@@ -2,7 +2,7 @@ x <- 14
 y <- 15
 
 baz <- function(z) {
-  for (i in 1:3) {
+  for (i in 1:4) {
     bar <- foo(i,x,y)
     x <- bar$x
     y <- bar$y

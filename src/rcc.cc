@@ -139,6 +139,9 @@ Expression op_primsxp(SEXP e, string rho, SubexpBuffer & subexps);
 Expression op_symlist(SEXP e, string rho, SubexpBuffer & subexps);
 Expression op_lang(SEXP e, string rho, SubexpBuffer & subexps);
 Expression op_begin(SEXP exp, string rho, SubexpBuffer & subexps);
+Expression op_if(SEXP e, string rho, SubexpBuffer & subexps);
+Expression op_for(SEXP e, string rho, SubexpBuffer & subexps);
+Expression op_while(SEXP e, string rho, SubexpBuffer & subexps);
 Expression op_fundef(SEXP e, string rho, SubexpBuffer & subexps);
 Expression op_special(SEXP e, SEXP op, string rho, SubexpBuffer & subexps);
 Expression op_set(SEXP e, SEXP op, string rho, SubexpBuffer & subexps);
@@ -152,6 +155,7 @@ Expression op_list_help(SEXP e, string rho,
 Expression op_string(SEXP s, SubexpBuffer & subexps);
 Expression op_vector(SEXP e, SubexpBuffer & subexps);
 string make_symbol(SEXP e);
+string make_type(int t);
 string make_fundef(string func_name, SEXP args, SEXP code);
 string make_fundef_argslist(string func_name, SEXP args, SEXP code);
 string indent(string str);
@@ -512,6 +516,121 @@ Expression op_begin(SEXP exp, string rho, SubexpBuffer & subexps) {
   return Expression(var, e.is_prot, e.is_dep, e.is_visible);
 }
 
+Expression op_if(SEXP e, string rho, SubexpBuffer & subexps) {
+  if (length(e) > 2) {
+    Expression cond = op_exp(CAR(e), rho, subexps);
+    string out = subexps.new_var();
+    subexps.decls += "SEXP " + out + ";\n";
+    subexps.defs += "if (my_asLogicalNoNA(" + cond.var + ")) {\n";
+    Expression te = op_exp(CADR(e), rho, subexps);
+    subexps.defs += indent("PROTECT(" + out + " = " + te.var + ");\n");
+    if (te.is_prot) subexps.defs += indent("UNPROTECT_PTR(" + te.var + ");\n");
+    subexps.defs += "} else {\n";
+    Expression fe = op_exp(CADDR(e), rho, subexps);
+    subexps.defs += indent("PROTECT(" + out + " = " + fe.var + ");\n");
+    if (fe.is_prot) subexps.defs += indent("UNPROTECT_PTR(" + fe.var + ");\n");
+    subexps.defs += "}\n";
+    if (cond.is_prot) subexps.defs += indent("UNPROTECT_PTR(" + cond.var + ");\n");
+    return Expression(out, TRUE, FALSE, TRUE);
+  } else {
+    Expression cond = op_exp(CAR(e), rho, subexps);
+    string out = subexps.new_var();
+    subexps.decls += "SEXP " + out + ";\n";
+    subexps.defs += "if (my_asLogicalNoNA(" + cond.var + ")) {\n";
+    Expression te = op_exp(CADR(e), rho, subexps);
+    subexps.defs += indent("PROTECT(" + out + " = " + te.var + ");\n");
+    if (te.is_prot) subexps.defs += indent("UNPROTECT_PTR(" + te.var + ");\n");
+    subexps.defs += "} else {\n";
+    subexps.defs += indent("PROTECT(" + out + " = R_NilValue);\n");
+    subexps.defs += "}\n";
+    if (cond.is_prot) subexps.defs += indent("UNPROTECT_PTR(" + cond.var + ");\n");    
+    return Expression(out, TRUE, FALSE, TRUE);
+  }
+}
+
+Expression op_for(SEXP e, string rho, SubexpBuffer & subexps) {
+  SEXP sym, body, val;
+  sym = CAR(e);
+  val = CADR(e);
+  body = CADDR(e);
+  if ( !isSymbol(sym) ) err("non-symbol loop variable\n");
+  Expression val1 = op_exp(val, rho, subexps);
+  subexps.decls += "int i, n;\n";
+  subexps.decls += "SEXP ans, v;\n";
+  subexps.decls += "PROTECT_INDEX vpi, api;\n";
+  subexps.decls += "RCNTXT cntxt;\n";
+  subexps.defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
+  subexps.defs += "if (isList(" + val1.var + ") || isNull(" + val1.var + ")) {\n";
+  subexps.defs += indent("n = length(" + val1.var + ");\n");
+  subexps.defs += "PROTECT_WITH_INDEX(v = R_NilValue, &vpi);\n";
+  subexps.defs += "} else {\n;";
+  subexps.defs += indent("n = LENGTH(" + val1.var + ");\n");
+  subexps.defs += "PROTECT_WITH_INDEX(v = allocVector(TYPEOF(" + val1.var + "), 1), &vpi);\n";
+  subexps.defs += "}\n";
+  subexps.defs += "ans = R_NilValue;\n";
+  subexps.defs += "PROTECT_WITH_INDEX(ans, &api);\n";
+  subexps.defs += "begincontext(&cntxt, CTXT_LOOP, R_NilValue, " + rho
+    + ", R_NilValue, R_NilValue);\n";
+  subexps.defs += "switch (SETJMP(cntxt.cjmpbuf)) {\n";
+  subexps.defs += "case CTXT_BREAK: goto for_break;\n";
+  subexps.defs += "case CTXT_NEXT: goto for_next;\n";
+  subexps.defs += "}\n";
+  subexps.defs += "for (i=0; i < n; i++) {\n";
+  string in_loop = "";
+  in_loop += "switch(TYPEOF(" + val1.var + ")) {\n";
+  in_loop += "case LGLSXP:\n";
+  in_loop += indent("REPROTECT(v = allocVector(TYPEOF(" + val1.var + "), 1), vpi);\n");
+  in_loop += indent("LOGICAL(v)[0] = LOGICAL(" + val1.var + ")[i];\n");
+  in_loop += indent("setVar(" + make_symbol(sym) + ", v, " + rho + ");\n");
+  in_loop += indent("break;\n");
+  in_loop += "case INTSXP:\n";
+  in_loop += "REPROTECT(v = allocVector(TYPEOF(" + val1.var + "), 1), vpi);\n";
+  in_loop += "INTEGER(v)[0] = INTEGER(" + val1.var + ")[i];\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", v, " + rho + ");\n";
+  in_loop += indent("break;\n");
+  in_loop += "case REALSXP:\n";
+  in_loop += "REPROTECT(v = allocVector(TYPEOF(" + val1.var + "), 1), vpi);\n";
+  in_loop += "REAL(v)[0] = REAL(" + val1.var + ")[i];\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", v, " + rho + ");\n";
+  in_loop += indent("break;\n");
+  in_loop += "case CPLXSXP:\n";
+  in_loop += "REPROTECT(v = allocVector(TYPEOF(" + val1.var + "), 1), vpi);\n";
+  in_loop += "COMPLEX(v)[0] = COMPLEX(" + val1.var + ")[i];\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", v, " + rho + ");\n";
+  in_loop += indent("break;\n");
+  in_loop += "case STRSXP:\n";
+  in_loop += "REPROTECT(v = allocVector(TYPEOF(" + val1.var + "), 1), vpi);\n";
+  in_loop += "SET_STRING_ELT(v, 0, STRING_ELT(" + val1.var + ", i));\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", v, " + rho + ");\n";
+  in_loop += indent("break;\n");
+  in_loop += "case EXPRSXP:\n";
+  in_loop += "case VECSXP:\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", VECTOR_ELT(" + val1.var + ", i), " + rho + ");\n";
+  in_loop += indent("break;\n");
+  in_loop += "case LISTSXP:\n";
+  in_loop += "setVar(" + make_symbol(sym) + ", CAR(" + val1.var + "), " + rho + ");\n";
+  in_loop += val1.var + " = CDR(" + val1.var + ");\n";
+  in_loop += "default: errorcall(R_NilValue, \"Bad for loop sequence\");\n";
+  in_loop += "}\n";
+  subexps.defs += indent(in_loop);
+  Expression ans = op_exp(body, rho, subexps);
+  subexps.defs += "REPROTECT(ans = " + ans.var + ", api);\n";
+  if (ans.is_prot) {
+    subexps.defs += "UNPROTECT_PTR(" + ans.var + ");\n";
+  }
+  subexps.defs += "for_next:\n";
+  subexps.defs += ";\n";
+  subexps.defs += "}\n";
+  subexps.defs += "for_break:\n";
+  subexps.defs += "endcontext(&cntxt);\n";
+  subexps.defs += "UNPROTECT_PTR(" + val1.var + ");\n";
+  subexps.defs += "UNPROTECT_PTR(v);\n";
+  return Expression(ans.var, TRUE, TRUE, FALSE);
+}
+
+Expression op_while(SEXP e, string rho, SubexpBuffer & subexps) {
+}
+
 Expression op_fundef(SEXP e, string rho, SubexpBuffer & subexps) {
   string func_name = global_fundefs.new_var();
   global_fundefs.defs += make_fundef_argslist(func_name,
@@ -563,6 +682,15 @@ Expression op_special(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
     return op_fundef(CDR(e), rho, subexps);
   } else if (PRIMFUN(op) == (SEXP (*)())do_begin) {
     return op_begin(CDR(e), rho, subexps);
+  } else if (PRIMFUN(op) == (SEXP (*)())do_if) {
+    return op_if(CDR(e), rho, subexps);
+  } else if (PRIMFUN(op) == (SEXP (*)())do_for) {
+    return op_for(CDR(e), rho, subexps);
+    /*
+  } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
+    return op_while(CDR(e), rho, subexps);
+    */
+
   } else {
     /* default case for specials: call the (call, op, args, rho) fn */
     /* do_for currently lands here */
@@ -843,36 +971,10 @@ Expression op_list_help(SEXP e, string rho,
       return Expression(appl2_unp(my_cons, car.var, cdr.var, subexps,
 				  car.is_prot, cdr.is_prot),
 			FALSE, TRUE, TRUE);
-      /*
-      string var = global_constants.new_var();
-      global_constants.decls += "SEXP " + var + ";\n";
-      global_constants.defs += "{\n";
-      global_constants.defs += consts.decls;
-      global_constants.defs += consts.defs;
-      global_constants.defs += var + " =  " + cdr.var + ";\n";
-      global_constants.defs += "PROTECT(" + var + ");\n";
-      global_constants.defs += "}\n";
-      return Expression(appl2_unp(my_cons, car.var, var, subexps,
-				  car.is_prot, cdr.is_prot),
-			FALSE, TRUE, TRUE);
-      */
     } else if (!car.is_dep && cdr.is_dep) {
       return Expression(appl2_unp(my_cons, car.var, cdr.var, subexps,
 				  car.is_prot, cdr.is_prot),
 			FALSE, TRUE, TRUE);
-      /*
-      string var = global_constants.new_var();
-      global_constants.decls += "SEXP " + var + ";\n";
-      global_constants.defs += "{\n";
-      global_constants.defs += consts.decls;
-      global_constants.defs += consts.defs;
-      global_constants.defs += var + " =  " + car.var + ";\n";
-      global_constants.defs += "PROTECT(" + var + ");\n";
-      global_constants.defs += "}\n";
-      return Expression(appl2_unp(my_cons, var, cdr.var, subexps,
-				  car.is_prot, cdr.is_prot),
-			FALSE, TRUE, TRUE);
-      */
     }
   } else { /* It's a tagged cons */
     if (my_cons == "lcons") {
@@ -1040,6 +1142,35 @@ string make_symbol(SEXP e) {
     } else {
       return pr->second;
     }
+  }
+}
+
+string make_type(int t) {
+  switch(t) {
+  case NILSXP: return "0 /* NILSXP */";
+  case SYMSXP: return "1 /* SYMSXP */";
+  case LISTSXP: return "2 /* LISTSXP */";
+  case CLOSXP: return "3 /* CLOSXP */";
+  case ENVSXP: return "4 /* ENVSXP */";
+  case PROMSXP: return "5 /* PROMSXP */";
+  case LANGSXP: return "6 /* LANGSXP */";
+  case SPECIALSXP: return "7 /* SPECIALSXP */";
+  case BUILTINSXP: return "8 /* BUILTINSXP */";
+  case CHARSXP: return "9 /* CHARSXP */";
+  case LGLSXP: return "10 /* LGLSXP */";
+  case INTSXP: return "13 /* INTSXP */";
+  case REALSXP: return "14 /* REALSXP */";
+  case CPLXSXP: return "15 /* CPLXSXP */";
+  case STRSXP: return "16 /* STRSXP */";
+  case DOTSXP: return "17 /* DOTSXP */";
+  case ANYSXP: return "18 /* ANYSXP */";
+  case VECSXP: return "19 /* VECSXP */";
+  case EXPRSXP: return "20 /* EXPRSXP */";
+  case BCODESXP: return "21 /* BCODESXP */";
+  case EXTPTRSXP: return "22 /* EXTPTRSXP */";
+  case WEAKREFSXP: return "23 /* WEAKREFSXP */";
+  case FUNSXP: return "99 /* FUNSXP */";
+  default: err("make_type: invalid type"); return "BOGUS";
   }
 }
 
