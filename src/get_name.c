@@ -24,13 +24,13 @@
 #include <Parse.h>
 #include "get_name.h"
 
-static const char *name_map[];
+static const char *name_map[571];
 
 const char *get_name(int n) {
   return name_map[n];
 }
 
-static const char *name_map[] = 
+static const char *name_map[571] = 
 {
   "do_if",
   "do_while",
