@@ -509,6 +509,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   in_loop += "case LISTSXP:\n";
   in_loop += "setVar(" + make_symbol(sym) + ", CAR(" + val1.var + "), " + rho + ");\n";
   in_loop += val1.var + " = CDR(" + val1.var + ");\n";
+  in_loop += indent("break;\n");
   in_loop += "default: errorcall(R_NilValue, \"Bad for loop sequence\");\n";
   in_loop += "}\n";
   defs += indent(in_loop);
