@@ -25,4 +25,4 @@ tests/mgg00.c: tests/mgg00.r rcc
 	./rcc tests/mgg00.r
 
 clean:
-	-rm -f rcc *.o tests/*.c tests/*.so tests/mgg00
+	-rm -f rcc *.o tests/*.c tests/*.so sim00.out *~ run
