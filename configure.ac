@@ -78,12 +78,17 @@ AC_CONFIG_FILES([Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
-		 tests/hand-opt/Makefile])
+		 tests/hand-opt/Makefile
+		 tests/temp/Makefile
+                 ])
 
 AC_CONFIG_FILES([tests/regression/run-test],
                 [chmod +x tests/regression/run-test])
 
 AC_CONFIG_FILES([tests/performance/run-test],
                 [chmod +x tests/performance/run-test])
+
+AC_CONFIG_FILES([tests/temp/run-test],
+                [chmod +x tests/temp/run-test])
 
 AC_OUTPUT

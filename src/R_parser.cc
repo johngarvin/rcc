@@ -27,11 +27,7 @@
 // is NULL. Sets 'e' to be a list of the resulting R
 // expressions. Returns the number of expressions.
 
-int parse_R(list<SEXP> & e, char *filename) {
-  SEXP exp;
-  ParseStatus status;
-  int num_exps = 0;
-  FILE *inFile;
+void init_R() {
   char *myargs[5];
   myargs[0] = "";
   myargs[1] = "--gui=none";
@@ -40,7 +36,9 @@ int parse_R(list<SEXP> & e, char *filename) {
   myargs[4] = NULL;
   Rf_initialize_R(4,myargs);
   setup_Rmainloop();
+}
 
+/*
   if (!filename) {
     inFile = stdin;
   } else {
@@ -50,16 +48,25 @@ int parse_R(list<SEXP> & e, char *filename) {
     cerr << "Error: input file \"" << filename << "\" not found\n";
     exit(1);
   }
+*/
+
+
+// int parse_R(list<SEXP> & e, char *filename) {
+list<SEXP> *parse_R(FILE *in_file) {
+  list<SEXP> *exps;
+  SEXP e;
+  ParseStatus status;
+
+  exps = new list<SEXP>;
 
   do {
     /* parse each expression */
-    PROTECT(exp = R_Parse1File(inFile, 1, &status));
+    PROTECT(e = R_Parse1File(in_file, 1, &status));
     switch(status) {
     case PARSE_NULL:
       break;
     case PARSE_OK:
-      num_exps++;
-      e.push_back(exp);
+      exps->push_back(e);
       break;
     case PARSE_INCOMPLETE:
       break;
@@ -71,5 +78,30 @@ int parse_R(list<SEXP> & e, char *filename) {
     }
   } while (status != PARSE_EOF && status != PARSE_INCOMPLETE);
   
-  return num_exps;
+  return exps;
+}
+
+SEXP parse_R_as_function(FILE *in_file) {
+  list <SEXP> *exps;
+  exps = parse_R(in_file);
+  SEXP stmts = R_NilValue;
+  while(!exps->empty()) {
+    SEXP e = exps->back();
+    stmts = CONS(e, stmts);
+    exps->pop_back();
+  }
+  PROTECT(stmts);
+  delete exps;
+  SEXP lbrace = Rf_install("{");
+  SEXP body = PROTECT(LCONS(lbrace, stmts));
+  UNPROTECT_PTR(stmts);
+  SEXP args = R_NilValue; // empty argument list
+  SEXP func_sym = Rf_install("function");
+  SEXP func_exp = PROTECT(LCONS(func_sym, CONS(args, CONS(body, R_NilValue))));
+  UNPROTECT_PTR(body);
+  SEXP fname = Rf_install("<toplevel>");
+  SEXP arrow = Rf_install("<-");
+  SEXP big_exp = PROTECT(LCONS(arrow, CONS(fname, CONS(func_exp, R_NilValue))));
+  UNPROTECT_PTR(func_exp);
+  return big_exp;
 }

@@ -41,4 +41,8 @@ extern void setup_Rmainloop(void);
 
 } //extern "C"
 
-int parse_R(std::list<SEXP> & e, char *inFile);
+// int parse_R(std::list<SEXP> & e, char *inFile);
+
+void init_R();
+list<SEXP> *parse_R(FILE *in_file);
+SEXP parse_R_as_function(FILE *in_file);

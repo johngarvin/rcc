@@ -543,11 +543,14 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     /* default case for specials: call the (call, op, args, rho) fn */
     Expression op1 = op_exp(op, rho);
     Expression args1 = op_list(CDR(e), rho);
+    string call_str = appl2("lcons", op1.var, args1.var);
+    Expression call = Expression(call_str, FALSE, TRUE, unp(call_str));
     out = appl4(get_name(PRIMOFFSET(op)),
-		"R_NilValue",
+		call.var,
 		op1.var,
 		args1.var,
 		rho);
+    del(call);
     del(op1);
     del(args1);
     return Expression(out, TRUE, 1 - PRIMPRINT(op), unp(out));
@@ -1231,11 +1234,13 @@ void SubexpBuffer::output_ip() {
 }
 
 int main(int argc, char *argv[]) {
-  unsigned int i, num_exps;
-  list<SEXP> e;
+  unsigned int i;
+  list<SEXP> *e;
   char *fullname_c;
   string fullname, libname, out_filename, path, exprs;
   bool in_file_exists, out_file_exists = FALSE;
+  FILE *in_file;
+  int n_exprs;
 
   // for getopt
   int c;
@@ -1284,8 +1289,11 @@ int main(int argc, char *argv[]) {
     in_file_exists = FALSE;
   }
 
+  // Initialize R interface and parse
+  init_R();
+
   if (in_file_exists) {
-    num_exps = parse_R(e, fullname_c);
+    in_file = fopen(fullname_c, "r");
     fullname = string(fullname_c);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
@@ -1294,10 +1302,12 @@ int main(int argc, char *argv[]) {
     // Lib name must be alphanumerical to be part of R_init_<library>
     // function (explained below)
   } else {
-    num_exps = parse_R(e, NULL);
+    in_file = stdin;
     libname = "R_output";
     path = "";
   }
+
+  e = parse_R(in_file);
 
   if (!out_file_exists) {
     out_filename = path + libname + ".c";
@@ -1308,18 +1318,20 @@ int main(int argc, char *argv[]) {
   global_fundefs = *fundefs_ptr;
   delete fundefs_ptr;
 
-  /* build expressions */
+  // build expressions
   global_constants.decls += "static void exec();\n";
   exprs += "}\n";
   exprs += "static void exec() {\n";
-  for(i=0; i<num_exps; i++) {
+  n_exprs = e->size();
+  for(i=0; i<n_exprs; i++) {
     exprs += indent("SEXP e" + i_to_s(i) + ";\n");
   }
-  for(i=0; i<num_exps; i++) {
+  for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
-    SEXP sexp = e.front();
+    SEXP sexp = e->front();
     Expression exp = subexps.op_exp(sexp, "R_GlobalEnv");
-    e.pop_front();
+    e->pop_front();
+    UNPROTECT_PTR(sexp);
     exprs += indent("{\n");
     exprs += indent(indent(subexps.output()));
     if (exp.is_visible) {
@@ -1329,10 +1341,11 @@ int main(int argc, char *argv[]) {
     exprs += indent(indent(exp.del_text));
     exprs += indent("}\n");
   }
+  delete e;
   exprs += indent("UNPROTECT(" + i_to_s(global_constants.get_n_prot())
 		  + "); /* c_ */\n");
   exprs += "}\n\n";
-
+  
   string header;
   header += "void R_init_" + libname + "() {\n";
   /* The name R_init_<libname> causes the R dynamic loader to execute the
