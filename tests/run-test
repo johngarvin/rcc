@@ -1,7 +1,9 @@
+#!/bin/sh
+PATH=/local/R-1.6.2/lib/R/bin:$PATH
 if [[ $1 == "" ]] ; then
-  TEST=`echo tests/test*.r`
+  TEST=`echo test*.r`
   make ${TEST//\.r/.so} &&
-  for i in tests/test*\.so ; do
+  for i in test*\.so ; do
     echo --- $i --- &&
     echo '     - R -' &&
     R --vanilla --slave < `echo $i | sed 's/\.so/.r/'` &&
@@ -10,11 +12,11 @@ if [[ $1 == "" ]] ; then
     true
   done ;
 else
-  TEST=`echo tests/test$1_*.r`
+  TEST=`echo test$1_*.r`
   make ${TEST/\.r/.so} &&
   echo --- R --- &&
-  R --vanilla --slave < tests/test$1_*.r &&
+  R --vanilla --slave < ${TEST} &&
   echo --- C --- &&
-  echo 'dyn.load("'`ls tests/test$1_*.so`'")' | R --vanilla --slave &&
+  echo 'dyn.load("'`ls test$1_*.so`'")' | R --vanilla --slave &&
   true ;
 fi

@@ -1,1 +1,1 @@
-source("tests/test_foo_15.r")
+source("test_foo_15.r")
