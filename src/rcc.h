@@ -30,6 +30,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <stdarg.h>
 
 using namespace std;
 
@@ -240,10 +241,12 @@ public:
   string defs;
   virtual string new_var();
   virtual string new_var_unp();
+  virtual string new_var_unp_name(string name);
   int get_n_vars();
   int get_n_prot();
   string new_sexp();
   string new_sexp_unp();
+  string new_sexp_unp_name(string name);
   string appl1(string func, string arg);
   string appl1_unp(string func, string arg);
   string appl2(string func, string arg1, string arg2);
@@ -274,6 +277,7 @@ public:
 	       string appl4,
 	       string appl5,
 	       string appl6);
+  void appl(string var, int protect, string func, int argc, ...);
   void del(Expression exp);
   Expression op_exp(SEXP e, string rho);
   Expression op_primsxp(SEXP e, string rho);
@@ -330,6 +334,7 @@ public:
   string get_init_str();
   virtual string new_var();
   virtual string new_var_unp();
+  virtual string new_var_unp_name(string name);
   SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 500, string is = "init")
     : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;

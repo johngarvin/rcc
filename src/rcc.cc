@@ -63,6 +63,9 @@ string SubexpBuffer::new_var() {
 string SubexpBuffer::new_var_unp() {
   return prefix + i_to_s(n++);
 }
+string SubexpBuffer::new_var_unp_name(string name) {
+  return prefix + i_to_s(n++) + "_" + make_c_id(name);
+}
 int SubexpBuffer::get_n_vars() {
   return n;
 }
@@ -87,6 +90,16 @@ string SubexpBuffer::new_sexp_unp() {
   }
   return str;
 }
+string SubexpBuffer::new_sexp_unp_name(string name) {
+  string str = new_var_unp_name(name);
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
+  return str;
+}
+
 
 /* Convenient macro-like things for outputting function applications */
 
@@ -182,6 +195,28 @@ string SubexpBuffer::appl6(string func,
     + ", " + arg5 + ", " + arg6 + "));\n";
   return var;
 }
+
+void
+SubexpBuffer::appl(string var, int protect, string func, int argc, ...)
+{
+  va_list param_pt;
+  string stmt;
+
+  stmt = var + " = " + func + "(";
+  va_start (param_pt, argc);
+  for (int i = 0; i < argc; i++) {
+    if (i > 0) stmt += ", ";
+    stmt += *va_arg(param_pt, string *);
+  }
+  stmt += ")";
+  if (protect) {
+    defs += "PROTECT(" + stmt + ");\n";
+    prot++;
+  }
+  else
+    defs += stmt + ";\n";
+}
+
 
 void SubexpBuffer::del(Expression exp) {
   defs += exp.del_text;
@@ -1354,6 +1389,18 @@ string SplitSubexpBuffer::new_var_unp() {
   }
   return prefix + i_to_s(n++);
 }
+string SplitSubexpBuffer::new_var_unp_name(string name) {
+  if ((n % threshold) == 0) {
+    if (is_const) decls += "static ";
+    decls += "void " + init_str + i_to_s(init_fns) + "();\n";
+    if (n != 0) defs += "}\n";
+    if (is_const) defs += "static ";
+    defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
+    init_fns++;
+  }
+  return prefix + i_to_s(n++) + "_" + make_c_id(name);
+}
+
 
 string SubexpBuffer::output() {
   string out;
@@ -1533,7 +1580,9 @@ string make_symbol(SEXP e) {
     string name = string(CHAR(PRINTNAME(e)));
     map<string,string>::iterator pr = symbol_map.find(name);
     if (pr == symbol_map.end()) {  // not found
-      string var = global_constants.appl1_unp("install", quote(name));
+      string var = global_constants.new_sexp_unp_name(name);
+      string qname = quote(name);
+      global_constants.appl(var, FALSE, "install", 1, &qname);
       symbol_map.insert(pair<string,string>(name, var));
       return var;
     } else {
