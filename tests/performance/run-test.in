@@ -1,0 +1,17 @@
+#!/bin/sh
+# @configure_input@
+trap 'echo "Testing halted" ; exit' SIGINT
+export PATH=@R_PREFIX@/lib/R/bin:$PATH
+export LD_LIBRARY_PATH=@R_PREFIX@/bin:@top_builddir@/lib/.libs
+TEST=`echo *.r`
+make ${TEST//\.r/.so}                                   \
+&& for i in *\.so ; do
+     echo --- $i ---                                    \
+  && echo '     - R -'                                  \
+  && R --slave < `echo $i | sed 's/\.so/.r/'`           \
+  && R CMD Rprof Rprof.out | grep "^Total run time"     \
+  && echo '     - C -'                                  \
+  && echo 'dyn.load("'$i'")' | R --slave                \
+  && R CMD Rprof Rprof.out | grep "^Total run time"     \
+  && true
+done
