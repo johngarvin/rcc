@@ -31,21 +31,25 @@
 extern int Rf_initEmbeddedR(int argc, char **argv);
 
 int main(int argc, char *argv[]) {
-  SEXP v0, v1, v2, v3;
-  char *myargv[] = {argv[0], "--gui=none", "--slave"};
+  SEXP v0, v1, v2, v3, v4;
+  char *myargv[] = {argv[0], "--slave"};
   if (argc != 2) {
     fprintf(stderr, "Usage: run <name of .so file>\n");
     exit(1);
   }
-  Rf_initEmbeddedR(3, myargv);
+  Rf_initEmbeddedR(2, myargv);
   v0 = PROTECT(mkPRIMSXP(359,0));
   v1 = PROTECT(mkString(argv[1]));
-  v2 = PROTECT(ScalarLogical(1));
-  v3 = PROTECT(cons(v1,cons(v2,cons(v2,R_NilValue))));
+  v2 = PROTECT(ScalarLogical(0));
+  v3 = PROTECT(ScalarLogical(1));
+  v4 = PROTECT(cons(v1,cons(v3,cons(v3,R_NilValue))));
+  UNPROTECT_PTR(v1);
+  UNPROTECT_PTR(v2);
+  UNPROTECT_PTR(v3);
   do_dynload(R_NilValue,
 	     v0,
-	     v3,
+	     v4,
 	     R_GlobalEnv);
-  UNPROTECT(4);
+  UNPROTECT(2);
   return 0;
 }
