@@ -65,7 +65,7 @@ string quote(string str);
 string unp(string str);
 string strip_suffix(string str);
 int filename_pos(string str);
-int parse_R(list<SEXP> & e, char *inFile);
+int parse_R(list<SEXP> & e, char *myname, char *inFile);
 void err(string message);
 void printstr(string str);
 

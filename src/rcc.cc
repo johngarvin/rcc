@@ -1372,12 +1372,15 @@ int main(int argc, char *argv[]) {
     arg_err();
   }
 
+  // Required by R library.
+  setenv ("R_HOME", R_HOME, 1);
+
   // First arg is input filename
   if (strcmp(argv[1], "--") == 0) {
-    num_exps = parse_R(e, NULL);
+    num_exps = parse_R(e, argv[0], NULL);
     libname = "R_output";
   } else {
-    num_exps = parse_R(e, argv[1]);
+    num_exps = parse_R(e, argv[0], argv[1]);
     fullname = string(argv[1]);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
@@ -1455,8 +1458,8 @@ int main(int argc, char *argv[]) {
   out_file << "#include <Parse.h>\n";
   out_file << "#include <Internal.h>\n";
   out_file << "#include <R_ext/RConverters.h>\n";
-  out_file << "#include <../main/arithmetic.h>\n";
-  out_file << "#include \"rcc_lib.h\"\n";
+  out_file << "#include <main/arithmetic.h>\n";
+  out_file << "#include <rcc_lib.h>\n";
   out_file << "\n";
   global_fundefs.output_ip();
   global_constants.output_ip();
@@ -1809,13 +1812,13 @@ int filename_pos(string str) {
   }
 }
 
-int parse_R(list<SEXP> & e, char *filename) {
+int parse_R(list<SEXP> & e, char *myname, char *filename) {
   SEXP exp;
   int status;
   int num_exps = 0;
   FILE *inFile;
   char *myargs[5];
-  myargs[0] = "/home/garvin/research/tel/rcc/rcc";
+  myargs[0] = myname;
   myargs[1] = "--gui=none";
   myargs[2] = "--slave";
   myargs[3] = "--vanilla";

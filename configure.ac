@@ -1,4 +1,4 @@
-AC_INIT(rcc, 1.0.0, garvin@rice.edu)
+AC_INIT(rcc, 1.0.1, garvin@rice.edu)
 AM_INIT_AUTOMAKE
 AC_PREFIX_DEFAULT([/usr])
 AC_CONFIG_SRCDIR([src/rcc.cc])
@@ -45,6 +45,6 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 lib/Makefile
 		 R-patches/Makefile
-		 tests/Makefile])
+		 tests/Makefile tests/run-test])
 
 AC_OUTPUT

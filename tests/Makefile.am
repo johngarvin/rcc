@@ -1,5 +1,6 @@
 
 EXTRA_DIST = \
+	run-test.in			\
 	sep_def.r			\
 	sep_use.r			\
 	test00_constants.r		\
@@ -44,10 +45,10 @@ EXTRA_DIST = \
 .r.c:
 	../src/rcc $<
 
-TEST_CFLAGS  = $(BASE_CFLAGS) -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib
+TEST_CFLAGS  = $(BASE_CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib
 
 .c.so: ../lib/.libs/librcc.so
 	$(CC) $(CPPFLAGS) $(TEST_CFLAGS) $(LDFLAGS) -fpic -shared ../lib/.libs/librcc.so  $< -o $@
 
 check: ../src/rcc ../lib/.libs/librcc.so
-	./run-test
+	sh ./run-test
