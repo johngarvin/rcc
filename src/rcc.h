@@ -345,5 +345,5 @@ string indent(string str);
 string i_to_s(const int i);
 string d_to_s(double d);
 string c_to_s(Rcomplex c);
-string make_c_func(string s);
+string make_c_id(string s);
 

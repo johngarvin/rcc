@@ -329,7 +329,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     string r_sym = CHAR(PRINTNAME(CAR(e)));
     if (is_special(r_sym)) {
       //direct function call
-      string func = make_c_func(r_sym);
+      string func = make_c_id(r_sym) + "_direct";
       Expression args = op_list(CDR(e), rho, FALSE); // not local; used for env
       string call = appl1(func, args.var);
       del(args);
@@ -575,10 +575,11 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 	cerr << "Note: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
       } else {
 	global_c_return = TRUE;
-	global_fundefs.defs += make_fundef_argslist_c(this,
-						      make_c_func(opt_R_name),
-						      CAR(e),
-						      CADR(e));
+	global_fundefs.defs += 
+	  make_fundef_argslist_c(this,
+				 make_c_id(opt_R_name) + "_direct",
+				 CAR(e),
+				 CADR(e));
 	global_c_return = FALSE;
       }
       // in any case, continue to closure version
@@ -1412,7 +1413,10 @@ int main(int argc, char *argv[]) {
     fullname = string(argv[1]);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
-    libname = strip_suffix(fullname.substr(pos, fullname.size() - pos));
+    string filename = fullname.substr(pos, fullname.size() - pos);
+    libname = make_c_id(strip_suffix(filename));
+    // Lib name must be alphanumerical to be part of R_init_<library>
+    // function (explained below)
   }
 
   if (argc == 2) {
@@ -1449,8 +1453,8 @@ int main(int argc, char *argv[]) {
     e.pop_front();
     exprs += indent("{\n");
     exprs += indent(indent(subexps.output()));
-    exprs += indent(indent("e" + i_to_s(i) + " = " + exp.var + ";\n"));
     if (exp.is_visible) {
+      exprs += indent(indent("e" + i_to_s(i) + " = " + exp.var + ";\n"));
       exprs += indent(indent("PrintValueRec(e" + i_to_s(i) + ", R_GlobalEnv);\n"));
     }
     exprs += indent(indent(exp.del_text));
@@ -1796,21 +1800,25 @@ string escape(string str) {
   return out;
 }
 
-/* Make a string suitable for use as a C function name. The input is
- * assumed to be a valid R symbol. It's important to make sure two R
- * functions can't translate to the same C name. */
-
-string make_c_func(string str) {
+/* Make a string suitable for use as a C identifier. Note that, since
+ * "." is the only non-alphanumeric character that can appear in R
+ * variable names, two different R functions can't translate to the
+ * same C name.
+ */
+string make_c_id(string str) {
   string out;
   unsigned int i;
+  if (!isalpha(str[0])) {
+    out += 'a';
+  }
   for(i=0; i<str.size(); i++) {
-    if (str[i] == '.') {
+    if (!isalnum(str[i])) {
       out += '_';
     } else {
       out += str[i];
     }
   }
-  return out + "_direct";
+  return out;
 }
 
 /* Simple function to add quotation marks around a string */
