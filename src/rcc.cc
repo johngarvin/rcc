@@ -370,10 +370,10 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
   Expression e;
   string var = new_sexp();
   while (exp != R_NilValue) {
-    SubexpBuffer temp("tmp_" + i_to_s(global_temps++) + "_");
+    SubexpBuffer temp("tmp_be_" + i_to_s(global_temps++) + "_");
     e = temp.op_exp(CAR(exp), rho);
     defs += "{\n";
-    defs += temp.output();
+    defs += indent(temp.output());
     if (CDR(exp) == R_NilValue) {
       defs += indent(var + " = " + e.var + ";\n");
     } else {
@@ -1599,7 +1599,6 @@ int parse_R(list<SEXP> & e, char *filename) {
       e.push_back(exp);
       break;
     case PARSE_INCOMPLETE:
-      err("parsing returned PARSE_INCOMPLETE.\n");
       break;
     case PARSE_ERROR:
       err("parsing returned PARSE_ERROR.\n");
@@ -1607,7 +1606,7 @@ int parse_R(list<SEXP> & e, char *filename) {
     case PARSE_EOF:
       break;
     }
-  } while (status != PARSE_EOF);
+  } while (status != PARSE_EOF && status != PARSE_INCOMPLETE);
   
   return num_exps;
 }
