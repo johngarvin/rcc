@@ -2,8 +2,9 @@ CC=cc
 CXX=cxx
 LD=cxx
 R=/scratch/garvin/R-1.6.2
-CPPFLAGS=-g3 -fast -I$(R)/src/include -I. -D__USE_STD_IOSTREAM
+CPPFLAGS=-g3 -I$(R)/src/include -I. -D__USE_STD_IOSTREAM
 LDFLAGS= -L$(R)/bin -lR
+OPTFLAGS=-fast
 
 .SECONDARY:  # don't delete intermediate .c files
 
@@ -13,16 +14,19 @@ TARGS=$(subst .r,.so,$(TESTS))
 all: $(TARGS)
 
 rcc: rcc.o get_name.o
-	$(LD) $(LDFLAGS) $< get_name.o -o $@
+	$(LD) $(LDFLAGS) $(CPPFLAGS) rcc.o get_name.o -o $@
+
+rcc.o: rcc.cc rcc.h
+	$(CXX) -c $(CPPFLAGS) $< -o $@
 
 tests/test%.so: tests/test%.c rcc_lib.o
-	$(CC) $(CPPFLAGS) $(LDFLAGS) -shared rcc_lib.o $< -o $@
+	$(CXX) $(OPTFLAGS) $(CPPFLAGS) $(LDFLAGS) -shared rcc_lib.o $< -o $@
 
 tests/test%.c: tests/test%.r rcc 
 	./rcc $<
 
 tests/mgg00.so: tests/mgg00.c rcc_lib.o
-	$(CC) $(CPPFLAGS) $(LDFLAGS) -shared rcc_lib.o $< -o $@
+	$(CXX) $(OPTFLAGS) $(CPPFLAGS) $(LDFLAGS) -shared rcc_lib.o $< -o $@
 
 tests/mgg00.c: tests/mgg00.r rcc
 	./rcc tests/mgg00.r

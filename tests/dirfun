@@ -18,3 +18,4 @@
 ./rcc tests/test29_fib.r -f fib
 ./rcc tests/test30_scoping.r -f foo bar
 ./rcc tests/mgg00.r -f rnorm sim.ss.fun
+./rcc tests/trials.r -f  stoporcontfn lgamma

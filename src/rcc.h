@@ -38,6 +38,7 @@ extern "C" {
 #include <sys/file.h>
 #include <IOStuff.h>
 #include <Parse.h>
+#include <alloca.h>
 #include "get_name.h"
 #include "replacements.h"
 
@@ -340,7 +341,7 @@ string make_fundef(string func_name, SEXP args, SEXP code);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string indent(string str);
-string i_to_s(int i);
+string i_to_s(const int i);
 string d_to_s(double d);
 string c_to_s(Rcomplex c);
 string make_c_func(string s);

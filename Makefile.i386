@@ -17,17 +17,17 @@ rcc: rcc.o get_name.o
 rcc.o: rcc.cc rcc.h
 	$(CC) -c $(CPPFLAGS) $(LO_OPTFLAGS) $< -o $@
 
-tests/test%.so: tests/test%.c rcc_lib.o replacements.o
+tests/%.so: tests/%.c rcc_lib.o replacements.o
 	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o replacements.o $< -o $@
 
-tests/test%.c: tests/test%.r rcc 
+tests/%.c: tests/%.r rcc
 	./rcc $<
 
-tests/mgg00.so: tests/mgg00.c rcc_lib.o
-	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
-
-tests/mgg00.c: tests/mgg00.r rcc
-	./rcc tests/mgg00.r
+#tests/mgg00.so: tests/mgg00.c rcc_lib.o
+#	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
+#
+#tests/mgg00.c: tests/mgg00.r rcc
+#	./rcc tests/mgg00.r
 
 tests/distn.so: tests/distn.c rcc_lib.o
 	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@

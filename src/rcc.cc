@@ -24,7 +24,7 @@
 #include "rcc.h"
 
 // Settings to change how rcc works
-static const bool global_self_allocate = FALSE;
+static const bool global_self_allocate = TRUE;
 
 static bool global_c_return = FALSE;
 static bool global_ok = TRUE;
@@ -385,6 +385,7 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
   string var = new_sexp();
   while (exp != R_NilValue) {
     SubexpBuffer temp = new_sb("tmp_be_" + i_to_s(global_temps++) + "_");
+    //    temp.encl_fn = this;
     e = temp.op_exp(CAR(exp), rho);
     defs += "{\n";
     defs += indent(temp.output());
@@ -569,7 +570,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     } else { // not yet defined
       // direct version
       if (rho != "R_GlobalEnv") {
-	cerr << "Note: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call";
+	cerr << "Note: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
       } else {
 	global_c_return = TRUE;
 	global_fundefs.defs += make_fundef_argslist_c(this,
@@ -1016,8 +1017,9 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal /* = TRUE */) 
   } else {  // length >= 2
     string unp_cars = "";
     bool list_dep = FALSE;
-    Expression exps[len], tags[len];
-    bool langs[len];
+    Expression *exps = new Expression[len];
+    Expression *tags = new Expression[len];
+    bool *langs = new bool[len];
     SEXP tmp_e = e;
     for(i=0; i<len; i++) {
       switch (TYPEOF(tmp_e)) {
@@ -1048,6 +1050,9 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal /* = TRUE */) 
       }
       unp_cars += exps[i].del_text;
     }
+    delete [] exps;
+    delete [] tags;
+    delete [] langs;
     if (list_dep) {
       string handle = new_sexp();
       defs += "{\n";
