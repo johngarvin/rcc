@@ -57,8 +57,6 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
   mu.star      <- mustar.rstar[,1]
   r.star       <- mustar.rstar[,2]
   ss           <- inits$ss
-  print("ss=")
-  print(ss)
   r            <- inits$r
   
   p0    <- inits$p0
@@ -130,8 +128,6 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
     kk0       <- mu.ss.sim$kk0
     kk        <- mu.ss.sim$kk
 
-    cat("mu.ss.sim$kk0, kk0 is ", mu.ss.sim$kk0, kk0, "\n")
-
     kk0.vec[isim] <- kk0
     kk.vec[isim]  <- kk
     r.mat[isim,]  <- r
@@ -180,7 +176,6 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
 }
 
 sim.ss.fun <- function(isim, p0, mu.star, r.star, r, ss, kk0, kk, nj, M, zZscore, b, b1, sigmaBsquare, sigmaBsquare1, sigmaSsquare, n, N) {
-
   tauB <- 1/sigmaBsquare
   tauB1 <- 1/sigmaBsquare1
   tauS <- 1/sigmaSsquare
@@ -312,7 +307,6 @@ sim.ss.fun <- function(isim, p0, mu.star, r.star, r, ss, kk0, kk, nj, M, zZscore
 }
 
 sim.p0.fun <- function(alpha, beta, r, n, N, p0.lb, p0.ub) {
-
   #p0.lb and p0.ub stand for lower and upper bound of p0
 
   # The posterior of p0 is a truncated beta,
@@ -326,7 +320,6 @@ sim.p0.fun <- function(alpha, beta, r, n, N, p0.lb, p0.ub) {
 
   pbeta.lb <- pbeta(p0.lb, new.alpha, new.beta)
   pbeta.ub <- pbeta(p0.ub, new.alpha, new.beta)
-
   newpbeta <- runif(1, pbeta.lb, pbeta.ub)
 
   p0.new <- qbeta(newpbeta, new.alpha, new.beta)

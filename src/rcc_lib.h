@@ -1,3 +1,4 @@
+void my_init_memory(SEXP mem, int n);
 SEXP tagged_cons(SEXP car, SEXP tag, SEXP cdr);
 Rcomplex mk_complex(double r, double i);
 SEXP rcc_cons(SEXP car, SEXP cdr, int unp_car, int unp_cdr);

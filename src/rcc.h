@@ -272,6 +272,7 @@ public:
   Expression op_set(SEXP e, SEXP op, string rho);
   Expression op_clos_app(Expression op1, SEXP args, string rho);
   Expression op_arglist(SEXP e, string rho);
+  Expression op_arglist_array(SEXP e, string rho);
   Expression op_literal(SEXP e, string rho);
   Expression op_list_array(SEXP e, string rho, bool literal = TRUE);
   Expression op_list(SEXP e, string rho, bool literal = TRUE);

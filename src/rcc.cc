@@ -23,6 +23,7 @@
 
 #include "rcc.h"
 
+static bool global_self_allocate = 0; // breaks on GC when 1
 static bool global_ok = 1;
 static unsigned int global_temps = 0;
 static map<string, string> symbol_map;
@@ -303,13 +304,15 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
   if (TYPEOF(CAR(e)) == SYMSXP) {
     op = findVar(CAR(e), R_GlobalEnv);
     if (op == R_UnboundValue) {  /* user-defined function */
-      Expression args = op_exp(CDR(e), rho);
+      //Expression args = op_exp(CDR(e), rho);
+      Expression args = op_list_array(CDR(e), rho, FALSE);
       string func = appl2("findFun",
 			  make_symbol(CAR(e)),
 			  rho);
       /* Unlike other functions,
        * applyClosure uses its 'call' argument. */
       string call = appl2("cons", func, args.var);
+      // !!!!! TODO: self-allocate 'call'
       out = appl5("applyClosure",
 		  call,
 		  func,
@@ -330,7 +333,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
       return op_special(e, op, rho);
     } else if (TYPEOF(op) == BUILTINSXP) {
       Expression op1 = op_exp(op, rho);
-      Expression args1 = op_exp(CDR(e), rho);
+      //Expression args1 = op_exp(CDR(e), rho);
+      Expression args1 = op_list_array(CDR(e), rho, FALSE);
       out = appl4(get_name(PRIMOFFSET(op)),
 		  "R_NilValue ",
 		  op1.var,
@@ -429,7 +433,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   decls += "PROTECT_INDEX vpi, api;\n";
   decls += "RCNTXT cntxt;\n";
   if (!has_i) {
-    decls += "int i = 0;\n";
+    decls += "int i;\n";
     has_i = TRUE;
   }
   defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
@@ -542,7 +546,8 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     } else {
       args = op_exp(CDR(CADR(e)), rho);
     }
-    Expression func = op_exp(INTERNAL(fun), rho);
+    //Expression func = op_exp(INTERNAL(fun), rho);
+    Expression func = op_list_array(INTERNAL(fun), rho, FALSE);
     out = appl4(get_name(PRIMOFFSET(INTERNAL(fun))),
 		"R_NilValue", func.var, args.var, rho);
     del(func);
@@ -680,6 +685,22 @@ Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
   defs += "}\n";
   return Expression(out, TRUE, FALSE, unp(out));
 }
+
+
+Expression SubexpBuffer::op_arglist_array(SEXP e, string rho) {
+  if (e == R_NilValue) return Expression("R_NilValue", TRUE, TRUE, "");
+  int i, len;
+  string list = new_sexp_unp();
+  len = Rf_length(e);
+  if (len == 0) return Expression("R_NilValue", TRUE, TRUE, "");
+  alloc_list.add(list, defs.length(), len);
+  for(i=0; i<len; i++) {
+    defs += "CAR(" + list + "-" + i_to_s(i) + ") = " 
+      + make_symbol(TAG(e)) + ";\n";
+    e = CDR(e);
+  }
+  return Expression(list, TRUE, FALSE, "");
+}
   
 Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   Expression formals, body, env;
@@ -752,14 +773,17 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
 }
 
 Expression SubexpBuffer::op_list_array(SEXP e, string rho, bool literal) {
+  if (TYPEOF(e) != LISTSXP && TYPEOF(e) != LANGSXP && TYPEOF(e) != NILSXP) {
+    err("non-list found in op_list_array\n");
+  }
+  if (!global_self_allocate) return op_list(e, rho, literal); 
   bool list_dep = FALSE;
   if (e == R_NilValue) return Expression("R_NilValue", FALSE, TRUE, "");
   int i;
   string list = new_sexp();
   int len = Rf_length(e);
   if (len == 0) return Expression("R_NilValue", FALSE, TRUE, "");
-  alloc_list.add(list, defs.length(), len);
-  string dt;
+  string set_list, dt;
   for(i=0; i<len; i++) {
     Expression car_exp;
     if (literal) {
@@ -768,28 +792,32 @@ Expression SubexpBuffer::op_list_array(SEXP e, string rho, bool literal) {
       car_exp = op_exp(CAR(e), rho);
     }
     list_dep = list_dep || car_exp.is_dep;
-    defs += "CAR(" + list + " - " + i_to_s(i) + ") = " + car_exp.var + ";\n";
+    set_list += "CAR(" + list + " - " + i_to_s(i) + ") = " + car_exp.var + ";\n";
     dt += car_exp.del_text;
     if (TYPEOF(e) == LANGSXP) {
-      defs += "TYPEOF(" + list + " - " + i_to_s(i) + ") = LANGSXP;\n";
+      set_list += "TYPEOF(" + list + " - " + i_to_s(i) + ") = LANGSXP;\n";
       dt += "TYPEOF(" + list + " - " + i_to_s(i) + ") = LISTSXP;\n";
     }
     if (TAG(e) != R_NilValue) {
       Expression tag_exp = op_literal(TAG(e), rho);
-      defs += "TAG(" + list + " - " + i_to_s(i) + ") = " + tag_exp.var + ";\n";
+      set_list += "TAG(" + list + " - " + i_to_s(i) + ") = " + tag_exp.var + ";\n";
       dt += "TAG(" + list + " - " + i_to_s(i) + ") = R_NilValue;\n";
     }
     e = CDR(e);
   }
-  return Expression(list, list_dep, TRUE, dt);
+  alloc_list.add(list, defs.length(), len);
+  defs += set_list;
+  Expression out = Expression(list, list_dep, TRUE, dt);
+  out.is_alloc = TRUE;
+  return out;
 }
-  
+
 Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
   SubexpBuffer temp_f("tmp_" + i_to_s(global_temps++) + "_");
   SubexpBuffer temp_c("tmp_" + i_to_s(global_temps++) + "_");
   string out_const, var_c;
   Expression exp = temp_f.op_list_help(e, rho, temp_c, out_const, literal);
-  if (out_const != "") {
+  if (!out_const.empty()) {
     var_c = global_constants.new_sexp();
     global_constants.defs += "{\n";
     global_constants.defs += indent(temp_c.output());
@@ -800,13 +828,14 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
     var_c = exp.var;
   }
   if (exp.is_dep) {
-    if (temp_f.defs == "") {
+    if (temp_f.defs.empty()) {
       return exp;
     } else {
       string var_f = new_sexp();
       defs += "{\n";
       defs += indent(temp_f.output());
-      defs += indent("PROTECT(" + var_f + " =" + exp.var + ");\n");
+      //      defs += indent("PROTECT(" + var_f + " =" + exp.var + ");\n");
+      defs += indent(var_f + " =" + exp.var + ";\n");
       defs += "}\n";
       return Expression(var_f, TRUE, TRUE, unp(var_f));
     }
@@ -817,14 +846,15 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
 
 // Note: Does not protect the result, because it is often called directly
 // before a cons, where it doesn't need to be protected.
+// !!!!!
 Expression SubexpBuffer::
 op_list_help(SEXP e, string rho,
-	     SubexpBuffer & consts, 
+	     SubexpBuffer & consts,
 	     string & out_const, bool literal) {
   string my_cons;
   switch (TYPEOF(e)) {
   case NILSXP:
-    return Expression("R_NilValue", TRUE, TRUE, "");
+    return Expression("R_NilValue", TRUE, FALSE, "");
   case LISTSXP:
     my_cons = "cons";
     break;
@@ -842,31 +872,31 @@ op_list_help(SEXP e, string rho,
     } else {
       car = op_exp(CAR(e), rho);
     }
-    Expression cdr = op_list_help(CDR(e), rho, consts, 
+    Expression cdr = op_list_help(CDR(e), rho, consts,
 				  out_const, literal);
     if (car.is_dep && cdr.is_dep) {
-      string out = appl2_unp(my_cons, car.var, cdr.var);
+      string out = appl2(my_cons, car.var, cdr.var);
       del(car);
       del(cdr);
-      return Expression(out, TRUE, TRUE, "");
+      return Expression(out, TRUE, TRUE, unp(out));
     } else if (!car.is_dep && !cdr.is_dep) {
-      string out = consts.appl2_unp(my_cons, car.var, cdr.var);
+      string out = consts.appl2(my_cons, car.var, cdr.var);
       consts.del(car);
       consts.del(cdr);
-      return Expression(out, FALSE, TRUE, "");
+      return Expression(out, FALSE, TRUE, unp(out));
       /* If this is dependent but some subexpression is constant, create
        * the bridge between the constant subexpression and the global 
        * constants. */
     } else if (car.is_dep && !cdr.is_dep) {
-      string out = appl2_unp(my_cons, car.var, cdr.var);
+      string out = appl2(my_cons, car.var, cdr.var);
       del(car);
       del(cdr);
-      return Expression(out, TRUE, TRUE, "");
+      return Expression(out, TRUE, TRUE, unp(out));
     } else if (!car.is_dep && cdr.is_dep) {
-      string out = appl2_unp(my_cons, car.var, cdr.var);
+      string out = appl2(my_cons, car.var, cdr.var);
       del(car);
       del(cdr);
-      return Expression(out, TRUE, TRUE, "");
+      return Expression(out, TRUE, TRUE, unp(out));
     }
   } else { /* It's a tagged cons */
     if (my_cons == "lcons") {
@@ -882,45 +912,27 @@ op_list_help(SEXP e, string rho,
     Expression cdr = op_list_help(CDR(e), rho, consts, 
 				  out_const, literal);
     if (car.is_dep && tag.is_dep && cdr.is_dep) {
-      string out = appl3_unp("tagged_cons", car.var, tag.var, cdr.var);
+      string out = appl3("tagged_cons", car.var, tag.var, cdr.var);
       del(car);
       del(tag);
       del(cdr);
-      return Expression(out, TRUE, TRUE, "");
+      return Expression(out, TRUE, TRUE, unp(out));
     } else if (!car.is_dep && !tag.is_dep && !cdr.is_dep) {
-      out_const = consts.appl3_unp("tagged_cons ", car.var, tag.var, cdr.var);
+      out_const = consts.appl3("tagged_cons ", car.var, tag.var, cdr.var);
       consts.del(car);
       consts.del(tag);
       consts.del(cdr);
-      return Expression(out_const, FALSE, TRUE, "");
+      return Expression(out_const, FALSE, TRUE, unp(out_const));
     } else {
-      // !!!!! What if consts is empty?
-      global_constants.defs += "{\n";
       global_constants.defs += consts.output();
-      if (!car.is_dep) {
-	string var = global_constants.new_sexp_unp();
-	global_constants.defs += var + " =   " + car.var + ";\n";
-	car.var = var;
-      }
-      if (!tag.is_dep) {
-	string var = global_constants.new_sexp_unp();
-	global_constants.defs += var + " =   " + tag.var + ";\n";
-	tag.var = var;
-      }
-      if (!cdr.is_dep) {
-	string var = global_constants.new_sexp_unp();
-	global_constants.defs += var + " =   " + cdr.var + ";\n";
-	cdr.var = var;
-      }
-      global_constants.defs += "}\n";
-      string out = appl3_unp("tagged_cons  ", car.var, tag.var, cdr.var);
+      string out = appl3("tagged_cons  ", car.var, tag.var, cdr.var);
       del(car);
       del(tag);
       del(cdr);
-      return Expression(out, TRUE, TRUE, "");
+      return Expression(out, TRUE, TRUE, unp(out));
     }
   }
-  return bogus_exp;
+  return bogus_exp; //never reached
 }
   
 Expression SubexpBuffer::op_string(SEXP s) {
@@ -943,8 +955,8 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
       int value = INTEGER(vec)[0];
       map<int,string>::iterator pr = sc_logical_map.find(value);
       if (pr == sc_logical_map.end()) {  // not found
-	string var = global_constants.appl1_unp("ScalarLogical",
-						i_to_s(value));
+	string var = global_constants.appl1("ScalarLogical",
+					    i_to_s(value));
 	sc_logical_map.insert(pair<int,string>(value, var));
 	return Expression(var, FALSE, TRUE, "");
       } else {
@@ -961,8 +973,8 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
       int value = INTEGER(vec)[0];
       map<int,string>::iterator pr = sc_integer_map.find(value);
       if (pr == sc_integer_map.end()) {  // not found
-	string var = global_constants.appl1_unp("ScalarInteger",
-						i_to_s(value));
+	string var = global_constants.appl1("ScalarInteger",
+					    i_to_s(value));
 	sc_integer_map.insert(pair<int,string>(value, var));
 	return Expression(var, FALSE, TRUE, "");
       } else {
@@ -995,8 +1007,8 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case CPLXSXP:
     if (len == 1) {
       Rcomplex value = COMPLEX(vec)[0];
-      string var = global_constants.appl1_unp("ScalarComplex",
-					      c_to_s(value));
+      string var = global_constants.appl1("ScalarComplex",
+					  c_to_s(value));
       return Expression(var, FALSE, TRUE, "");
     } else {
       global_ok = 0;
@@ -1029,7 +1041,7 @@ string SplitSubexpBuffer::new_var_unp() {
   if ((n % threshold) == 0) {
     decls += "void " + init_str + i_to_s(init_fns) + "();\n";
     if (n != 0) defs += "}\n";
-    defs += "void " + init_str + i_to_s(init_fns) + "()\n{\n";
+    defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
     init_fns++;
   }
   return prefix + i_to_s(n++);
@@ -1052,7 +1064,8 @@ void SubexpBuffer::output_ip() {
   for(p = ls.begin(), i=0; p != ls.end(); p++, i++) {
     string var = "mem" + i_to_s(i);
     decls += "SEXP " + var + ";\n";
-    string alloc = var + " = malloc(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
+    /*
+      string alloc = var + " = malloc(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
     if (p->max == 1) {
       alloc += "TYPEOF(" + var + ") = LISTSXP;\n";
       alloc += "CDR(" + var + ") = R_NilValue;\n";
@@ -1064,11 +1077,11 @@ void SubexpBuffer::output_ip() {
       alloc += "TAG(" + var + "+1) = R_NilValue;\n";
       alloc += "ATTRIB(" + var + "+1) = R_NilValue;\n";
       alloc += "TYPEOF(" + var + ") = LISTSXP;\n";
-      alloc += "CAR(" + var + ") = R_NilValue;\n";
       alloc += "CDR(" + var + ") = R_NilValue;\n";
       alloc += "TAG(" + var + ") = R_NilValue;\n";
       alloc += "ATTRIB(" + var + ") = R_NilValue;\n";
     } else {
+      if (!has_i) decls += "int i;\n";
       alloc += "for(i=0; i<" + i_to_s(p->max) + "; i++) {\n";
       alloc += indent("TYPEOF(" + var + "+i) = LISTSXP;\n");
       alloc += indent("CDR(" + var + "+i) = " + var + "+i-1;\n");
@@ -1077,6 +1090,9 @@ void SubexpBuffer::output_ip() {
       alloc += "}\n";
       alloc += "CDR(" + var + ") = R_NilValue;\n";
     }
+    */
+    string alloc = var + "= alloca(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
+    alloc += "my_init_memory(" + var + ", " + i_to_s(p->max) + ");\n";
     defs.insert(0, alloc);
     offset += alloc.length();
     for(q = p->vars.begin(); q != p->vars.end(); q++) {
@@ -1084,6 +1100,7 @@ void SubexpBuffer::output_ip() {
       defs.insert(q->location + offset, ref);
       offset += ref.length();
     }
+    //defs += "UNPROTECT_PTR(" + var + "+" + i_to_s(p->max - 1) + ");\n"; // ?????
   }
 }
 
@@ -1165,6 +1182,8 @@ int main(int argc, char *argv[]) {
   out_file << "#include <../main/arithmetic.h>\n";
   out_file << "#include \"rcc_lib.h\"\n";
   out_file << "\n";
+  global_fundefs.output_ip();
+  global_constants.output_ip();
   out_file << global_fundefs.decls;
   out_file << global_constants.decls;
   out_file << header;
@@ -1262,8 +1281,7 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
 				actuals);
   }
   int env_nprot = env_subexps.get_n_prot() + 1;
-  f += indent(env_subexps.decls);
-  f += indent(env_subexps.defs);
+  f += indent(env_subexps.output());
   f += indent("PROTECT(newenv =\n");
   f += indent(indent("Rf_NewEnvironment(\n"
 		     + indent(formals) + ",\n"
@@ -1275,8 +1293,7 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
   Expression outblock = out_subexps.op_exp(code, "newenv");
   f += indent(indent("{\n"));
-  f += indent(indent(indent(out_subexps.decls)));
-  f += indent(indent(indent(out_subexps.defs)));
+  f += indent(indent(indent(out_subexps.output())));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   out_subexps.del(outblock); // ?????
   f += indent(indent("}\n"));
@@ -1317,6 +1334,7 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
   Expression formals = env_subexps.op_symlist(args, "env");
   string actuals = "args";
   //  int env_nprot = env_subexps.get_n_prot() + 3;
+  env_subexps.output_ip();
   f += indent(env_subexps.decls);
   f += indent("PROTECT(env = CADR(full_args));\n");
   f += indent("PROTECT(args = CDDR(full_args));\n");
