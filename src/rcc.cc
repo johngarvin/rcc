@@ -23,15 +23,20 @@
 
 #include "rcc.h"
 
-static bool global_self_allocate = 0; // breaks on GC when 1
-static bool global_ok = 1;
+// Settings to change how rcc works
+static const bool global_self_allocate = TRUE;
+
+static bool global_c_return = FALSE;
+static bool global_ok = TRUE;
 static unsigned int global_temps = 0;
+static map<string, string> func_map;
 static map<string, string> symbol_map;
 static map<double, string> sc_real_map;
 static map<int, string> sc_logical_map;
 static map<int, string> sc_integer_map;
 static map<int, string> primsxp_map;
 static map<string, bool> vis_map;
+static list<string> special_funcs;
 static string * global_formals = NULL;
 static int global_formals_len = 0;
 static SubexpBuffer global_fundefs("f");
@@ -39,6 +44,14 @@ static SplitSubexpBuffer global_constants("c");
 static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, FALSE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, FALSE, "");
+
+bool is_special(string func) {
+  list<string>::iterator i;
+  for(i=special_funcs.begin(); i!=special_funcs.end(); i++) {
+    if (*i == func) return TRUE;
+  }
+  return FALSE;
+}
 
 string SubexpBuffer::new_var() {
   prot++;
@@ -99,7 +112,7 @@ string SubexpBuffer::appl3(string func,
     + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + "));\n";
   return var;
 }
-  
+
 string SubexpBuffer::appl3_unp(string func,
 			       string arg1, string arg2, string arg3) {
   string var = new_sexp_unp();
@@ -107,7 +120,7 @@ string SubexpBuffer::appl3_unp(string func,
     + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ");\n";
   return var;
 }
-  
+
 string SubexpBuffer::appl4(string func, 
 			   string arg1, 
 			   string arg2, 
@@ -301,33 +314,33 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
   SEXP op;
   string out;
   Expression exp;
-  
   if (TYPEOF(CAR(e)) == SYMSXP) {
     op = findVar(CAR(e), R_GlobalEnv);
     if (op == R_UnboundValue) {  /* user-defined function */
-      //Expression args = op_exp(CDR(e), rho);
-      Expression args = op_list_array(CDR(e), rho, FALSE);
+      if (is_special(CHAR(PRINTNAME(CAR(e))))) {
+	//direct function call
+	map<string,string>::iterator f = 
+	  func_map.find(CHAR(PRINTNAME(CAR(e))));
+	if (f != func_map.end()) { // exists
+	  string func = f->second;
+	  Expression args = op_list(CDR(e), rho, FALSE);
+	  string env_args = appl2("cons", rho, args.var);
+	  del(args);
+	  string c_args = appl2("lcons", "R_NilValue", env_args);
+	  defs += unp(env_args);
+	  string call = appl1(func, c_args);
+	  defs += unp(c_args);
+	  return Expression(call, TRUE, TRUE, unp(call));
+	} else {
+	  fprintf(stderr, "Function %s not defined in rcc-reachable block; ignoring\n", CHAR(PRINTNAME(CAR(e))));
+	  // revert to indirect function call via closure
+	}
+      }
       string func = appl2("findFun",
 			  make_symbol(CAR(e)),
 			  rho);
-      /* Unlike other functions,
-       * applyClosure uses its 'call' argument. */
-      string call = appl2("cons", func, args.var);
-      // !!!!! TODO: self-allocate 'call'
-      out = appl5("applyClosure",
-		  call,
-		  func,
-		  args.var,
-		  rho,
-		  "R_NilValue");
-      defs += unp(call);
-      defs += unp(func);
-      del(args);
-      string func_name = string(CHAR(PRINTNAME(CAR(e))));
-      //bool fun_visible = vis_map.find(func_name)->second;
-      return Expression(out, TRUE, TRUE, unp(out));
-      // Punt here; can't easily tell whether the result of the closure
-      // is visible, so we just call it visible
+      return op_clos_app(Expression(func, FALSE, FALSE, unp(func)),
+			 CDR(e), rho);
     }
     /* It's a built-in function, special function, or closure */
     if (TYPEOF(op) == SPECIALSXP) {
@@ -335,7 +348,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     } else if (TYPEOF(op) == BUILTINSXP) {
       Expression op1 = op_exp(op, rho);
       //Expression args1 = op_exp(CDR(e), rho);
-      Expression args1 = op_list_array(CDR(e), rho, FALSE);
+      Expression args1 = op_list_local(CDR(e), rho, FALSE);
       out = appl4(get_name(PRIMOFFSET(op)),
 		  "R_NilValue ",
 		  op1.var,
@@ -365,12 +378,12 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     // eval.c: 395
   }
 }
-  
+
 Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
   Expression e;
   string var = new_sexp();
   while (exp != R_NilValue) {
-    SubexpBuffer temp("tmp_be_" + i_to_s(global_temps++) + "_");
+    SubexpBuffer temp = new_sb("tmp_be_" + i_to_s(global_temps++) + "_");
     e = temp.op_exp(CAR(exp), rho);
     defs += "{\n";
     defs += indent(temp.output());
@@ -397,27 +410,30 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
     Expression cond = op_exp(CAR(e), rho);
     string out = new_sexp();
     defs += "if (my_asLogicalNoNA(" + cond.var + ")) {\n";
+    del(cond);
     Expression te = op_exp(CADR(e), rho);
     defs += indent("PROTECT(" + out + " = " + te.var + ");\n");
     del(te);
     defs += "} else {\n";
+    del(cond);
     Expression fe = op_exp(CADDR(e), rho);
     defs += indent("PROTECT(" + out + " = " + fe.var + ");\n");
     del(fe);
     defs += "}\n";
-    del(cond);
+    //del(cond);
     return Expression(out, FALSE, TRUE, unp(out));
   } else {
     Expression cond = op_exp(CAR(e), rho);
     string out = new_sexp();
     defs += "if (my_asLogicalNoNA(" + cond.var + ")) {\n";
+    del(cond);
     Expression te = op_exp(CADR(e), rho);
     defs += indent("PROTECT(" + out + " = " + te.var + ");\n");
     del(te);
     defs += "} else {\n";
+    del(cond);
     defs += indent("PROTECT(" + out + " = R_NilValue);\n");
     defs += "}\n";
-    del(cond);
     return Expression(out, FALSE, TRUE, unp(out));
   }
 }
@@ -440,10 +456,10 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
   defs += "if (isList(" + val1.var + ") || isNull(" + val1.var + ")) {\n";
   defs += indent("n = length(" + val1.var + ");\n");
-  defs += "PROTECT_WITH_INDEX(v = R_NilValue, &vpi);\n";
-  defs += "} else {\n;";
+  defs += indent("PROTECT_WITH_INDEX(v = R_NilValue, &vpi);\n");
+  defs += "} else {\n";
   defs += indent("n = LENGTH(" + val1.var + ");\n");
-  defs += "PROTECT_WITH_INDEX(v = allocVector(TYPEOF(" + val1.var + "), 1), &vpi);\n";
+  defs += indent("PROTECT_WITH_INDEX(v = allocVector(TYPEOF(" + val1.var + "), 1), &vpi);\n");
   defs += "}\n";
   defs += "ans = R_NilValue;\n";
   defs += "PROTECT_WITH_INDEX(ans, &api);\n";
@@ -451,8 +467,8 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
     + ", R_NilValue, R_NilValue);\n";
   defs += "switch (SETJMP(cntxt.cjmpbuf)) {\n";
   string lab = global_labels.new_var();
-  defs += "case CTXT_BREAK: goto for_break_" + lab + ";\n";
-  defs += "case CTXT_NEXT: goto for_next_" + lab + ";\n";
+  defs += indent("case CTXT_BREAK: goto for_break_" + lab + ";\n");
+  defs += indent("case CTXT_NEXT: goto for_next_" + lab + ";\n");
   defs += "}\n";
   defs += "for (i=0; i < n; i++) {\n";
   string in_loop;
@@ -504,32 +520,80 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   defs += "UNPROTECT_PTR(v);\n";
   return Expression(ans.var, TRUE, FALSE, unp(ans.var));
 }
-  
+
 Expression SubexpBuffer::op_while(SEXP e, string rho) {
   return bogus_exp;
 }
-  
-Expression SubexpBuffer::op_fundef(SEXP e, string rho) {
+
+Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
+  Expression value;
+  switch(Rf_length(e)) {
+  case 0:
+    defs += "R_ReturnedValue = R_NilValue;\n";
+    break;
+  case 1:
+    value = op_exp(CAR(e), rho);
+    defs += "R_ReturnedValue = " + value.var + ";\n";
+    del(value);
+    break;
+  default:
+    value = op_list(e, rho, FALSE);
+    defs += "R_ReturnedValue = " + value.var + ";\n";
+    del(value);
+    break;
+  }
+  defs += "LONGJMP(context.cjmpbuf, 1);\n";
+  return Expression("R_NilValue", TRUE, FALSE, "");
+}
+
+Expression SubexpBuffer::op_fundef(SEXP e, string rho,
+				   string opt_R_name /* = "" */) {
   string func_name = global_fundefs.new_var();
-  global_fundefs.defs += make_fundef_argslist(func_name,
+  if (!opt_R_name.empty() && is_special(opt_R_name)) { // function to be called directly
+    string direct_func_name = func_name + "_direct";
+    func_map.insert(pair<string,string>(opt_R_name, direct_func_name));
+    global_c_return = TRUE;
+    // direct version
+    global_fundefs.defs += make_fundef_argslist(this,
+						direct_func_name,
+						CAR(e),
+						CADR(e));
+    global_c_return = FALSE;
+  }
+  // closure version
+  global_fundefs.defs += make_fundef_argslist(this,
+					      func_name,
 					      CAR(e),
 					      CADR(e));
   Expression formals = op_literal(CAR(e), rho);
   string func_sym = global_constants.appl1("mkString",
 					   quote(func_name));
-  Expression c_f_args = op_arglist(CAR(e), rho);
-  string c_args = appl2("cons", rho, c_f_args.var);
-  del(c_f_args);
-  string c_call = appl2("cons", func_sym, c_args);
-  defs += unp(c_args);
-  string r_call = appl2("lcons",
-			make_symbol(install(".External")),
-			c_call);
-  defs += unp(c_call);
-  string out = appl3("mkCLOSXP ", formals.var, r_call, rho);
-  del(formals);
-  defs += unp(r_call);
-  return Expression(out, TRUE, FALSE, unp(out));
+  if (rho == "R_GlobalEnv") {
+    Expression c_f_args = global_constants.op_arglist(CAR(e), rho);
+    string c_args = global_constants.appl2("cons", rho, c_f_args.var);
+    global_constants.del(c_f_args);
+    string c_call = global_constants.appl2("cons", func_sym, c_args);
+    string r_call = global_constants.appl2("lcons",
+			  make_symbol(install(".External")),
+			  c_call);
+    string out = global_constants.appl3("mkCLOSXP ", formals.var, r_call, rho);
+    global_constants.del(formals);
+    return Expression(out, FALSE, FALSE, "");
+  } else {
+    Expression c_f_args = op_arglist(CAR(e), rho);
+    string c_args = appl2("cons", rho, c_f_args.var);
+    del(c_f_args);
+    string c_call = appl2("cons", func_sym, c_args);
+    defs += unp(c_args);
+    string r_call = appl2("lcons",
+			  make_symbol(install(".External")),
+			  c_call);
+    defs += unp(c_call);
+    string out = appl3("mkCLOSXP ", formals.var, r_call, rho);
+    del(formals);
+    defs += unp(r_call);
+    return Expression(out, TRUE, FALSE, unp(out));
+  }
 }
 
 Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
@@ -565,6 +629,8 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
      * } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
      *   return op_while(CDR(e), rho);
      */
+  } else if (PRIMFUN(op) == (SEXP (*)())do_return && global_c_return) {
+    return op_c_return(CDR(e), rho);
   } else {
     /* default case for specials: call the (call, op, args, rho) fn */
     Expression op1 = op_exp(op, rho);
@@ -588,7 +654,16 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
     }
     if (isSymbol(CADR(e))) {
       string name = make_symbol(CADR(e));
-      Expression body = op_exp(CADDR(e), rho);
+      Expression body;
+      // if body is a function definition, give op_fundef
+      // the R name so that the f-function can be called directly later on
+      if (TYPEOF(CADDR(e)) == LANGSXP
+	  && TYPEOF(CAR(CADDR(e))) == SYMSXP
+	  && CAR(CADDR(e)) == install("function")) {
+	body = op_fundef(CDR(CADDR(e)), rho, CHAR(PRINTNAME(CADR(e))));
+      } else {
+	body = op_exp(CADDR(e), rho);
+      }
       defs += "defineVar(" + name + ", " 
 	+ body.var + ", " + rho + ");\n";
       del(body);
@@ -626,28 +701,59 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
 		      TRUE, FALSE, "");
   }
 }
-  
-/* Output an application of a closure to arguments. */
+
+/* Returns true iff the given list only contains CARs that are
+ * R_MissingArg and symbolic or null TAGs. */
+bool just_sym_tags(SEXP ls) {
+  if (TYPEOF(ls) != LISTSXP && TYPEOF(ls) != NILSXP) {
+    err("just_sym_tags internal error: non-list given\n");
+  }
+  while (ls != R_NilValue) {
+    if (CAR(ls) != R_MissingArg) return FALSE;
+    if (TYPEOF(TAG(ls)) != SYMSXP && TYPEOF(TAG(ls)) != NILSXP) {
+      return FALSE;
+    }
+    ls = CDR(ls);
+  }
+  return TRUE;
+}
+
+/* Output an application of a closure to actual arguments. */
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
   /* see eval.c:438-9 */
-  Expression args1 = op_literal(args, rho);
-  string arglist = appl2("promiseArgs",
-			 args1.var,
-			 rho);
+  Expression call;
+  string arglist;
   /* Unlike most functions of its type,
    * applyClosure uses its 'call' argument. */
-  string call = appl2("lcons", op1.var, args1.var);
-  del(args1);
+  if (global_self_allocate) {
+    call = op_list_local(args, rho, TRUE, op1.var);
+    if (call.var == "R_NilValue") {
+      arglist = "R_NilValue";
+    } else {
+      arglist = appl2("promiseArgs", call.var + "-1", rho);
+    }
+  } else {
+    Expression args1 = op_list(args, rho, TRUE);
+    string call_str = appl2("lcons", op1.var, args1.var);
+    call = Expression(call_str, FALSE, TRUE, unp(call_str));
+    arglist = appl2("promiseArgs", args1.var, rho);
+    del(args1);
+  }
   string out = appl5("applyClosure ",
-		     call,
+		     call.var,
 		     op1.var,
 		     arglist,
 		     rho,
 		     "R_NilValue");
-  defs += unp(call);
+  del(call);
   del(op1);
-  defs += unp(arglist);
-  return Expression(out, TRUE, op1.is_visible, unp(out));
+  if (call.var != "R_NilValue") defs += unp(arglist);
+  //string func_name = string(CHAR(PRINTNAME(CAR(e))));
+  //bool fun_visible = vis_map.find(func_name)->second;
+  // Punt here; can't easily tell whether the result of the closure
+  // is visible, so we just call it visible.
+  // This will result in some extra expressions being printed at toplevel.
+  return Expression(out, TRUE, TRUE, unp(out));
 }
   
 /* Output the argument list for an external function.
@@ -659,7 +765,7 @@ Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
   int len = Rf_length(e);
   if (len == 0) return nil_exp;
   SEXP *args = new SEXP[len];
-  SubexpBuffer buf("tmp_arglist_" + i_to_s(global_temps++) + "_");
+  SubexpBuffer buf = new_sb("tmp_arglist_" + i_to_s(global_temps++) + "_");
     
   arg = e;
   for(i=0; i<len; i++) {
@@ -687,7 +793,7 @@ Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
 }
 
 
-Expression SubexpBuffer::op_arglist_array(SEXP e, string rho) {
+Expression SubexpBuffer::op_arglist_local(SEXP e, string rho) {
   if (e == R_NilValue) return nil_exp;
   int i, len;
   string list = new_sexp_unp();
@@ -776,19 +882,46 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   }
 }
 
-Expression SubexpBuffer::op_list_array(SEXP e, string rho, bool literal) {
+/* Output a list using locally allocated storage instead of R's
+ * allocation mechanism. The literal argument determines whether the
+ * CARs are to be output literally or programatically. opt_l_car is an
+ * optional string used mostly for applyClosure arguments. If it is
+ * nonempty, it makes the first CONS a LANGSXP whose CAR is the given
+ * string.
+ */
+Expression SubexpBuffer::op_list_local(SEXP e, string rho,
+				       bool literal /* = TRUE */,
+				       string opt_l_car /* = "" */) {
   if (TYPEOF(e) != LISTSXP && TYPEOF(e) != LANGSXP && TYPEOF(e) != NILSXP) {
-    err("non-list found in op_list_array\n");
+    err("non-list found in op_list_local\n");
   }
-  if (!global_self_allocate) return op_list(e, rho, literal); 
+  if (!global_self_allocate) {
+    if (opt_l_car.empty()) {
+      return op_list(e, rho, literal);
+    } else {
+      Expression cdr = op_list(e, rho, literal);
+      string out = appl2("lcons", opt_l_car, cdr.var);
+      del(cdr);
+      return Expression(out, cdr.is_dep, TRUE, unp(out));
+    }
+  }
   bool list_dep = FALSE;
   if (e == R_NilValue) return nil_exp;
-  int i;
-  string list = new_sexp();
-  int len = Rf_length(e);
-  if (len == 0) return nil_exp;
+  int i, len, init_for;
   string set_list, dt;
-  for(i=0; i<len; i++) {
+  string list = new_sexp();
+  if (opt_l_car.empty()) {
+    len = Rf_length(e);
+    if (len == 0) return nil_exp;
+    init_for = 0;
+  } else {
+    len = 1 + Rf_length(e);
+    init_for = 1;
+    set_list += "CAR(" + list + ") = " + opt_l_car + ";\n";
+    set_list += "TYPEOF(" + list + ") = LANGSXP;\n";
+    dt += "TYPEOF(" + list + ") = LISTSXP;\n";
+  }
+  for(i=init_for; i<len; i++) {
     Expression car_exp;
     if (literal) {
       car_exp = op_literal(CAR(e), rho);
@@ -816,7 +949,7 @@ Expression SubexpBuffer::op_list_array(SEXP e, string rho, bool literal) {
   return out;
 }
 
-Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
+Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal /* = TRUE */) {
   int i, len;
   len = Rf_length(e);
   string my_cons;
@@ -835,7 +968,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
       return bogus_exp;  // never reached
     }
     Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(CAR(e), rho));
-    SubexpBuffer out_buf("tmp_ls_" + i_to_s(global_temps++) + "_");
+    SubexpBuffer out_buf = new_sb("tmp_ls_" + i_to_s(global_temps++) + "_");
     string out;
     if (car.is_dep) {
       if (TAG(e) == R_NilValue) {
@@ -883,7 +1016,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
       if (exps[i].is_dep) list_dep = TRUE;
       tmp_e = CDR(tmp_e);
     }
-    SubexpBuffer tmp_buf("tmp_ls_" + i_to_s(global_temps++) + "_");
+    SubexpBuffer tmp_buf = new_sb("tmp_ls_" + i_to_s(global_temps++) + "_");
     string cdr = "R_NilValue";
     for(i=len-1; i>=0; i--) {
       string new_cdr;
@@ -917,8 +1050,8 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
 
 /*
 Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
-  SubexpBuffer temp_f("tmp_" + i_to_s(global_temps++) + "_");
-  SubexpBuffer temp_c("tmp_" + i_to_s(global_temps++) + "_");
+  SubexpBuffer temp_f = new_sb("tmp_" + i_to_s(global_temps++) + "_");
+  SubexpBuffer temp_c = new_sb("tmp_" + i_to_s(global_temps++) + "_");
   string out_const, var_c;
   Expression exp = temp_f.op_list_help(e, rho, temp_c, out_const, literal);
   if (!out_const.empty()) {
@@ -946,8 +1079,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
   } else {
     return Expression(var_c, FALSE, TRUE, "");
   }
-}
-*/
+} */
 
 // Note: Does not protect the result, because it is often called directly
 // before a cons, where it doesn't need to be protected.
@@ -1161,61 +1293,47 @@ string SubexpBuffer::output() {
 
 void SubexpBuffer::output_ip() {
   int i;
+  static int id;
   list<AllocListElem> ls = alloc_list.get();
   list<AllocListElem>::iterator p;
   list<VarRef>::iterator q;
   int offset = 0;
   for(p = ls.begin(), i=0; p != ls.end(); p++, i++) {
-    string var = "mem" + i_to_s(i);
-    decls += "SEXP " + var + ";\n";
-    /*
-      string alloc = var + " = malloc(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
-    if (p->max == 1) {
-      alloc += "TYPEOF(" + var + ") = LISTSXP;\n";
-      alloc += "CDR(" + var + ") = R_NilValue;\n";
-      alloc += "TAG(" + var + ") = R_NilValue;\n";
-      alloc += "ATTRIB(" + var + ") = R_NilValue;\n";
-    } else if (p->max == 2) {
-      alloc += "TYPEOF(" + var + "+1) = LISTSXP;\n";
-      alloc += "CDR(" + var + "+1) = " + var + ";\n";
-      alloc += "TAG(" + var + "+1) = R_NilValue;\n";
-      alloc += "ATTRIB(" + var + "+1) = R_NilValue;\n";
-      alloc += "TYPEOF(" + var + ") = LISTSXP;\n";
-      alloc += "CDR(" + var + ") = R_NilValue;\n";
-      alloc += "TAG(" + var + ") = R_NilValue;\n";
-      alloc += "ATTRIB(" + var + ") = R_NilValue;\n";
-    } else {
-      if (!has_i) decls += "int i;\n";
-      alloc += "for(i=0; i<" + i_to_s(p->max) + "; i++) {\n";
-      alloc += indent("TYPEOF(" + var + "+i) = LISTSXP;\n");
-      alloc += indent("CDR(" + var + "+i) = " + var + "+i-1;\n");
-      alloc += indent("TAG(" + var + "+i) = R_NilValue;\n");
-      alloc += indent("ATTRIB(" + var + "+i) = R_NilValue;\n");
-      alloc += "}\n";
-      alloc += "CDR(" + var + ") = R_NilValue;\n";
-    }
-    */
+    string var = "mem" + i_to_s(i) + "_" + i_to_s(id++);
+    encl_fn->decls += "SEXP " + var + ";\n";
     string alloc = var + "= alloca(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
     alloc += "my_init_memory(" + var + ", " + i_to_s(p->max) + ");\n";
-    defs.insert(0, alloc);
-    offset += alloc.length();
+    encl_fn->defs.insert(0, alloc);
+    if (encl_fn == this) offset += alloc.length();
     for(q = p->vars.begin(); q != p->vars.end(); q++) {
       string ref = q->name + " = " + var + "+" + i_to_s(q->size - 1) + ";\n";
       defs.insert(q->location + offset, ref);
       offset += ref.length();
     }
-    //defs += "UNPROTECT_PTR(" + var + "+" + i_to_s(p->max - 1) + ");\n"; // ?????
   }
+}
+
+SubexpBuffer SubexpBuffer::new_sb() {
+  SubexpBuffer new_sb;
+  new_sb.encl_fn = encl_fn;
+  return new_sb;
+}
+
+SubexpBuffer SubexpBuffer::new_sb(string pref) {
+  SubexpBuffer new_sb(pref);
+  new_sb.encl_fn = encl_fn;
+  return new_sb;
 }
 
 int main(int argc, char *argv[]) {
   unsigned int i, num_exps;
   list<SEXP> e;
   string fullname, libname, out_filename, path, exprs;
-  if (argc != 2 && argc != 3) {
-    cerr << "Usage: rcc file [output-file]\n";
-    exit(1);
+  if (argc < 2) {
+    arg_err();
   }
+
+  // First arg is input filename
   if (strcmp(argv[1], "--") == 0) {
     num_exps = parse_R(e, NULL);
     libname = "R_output";
@@ -1226,10 +1344,23 @@ int main(int argc, char *argv[]) {
     path = fullname.substr(0,pos);
     libname = strip_suffix(fullname.substr(pos, fullname.size() - pos));
   }
-  if (argc == 3) {
+
+  if (argc == 2) {
+    out_filename = path + libname + ".c";
+  } else if (argc == 3) {
     out_filename = string(argv[2]);
   } else {
-    out_filename = path + libname + ".c";
+    if (strcmp(argv[2], "-f") == 0) {
+      out_filename = path + libname + ".c";
+      set_funcs(argc-3, &argv[3]);
+    } else {
+      out_filename = string(argv[2]);
+      if (strcmp(argv[3], "-f") == 0) {
+	set_funcs(argc-4, &argv[4]);
+      } else {
+	arg_err();
+      }
+    }
   }
 
   /* build expressions */
@@ -1250,7 +1381,7 @@ int main(int argc, char *argv[]) {
     if (exp.is_visible) {
       exprs += indent(indent("PrintValueRec(e" + i_to_s(i) + ", R_GlobalEnv);\n"));
     }
-    exprs += exp.del_text;
+    exprs += indent(indent(exp.del_text));
     exprs += indent("}\n");
   }
   exprs += indent("UNPROTECT(" + i_to_s(global_constants.get_n_prot())
@@ -1301,6 +1432,18 @@ int main(int argc, char *argv[]) {
     return 0;
   } else {
     return 1;
+  }
+}
+
+void arg_err() {
+  cerr << "Usage: rcc file [output-file] [-f function-name ...]\n";
+  exit(1);
+}
+
+void set_funcs(int argc, char *argv[]) {
+  int i;
+  for(i=0; i<argc; i++) {
+    special_funcs.push_back(string(*argv++));
   }
 }
 
@@ -1356,7 +1499,8 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   string f, header;
   SEXP temp_args = args;
   int len = Rf_length(args);
-  SubexpBuffer out_subexps, env_subexps;
+  SubexpBuffer out_subexps;
+  SubexpBuffer env_subexps;
   string * old_formals;
   int old_formals_len;
   old_formals = global_formals;
@@ -1416,16 +1560,20 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
  * a list to form a single f-function argument, as opposed to
  * make_fundef where the mapping is one-to-one. This version is used
  * for functions that include the "..." object.
+ *
+ * Actually, at the moment it's being used all the time for simplicity.
  */
-string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
+string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
   string f, header;
-  SubexpBuffer out_subexps, env_subexps;
+  SubexpBuffer out_subexps;
+  SubexpBuffer env_subexps;
   string * old_formals;
   int old_formals_len;
   old_formals = global_formals;
   old_formals_len = global_formals_len;
   global_formals = NULL;
   global_formals_len = 0;
+  //out_subexps.encl_fn = this_buf;
   header = "SEXP " + func_name + "(";
   header += "SEXP full_args)";
   global_fundefs.decls += header + ";\n";
@@ -1449,7 +1597,6 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
   f += indent("if (SETJMP(context.cjmpbuf)) {\n");
-  //f += indent(indent("UNPROTECT(1);\n"));
   f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
   f += indent("} else {\n");
   f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
@@ -1461,7 +1608,6 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
   f += indent(indent("}\n"));
   f += indent(indent("endcontext(&context);\n"));
   f += indent("}\n");
-  //  f += indent("UNPROTECT(" + i_to_s(env_nprot) + ");\n");
   f += indent(unp("env"));
   f += indent(unp("args"));
   f += indent(unp("newenv"));

@@ -50,6 +50,7 @@ extern void setup_Rmainloop(void);
 
 }
 
+bool is_special(string func);
 string make_symbol(SEXP e);
 string make_type(int t);
 string make_fundef(string func_name, SEXP args, SEXP code);
@@ -188,13 +189,15 @@ public:
  * subexpression in the output.
  *
  * var = the name of the variable storing the expression
- * is_prot = whether the expression has been PROTECTed (and thus must
- *           be UNPROTECTed).
  * is_dep = whether the expression depends on the current
  *          environment. If false, the expression can be hoisted out
  *          of an f-function.
  * is_visible = whether the expression should be printed if it
  *              apppears at top level in R.
+ * is_alloc = whether the expression is locally allocated.
+
+ * del_text = code to clean up after the expression has been
+ * used. Most commonly a call to UNPROTECT.
  */
 struct Expression {
   string var;
@@ -219,6 +222,7 @@ protected:
   unsigned int prot;
   AllocList alloc_list;
 public:
+  SubexpBuffer * encl_fn;
   bool has_i;
   string decls;
   string defs;
@@ -267,14 +271,16 @@ public:
   Expression op_if(SEXP e, string rho);
   Expression op_for(SEXP e, string rho);
   Expression op_while(SEXP e, string rho);
-  Expression op_fundef(SEXP e, string rho);
+  Expression op_c_return(SEXP e, string rho);
+  Expression op_fundef(SEXP e, string rho, string opt_R_name = "");
   Expression op_special(SEXP e, SEXP op, string rho);
   Expression op_set(SEXP e, SEXP op, string rho);
   Expression op_clos_app(Expression op1, SEXP args, string rho);
   Expression op_arglist(SEXP e, string rho);
-  Expression op_arglist_array(SEXP e, string rho);
+  Expression op_arglist_local(SEXP e, string rho);
   Expression op_literal(SEXP e, string rho);
-  Expression op_list_array(SEXP e, string rho, bool literal = TRUE);
+  Expression op_list_local(SEXP e, string rho, bool literal = TRUE,
+			   string opt_l_car = "");
   Expression op_list(SEXP e, string rho, bool literal = TRUE);
   Expression op_list_help(SEXP e, string rho, 
 			  SubexpBuffer & consts, 
@@ -283,10 +289,13 @@ public:
   Expression op_vector(SEXP e);
   string output();
   void output_ip();
+  SubexpBuffer new_sb();
+  SubexpBuffer new_sb(string pref);
   SubexpBuffer(string pref = "v") : prefix(pref) {
     has_i = FALSE;
     n = prot = 0;
     decls = defs = "";
+    encl_fn = this;
   }
   virtual ~SubexpBuffer() {};
 };
@@ -312,10 +321,12 @@ public:
   }
 };
 
+void arg_err();
+void set_funcs(int argc, char *argv[]);
 string make_symbol(SEXP e);
 string make_type(int t);
 string make_fundef(string func_name, SEXP args, SEXP code);
-string make_fundef_argslist(string func_name, SEXP args, SEXP code);
+string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string indent(string str);
 string i_to_s(int i);
 string d_to_s(double d);
