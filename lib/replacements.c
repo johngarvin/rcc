@@ -508,3 +508,259 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     return ans;
 }
+
+/* Replacement for static VectorAssign in subassign.c */
+#if 0
+SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+{
+    SEXP dim, indx;
+    int i, ii, iy, n, nx, ny, stretch, which;
+    double ry;
+
+    if (isNull(x) && isNull(y)) {
+	return R_NilValue;
+    }
+
+    /* Check to see if we have special matrix subscripting. */
+    /* If so, we manufacture a real subscript vector. */
+
+    dim = getAttrib(x, R_DimSymbol);
+    if (isMatrix(s) && isArray(x) &&
+	    (isInteger(s) || isReal(s)) &&
+	    ncols(s) == length(dim)) {
+	s = mat2indsub(dim, s);
+    }
+    PROTECT(s);
+
+    stretch = 1;
+    PROTECT(indx = makeSubscript(x, s, &stretch));
+    n = length(indx);
+
+    /* Here we make sure that the LHS has */
+    /* been coerced into a form which can */
+    /* accept elements from the RHS. */
+    which = SubassignTypeFix(&x, &y, stretch, 1, call);
+    /* = 100 * TYPEOF(x) + TYPEOF(y);*/
+    ny = length(y);
+    nx = length(x);
+
+    if ((TYPEOF(x) != VECSXP && TYPEOF(x) != EXPRSXP) || y != R_NilValue) {
+	if (n > 0 && ny == 0)
+	    errorcall(call, "nothing to replace with");
+	if (n > 0 && n % ny)
+	    warning("number of items to replace is not a multiple of replacement length");
+    }
+
+
+    PROTECT(x);
+
+    /* When array elements are being permuted the RHS */
+    /* must be duplicated or the elements get trashed. */
+    /* FIXME : this should be a shallow copy for list */
+    /* objects.  A full duplication is wasteful. */
+
+    if (x == y)
+	PROTECT(y = duplicate(y));
+    else
+	PROTECT(y);
+
+    /* Note that we are now committed. */
+    /* Since we are mutating existing objects, */
+    /* any changes we make now are (likely to be) permanent.  Beware! */
+
+    switch(which) {
+
+    case 1010:	/* logical   <- logical	  */
+    case 1310:	/* integer   <- logical	  */
+    case 1013:	/* logical   <- integer	  */
+    case 1313:	/* integer   <- integer	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
+	}
+	break;
+
+    case 1410:	/* real	     <- logical	  */
+    case 1413:	/* real	     <- integer	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    iy = INTEGER(y)[i % ny];
+	    if (iy == NA_INTEGER)
+		REAL(x)[ii] = NA_REAL;
+	    else
+		REAL(x)[ii] = iy;
+	}
+	break;
+
+    case 1014:	/* logical   <- real	  */
+    case 1314:	/* integer   <- real	  */
+    case 1414:	/* real	     <- real	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    REAL(x)[ii] = REAL(y)[i % ny];
+	}
+	break;
+
+    case 1510:	/* complex   <- logical	  */
+    case 1513:	/* complex   <- integer	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    iy = INTEGER(y)[i % ny];
+	    if (iy == NA_INTEGER) {
+		COMPLEX(x)[ii].r = NA_REAL;
+		COMPLEX(x)[ii].i = NA_REAL;
+	    }
+	    else {
+		COMPLEX(x)[ii].r = iy;
+		COMPLEX(x)[ii].i = 0.0;
+	    }
+	}
+	break;
+
+    case 1514:	/* complex   <- real	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    ry = REAL(y)[i % ny];
+	    if (ISNA(ry)) {
+		COMPLEX(x)[ii].r = NA_REAL;
+		COMPLEX(x)[ii].i = NA_REAL;
+	    }
+	    else {
+		COMPLEX(x)[ii].r = ry;
+		COMPLEX(x)[ii].i = 0.0;
+	    }
+	}
+	break;
+
+    case 1015:	/* logical   <- complex	  */
+    case 1315:	/* integer   <- complex	  */
+    case 1415:	/* real	     <- complex	  */
+    case 1515:	/* complex   <- complex	  */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
+	}
+	break;
+
+    case 1610:	/* character <- logical	  */
+    case 1613:	/* character <- integer	  */
+    case 1614:	/* character <- real	  */
+    case 1615:	/* character <- complex	  */
+    case 1616:	/* character <- character */
+    case 1016:	/* logical   <- character */
+    case 1316:	/* integer   <- character */
+    case 1416:	/* real	     <- character */
+    case 1516:	/* complex   <- character */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
+	}
+	break;
+
+    case 1019:  /* vector     <- logical   */
+    case 1319:  /* vector     <- integer   */
+    case 1419:  /* vector     <- real      */
+    case 1519:  /* vector     <- complex   */
+    case 1619:  /* vector     <- character */
+
+    case 1910:  /* vector     <- logical    */
+    case 1913:  /* vector     <- integer    */
+    case 1914:  /* vector     <- real       */
+    case 1915:  /* vector     <- complex    */
+    case 1916:  /* vector     <- character  */
+
+    case 1919:  /* vector     <- vector     */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
+	}
+	break;
+
+    case 2001:
+    case 2006:	/* expression <- language   */
+    case 2010:	/* expression <- logical    */
+    case 2013:	/* expression <- integer    */
+    case 2014:	/* expression <- real	    */
+    case 2015:	/* expression <- complex    */
+    case 2016:	/* expression <- character  */
+    case 2020:	/* expression <- expression */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
+	}
+	break;
+
+    case 1900:  /* vector     <- null       */
+    case 2000:  /* expression <- null       */
+
+	x = DeleteListElements(x, indx);
+	UNPROTECT(4);
+	return x;
+
+    default:
+	warningcall(call, "sub assignment (*[*] <- *) not done; __bug?__");
+    }
+    /* Check for additional named elements. */
+    /* Note we are using a horrible hack in makeSubscript */
+    /* Which passes the additional names back in the attribute */
+    /* slot of the generated subscript vector.  (Shudder!) */
+    if (ATTRIB(indx) != R_NilValue) {
+	SEXP newnames = ATTRIB(indx);
+	SEXP oldnames = getAttrib(x, R_NamesSymbol);
+	if (oldnames != R_NilValue) {
+	    for (i = 0; i < n; i++) {
+		if (STRING_ELT(newnames, i) != R_NilValue) {
+		    ii = INTEGER(indx)[i];
+		    if (ii == NA_INTEGER) continue;
+		    ii = ii - 1;
+		    SET_STRING_ELT(oldnames, ii, STRING_ELT(newnames, i));
+		}
+	    }
+	}
+	else {
+	    PROTECT(oldnames = allocVector(STRSXP, nx));
+	    for (i = 0; i < nx; i++)
+		SET_STRING_ELT(oldnames, i, R_BlankString);
+	    for (i = 0; i < n; i++) {
+		if (STRING_ELT(newnames, i) != R_NilValue) {
+		    ii = INTEGER(indx)[i];
+		    if (ii == NA_INTEGER) continue;
+		    ii = ii - 1;
+		    SET_STRING_ELT(oldnames, ii, STRING_ELT(newnames, i));
+		}
+	    }
+	    setAttrib(x, R_NamesSymbol, oldnames);
+	    UNPROTECT(1);
+	}
+    }
+    UNPROTECT(4);
+    return x;
+}
+#endif

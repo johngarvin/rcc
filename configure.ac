@@ -40,6 +40,35 @@ AC_ARG_WITH(R-prefix,
 AC_SUBST(R_SOURCES)
 AC_SUBST(R_PREFIX)
 
+### ** Platform.
+
+AC_CANONICAL_HOST
+AC_DEFINE_UNQUOTED(R_PLATFORM, "${host}",
+[Define this to be the canonical name (cpu-vendor-os) of your system.])
+AC_DEFINE_UNQUOTED(R_CPU, "${host_cpu}",
+[Define this to be the name of the CPU of your system.])
+AC_DEFINE_UNQUOTED(R_VENDOR, "${host_vendor}",
+[Define this to be the name of the vendor of your system.])
+AC_DEFINE_UNQUOTED(R_OS, "${host_os}",
+[Define this to be the name of the OS of your system.])
+
+R_PLATFORM="${host}"
+AC_SUBST(R_PLATFORM)
+
+case "${host_os}" in
+  cygwin*|mingw*|windows*|winnt)
+    AC_DEFINE(Win32, 1,
+              [Define according to your operating system type.])
+    R_OSTYPE="windows"
+    ;;
+  *)
+    AC_DEFINE(Unix, 1,
+              [Define according to your operating system type.])
+    R_OSTYPE="unix"
+   ;;
+esac
+AC_SUBST(R_OSTYPE)
+
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
 		 src/Makefile

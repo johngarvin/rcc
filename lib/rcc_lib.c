@@ -1,5 +1,6 @@
 #include <IOStuff.h>
 #include "rcc_lib.h"
+#include "replacements.h"
 
 void my_init_memory(SEXP mem, int n) {
   int i;
@@ -51,3 +52,51 @@ Rboolean my_asLogicalNoNA(SEXP s)
     }
     return cond;
 }
+
+#if 0
+SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
+  int oldtype;
+  oldtype = 0;
+  if (TYPEOF(x) == LISTSXP || TYPEOF(x) == LANGSXP) {
+    oldtype = TYPEOF(x);
+    PROTECT(x = PairToVectorList(x));
+  }
+  else if (length(x) == 0) {
+    if (length(y) == 0) {
+      UNPROTECT(1);
+      return(x);
+    }
+    else {
+      /* bug PR#2590 coerce only if null */
+      if(isNull(x)) PROTECT(x = coerceVector(x, TYPEOF(y)));
+      else PROTECT(x);
+    }
+  }
+  else {
+    PROTECT(x);
+  }
+  
+  switch (TYPEOF(x)) {
+  case LGLSXP:
+  case INTSXP:
+  case REALSXP:
+  case CPLXSXP:
+  case STRSXP:
+  case EXPRSXP:
+  case VECSXP:
+    x = VectorAssign(R_NilValue, x, sub, y);
+    break;
+  default:
+    error("object is not subsettable");
+    break;
+  }
+  
+  if (oldtype == LANGSXP) {
+    x = VectorToPairList(x);
+    SET_TYPEOF(x, LANGSXP);
+  }
+  
+  UNPROTECT(1);
+  return x;
+}
+#endif

@@ -678,6 +678,12 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     return Expression(out, TRUE, 1 - PRIMPRINT(op), unp(out));
   }
 }
+
+bool isSimpleSubscript(SEXP e) {
+  return (TYPEOF(e) == LANGSXP
+	  && CAR(e) == install("[")
+	  && TYPEOF(CADR(e)) == SYMSXP);
+}
   
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
   string out;
@@ -701,6 +707,10 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
 	+ body.var + ", " + rho + ");\n";
       del(body);
       return Expression(name, TRUE, FALSE, "");
+      /*
+       *    } else if (isSimpleSubscript(CADR(e))) {
+       *      return op_subscriptset(e, rho);
+       */
     } else if (isLanguage(CADR(e))) {
       Expression func = op_exp(op, rho);
       Expression args = op_list_local(CDR(e), rho);
@@ -733,6 +743,25 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
     return Expression("<<Assignment of a type not yet implemented>>",
 		      TRUE, FALSE, "");
   }
+}
+
+Expression SubexpBuffer::op_subscriptset(SEXP e, string rho) {
+  // CAR(e) = "<-", "=", etc.
+  // CADR(e) = LHS
+  //   CAR(CADR(e)) = "["
+  //   CADR(CADR(e)) = array
+  //   CADDR(CADR(e)) = subscript
+  // CADDR(e) = RHS
+  SEXP array = CADR(CADR(e));
+  SEXP sub = CADDR(CADR(e));
+  SEXP rhs = CADDR(e);
+  Expression a = op_exp(array, rho);
+  Expression s = op_exp(sub, rho);
+  Expression r = op_exp(rhs, rho);
+  string assign = appl3("rcc_subassign", a.var, s.var, r.var);
+  defs += "defineVar(" + a.var + ", " + assign + ", " + rho + ");\n";
+  del(s); del(r); defs += unp(assign);
+  return a;
 }
 
 /* Returns true iff the given list only contains CARs that are
@@ -1372,15 +1401,12 @@ int main(int argc, char *argv[]) {
     arg_err();
   }
 
-  // Required by R library.
-  setenv ("R_HOME", R_HOME, 1);
-
   // First arg is input filename
   if (strcmp(argv[1], "--") == 0) {
-    num_exps = parse_R(e, argv[0], NULL);
+    num_exps = parse_R(e, NULL);
     libname = "R_output";
   } else {
-    num_exps = parse_R(e, argv[0], argv[1]);
+    num_exps = parse_R(e, argv[1]);
     fullname = string(argv[1]);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
@@ -1458,8 +1484,8 @@ int main(int argc, char *argv[]) {
   out_file << "#include <Parse.h>\n";
   out_file << "#include <Internal.h>\n";
   out_file << "#include <R_ext/RConverters.h>\n";
-  out_file << "#include <main/arithmetic.h>\n";
-  out_file << "#include <rcc_lib.h>\n";
+  out_file << "#include <../main/arithmetic.h>\n";
+  out_file << "#include \"rcc_lib.h\"\n";
   out_file << "\n";
   global_fundefs.output_ip();
   global_constants.output_ip();
@@ -1812,13 +1838,13 @@ int filename_pos(string str) {
   }
 }
 
-int parse_R(list<SEXP> & e, char *myname, char *filename) {
+int parse_R(list<SEXP> & e, char *filename) {
   SEXP exp;
   ParseStatus status;
   int num_exps = 0;
   FILE *inFile;
   char *myargs[5];
-  myargs[0] = myname;
+  myargs[0] = "/home/garvin/research/tel/rcc/rcc";
   myargs[1] = "--gui=none";
   myargs[2] = "--slave";
   myargs[3] = "--vanilla";

@@ -65,7 +65,7 @@ string quote(string str);
 string unp(string str);
 string strip_suffix(string str);
 int filename_pos(string str);
-int parse_R(list<SEXP> & e, char *myname, char *inFile);
+int parse_R(list<SEXP> & e, char *inFile);
 void err(string message);
 void printstr(string str);
 
@@ -285,6 +285,7 @@ public:
   Expression op_fundef(SEXP e, string rho, string opt_R_name = "");
   Expression op_special(SEXP e, SEXP op, string rho);
   Expression op_set(SEXP e, SEXP op, string rho);
+  Expression op_subscriptset(SEXP e, string rho);
   Expression op_clos_app(Expression op1, SEXP args, string rho);
   Expression op_arglist(SEXP e, string rho);
   Expression op_arglist_local(SEXP e, string rho);
