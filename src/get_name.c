@@ -602,7 +602,6 @@ static const struct map name_map[] =
   {"do_erase", do_erase},
   {"do_persp", do_persp},
   {"do_filledcontour", do_filledcontour},
-  /*  {"do_getGPar", do_getGPar}, */
   {"do_playDL", do_playDL},
   {"do_setGPar", do_setGPar},
   {"do_getSnapshot", do_getSnapshot},
