@@ -44,7 +44,6 @@ AC_SUBST(R_PREFIX)
 
 ### ** Platform.
 
-#AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(R_PLATFORM, "${host}",
 [Define this to be the canonical name (cpu-vendor-os) of your system.])
 AC_DEFINE_UNQUOTED(R_CPU, "${host_cpu}",
