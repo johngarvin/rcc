@@ -1,0 +1,19 @@
+./rcc tests/test01_fundef_in_loop.r -f foo
+./rcc tests/test02_defun.r -f foo
+./rcc tests/test06_myrgamma.r -f myRgamma
+./rcc tests/test08_closure.r -f foo
+./rcc tests/test09_memory.r -f baz
+./rcc tests/test10_defun_after.r -f foo bar
+./rcc tests/test11_env.r -f bar
+./rcc tests/test12_multireturn.r -f foo
+./rcc tests/test13_return.r -f foo
+./rcc tests/test14_samename.r -f baz foo
+./rcc tests/test19_scope.r -f foo bar
+./rcc tests/test22_expensive_fn.r -f foo
+./rcc tests/test23_scope.r -f foo bar
+./rcc tests/test25_recursion.r -f factorial
+./rcc tests/test26_return_fn.r -f foo baz
+./rcc tests/test27_fundef_scope.r -f foo bar
+./rcc tests/test28_fundef_scope.r -f f
+./rcc tests/test29_fib.r -f fib
+./rcc tests/test30_scoping.r -f foo bar

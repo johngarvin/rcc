@@ -476,3 +476,13 @@ simSim1 <- mixGibbsGene.fun (30, zZscore, 400, 400, geneInits)
 Rprof(NULL)
 
 source("analyze.r")
+
+#####
+
+dnorm <- function(x, mean=0, sd=1, log=FALSE) .Internal(dnorm(x, mean, sd, log))
+pnorm <- function(q, mean=0, sd=1, lower.tail = TRUE, log.p = FALSE)
+    .Internal(pnorm(q, mean, sd, lower.tail, log.p))
+qnorm <- function(p, mean=0, sd=1, lower.tail = TRUE, log.p = FALSE)
+    .Internal(qnorm(p, mean, sd, lower.tail, log.p))
+rnorm <- function(n, mean=0, sd=1) .Internal(rnorm(n, mean, sd))
+vector <- function(mode = "logical", length = 0).Internal(vector(mode,length))

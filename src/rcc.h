@@ -68,6 +68,9 @@ int parse_R(list<SEXP> & e, char *inFile);
 void err(string message);
 void printstr(string str);
 
+/* VarRef: reference to an allocated variable inside a string: its
+ * name, location, and length of the list it represents.
+ */
 struct VarRef {
   string name;
   int location;
@@ -79,6 +82,12 @@ struct VarRef {
   }
 };
 
+/* AllocList keeps track of locally-allocated lists (LALs). When more
+ * than one LAL is live at the same time, they must be in different
+ * places in memory, but if they have different live ranges, they can
+ * use the same memory. Each memory location must be as big as the
+ * biggest list allocated there. 
+ */
 struct AllocListElem {
   int max;
   bool occupied;
@@ -197,8 +206,7 @@ public:
  * is_alloc = whether the expression is locally allocated.
 
  * del_text = code to clean up after the expression has been
- * used. Most commonly a call to UNPROTECT.
- */
+ * used. Most commonly a call to UNPROTECT.  */
 struct Expression {
   string var;
   bool is_dep;
@@ -217,13 +225,14 @@ struct Expression {
 
 class SubexpBuffer {
 protected:
-  const string prefix;
+  string prefix;
   unsigned int n;
   unsigned int prot;
   AllocList alloc_list;
 public:
   SubexpBuffer * encl_fn;
   bool has_i;
+  bool is_const;
   string decls;
   string defs;
   virtual string new_var();
@@ -291,8 +300,10 @@ public:
   void output_ip();
   SubexpBuffer new_sb();
   SubexpBuffer new_sb(string pref);
-  SubexpBuffer(string pref = "v") : prefix(pref) {
+  SubexpBuffer(string pref = "v", bool is_c = FALSE)
+    : prefix(pref), is_const(is_c) {
     has_i = FALSE;
+    is_const = is_c;
     n = prot = 0;
     decls = defs = "";
     encl_fn = this;
@@ -315,8 +326,8 @@ public:
   string get_init_str();
   virtual string new_var();
   virtual string new_var_unp();
-  SplitSubexpBuffer(string pref = "v", int thr = 500, string is = "init") 
-    : SubexpBuffer(pref), threshold(thr), init_str(is) {
+  SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 500, string is = "init")
+    : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;
   }
 };
@@ -331,4 +342,5 @@ string indent(string str);
 string i_to_s(int i);
 string d_to_s(double d);
 string c_to_s(Rcomplex c);
+string make_c_func(string s);
 

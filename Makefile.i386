@@ -1,7 +1,9 @@
 CC=gcc
 R=/local/software/R-1.6.2
-CPPFLAGS=-g -O0 -Wall -I$(R)/src/include -I.
+CPPFLAGS=-Wall -I$(R)/src/include -I.
 LDFLAGS=-L$(R)/bin -lR -lstdc++
+LO_OPTFLAGS=-g -O0
+HI_OPTFLAGS=-g -O2
 
 .SECONDARY:  # don't delete intermediate .c files
 
@@ -13,15 +15,25 @@ all: $(TARGS)
 rcc: rcc.o get_name.o
 
 rcc.o: rcc.cc rcc.h
+	$(CC) -c $(CPPFLAGS) $(LO_OPTFLAGS) $< -o $@
 
 tests/test%.so: tests/test%.c rcc_lib.o replacements.o
-	$(CC) $(CPPFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o replacements.o $< -o $@
+	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o replacements.o $< -o $@
 
 tests/test%.c: tests/test%.r rcc 
 	./rcc $<
 
 tests/mgg00.so: tests/mgg00.c rcc_lib.o
-	$(CC) $(CPPFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
+	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
 
 tests/mgg00.c: tests/mgg00.r rcc
 	./rcc tests/mgg00.r
+
+tests/distn.so: tests/distn.c rcc_lib.o
+	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
+
+#tests/distn.c: /local/software/R-1.6.2/src/library/base/R/distn.R rcc
+#	./rcc /local/software/R-1.6.2/src/library/base/R/distn.R tests/distn.c
+
+tests/distn.c: tests/distn.r rcc
+	./rcc tests/distn.r

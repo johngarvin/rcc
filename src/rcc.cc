@@ -39,8 +39,9 @@ static map<string, bool> vis_map;
 static list<string> special_funcs;
 static string * global_formals = NULL;
 static int global_formals_len = 0;
-static SubexpBuffer global_fundefs("f");
-static SplitSubexpBuffer global_constants("c");
+//static SubexpBuffer global_fundefs("f", TRUE);
+static SubexpBuffer global_fundefs;
+static SplitSubexpBuffer global_constants("c", TRUE);
 static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, FALSE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, FALSE, "");
@@ -68,12 +69,20 @@ int SubexpBuffer::get_n_prot() {
 }
 string SubexpBuffer::new_sexp() {
   string str = new_var();
-  decls += "SEXP " + str + ";\n";
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
   return str;
 }
 string SubexpBuffer::new_sexp_unp() {
   string str = new_var_unp();
-  decls += "SEXP " + str + ";\n";
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
   return str;
 }
 
@@ -315,60 +324,56 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
   string out;
   Expression exp;
   if (TYPEOF(CAR(e)) == SYMSXP) {
-    op = findVar(CAR(e), R_GlobalEnv);
-    if (op == R_UnboundValue) {  /* user-defined function */
-      if (is_special(CHAR(PRINTNAME(CAR(e))))) {
-	//direct function call
-	map<string,string>::iterator f = 
-	  func_map.find(CHAR(PRINTNAME(CAR(e))));
-	if (f != func_map.end()) { // exists
-	  string func = f->second;
-	  Expression args = op_list(CDR(e), rho, FALSE);
-	  string env_args = appl2("cons", rho, args.var);
-	  del(args);
-	  string c_args = appl2("lcons", "R_NilValue", env_args);
-	  defs += unp(env_args);
-	  string call = appl1(func, c_args);
-	  defs += unp(c_args);
-	  return Expression(call, TRUE, TRUE, unp(call));
+    string r_sym = CHAR(PRINTNAME(CAR(e)));
+    if (is_special(r_sym)) {
+      //direct function call
+      string func = make_c_func(r_sym);
+      Expression args = op_list(CDR(e), rho, FALSE);
+      string env_args = appl2("cons", rho, args.var);
+      del(args);
+      string c_args = appl2("lcons", "R_NilValue", env_args);
+      defs += unp(env_args);
+      string call = appl1(func, c_args);
+      defs += unp(c_args);
+      return Expression(call, TRUE, TRUE, unp(call));	  
+    } else { // not special; call via closure
+      op = findVar(CAR(e), R_GlobalEnv);
+      if (op == R_UnboundValue) {    // user-defined function
+	string func = appl2("findFun",
+			    make_symbol(CAR(e)),
+			    rho);
+	return op_clos_app(Expression(func, FALSE, FALSE, unp(func)),
+			   CDR(e), rho);
+      } else {
+	/* It's a built-in function, special function, or closure */
+	if (TYPEOF(op) == SPECIALSXP) {
+	  return op_special(e, op, rho);
+	} else if (TYPEOF(op) == BUILTINSXP) {
+	  Expression op1 = op_exp(op, rho);
+	  //Expression args1 = op_exp(CDR(e), rho);
+	  Expression args1 = op_list_local(CDR(e), rho, FALSE);
+	  out = appl4(get_name(PRIMOFFSET(op)),
+		      "R_NilValue ",
+		      op1.var,
+		      args1.var,
+		      rho);
+	  del(op1);
+	  del(args1);
+	  return Expression(out, TRUE, 1 - PRIMPRINT(op), unp(out));
+	} else if (TYPEOF(op) == CLOSXP) {
+	  Expression op1;
+	  if (CAR(BODY(op)) == install(".Internal")) {
+	    op1 = op_exp(op, "R_GlobalEnv");
+	  } else {
+	    op1 = op_exp(op, rho);
+	  }
+	  Expression out_exp = op_clos_app(op1, CDR(e), rho);
+	  return out_exp;
 	} else {
-	  fprintf(stderr, "Function %s not defined in rcc-reachable block; ignoring\n", CHAR(PRINTNAME(CAR(e))));
-	  // revert to indirect function call via closure
+	  err("Internal error: LANGSXP encountered non-function op\n");
+	  return bogus_exp; // never reached
 	}
       }
-      string func = appl2("findFun",
-			  make_symbol(CAR(e)),
-			  rho);
-      return op_clos_app(Expression(func, FALSE, FALSE, unp(func)),
-			 CDR(e), rho);
-    }
-    /* It's a built-in function, special function, or closure */
-    if (TYPEOF(op) == SPECIALSXP) {
-      return op_special(e, op, rho);
-    } else if (TYPEOF(op) == BUILTINSXP) {
-      Expression op1 = op_exp(op, rho);
-      //Expression args1 = op_exp(CDR(e), rho);
-      Expression args1 = op_list_local(CDR(e), rho, FALSE);
-      out = appl4(get_name(PRIMOFFSET(op)),
-		  "R_NilValue ",
-		  op1.var,
-		  args1.var,
-		  rho);
-      del(op1);
-      del(args1);
-      return Expression(out, TRUE, 1 - PRIMPRINT(op), unp(out));
-    } else if (TYPEOF(op) == CLOSXP) {
-      Expression op1;
-      if (CAR(BODY(op)) == install(".Internal")) {
-	op1 = op_exp(op, "R_GlobalEnv");
-      } else {
-	op1 = op_exp(op, rho);
-      }
-      Expression out_exp = op_clos_app(op1, CDR(e), rho);
-      return out_exp;
-    } else {
-      err("Internal error: LANGSXP encountered non-function op");
-      return bogus_exp; // never reached
     }
   } else {  // function is not a symbol
     Expression op1;
@@ -529,38 +534,61 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
   Expression value;
   switch(Rf_length(e)) {
   case 0:
-    defs += "R_ReturnedValue = R_NilValue;\n";
+    defs += "UNPROTECT_PTR(env);\n";
+    defs += "UNPROTECT_PTR(args);\n";
+    defs += "UNPROTECT_PTR(newenv);\n";
+    defs += "return R_NilValue;\n";
     break;
   case 1:
     value = op_exp(CAR(e), rho);
-    defs += "R_ReturnedValue = " + value.var + ";\n";
+    defs += "UNPROTECT_PTR(env);\n";
+    defs += "UNPROTECT_PTR(args);\n";
+    defs += "UNPROTECT_PTR(newenv);\n";
     del(value);
+    defs += "return " + value.var + ";\n";
     break;
   default:
+    SEXP exp = e;
+    // set names for multiple return
+    while(exp != R_NilValue) {
+      if (TYPEOF(CAR(exp)) == SYMSXP) {
+	SET_TAG(exp, CAR(exp));
+      }
+      exp = CDR(exp);
+    }
     value = op_list(e, rho, FALSE);
-    defs += "R_ReturnedValue = " + value.var + ";\n";
+    defs += "UNPROTECT_PTR(env);\n";
+    defs += "UNPROTECT_PTR(args);\n";
+    defs += "UNPROTECT_PTR(newenv);\n";
     del(value);
+    defs += "return " + value.var + ";\n";
     break;
   }
-  defs += "LONGJMP(context.cjmpbuf, 1);\n";
   return Expression("R_NilValue", TRUE, FALSE, "");
 }
 
 Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 				   string opt_R_name /* = "" */) {
-  string func_name = global_fundefs.new_var();
-  if (!opt_R_name.empty() && is_special(opt_R_name)) { // function to be called directly
-    string direct_func_name = func_name + "_direct";
-    func_map.insert(pair<string,string>(opt_R_name, direct_func_name));
-    global_c_return = TRUE;
-    // direct version
-    global_fundefs.defs += make_fundef_argslist(this,
-						direct_func_name,
-						CAR(e),
-						CADR(e));
-    global_c_return = FALSE;
+  bool special = FALSE;
+  if (!opt_R_name.empty() && is_special(opt_R_name)) {
+    special = TRUE;
+    // make function to be called directly
+    if (func_map.find(opt_R_name) != func_map.end()) { // defined already
+      string closure_name = func_map.find(opt_R_name)->second;
+      return Expression(closure_name, FALSE, FALSE, "");
+    } else { // not yet defined
+      // direct version
+      global_c_return = TRUE;
+      global_fundefs.defs += make_fundef_argslist(this,
+						  make_c_func(opt_R_name),
+						  CAR(e),
+						  CADR(e));
+      global_c_return = FALSE;
+      // continue to closure version
+    }
   }
   // closure version
+  string func_name = global_fundefs.new_var();
   global_fundefs.defs += make_fundef_argslist(this,
 					      func_name,
 					      CAR(e),
@@ -578,6 +606,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 			  c_call);
     string out = global_constants.appl3("mkCLOSXP ", formals.var, r_call, rho);
     global_constants.del(formals);
+    if (special) func_map.insert(pair<string,string>(opt_R_name, out));
     return Expression(out, FALSE, FALSE, "");
   } else {
     Expression c_f_args = op_arglist(CAR(e), rho);
@@ -604,10 +633,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     SEXP fun = CAR(CADR(e));
     Expression args;
     if (TYPEOF(INTERNAL(fun)) == BUILTINSXP) {
-      Expression list = op_exp(CDR(CADR(e)), rho);
-      string v = appl2("evalList", list.var, rho);
-      args = Expression(v, TRUE, FALSE, unp(v));
-      del(list);
+      args = op_list(CDR(CADR(e)), rho, FALSE);
     } else {
       args = op_exp(CDR(CADR(e)), rho);
     }
@@ -1272,11 +1298,13 @@ string SplitSubexpBuffer::get_init_str() {
 string SplitSubexpBuffer::new_var() {
   prot++;
   return new_var_unp();
-}  
+}
 string SplitSubexpBuffer::new_var_unp() {
   if ((n % threshold) == 0) {
+    if (is_const) decls += "static ";
     decls += "void " + init_str + i_to_s(init_fns) + "();\n";
     if (n != 0) defs += "}\n";
+    if (is_const) defs += "static ";
     defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
     init_fns++;
   }
@@ -1363,10 +1391,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  global_fundefs = *(new SubexpBuffer(libname + "_f", TRUE));
+
   /* build expressions */
-  global_constants.decls += "void exec();\n";
+  global_constants.decls += "static void exec();\n";
   exprs += "}\n";
-  exprs += "void exec() {\n";
+  exprs += "static void exec() {\n";
   for(i=0; i<num_exps; i++) {
     exprs += indent("SEXP e" + i_to_s(i) + ";\n");
   }
@@ -1596,18 +1626,27 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
 		     + indent(formals.var) + ",\n"
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
-  f += indent("if (SETJMP(context.cjmpbuf)) {\n");
-  f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
-  f += indent("} else {\n");
-  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
-  Expression outblock = out_subexps.op_exp(code, "newenv");
-  f += indent(indent("{\n"));
-  f += indent(indent(indent(out_subexps.output())));
-  f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
-  f += indent(indent(indent(outblock.del_text)));
-  f += indent(indent("}\n"));
-  f += indent(indent("endcontext(&context);\n"));
-  f += indent("}\n");
+  if (global_c_return) {
+    Expression outblock = out_subexps.op_exp(code, "newenv");
+    f += indent("{\n");
+    f += indent(indent(out_subexps.output()));
+    f += indent(indent("PROTECT(out = " + outblock.var + ");\n"));
+    f += indent(indent(outblock.del_text));
+    f += indent("}\n");
+  } else {
+    f += indent("if (SETJMP(context.cjmpbuf)) {\n");
+    f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
+    f += indent("} else {\n");
+    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
+    Expression outblock = out_subexps.op_exp(code, "newenv");
+    f += indent(indent("{\n"));
+    f += indent(indent(indent(out_subexps.output())));
+    f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
+    f += indent(indent(indent(outblock.del_text)));
+    f += indent(indent("}\n"));
+    f += indent(indent("endcontext(&context);\n"));
+    f += indent("}\n");
+  }
   f += indent(unp("env"));
   f += indent(unp("args"));
   f += indent(unp("newenv"));
@@ -1681,6 +1720,23 @@ string escape(string str) {
     }
   }
   return out;
+}
+
+/* Make a string suitable for use as a C function name. The input is
+ * assumed to be a valid R symbol. It's important to make sure two R
+ * functions can't translate to the same C name. */
+
+string make_c_func(string str) {
+  string out;
+  unsigned int i;
+  for(i=0; i<str.size(); i++) {
+    if (str[i] == '.') {
+      out += '_';
+    } else {
+      out += str[i];
+    }
+  }
+  return out + "_direct";
 }
 
 /* Simple function to add quotation marks around a string */
