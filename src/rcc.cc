@@ -466,7 +466,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   defs += "ans = R_NilValue;\n";
   defs += "PROTECT_WITH_INDEX(ans, &api);\n";
   defs += "begincontext(&cntxt, CTXT_LOOP, R_NilValue, " + rho
-    + ", R_NilValue, R_NilValue);\n";
+    + ", R_NilValue, R_NilValue, R_NilValue);\n";
   defs += "switch (SETJMP(cntxt.cjmpbuf)) {\n";
   string lab = global_labels.new_var();
   defs += indent("case CTXT_BREAK: goto for_break_" + lab + ";\n");
@@ -1582,7 +1582,7 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   f += indent("if (SETJMP(context.cjmpbuf)) {\n");
   f += indent(indent("out = R_ReturnedValue;\n"));
   f += indent("} else {\n");
-  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
+  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   Expression outblock = out_subexps.op_exp(code, "newenv");
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output())));
@@ -1642,7 +1642,7 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
   f += indent("if (SETJMP(context.cjmpbuf)) {\n");
   f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
   f += indent("} else {\n");
-  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
+  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   Expression outblock = out_subexps.op_exp(code, "newenv");
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output())));
@@ -1814,7 +1814,7 @@ int filename_pos(string str) {
 
 int parse_R(list<SEXP> & e, char *myname, char *filename) {
   SEXP exp;
-  int status;
+  ParseStatus status;
   int num_exps = 0;
   FILE *inFile;
   char *myargs[5];
