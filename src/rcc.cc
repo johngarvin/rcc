@@ -24,7 +24,7 @@
 #include "rcc.h"
 
 // Settings to change how rcc works
-static const bool global_self_allocate = TRUE;
+static const bool global_self_allocate = FALSE;
 
 static bool global_c_return = FALSE;
 static bool global_ok = TRUE;
@@ -579,7 +579,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 						      CADR(e));
 	global_c_return = FALSE;
       }
-      // continue to closure version
+      // in any case, continue to closure version
     }
   }
   // closure version
@@ -592,18 +592,27 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
   string func_sym = global_constants.appl1("mkString",
 					   quote(func_name));
   if (rho == "R_GlobalEnv") {
+    Expression r_args = global_constants.op_list(CAR(e), rho, TRUE);
+    Expression r_code = global_constants.op_literal(CADR(e), rho);
+    string r_form = global_constants.appl3("mkCLOSXP", r_args.var, r_code.var, rho);
     Expression c_f_args = global_constants.op_arglist(CAR(e), rho);
     string c_args = global_constants.appl2("cons", rho, c_f_args.var);
-    global_constants.del(c_f_args);
     string c_call = global_constants.appl2("cons", func_sym, c_args);
     string r_call = global_constants.appl2("lcons",
 			  make_symbol(install(".External")),
 			  c_call);
-    string out = global_constants.appl3("mkCLOSXP ", formals.var, r_call, rho);
+    string c_clos = global_constants.appl3("mkCLOSXP ", formals.var, r_call, rho);
+    global_constants.defs += "setAttrib(" + r_form
+          + ", install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n";
     global_constants.del(formals);
-    if (special) func_map.insert(pair<string,string>(opt_R_name, out));
-    return Expression(out, FALSE, FALSE, "");
+    if (special) func_map.insert(pair<string,string>(opt_R_name, c_clos));
+    return Expression(r_form, FALSE, FALSE, "");
   } else {
+    Expression r_args = op_literal(CAR(e), rho);
+    Expression r_code = op_literal(CADR(e), rho);
+    string r_form = appl3("mkCLOSXP", r_args.var, r_code.var, rho);
+    del(r_args);
+    del(r_code);
     Expression c_f_args = op_arglist(CAR(e), rho);
     string c_args = appl2("cons", rho, c_f_args.var);
     del(c_f_args);
@@ -616,7 +625,10 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     string out = appl3("mkCLOSXP ", formals.var, r_call, rho);
     del(formals);
     defs += unp(r_call);
-    return Expression(out, TRUE, FALSE, unp(out));
+    defs += "setAttrib(" + r_form
+          + ", install(\"RCC_CompiledSymbol\"), " + out + ");\n";
+    defs += unp(out);
+    return Expression(r_form, FALSE, TRUE, unp(r_form));
   }
 }
 
@@ -805,7 +817,7 @@ Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
     }
   }
   delete [] args;
-  out = new_sexp_unp();
+  out = new_sexp();
   defs += "{\n";
   defs += indent(buf.output());
   defs += indent(out + " = " + tmp + ";\n");
