@@ -1,7 +1,7 @@
 CC=gcc
-R=/local/software/R-1.6.2
+R=/local/R-1.6.2
 CPPFLAGS=-Wall -I$(R)/src/include -I.
-LDFLAGS=-L$(R)/bin -lR -lstdc++
+LDFLAGS=-L$(R)/lib/R/bin -lR -lstdc++
 LO_OPTFLAGS=-g -O0
 HI_OPTFLAGS=-g -O2
 

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: RCC
+Description: R to C Compiler
+Version: @PACKAGE_VERSION@
+Libs: -shared -L${libdir} -L${libdir}/rcc -lrcc
+Cflags: -I${includedir} -fpic
