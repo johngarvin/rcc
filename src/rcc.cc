@@ -110,27 +110,27 @@ public:
 };
 
 /* Expression is a struct returned by the op_ functions.
- * DEP = a variable representing a PROTECTed subexpression that
- *       depends on new_env and therefore must be placed inside the
- *       f-function
- * NOPR = an expression that must be inside the f-function but is not
- *        PROTECTed (usually a function argument)
- * CON = a variable representing a PROTECTed constant expression that
- *       can be moved outside the f-function
- * STR = a plain expression that doesn't need to be PROTECTed, such as
- * 'install("foo")'.
- * This should be redone as two booleans: whether it's PROTECTed and whether
- * it depends on the environment.
+ * var = the name of the variable storing the expression
+ * is_prot = whether the expression has been PROTECTed (and thus must
+ *           be UNPROTECTed).
+ * is_dep = whether the expression depends on the current
+ *          environment. If false, the expression can be hoisted out
+ *          of an f-function.
+ * is_visible = whether the expression should be printed if it
+ *              apppears at top level in R.
  */
-typedef enum {DEP, NOPR, CON, STR} Type;
 struct Expression {
-  Type type;
   string var;
+  bool is_prot;
+  bool is_dep;
+  bool is_visible;
   Expression() {
   }
-  Expression(Type t, string v) {
-    type = t;
+  Expression(string v, bool p, bool d, bool vis) {
     var = v;
+    is_prot = p;
+    is_dep = d;
+    is_visible = vis;
   }
 };
 
@@ -182,12 +182,6 @@ int parse_R(list<SEXP> & e, char *inFile);
 void err(string message);
 void printstr(string str);
 
-/* Determines whether to print out each result.
- *  1 : print
- *  0 : determine dynamically; print iff R_Visible is true
- * -1 : don't print
- */
-static int global_visible = 0;
 static bool global_ok = 1;
 static unsigned int global_temps = 0;
 static SubexpBuffer global_fundefs("f");
@@ -197,6 +191,7 @@ static map<double, string> sc_real_map;
 static map<int, string> sc_logical_map;
 static map<int, string> sc_integer_map;
 static map<int, string> primsxp_map;
+static map<string, bool> vis_map;
 static string * global_formals = NULL;
 static int global_formals_len = 0;
 
@@ -240,15 +235,10 @@ int main(int argc, char *argv[]) {
     exprs += indent(indent(subexps.decls));
     exprs += indent(indent(subexps.defs));
     exprs += indent(indent("e" + itos(i) + " = " + exp.var + ";\n"));
-    if (global_visible == 1) {
+    if (exp.is_visible) {
       exprs += indent(indent("PrintValueRec(e" + itos(i) + ", R_GlobalEnv);\n"));
-    } else if (global_visible == -1) {
-      /* do nothing */
-    } else {
-      exprs += indent(indent("if (R_Visible) PrintValueRec(e" + itos(i)
-			     + ", R_GlobalEnv);\n"));
     }
-    if (exp.type == DEP) {
+    if (exp.is_prot) {
       exprs += indent(indent("UNPROTECT_PTR(" + exp.var + ");\n"));
     }
     exprs += indent("}\n");
@@ -300,12 +290,11 @@ int main(int argc, char *argv[]) {
 }
 
 Expression op_exp(SEXP e, string rho, SubexpBuffer & subexps) {
-  global_visible = 0;
   string sym, var;
   Expression out, formals, body, env;
   switch(TYPEOF(e)) {
   case NILSXP:
-    return Expression(STR, "R_NilValue");
+    return Expression("R_NilValue", FALSE, TRUE, FALSE);
     break;
   case STRSXP:
     return op_string(e, subexps);
@@ -314,72 +303,71 @@ Expression op_exp(SEXP e, string rho, SubexpBuffer & subexps) {
   case INTSXP:
   case REALSXP:
   case CPLXSXP:
-    global_visible = 1;
     return op_vector(e, subexps);
     break;
   case VECSXP:
     global_ok = 0;
-    return Expression(STR, "<<unimplemented vector>>");
+    return Expression("<<unimplemented vector>>", FALSE, TRUE, FALSE);
     break;
   case SYMSXP:
     if (e == R_MissingArg) {
-      return Expression(STR, "R_MissingArg");
+      return Expression("R_MissingArg", FALSE, TRUE, FALSE);
     } else {
       if (global_formals != NULL && rho != "R_GlobalEnv") {
 	int i;
 	for(i=0; i<global_formals_len; i++) {
 	  if (string(CHAR(PRINTNAME(e))) == global_formals[i]) {
-	    return Expression(NOPR, "arg" + itos(i));
+	    return Expression("arg" + itos(i), FALSE, TRUE, FALSE);
 	  }
 	}
       }
       sym = make_symbol(e);
-      out = Expression(DEP, appl2("findVar", sym, rho, subexps));
-      global_visible = 1;
+      out = Expression(appl2("findVar", sym, rho, subexps), TRUE, TRUE, TRUE);
       return out;
     }
     break;
   case LISTSXP:
-    global_visible = 1;
     return op_list(e, rho, subexps, FALSE);
     break;
   case CLOSXP:
     formals = op_symlist(FORMALS(e), rho, subexps);
     body = op_literal(BODY(e), rho, subexps);
-    if (rho == "R_GlobalEnv") {
-      out = Expression(CON, appl3("mkCLOSXP",
-				  formals.var,
-				  body.var,
-				  rho,
-				  global_constants));
+    if (rho == "R_GlobalEnv" && !formals.is_dep && !body.is_dep) {
+      out = Expression(appl3("mkCLOSXP",
+			     formals.var,
+			     body.var,
+			     rho,
+			     global_constants,
+			     formals.is_prot, body.is_prot, FALSE),
+		       TRUE, FALSE, FALSE);
     } else {
-      out = Expression(DEP, appl3("mkCLOSXP",
-				  formals.var,
-				  body.var,
-				  rho,
-				  subexps));
+      out = Expression(appl3("mkCLOSXP",
+			     formals.var,
+			     body.var,
+			     rho,
+			     subexps,
+			     formals.is_prot, body.is_prot, FALSE),
+		       TRUE, TRUE, FALSE);
     }
-    global_visible = -1;
     return out;
     break;
   case ENVSXP:
-    global_visible = -1;
     global_ok = 0;
-    return Expression(STR, "<<unexpected environment>>");
+    return Expression("<<unexpected environment>>", FALSE, TRUE, FALSE);
     break;
   case PROMSXP:
-    global_visible = -1;
     global_ok = 0;
-    return Expression(STR, "<<unexpected promise>>");
+    return Expression("<<unexpected promise>>", FALSE, TRUE, FALSE);
     break;
   case LANGSXP:
     out = op_lang(e, rho, subexps);
     return out;
     break;
   case CHARSXP:
-    return Expression(CON, appl1("mkChar",
-				 quote(string(CHAR(e))),
-				 subexps));
+    return Expression(appl1("mkChar",
+			    quote(string(CHAR(e))),
+			    subexps),
+		      FALSE, FALSE, TRUE);
     break;
   case SPECIALSXP:
   case BUILTINSXP:
@@ -388,12 +376,12 @@ Expression op_exp(SEXP e, string rho, SubexpBuffer & subexps) {
   case EXTPTRSXP:
   case WEAKREFSXP:
     global_ok = 0;
-    return Expression(STR, 
-		      "<<unimplemented type " + itos(TYPEOF(e)) + ">>");
+    return Expression("<<unimplemented type " + itos(TYPEOF(e)) + ">>",
+		      FALSE, TRUE, FALSE);
     break;
   default:
     err("Internal error: op_exp encountered bad type\n");
-    return Expression(STR, "BOGUS"); // never reached
+    return Expression("BOGUS", FALSE, TRUE, FALSE); // never reached
     break;
   }
 }
@@ -423,9 +411,9 @@ Expression op_primsxp(SEXP e, string rho, SubexpBuffer & subexps) {
       + "," + itos(is_builtin) + "));"
       + " /* " + string(PRIMNAME(e)) + " */\n";
     primsxp_map.insert(pair<int,string>(value, var));
-    return Expression(STR, var);
+    return Expression(var, FALSE, TRUE, FALSE);
   } else {
-    return Expression(STR, pr->second);
+    return Expression(pr->second, FALSE, TRUE, FALSE);
   }
 }
 
@@ -457,11 +445,15 @@ Expression op_lang(SEXP e, string rho, SubexpBuffer & subexps) {
 		  "R_NilValue",
 		  subexps);
       subexps.defs += "UNPROTECT_PTR(" + func + ");\n";
-      if (args.type == DEP) {
+      if (args.is_prot) {
 	subexps.defs += "UNPROTECT_PTR(" + args.var + ");\n";
       }
       subexps.defs += "UNPROTECT_PTR(" + call + ");\n";
-      return Expression(DEP, out);
+      string func_name = string(CHAR(PRINTNAME(CAR(e))));
+      //bool fun_visible = vis_map.find(func_name)->second;
+      return Expression(out, TRUE, TRUE, TRUE);
+      // Punt here; can't easily tell whether the result of the closure
+      // is visible, so we just call it visible
     }
     /* It's a built-in function, special function, or closure */
     if (TYPEOF(op) == SPECIALSXP) {
@@ -475,11 +467,10 @@ Expression op_lang(SEXP e, string rho, SubexpBuffer & subexps) {
 		  args1.var,
 		  rho,
 		  subexps);
-      if (args1.type == DEP) {
+      if (args1.is_prot) {
 	subexps.defs += "UNPROTECT_PTR(" + args1.var + ");\n";
       }
-      global_visible = PRIMPRINT(op) ? -1 : 1;
-      return Expression(DEP, out);
+      return Expression(out, TRUE, TRUE, 1 - PRIMPRINT(op));
     } else if (TYPEOF(op) == CLOSXP) {
       Expression op1;
       if (CAR(BODY(op)) == install(".Internal")) {
@@ -488,17 +479,15 @@ Expression op_lang(SEXP e, string rho, SubexpBuffer & subexps) {
 	op1 = op_exp(op, rho, subexps);
       }
       Expression out_exp = op_clos_app(op1, CDR(e), rho, subexps);
-      global_visible = -1;
       return out_exp;
     } else {
       err("Internal error: LANGSXP encountered non-function op");
-      return Expression(STR, "BOGUS"); // never reached
+      return Expression("BOGUS", FALSE, TRUE, FALSE); // never reached
     }
   } else {  // function is not a symbol
     Expression op1;
     op1 = op_exp(CAR(e), rho, subexps);
     Expression out_exp = op_clos_app(op1, CDR(e), rho, subexps);
-    global_visible = -1;
     return out_exp;
     // eval.c: 395
   }
@@ -520,7 +509,7 @@ Expression op_begin(SEXP exp, string rho, SubexpBuffer & subexps) {
     subexps.defs += "}\n";
     exp = CDR(exp);
   }
-  return Expression(e.type, var);
+  return Expression(var, e.is_prot, e.is_dep, e.is_visible);
 }
 
 Expression op_fundef(SEXP e, string rho, SubexpBuffer & subexps) {
@@ -534,15 +523,18 @@ Expression op_fundef(SEXP e, string rho, SubexpBuffer & subexps) {
 			  global_constants);
   Expression c_f_args = op_arglist(CAR(e), rho, subexps);
   string c_args = appl2("cons", rho, c_f_args.var, subexps,
-			FALSE, (c_f_args.type == DEP));
+			FALSE, (c_f_args.is_prot));
   string c_call = appl2("cons", func_sym, c_args, subexps, FALSE, TRUE);
   string r_call = appl2("lcons",
 			make_symbol(install(".External")),
 			c_call,
 			subexps, FALSE, TRUE);
   string out = appl3("mkCLOSXP ", formals.var, r_call, rho, subexps);
+  if (formals.is_prot) {
+    subexps.defs += "UNPROTECT_PTR(" + formals.var + ");\n";
+  }
   subexps.defs += "UNPROTECT_PTR(" + r_call + ");\n";
-  return Expression(DEP, out);
+  return Expression(out, TRUE, TRUE, FALSE);
 }
 
 Expression op_special(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
@@ -554,19 +546,19 @@ Expression op_special(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
     Expression args;
     if (TYPEOF(INTERNAL(fun)) == BUILTINSXP) {
       Expression list = op_exp(CDR(CADR(e)), rho, subexps);
-      args = Expression(DEP, appl2("evalList", list.var, rho, subexps));
+      args = Expression(appl2("evalList", list.var, rho, subexps),
+			TRUE, TRUE, FALSE);
     } else {
       args = op_exp(CDR(CADR(e)), rho, subexps);
     }
     Expression func = op_exp(INTERNAL(fun), rho, subexps);
-    global_visible = -1;
-    return Expression(DEP,
-		      appl4(get_name(PRIMOFFSET(INTERNAL(fun))),
+    return Expression(appl4(get_name(PRIMOFFSET(INTERNAL(fun))),
 			    "R_NilValue",
 			    func.var,
 			    args.var,
 			    rho,
-			    subexps));
+			    subexps),
+		      TRUE, TRUE, FALSE);
   } else if (PRIMFUN(op) == (SEXP (*)())do_function) {
     return op_fundef(CDR(e), rho, subexps);
   } else if (PRIMFUN(op) == (SEXP (*)())do_begin) {
@@ -582,9 +574,13 @@ Expression op_special(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
 		args1.var,
 		rho,
 		subexps);
-    //global_visible = PRIMPRINT(op) ? -1 : 1;
-    global_visible = 0;
-    return Expression(DEP, out);
+    if (op1.is_prot) {
+      subexps.defs += "UNPROTECT_PTR(" + op1.var + ");\n";
+    }
+    if (args1.is_prot) {
+      subexps.defs += "UNPROTECT_PTR(" + args1.var + ");\n";
+    }
+    return Expression(out, TRUE, TRUE, 1 - PRIMPRINT(op));
   }
 }
 
@@ -599,11 +595,10 @@ Expression op_set(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
       Expression body = op_exp(CADDR(e), rho, subexps);
       subexps.defs += "defineVar(" + name + ", " 
 	+ body.var + ", " + rho + ");\n";
-      if (body.type == DEP) {
+      if (body.is_dep) {
 	subexps.defs += "UNPROTECT_PTR(" + body.var + ");\n";
       }
-      global_visible = -1;
-      return Expression(STR, name);
+      return Expression(name, FALSE, TRUE, FALSE);
     } else if (isLanguage(CADR(e))) {
       Expression func = op_exp(op, rho, subexps);
       Expression args = op_literal(CDR(e), rho, subexps);
@@ -613,11 +608,11 @@ Expression op_set(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
 		  args.var,
 		  rho,
 		  subexps);
-      global_visible = -1;
-      return Expression(DEP, out);
+      return Expression(out, TRUE, TRUE, FALSE);
     } else {
       global_ok = 0;
-      return Expression(STR, "<<assignment with unrecognized LHS>>");
+      return Expression("<<assignment with unrecognized LHS>>",
+			FALSE, TRUE, FALSE);
     }
   } else if (PRIMVAL(op) == 2) {  /* <<- */
     Expression op1 = op_exp(op, rho, subexps);
@@ -628,12 +623,17 @@ Expression op_set(SEXP e, SEXP op, string rho, SubexpBuffer & subexps) {
 		args1.var,
 		rho,
 		subexps);
-    global_visible = -1;
-    return Expression(DEP, out);
+    if (op1.is_prot) {
+      subexps.defs += "UNPROTECT_PTR(" + op1.var + ");\n";
+    }
+    if (args1.is_prot) {
+      subexps.defs += "UNPROTECT_PTR(" + args1.var + ");\n";
+    }
+    return Expression(out, TRUE, TRUE, FALSE);
   } else {
     global_ok = 0;
-    return Expression(STR, 
-		      "<<Assignment of a type not yet implemented>>");
+    return Expression("<<Assignment of a type not yet implemented>>",
+		      FALSE, TRUE, FALSE);
   }
 }
 
@@ -648,8 +648,7 @@ Expression op_clos_app(Expression op1, SEXP args, string rho, SubexpBuffer & sub
   /* Unlike most functions of its type,
    * applyClosure uses its 'call' argument. */
   string call = appl2("lcons", op1.var, args1.var, subexps,
-		      (op1.type == DEP),
-		      (args1.type == DEP));
+		      op1.is_dep, args1.is_dep);
   string out = appl5("applyClosure",
 		     call,
 		     op1.var,
@@ -659,7 +658,7 @@ Expression op_clos_app(Expression op1, SEXP args, string rho, SubexpBuffer & sub
 		     subexps);
   subexps.defs += "UNPROTECT_PTR(" + arglist + ");\n";
   subexps.defs += "UNPROTECT_PTR(" + call + ");\n";
-  return Expression(DEP, out);
+  return Expression(out, TRUE, TRUE, op1.is_visible);
 }
 
 /* Output the argument list for an external function.
@@ -669,7 +668,7 @@ Expression op_arglist(SEXP e, string rho, SubexpBuffer & subexps) {
   string out, tmp, tmp1;
   SEXP arg;
   int len = Rf_length(e);
-  if (len == 0) return Expression(STR, "R_NilValue");
+  if (len == 0) return Expression("R_NilValue", FALSE, TRUE, FALSE);
   SEXP args[len];
   SubexpBuffer buf("tmp_" + itos(global_temps++) + "_");
 
@@ -694,14 +693,14 @@ Expression op_arglist(SEXP e, string rho, SubexpBuffer & subexps) {
   subexps.defs += indent(buf.defs);
   subexps.defs += indent(out + " = " + tmp + ";\n");
   subexps.defs += "}\n";
-  return Expression(DEP, out);
+  return Expression(out, TRUE, TRUE, FALSE);
 }
 
 Expression op_literal(SEXP e, string rho, SubexpBuffer & subexps) {
   Expression formals, body, env;
   switch (TYPEOF(e)) {
   case NILSXP:
-    return Expression(STR, "R_NilValue");
+    return Expression("R_NilValue", FALSE, TRUE, TRUE);
     break;
   case STRSXP:
     return op_string(e, subexps);
@@ -710,15 +709,14 @@ Expression op_literal(SEXP e, string rho, SubexpBuffer & subexps) {
   case INTSXP:
   case REALSXP:
   case CPLXSXP:
-    global_visible = 1;
     return op_vector(e, subexps);
     break;
   case VECSXP:
     global_ok = 0;
-    return Expression(STR, "<<unimplemented vector>>");
+    return Expression("<<unimplemented vector>>", FALSE, TRUE, FALSE);
     break;
   case SYMSXP:
-    return Expression(STR, make_symbol(e));
+    return Expression(make_symbol(e), FALSE, TRUE, TRUE);
     break;
   case LISTSXP:
     return op_list(e, rho, subexps);
@@ -726,41 +724,42 @@ Expression op_literal(SEXP e, string rho, SubexpBuffer & subexps) {
   case CLOSXP:
     formals = op_symlist(FORMALS(e), rho, subexps);
     body = op_literal(BODY(e), rho, subexps);
-    return Expression(DEP, appl3("mkCLOSXP  ", 
-				 formals.var,
-				 body.var,
-				 rho,
-				 subexps));
+    return Expression(appl3("mkCLOSXP  ",
+			    formals.var,
+			    body.var,
+			    rho,
+			    subexps),
+		      TRUE, TRUE, FALSE);
     break;
   case ENVSXP:
     global_ok = 0;
-    return Expression(STR, "<<unexpected environment>>");
+    return Expression("<<unexpected environment>>", FALSE, TRUE, FALSE);
     break;
   case PROMSXP:
     global_ok = 0;
-    return Expression(STR, "<<unexpected promise>>");
+    return Expression("<<unexpected promise>>", FALSE, TRUE, FALSE);
     break;
   case LANGSXP:
     return op_list(e, rho, subexps);
     break;
   case CHARSXP:
-    return Expression(STR, 
-		      appl1("mkChar", quote(string(CHAR(e))), subexps));
+    return Expression(appl1("mkChar", quote(string(CHAR(e))), subexps),
+		      FALSE, TRUE, TRUE);
     break;
   case SPECIALSXP:
   case BUILTINSXP:
-    global_visible = 1 - PRIMPRINT(e);
     return op_primsxp(e, rho, global_constants);
+    break;
   case EXPRSXP:
   case EXTPTRSXP:
   case WEAKREFSXP:
     global_ok = 0;
-    return Expression(STR, 
-		      "<<unimplemented type " + itos(TYPEOF(e)) + ">>");
+    return Expression("<<unimplemented type " + itos(TYPEOF(e)) + ">>",
+		      FALSE, TRUE, FALSE);
     break;
   default:
     err("Internal error: op_literal encountered bad type\n");
-    return Expression(STR, "BOGUS"); // never reached
+    return Expression("BOGUS", FALSE, TRUE, FALSE); // never reached
     break;
   }
 }
@@ -780,20 +779,24 @@ Expression op_list(SEXP e, string rho, SubexpBuffer & subexps,
     global_constants.defs += 
       indent("PROTECT(" + var_c + " = " + out_const + ");\n");
     global_constants.defs += "}\n";
+  } else {
+    var_c = exp.var;
   }
-  if (exp.type == DEP) {
-    string var_f = subexps.new_var();
-    subexps.decls += "SEXP " + var_f + ";\n";
-    subexps.defs += "{\n";
-    subexps.defs += indent(temp_f.decls);
-    subexps.defs += indent(temp_f.defs);
-    subexps.defs += indent("PROTECT(" + var_f + " =" + exp.var + ");\n");
-    subexps.defs += "}\n";
-    return Expression(DEP, var_f);
-  } else if (exp.type == CON) {
-    return Expression(STR, var_c);
-  } else if (exp.type == STR) {
-    return Expression(STR, exp.var);
+  if (exp.is_dep) {
+    if (temp_f.defs == "") {
+      return exp;
+    } else {
+      string var_f = subexps.new_var();
+      subexps.decls += "SEXP " + var_f + ";\n";
+      subexps.defs += "{\n";
+      subexps.defs += indent(temp_f.decls);
+      subexps.defs += indent(temp_f.defs);
+      subexps.defs += indent("PROTECT(" + var_f + " =" + exp.var + ");\n");
+      subexps.defs += "}\n";
+      return Expression(var_f, TRUE, TRUE, TRUE);
+    }
+  } else {
+    return Expression(var_c, FALSE, FALSE, TRUE);
   }
 }
 
@@ -805,7 +808,7 @@ Expression op_list_help(SEXP e, string rho,
   string my_cons;
   switch (TYPEOF(e)) {
   case NILSXP:
-    return Expression(STR, "R_NilValue");
+    return Expression("R_NilValue", FALSE, TRUE, TRUE);
   case LISTSXP:
     my_cons = "cons";
     break;
@@ -814,7 +817,7 @@ Expression op_list_help(SEXP e, string rho,
     break;
   default:
     err("Internal error: bad call to op_list\n");
-    return Expression(STR, "BOGUS");  // never reached
+    return Expression("BOGUS", FALSE, FALSE, FALSE);  // never reached
   }
   if (TAG(e) == R_NilValue) {
     Expression car;
@@ -825,43 +828,53 @@ Expression op_list_help(SEXP e, string rho,
     }
     Expression cdr = op_list_help(CDR(e), rho, subexps, consts, 
 					  out_const, literal);
-    if (car.type == DEP || car.type == NOPR || cdr.type == DEP) {
-      /* if this is dependent but some subexpression is constant, create
+    if (car.is_dep && cdr.is_dep) {
+      return Expression(appl2_unp(my_cons, car.var, cdr.var, subexps,
+				  car.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+    } else if (!car.is_dep && !cdr.is_dep) {
+      return Expression(appl2_unp(my_cons, car.var, cdr.var, consts,
+				  car.is_prot, cdr.is_prot),
+			FALSE, FALSE, TRUE);
+      /* If this is dependent but some subexpression is constant, create
        * the bridge between the constant subexpression and the global 
        * constants. */
-      if (car.type == CON || cdr.type == CON) {
-	string var = global_constants.new_var();
-	global_constants.decls += "SEXP " + var + ";\n";
-	global_constants.defs += "{\n";
-	global_constants.defs += consts.decls;
-	global_constants.defs += consts.defs;
-	if (car.type == CON) {
-	  global_constants.defs += var + " =  " + car.var + ";\n";
-	  car.var = var;
-	}
-	if (cdr.type == CON) {
-	  global_constants.defs += var + " =  " + cdr.var + ";\n";
-	  cdr.var = var;
-	}
-	global_constants.defs += "PROTECT(" + var + ");\n";
-	global_constants.defs += "}\n";
-      }
-      return Expression(DEP, appl2_unp(my_cons,  // _unp
-				       car.var,
-				       cdr.var,
-				       subexps,
-				       (car.type == DEP),
-				       FALSE));
-    } else {
-      out_const = appl2_unp(my_cons,  // _unp
-			    car.var,
-			    cdr.var,
-			    consts,
-			    (car.type == CON),
-			    FALSE);
-      return Expression(CON, out_const);
+    } else if (car.is_dep && !cdr.is_dep) {
+      return Expression(appl2_unp(my_cons, car.var, cdr.var, subexps,
+				  car.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+      /*
+      string var = global_constants.new_var();
+      global_constants.decls += "SEXP " + var + ";\n";
+      global_constants.defs += "{\n";
+      global_constants.defs += consts.decls;
+      global_constants.defs += consts.defs;
+      global_constants.defs += var + " =  " + cdr.var + ";\n";
+      global_constants.defs += "PROTECT(" + var + ");\n";
+      global_constants.defs += "}\n";
+      return Expression(appl2_unp(my_cons, car.var, var, subexps,
+				  car.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+      */
+    } else if (!car.is_dep && cdr.is_dep) {
+      return Expression(appl2_unp(my_cons, car.var, cdr.var, subexps,
+				  car.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+      /*
+      string var = global_constants.new_var();
+      global_constants.decls += "SEXP " + var + ";\n";
+      global_constants.defs += "{\n";
+      global_constants.defs += consts.decls;
+      global_constants.defs += consts.defs;
+      global_constants.defs += var + " =  " + car.var + ";\n";
+      global_constants.defs += "PROTECT(" + var + ");\n";
+      global_constants.defs += "}\n";
+      return Expression(appl2_unp(my_cons, var, cdr.var, subexps,
+				  car.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+      */
     }
-  } else {
+  } else { /* It's a tagged cons */
     if (my_cons == "lcons") {
       err("Internal error: op_list encountered tagged lcons\n");
     }
@@ -874,46 +887,44 @@ Expression op_list_help(SEXP e, string rho,
     Expression tag = op_literal(TAG(e), rho, subexps);
     Expression cdr = op_list_help(CDR(e), rho, subexps, consts, 
 				  out_const, literal);
-    if (car.type == DEP || car.type == NOPR 
-	|| tag.type == DEP || cdr.type == DEP) {
-      if (car.type == CON || tag.type == CON || cdr.type == CON) {
+    if (car.is_dep && tag.is_dep && cdr.is_dep) {
+      return Expression(appl3_unp("tagged_cons", car.var, tag.var, cdr.var,
+				  subexps,
+				  car.is_prot, tag.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
+    } else if (!car.is_dep && !tag.is_dep && !cdr.is_dep) {
+      out_const = appl3_unp("tagged_cons", car.var, tag.var, cdr.var,
+			    consts,
+			    car.is_prot, tag.is_prot, cdr.is_prot);
+      return Expression(out_const,
+			FALSE, FALSE, TRUE);
+    } else {
+      global_constants.defs += "{\n";
+      global_constants.defs += consts.decls;
+      global_constants.defs += consts.defs;
+      if (!car.is_dep) {
 	string var = global_constants.new_var_unp();
 	global_constants.decls += "SEXP " + var + ";\n";
-	global_constants.defs += "{\n";
-	global_constants.defs += consts.decls;
-	global_constants.defs += consts.defs;
-	if (car.type == CON) {
-	  global_constants.defs += var + " =   " + car.var + ";\n";
-	  car.var = var;
-	}
-	if (tag.type == CON) {
-	  global_constants.defs += var + " =   " + tag.var + ";\n";
-	  tag.var = var;
-	}
-	if (cdr.type == CON) {
-	  global_constants.defs += var + " =   " + cdr.var + ";\n";
-	  cdr.var = var;
-	}
-	global_constants.defs += "}\n";
+	global_constants.defs += var + " =   " + car.var + ";\n";
+	car.var = var;
       }
-      return Expression(DEP, appl3_unp("tagged_cons",
-				       car.var,
-				       tag.var,
-				       cdr.var,
-				       subexps,
-				       (car.type == DEP),
-				       (tag.type == DEP),
-				       FALSE));
-    } else {
-      out_const = appl3_unp("tagged_cons",
-			    car.var,
-			    tag.var,
-			    cdr.var,
-			    consts,
-			    (car.type == CON),
-			    (tag.type == CON),
-			    FALSE);
-      return Expression(CON, out_const);
+      if (!tag.is_dep) {
+	string var = global_constants.new_var_unp();
+	global_constants.decls += "SEXP " + var + ";\n";
+	global_constants.defs += var + " =   " + tag.var + ";\n";
+	tag.var = var;
+      }
+      if (!cdr.is_dep) {
+	string var = global_constants.new_var_unp();
+	global_constants.decls += "SEXP " + var + ";\n";
+	global_constants.defs += var + " =   " + cdr.var + ";\n";
+	cdr.var = var;
+      }
+      global_constants.defs += "}\n";
+      return Expression(appl3_unp("tagged_cons", car.var, tag.var, cdr.var,
+				  subexps,
+				  car.is_prot, tag.is_prot, cdr.is_prot),
+			FALSE, TRUE, TRUE);
     }
   }
 }
@@ -925,10 +936,10 @@ Expression op_string(SEXP s, SubexpBuffer & subexps) {
   for(i=0; i<len; i++) {
     str += string(CHAR(STRING_ELT(s, i)));
   }
-  global_visible = 1;
-  return Expression(STR, appl1("mkString", 
-			       quote(escape(str)), 
-			       global_constants));
+  return Expression(appl1("mkString", 
+			  quote(escape(str)), 
+			  global_constants),
+		    FALSE, FALSE, TRUE);
 }
 
 Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
@@ -936,7 +947,6 @@ Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
   switch(TYPEOF(vec)) {
   case LGLSXP:
     if (len == 1) {
-      global_visible = 1;
       int value = INTEGER(vec)[0];
       map<int,string>::iterator pr = sc_logical_map.find(value);
       if (pr == sc_logical_map.end()) {  // not found
@@ -944,13 +954,14 @@ Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
 			   itos(value),
 			   global_constants);
 	sc_logical_map.insert(pair<int,string>(value, var));
-	return Expression(STR, var);
+	return Expression(var, FALSE, FALSE, TRUE);
       } else {
-	return Expression(STR, pr->second);
+	return Expression(pr->second, FALSE, FALSE, TRUE);
       }
     } else {
       global_ok = 0;
-      return Expression(STR, "<<unimplemented logical vector>>");
+      return Expression("<<unimplemented logical vector>>",
+			FALSE, FALSE, FALSE);
     }
     break;
   case INTSXP:
@@ -962,13 +973,14 @@ Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
 			   itos(value),
 			   global_constants);
 	sc_integer_map.insert(pair<int,string>(value, var));
-	return Expression(STR, var);
+	return Expression(var, FALSE, FALSE, TRUE);
       } else {
-	return Expression(STR, pr->second);
+	return Expression(pr->second, FALSE, FALSE, TRUE);
       }
     } else {
       global_ok = 0;
-      return Expression(STR, "<<unimplemented integer vector>>");
+      return Expression("<<unimplemented integer vector>>",
+			FALSE, FALSE, FALSE);
     }
     break;
   case REALSXP:
@@ -980,13 +992,14 @@ Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
 			   dtos(value),
 			   global_constants);
 	sc_real_map.insert(pair<double,string>(value, var));
-	return Expression(STR, var);
+	return Expression(var, FALSE, FALSE, TRUE);
       } else {
-	return Expression(STR, pr->second);
+	return Expression(pr->second, FALSE, FALSE, TRUE);
       }
     } else {
       global_ok = 0;
-      return Expression(STR, "<<unimplemented real vector>>");
+      return Expression("<<unimplemented real vector>>",
+			FALSE, FALSE, FALSE);
     }
     break;
   case CPLXSXP:
@@ -995,15 +1008,16 @@ Expression op_vector(SEXP vec, SubexpBuffer & subexps) {
       string var = appl1("ScalarComplex",
 			 ctos(value),
 			 global_constants);
-      return Expression(STR, var);
+      return Expression(var, FALSE, FALSE, TRUE);
     } else {
       global_ok = 0;
-      return Expression(STR, "<<unimplemented complex vector>>");
+      return Expression("<<unimplemented complex vector>>",
+			FALSE, FALSE, FALSE);
     }
     break;
   default:
     err("Internal error: op_vector encountered bad vector type\n");
-    return Expression(STR, "BOGUS"); // not reached
+    return Expression("BOGUS", FALSE, FALSE, FALSE); // not reached
     break;
   }
 }
@@ -1075,12 +1089,14 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   f += indent(indent("out = R_ReturnedValue;\n"));
   f += indent("} else {\n");
   f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
-  string outblock = op_exp(code, "newenv", out_subexps).var;
+  Expression outblock = op_exp(code, "newenv", out_subexps);
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.decls)));
   f += indent(indent(indent(out_subexps.defs)));
-  f += indent(indent(indent("out = " + outblock + ";\n")));
-  f += indent(indent(indent("UNPROTECT(1);\n")));
+  f += indent(indent(indent("out = " + outblock.var + ";\n")));
+  if (outblock.is_prot) {
+    f += indent(indent(indent("UNPROTECT(1);\n")));
+  }
   f += indent(indent("}\n"));
   f += indent(indent("endcontext(&context);\n"));
   f += indent("}\n");
@@ -1116,12 +1132,12 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
   f += indent("SEXP env;\n");
   f += indent("SEXP args;\n");
   f += indent("RCNTXT context;\n");
-  f += indent("PROTECT(env = CADR(full_args));\n");
-  f += indent("PROTECT(args = CDDR(full_args));\n");
   string formals = op_symlist(args, "env", env_subexps).var;
   string actuals = "args";
   int env_nprot = env_subexps.get_n_prot() + 3;
   f += indent(env_subexps.decls);
+  f += indent("PROTECT(env = CADR(full_args));\n");
+  f += indent("PROTECT(args = CDDR(full_args));\n");
   f += indent(env_subexps.defs);
   f += indent("PROTECT(newenv =\n");
   f += indent(indent("Rf_NewEnvironment(\n"
@@ -1137,7 +1153,7 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
   f += indent(indent(indent(out_subexps.decls)));
   f += indent(indent(indent(out_subexps.defs)));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
-  if (outblock.type == DEP) {
+  if (outblock.is_prot) {
     f += indent(indent(indent("UNPROTECT(1);\n")));
   }
   f += indent(indent("}\n"));
@@ -1146,6 +1162,7 @@ string make_fundef_argslist(string func_name, SEXP args, SEXP code) {
   f += indent("UNPROTECT(" + itos(env_nprot) + ");\n");
   f += indent("return out;\n");
   f += "}\n";
+  //vis_map[func_name] = outblock.is_visible;
   global_formals = old_formals;
   global_formals_len = old_formals_len;
   return f;
