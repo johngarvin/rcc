@@ -58,8 +58,6 @@ extern void setup_Rmainloop(void);
 bool is_special(string func);
 string make_symbol(SEXP e);
 string make_type(int t);
-string make_fundef(string func_name, SEXP args, SEXP code);
-string make_fundef_argslist(string func_name, SEXP args, SEXP code);
 string indent(string str);
 string i_to_s(const int i);
 string d_to_s(double d);
@@ -71,7 +69,6 @@ string strip_suffix(string str);
 int filename_pos(string str);
 int parse_R(list<SEXP> & e, char *inFile);
 void err(string message);
-void printstr(string str);
 
 /* VarRef: reference to an allocated variable inside a string: its
  * name, location, and length of the list it represents.
@@ -231,7 +228,7 @@ struct Expression {
 class SubexpBuffer {
 protected:
   string prefix;
-  unsigned int n;
+  static unsigned int n;
   unsigned int prot;
   AllocList alloc_list;
 public:
@@ -314,7 +311,7 @@ public:
     : prefix(pref), is_const(is_c) {
     has_i = FALSE;
     is_const = is_c;
-    n = prot = 0;
+    prot = 0;
     decls = defs = "";
     encl_fn = this;
   }
@@ -337,7 +334,7 @@ public:
   virtual string new_var();
   virtual string new_var_unp();
   virtual string new_var_unp_name(string name);
-  SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 500, string is = "init")
+  SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 300, string is = "init")
     : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;
   }
@@ -346,7 +343,6 @@ public:
 void arg_err();
 void set_funcs(int argc, char *argv[]);
 string make_symbol(SEXP e);
-string make_fundef(string func_name, SEXP args, SEXP code);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string indent(string str);

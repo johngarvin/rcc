@@ -8,10 +8,10 @@ src_SCRIPTS = run-test.in
 
 MOSTLYCLEANFILES = $(subst .r,.so,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES))
 
-.r.c: ../../src/rcc
-	../../src/rcc $<
-
 TEST_CFLAGS  = $(CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib
+
+%.c: %.r ../../src/rcc
+	../../src/rcc $<
 
 %.so: %.c ../../src/rcc
 	$(LIBTOOL) --mode=compile $(CC) -prefer-pic $(CPPFLAGS) $(TEST_CFLAGS) $(LDFLAGS) -shared ../../lib/.libs/librcc.so $<

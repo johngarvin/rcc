@@ -37,9 +37,6 @@ static map<int, string> sc_integer_map;
 static map<int, string> primsxp_map;
 static map<string, bool> vis_map;
 static list<string> special_funcs;
-static string * global_formals = NULL;
-static int global_formals_len = 0;
-//static SubexpBuffer global_fundefs("f", TRUE);
 static SubexpBuffer global_fundefs;
 static SplitSubexpBuffer global_constants("c", TRUE);
 static SubexpBuffer global_labels("l");
@@ -56,18 +53,20 @@ bool is_special(string func) {
   return FALSE;
 }
 
+unsigned int SubexpBuffer::n;
+
 string SubexpBuffer::new_var() {
   prot++;
   return new_var_unp();
 }
 string SubexpBuffer::new_var_unp() {
-  return prefix + i_to_s(n++);
+  return prefix + i_to_s(SubexpBuffer::n++);
 }
 string SubexpBuffer::new_var_unp_name(string name) {
-  return prefix + i_to_s(n++) + "_" + make_c_id(name);
+  return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
 }
 int SubexpBuffer::get_n_vars() {
-  return n;
+  return SubexpBuffer::n;
 }
 int SubexpBuffer::get_n_prot() {
   return prot;
@@ -100,15 +99,13 @@ string SubexpBuffer::new_sexp_unp_name(string name) {
   return str;
 }
 
-string
-SubexpBuffer::protect_str (string str)
+string SubexpBuffer::protect_str (string str)
 {
     prot++;
     return "PROTECT(" + str + ")";
 }
 
-void
-SubexpBuffer::appl(string var, bool do_protect, string func, int argc, ...)
+void SubexpBuffer::appl(string var, bool do_protect, string func, int argc, ...)
 {
   va_list param_pt;
   string stmt;
@@ -243,14 +240,6 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho) {
     if (e == R_MissingArg) {
       return Expression("R_MissingArg", FALSE, FALSE, "");
     } else {
-      if (global_formals != NULL && rho != "R_GlobalEnv") {
-	int i;
-	for(i=0; i<global_formals_len; i++) {
-	  if (string(CHAR(PRINTNAME(e))) == global_formals[i]) {
-	    return Expression("arg" + i_to_s(i), TRUE, FALSE, "");
-	  }
-	}
-      }
       sym = make_symbol(e);
       string v = appl2("findVar", sym, rho);
       out = Expression(v, TRUE, TRUE, unp(v));
@@ -602,7 +591,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     } else { // not yet defined
       // direct version
       if (rho != "R_GlobalEnv") {
-	cerr << "Note: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
+	cerr << "Warning: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
       } else {
 	global_c_return = TRUE;
 	global_fundefs.defs += 
@@ -1646,6 +1635,7 @@ string make_type(int t) {
   }
 }
 
+/***
 string make_fundef(string func_name, SEXP args, SEXP code) {
   int i;
   string f, header;
@@ -1708,6 +1698,8 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   return f;
 }
 
+***/
+
 /* Make a function where the arguments of the R function are packed in
  * a list to form a single f-function argument, as opposed to
  * make_fundef where the mapping is one-to-one. This version is used
@@ -1719,13 +1711,6 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
-  string * old_formals;
-  int old_formals_len;
-  old_formals = global_formals;
-  old_formals_len = global_formals_len;
-  global_formals = NULL;
-  global_formals_len = 0;
-  //out_subexps.encl_fn = this_buf;
   header = "SEXP " + func_name + "(";
   header += "SEXP full_args)";
   global_fundefs.decls += header + ";\n";
@@ -1767,8 +1752,6 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
   f += indent("return out;\n");
   f += "}\n";
   //vis_map[func_name] = outblock.is_visible;
-  global_formals = old_formals;
-  global_formals_len = old_formals_len;
   return f;
 }
 
@@ -1777,13 +1760,6 @@ string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP ar
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
-  string * old_formals;
-  int old_formals_len;
-  old_formals = global_formals;
-  old_formals_len = global_formals_len;
-  global_formals = NULL;
-  global_formals_len = 0;
-  //out_subexps.encl_fn = this_buf;
   header = "SEXP " + func_name + "(";
   header += "SEXP args)";
   global_fundefs.decls += header + ";\n";
@@ -1809,8 +1785,6 @@ string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP ar
   f += indent("return out;\n");
   f += "}\n";
   //vis_map[func_name] = outblock.is_visible;
-  global_formals = old_formals;
-  global_formals_len = old_formals_len;
   return f;
 }
 
@@ -1858,7 +1832,9 @@ string c_to_s(Rcomplex c) {
   return "mk_complex(" + d_to_s(c.r) + "," + d_to_s(c.i) + ")";
 }
 
-/* Escape "'s, \'s and \n's to represent a string in C code. */
+/* Escape "'s, \'s and \n's to turn a string into its representation
+ * in C code.
+ */
 string escape(string str) {
   unsigned int i;
   string out = "";
@@ -1976,7 +1952,4 @@ void err(string message) {
   exit(1);
 }
 
-void printstr(string str) {
-  cerr << str << endl;
-}
 

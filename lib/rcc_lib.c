@@ -63,7 +63,6 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   }
   else if (length(x) == 0) {
     if (length(y) == 0) {
-      UNPROTECT(1);
       return(x);
     }
     else {

@@ -77,7 +77,8 @@ AC_CONFIG_FILES([Makefile
 		 R-patches/Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
-		 tests/performance/Makefile])
+		 tests/performance/Makefile
+		 tests/hand-opt/Makefile])
 
 AC_CONFIG_FILES([tests/regression/run-test],
                 [chmod +x tests/regression/run-test])

@@ -1,1 +1,1 @@
-SUBDIRS = regression performance
+SUBDIRS = regression performance hand-opt
