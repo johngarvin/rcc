@@ -16,18 +16,20 @@ AC_PROG_RANLIB
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
-                                                                                
+AC_HEADER_STDBOOL
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h sys/file.h])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
-                                                                                
+
 # Checks for library functions.
-AC_FUNC_MALLOC
+#AC_FUNC_MALLOC
 #AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror])
-                                                                                
+AC_FUNC_ALLOCA
+AC_FUNC_ERROR_AT_LINE
+AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
 
 AC_ARG_WITH(R-sources,
 	    [ --with-R-sources=DIR  Prefix of R source tree],
