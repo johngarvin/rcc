@@ -2,7 +2,7 @@ CC=cc
 CXX=cxx
 LD=cxx
 R=/scratch/garvin/R-1.6.2
-CPPFLAGS=-g2 -I$(R)/src/include -I. -D__USE_STD_IOSTREAM
+CPPFLAGS=-g3 -fast -I$(R)/src/include -I. -D__USE_STD_IOSTREAM
 LDFLAGS= -L$(R)/bin -lR
 
 .SECONDARY:  # don't delete intermediate .c files

@@ -12,8 +12,10 @@ all: $(TARGS)
 
 rcc: rcc.o get_name.o
 
-tests/test%.so: tests/test%.c rcc_lib.o
-	$(CC) $(CPPFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o $< -o $@
+rcc.o: rcc.cc rcc.h
+
+tests/test%.so: tests/test%.c rcc_lib.o replacements.o
+	$(CC) $(CPPFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o replacements.o $< -o $@
 
 tests/test%.c: tests/test%.r rcc 
 	./rcc $<
