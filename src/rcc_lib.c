@@ -4,12 +4,13 @@
 void my_init_memory(SEXP mem, int n) {
   int i;
   for (i = 0; i < n; i++) {
+    (mem+1)->sxpinfo.gp = 0;
     CDR(mem+i) = (i == 0 ? R_NilValue : &mem[i-1]);
     TYPEOF(mem+i) = LISTSXP;
     ATTRIB(mem+i) = R_NilValue;
     TAG(mem+i) = R_NilValue;
     MARK(mem+i) = 0;
-    //    failed attempts to fool the GC into not taking
+    //    fool the GC into not taking
     //    self-allocated memory when its children are R-allocated in
     //    old_to_new situations
     mem[i].gengc_next_node = NULL;

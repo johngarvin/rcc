@@ -338,6 +338,7 @@ string make_symbol(SEXP e);
 string make_type(int t);
 string make_fundef(string func_name, SEXP args, SEXP code);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
+string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string indent(string str);
 string i_to_s(int i);
 string d_to_s(double d);

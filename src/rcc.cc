@@ -24,7 +24,7 @@
 #include "rcc.h"
 
 // Settings to change how rcc works
-static const bool global_self_allocate = TRUE;
+static const bool global_self_allocate = FALSE;
 
 static bool global_c_return = FALSE;
 static bool global_ok = TRUE;
@@ -328,14 +328,10 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     if (is_special(r_sym)) {
       //direct function call
       string func = make_c_func(r_sym);
-      Expression args = op_list(CDR(e), rho, FALSE);
-      string env_args = appl2("cons", rho, args.var);
+      Expression args = op_list(CDR(e), rho, FALSE); // not local; used for env
+      string call = appl1(func, args.var);
       del(args);
-      string c_args = appl2("lcons", "R_NilValue", env_args);
-      defs += unp(env_args);
-      string call = appl1(func, c_args);
-      defs += unp(c_args);
-      return Expression(call, TRUE, TRUE, unp(call));	  
+      return Expression(call, TRUE, TRUE, unp(call));
     } else { // not special; call via closure
       op = findVar(CAR(e), R_GlobalEnv);
       if (op == R_UnboundValue) {    // user-defined function
@@ -534,15 +530,11 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
   Expression value;
   switch(Rf_length(e)) {
   case 0:
-    defs += "UNPROTECT_PTR(env);\n";
-    defs += "UNPROTECT_PTR(args);\n";
     defs += "UNPROTECT_PTR(newenv);\n";
     defs += "return R_NilValue;\n";
     break;
   case 1:
     value = op_exp(CAR(e), rho);
-    defs += "UNPROTECT_PTR(env);\n";
-    defs += "UNPROTECT_PTR(args);\n";
     defs += "UNPROTECT_PTR(newenv);\n";
     del(value);
     defs += "return " + value.var + ";\n";
@@ -557,8 +549,6 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
       exp = CDR(exp);
     }
     value = op_list(e, rho, FALSE);
-    defs += "UNPROTECT_PTR(env);\n";
-    defs += "UNPROTECT_PTR(args);\n";
     defs += "UNPROTECT_PTR(newenv);\n";
     del(value);
     defs += "return " + value.var + ";\n";
@@ -578,12 +568,16 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
       return Expression(closure_name, FALSE, FALSE, "");
     } else { // not yet defined
       // direct version
-      global_c_return = TRUE;
-      global_fundefs.defs += make_fundef_argslist(this,
-						  make_c_func(opt_R_name),
-						  CAR(e),
-						  CADR(e));
-      global_c_return = FALSE;
+      if (rho != "R_GlobalEnv") {
+	cerr << "Note: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call";
+      } else {
+	global_c_return = TRUE;
+	global_fundefs.defs += make_fundef_argslist_c(this,
+						      make_c_func(opt_R_name),
+						      CAR(e),
+						      CADR(e));
+	global_c_return = FALSE;
+      }
       // continue to closure version
     }
   }
@@ -633,7 +627,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     SEXP fun = CAR(CADR(e));
     Expression args;
     if (TYPEOF(INTERNAL(fun)) == BUILTINSXP) {
-      args = op_list(CDR(CADR(e)), rho, FALSE);
+      args = op_list_local(CDR(CADR(e)), rho, FALSE);
     } else {
       args = op_exp(CDR(CADR(e)), rho);
     }
@@ -696,7 +690,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
       return Expression(name, TRUE, FALSE, "");
     } else if (isLanguage(CADR(e))) {
       Expression func = op_exp(op, rho);
-      Expression args = op_literal(CDR(e), rho);
+      Expression args = op_list_local(CDR(e), rho);
       out = appl4("do_set",
 		  "R_NilValue",
 		  func.var,
@@ -1615,7 +1609,6 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
   f += indent("RCNTXT context;\n");
   Expression formals = env_subexps.op_symlist(args, "env");
   string actuals = "args";
-  //  int env_nprot = env_subexps.get_n_prot() + 3;
   env_subexps.output_ip();
   f += indent(env_subexps.decls);
   f += indent("PROTECT(env = CADR(full_args));\n");
@@ -1626,29 +1619,62 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
 		     + indent(formals.var) + ",\n"
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
-  if (global_c_return) {
-    Expression outblock = out_subexps.op_exp(code, "newenv");
-    f += indent("{\n");
-    f += indent(indent(out_subexps.output()));
-    f += indent(indent("PROTECT(out = " + outblock.var + ");\n"));
-    f += indent(indent(outblock.del_text));
-    f += indent("}\n");
-  } else {
-    f += indent("if (SETJMP(context.cjmpbuf)) {\n");
-    f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
-    f += indent("} else {\n");
-    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
-    Expression outblock = out_subexps.op_exp(code, "newenv");
-    f += indent(indent("{\n"));
-    f += indent(indent(indent(out_subexps.output())));
-    f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
-    f += indent(indent(indent(outblock.del_text)));
-    f += indent(indent("}\n"));
-    f += indent(indent("endcontext(&context);\n"));
-    f += indent("}\n");
-  }
+  f += indent("if (SETJMP(context.cjmpbuf)) {\n");
+  f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
+  f += indent("} else {\n");
+  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue);\n"));
+  Expression outblock = out_subexps.op_exp(code, "newenv");
+  f += indent(indent("{\n"));
+  f += indent(indent(indent(out_subexps.output())));
+  f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
+  f += indent(indent(indent(outblock.del_text)));
+  f += indent(indent("}\n"));
+  f += indent(indent("endcontext(&context);\n"));
+  f += indent("}     \n");
   f += indent(unp("env"));
   f += indent(unp("args"));
+  f += indent(unp("newenv"));
+  f += indent(formals.del_text);
+  f += indent(unp("out"));
+  f += indent("return out;\n");
+  f += "}\n";
+  //vis_map[func_name] = outblock.is_visible;
+  global_formals = old_formals;
+  global_formals_len = old_formals_len;
+  return f;
+}
+
+/* Like make_fundef_arglist but for directly-called functions. */
+string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+  string f, header;
+  SubexpBuffer out_subexps;
+  SubexpBuffer env_subexps;
+  string * old_formals;
+  int old_formals_len;
+  old_formals = global_formals;
+  old_formals_len = global_formals_len;
+  global_formals = NULL;
+  global_formals_len = 0;
+  //out_subexps.encl_fn = this_buf;
+  header = "SEXP " + func_name + "(";
+  header += "SEXP args)";
+  global_fundefs.decls += header + ";\n";
+  f += header + " {\n";
+  f += indent("SEXP newenv;\n");
+  f += indent("SEXP out;\n");
+  Expression formals = env_subexps.op_symlist(args, "R_GlobalEnv");
+  f += env_subexps.output();
+  f += indent("PROTECT(newenv =\n");
+  f += indent(indent("Rf_NewEnvironment(\n"
+		     + indent(formals.var) + ",\n"
+		     + indent("args") + ",\n"
+		     + indent("R_GlobalEnv") + "));\n"));
+  Expression outblock = out_subexps.op_exp(code, "newenv");
+  f += indent("{\n");
+  f += indent(indent(out_subexps.output()));
+  f += indent(indent("PROTECT(out = " + outblock.var + ");\n"));
+  f += indent(indent(outblock.del_text));
+  f += indent("}\n");
   f += indent(unp("newenv"));
   f += indent(formals.del_text);
   f += indent(unp("out"));

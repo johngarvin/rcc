@@ -37,3 +37,9 @@ tests/distn.so: tests/distn.c rcc_lib.o
 
 tests/distn.c: tests/distn.r rcc
 	./rcc tests/distn.r
+
+../bigsim/%.so: ../bigsim/%.c rcc_lib.o replacements.o
+	$(CC) $(CPPFLAGS) $(HI_OPTFLAGS) $(LDFLAGS) -fpic -shared rcc_lib.o replacements.o $< -o $@
+
+../bigsim/%.c: ../bigsim/%.r rcc
+	./rcc $<

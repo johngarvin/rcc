@@ -17,3 +17,4 @@
 ./rcc tests/test28_fundef_scope.r -f f
 ./rcc tests/test29_fib.r -f fib
 ./rcc tests/test30_scoping.r -f foo bar
+./rcc tests/mgg00.r -f rnorm sim.ss.fun
