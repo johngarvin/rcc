@@ -24,7 +24,7 @@
 #include "rcc.h"
 
 // Settings to change how rcc works
-static const bool global_self_allocate = FALSE;
+static bool global_self_allocate = FALSE;
 static bool global_c_return = FALSE;
 
 static bool global_ok = TRUE;
@@ -1441,42 +1441,74 @@ SubexpBuffer SubexpBuffer::new_sb(string pref) {
 int main(int argc, char *argv[]) {
   unsigned int i, num_exps;
   list<SEXP> e;
+  char *fullname_c;
   string fullname, libname, out_filename, path, exprs;
-  if (argc < 2) {
-    arg_err();
+  bool in_file_exists, out_file_exists = FALSE;
+
+  // for getopt
+  int c;
+  extern char *optarg;
+  extern int optind, opterr, optopt;
+
+  while(1) {
+    c = getopt(argc, argv, "f:lo:");
+    if (c == -1) {
+      break;
+    }
+    switch(c) {
+    case 'f':
+      special_funcs.push_back(string(optarg));
+      break;
+    case 'l':
+      global_self_allocate = TRUE;
+      break;
+    case 'o':
+      out_file_exists = TRUE;
+      out_filename = string(optarg);
+      break;
+    case '?':
+      arg_err();
+      break;
+    case ':':
+      arg_err();
+      break;
+    default:
+      err("Unknown error: getopt() returned " + i_to_s(c) + "\n");
+      break;
+    }
   }
 
-  // First arg is input filename
-  if (strcmp(argv[1], "--") == 0) {
-    num_exps = parse_R(e, NULL);
-    libname = "R_output";
-  } else {
-    num_exps = parse_R(e, argv[1]);
-    fullname = string(argv[1]);
+  if (optind < argc) {
+    in_file_exists = TRUE;
+    fullname_c = argv[optind++];
+    if (optind < argc) {
+      printf("Warning: ignoring extra arguments: ");
+      while (optind < argc) {
+	printf("%s ", argv[optind++]);
+      }
+      printf("\n");
+    }
+  } else {  // no filename specified
+    in_file_exists = FALSE;
+  }
+
+  if (in_file_exists) {
+    num_exps = parse_R(e, fullname_c);
+    fullname = string(fullname_c);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
     string filename = fullname.substr(pos, fullname.size() - pos);
     libname = make_c_id(strip_suffix(filename));
     // Lib name must be alphanumerical to be part of R_init_<library>
     // function (explained below)
+  } else {
+    num_exps = parse_R(e, NULL);
+    libname = "R_output";
+    path = "";
   }
 
-  if (argc == 2) {
+  if (!out_file_exists) {
     out_filename = path + libname + ".c";
-  } else if (argc == 3) {
-    out_filename = string(argv[2]);
-  } else {
-    if (strcmp(argv[2], "-f") == 0) {
-      out_filename = path + libname + ".c";
-      set_funcs(argc-3, &argv[3]);
-    } else {
-      out_filename = string(argv[2]);
-      if (strcmp(argv[3], "-f") == 0) {
-	set_funcs(argc-4, &argv[4]);
-      } else {
-	arg_err();
-      }
-    }
   }
 
   global_fundefs = *(new SubexpBuffer(libname + "_f", TRUE));
@@ -1554,7 +1586,7 @@ int main(int argc, char *argv[]) {
 }
 
 void arg_err() {
-  cerr << "Usage: rcc file [output-file] [-f function-name ...]\n";
+  cerr << "Usage: rcc [input-file] [-l] [-o output-file] [-f function-name]*\n";
   exit(1);
 }
 

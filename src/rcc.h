@@ -30,7 +30,6 @@
 #include <map>
 #include <list>
 #include <string>
-#include <stdarg.h>
 
 using namespace std;
 
@@ -38,6 +37,8 @@ extern "C" {
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <IOStuff.h>
 #include <Parse.h>
