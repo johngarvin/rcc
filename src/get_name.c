@@ -23,7 +23,7 @@
 #include <IOStuff.h>
 #include <Parse.h>
 #include <Defn.h>
-#include <arithmetic.h>
+#include <main/arithmetic.h>
 #include <R_ext/RConverters.h>
 #include "get_name.h"
 
