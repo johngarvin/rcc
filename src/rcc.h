@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2003 John Garvin 
  *
  * July 11, 2003 
@@ -24,10 +23,7 @@
 
 #define __USE_STD_IOSTREAM
 
-#include <iostream>
-#include <sstream>
 #include <fstream>
-#include <map>
 #include <list>
 #include <string>
 
@@ -40,7 +36,13 @@ extern "C" {
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/file.h>
-#include <IOStuff.h>
+
+// Why isn't this handled in IOStuff.h?
+#ifndef R_IOSTUFF_H
+#  define R_IOSTUFF_H
+#  include <IOStuff.h>
+#endif
+
 #include <Parse.h>
 #include <alloca.h>
 #include "get_name.h"
@@ -53,22 +55,12 @@ extern "C" {
 extern int Rf_initialize_R(int argc, char **argv);
 extern void setup_Rmainloop(void);
 
-}
+} //extern "C"
+
+#include "util.h"
+#include "R_parser.h"
 
 bool is_special(string func);
-string make_symbol(SEXP e);
-string make_type(int t);
-string indent(string str);
-string i_to_s(const int i);
-string d_to_s(double d);
-string c_to_s(Rcomplex c);
-string escape(string str);
-string quote(string str);
-string unp(string str);
-string strip_suffix(string str);
-int filename_pos(string str);
-int parse_R(list<SEXP> & e, char *inFile);
-void err(string message);
 
 /* VarRef: reference to an allocated variable inside a string: its
  * name, location, and length of the list it represents.
@@ -140,7 +132,9 @@ class AllocList {
     return ls;
   }
 };
-  
+
+/***
+
 // Sorted sequence of the lengths of lists currently allocated
 class SortedIntList {
 private:
@@ -196,6 +190,8 @@ public:
   }
 };
 
+***/
+
 /* Expression is a struct returned by the op_ functions representing a
  * subexpression in the output.
  *
@@ -227,57 +223,169 @@ struct Expression {
 
 class SubexpBuffer {
 protected:
-  string prefix;
-  static unsigned int n;
+  const string prefix;
+  static unsigned int n;  // see also definition immediately
+			  // following class definition
   unsigned int prot;
   AllocList alloc_list;
 public:
   SubexpBuffer * encl_fn;
   bool has_i;
-  bool is_const;
+  const bool is_const;
   string decls;
   string defs;
-  virtual string new_var();
-  virtual string new_var_unp();
-  virtual string new_var_unp_name(string name);
-  int get_n_vars();
-  int get_n_prot();
-  string protect_str (string str);	// Wrap str in a PROTECT() and incr prot
-  string new_sexp();
-  string new_sexp_unp();
-  string new_sexp_unp_name(string name);
-  void appl(string var, bool do_protect, string func, int argc, ...);
-  string appl1(string func, string arg);
-  string appl1_unp(string func, string arg);
-  string appl2(string func, string arg1, string arg2);
-  string appl2_unp(string func, string arg1, string arg2);
-  string appl3(string func, string arg1, string arg2, string arg3);
-  string appl3_unp(string func, string arg1, string arg2, string arg3);
+  virtual string new_var() {
+    prot++;
+    return new_var_unp();
+  }
+  virtual string new_var_unp() {
+    return prefix + i_to_s(SubexpBuffer::n++);
+  }
+  virtual string new_var_unp_name(string name) {
+    return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
+  }
+  int get_n_vars() { return n; }
+  int get_n_prot() { return prot; }
+  string new_sexp() {
+    string str = new_var();
+    if (is_const) {
+      decls += "static SEXP " + str + ";\n";
+    } else {
+      decls += "SEXP " + str + ";\n";
+    }
+    return str;
+  }
+  string new_sexp_unp() {
+    string str = new_var_unp();
+    if (is_const) {
+      decls += "static SEXP " + str + ";\n";
+    } else {
+      decls += "SEXP " + str + ";\n";
+    }
+    return str;
+  }
+  string new_sexp_unp_name(string name) {
+    string str = new_var_unp_name(name);
+    if (is_const) {
+      decls += "static SEXP " + str + ";\n";
+    } else {
+      decls += "SEXP " + str + ";\n";
+    }
+    return str;
+  }
+
+  string protect_str (string str) {
+    prot++;
+    return "PROTECT(" + str + ")";
+  }
+
+  void appl(string var, bool do_protect, string func, int argc, ...) {
+    va_list param_pt;
+    string stmt;
+    
+    stmt = var + " = " + func + "(";
+    va_start (param_pt, argc);
+    for (int i = 0; i < argc; i++) {
+      if (i > 0) stmt += ", ";
+      stmt += *va_arg(param_pt, string *);
+    }
+    stmt += ")";
+    if (do_protect) {
+      defs += protect_str(stmt) + ";\n";
+    }
+    else
+      defs += stmt + ";\n";
+  }
+
+  /* Convenient macro-like things for outputting function applications */
+  
+  string appl1(string func, string arg) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 1, &arg);
+    return var;
+  }
+  
+  string appl1_unp(string func, string arg) {
+    string var = new_sexp_unp();
+    appl (var, FALSE, func, 1, &arg);
+    return var;
+  }
+  
+  string appl2(string func, string arg1, string arg2) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 2, &arg1, &arg2);
+    return var;
+  }
+  
+  string appl2_unp(string func, string arg1, string arg2) {
+    string var = new_sexp_unp();
+    appl (var, FALSE, func, 2, &arg1, &arg2);
+    return var;
+  }
+  
+  string appl3(string func, string arg1, string arg2, string arg3) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
+    return var;
+  }
+
+  string appl3_unp(string func, string arg1, string arg2, string arg3) {
+    string var = new_sexp_unp();
+    appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
+    return var;
+  }
+
   string appl4(string func,
-	       string arg1,
-	       string arg2,
-	       string arg3,
-	       string arg4);
+               string arg1, 
+	       string arg2, 
+	       string arg3, 
+	       string arg4) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
+    return var;
+  }
+  
   string appl5(string func,
+               string arg1, 
+	       string arg2, 
+	       string arg3, 
+	       string arg4,
+	       string arg5) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+    return var;
+  }
+
+  string appl5_unp(string func, 
+		   string arg1, 
+		   string arg2, 
+		   string arg3, 
+		   string arg4,
+		   string arg5) {
+    string var = new_sexp_unp();
+    appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+    return var;
+  }
+  
+  string appl6(string func,
 	       string arg1,
 	       string arg2,
 	       string arg3,
 	       string arg4,
-	       string arg5);
-  string appl5_unp(string func,
-		   string arg1,
-		   string arg2,
-		   string arg3,
-		   string arg4,
-		   string arg5);
-  string appl6(string func,
-	       string appl1,
-	       string appl2,
-	       string appl3,
-	       string appl4,
-	       string appl5,
-	       string appl6);
-  void del(Expression exp);
+	       string arg5,
+	       string arg6) {
+    string var = new_sexp_unp();
+    appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
+    return var;
+  }
+
+  void del(Expression exp) {
+    defs += exp.del_text;
+    if (exp.is_alloc) {
+      alloc_list.remove(exp.var);
+    }
+  }
+
   Expression op_exp(SEXP e, string rho);
   Expression op_primsxp(SEXP e, string rho);
   Expression op_symlist(SEXP e, string rho);
@@ -305,18 +413,28 @@ public:
   Expression op_vector(SEXP e);
   string output();
   void output_ip();
-  SubexpBuffer new_sb();
-  SubexpBuffer new_sb(string pref);
+  SubexpBuffer new_sb() {
+    SubexpBuffer new_sb;
+    new_sb.encl_fn = encl_fn;
+    return new_sb;
+  }
+  SubexpBuffer new_sb(string pref) {
+    SubexpBuffer new_sb(pref);
+    new_sb.encl_fn = encl_fn;
+    return new_sb;
+  }
   SubexpBuffer(string pref = "v", bool is_c = FALSE)
     : prefix(pref), is_const(is_c) {
     has_i = FALSE;
-    is_const = is_c;
     prot = 0;
     decls = defs = "";
     encl_fn = this;
   }
   virtual ~SubexpBuffer() {};
+  SubexpBuffer &operator=(SubexpBuffer &sb) { return sb; }
 };
+
+unsigned int SubexpBuffer::n;
 
 /* Huge functions are hard on compilers like gcc. To generate code
  * that goes down easy, we split up the constant initialization into
@@ -329,25 +447,31 @@ private:
   unsigned int init_fns;
 public:
   static SplitSubexpBuffer global_constants;
-  unsigned int get_n_inits();
-  string get_init_str();
-  virtual string new_var();
-  virtual string new_var_unp();
-  virtual string new_var_unp_name(string name);
+  unsigned int get_n_inits() { return init_fns; }
+  string get_init_str() { return init_str; }
+  virtual string new_var() { prot++; return new_var_unp(); }
+  virtual string new_var_unp() {
+    if ((SubexpBuffer::n % threshold) == 0) {
+      if (is_const) decls += "static ";
+      decls += "void " + init_str + i_to_s(init_fns) + "();\n";
+      if (SubexpBuffer::n != 0) defs += "}\n";
+      if (is_const) defs += "static ";
+      defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
+      init_fns++;
+    }
+    return prefix + i_to_s(SubexpBuffer::n++);
+  }
+  virtual string new_var_unp_name(string name) {
+    return new_var_unp() + "_" + make_c_id(name);
+  }
   SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 300, string is = "init")
     : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;
   }
 };
 
-void arg_err();
-void set_funcs(int argc, char *argv[]);
-string make_symbol(SEXP e);
+static void arg_err();
+static void set_funcs(int argc, char *argv[]);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
-string indent(string str);
-string i_to_s(const int i);
-string d_to_s(double d);
-string c_to_s(Rcomplex c);
-string make_c_id(string s);
-
+string make_symbol(SEXP e);

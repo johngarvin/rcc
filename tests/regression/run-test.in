@@ -2,7 +2,7 @@
 # @configure_input@
 trap 'echo "Testing halted" ; exit' SIGINT
 export PATH=@R_PREFIX@/lib/R/bin:$PATH
-export LD_LIBRARY_PATH=@R_PREFIX@/bin:@top_builddir@/lib/.libs
+export LD_LIBRARY_PATH=@R_PREFIX@/lib/R/bin:@top_builddir@/lib/.libs
 if [[ $1 == "" ]] ; then
   TEST=`echo *.r`
   make ${TEST//\.r/.so}                                   \

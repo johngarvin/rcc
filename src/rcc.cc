@@ -1,4 +1,4 @@
-/* Copyright (c) 2003 John Garvin 
+/* Copyright (c) 2003-2004 John Garvin 
  *
  * July 11, 2003 
  *
@@ -36,7 +36,7 @@ static map<int, string> sc_logical_map;
 static map<int, string> sc_integer_map;
 static map<int, string> primsxp_map;
 static map<string, bool> vis_map;
-static list<string> special_funcs;
+static list<string> direct_funcs;
 static SubexpBuffer global_fundefs;
 static SplitSubexpBuffer global_constants("c", TRUE);
 static SubexpBuffer global_labels("l");
@@ -45,175 +45,12 @@ static Expression nil_exp = Expression("R_NilValue", FALSE, FALSE, "");
 
 // Returns true if the given string represents a function specified
 // for direct calling.
-bool is_special(string func) {
+bool is_direct(string func) {
   list<string>::iterator i;
-  for(i=special_funcs.begin(); i!=special_funcs.end(); i++) {
+  for(i=direct_funcs.begin(); i!=direct_funcs.end(); i++) {
     if (*i == func) return TRUE;
   }
   return FALSE;
-}
-
-unsigned int SubexpBuffer::n;
-
-string SubexpBuffer::new_var() {
-  prot++;
-  return new_var_unp();
-}
-string SubexpBuffer::new_var_unp() {
-  return prefix + i_to_s(SubexpBuffer::n++);
-}
-string SubexpBuffer::new_var_unp_name(string name) {
-  return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
-}
-int SubexpBuffer::get_n_vars() {
-  return SubexpBuffer::n;
-}
-int SubexpBuffer::get_n_prot() {
-  return prot;
-}
-string SubexpBuffer::new_sexp() {
-  string str = new_var();
-  if (is_const) {
-    decls += "static SEXP " + str + ";\n";
-  } else {
-    decls += "SEXP " + str + ";\n";
-  }
-  return str;
-}
-string SubexpBuffer::new_sexp_unp() {
-  string str = new_var_unp();
-  if (is_const) {
-    decls += "static SEXP " + str + ";\n";
-  } else {
-    decls += "SEXP " + str + ";\n";
-  }
-  return str;
-}
-string SubexpBuffer::new_sexp_unp_name(string name) {
-  string str = new_var_unp_name(name);
-  if (is_const) {
-    decls += "static SEXP " + str + ";\n";
-  } else {
-    decls += "SEXP " + str + ";\n";
-  }
-  return str;
-}
-
-string SubexpBuffer::protect_str (string str)
-{
-    prot++;
-    return "PROTECT(" + str + ")";
-}
-
-void SubexpBuffer::appl(string var, bool do_protect, string func, int argc, ...)
-{
-  va_list param_pt;
-  string stmt;
-
-  stmt = var + " = " + func + "(";
-  va_start (param_pt, argc);
-  for (int i = 0; i < argc; i++) {
-    if (i > 0) stmt += ", ";
-    stmt += *va_arg(param_pt, string *);
-  }
-  stmt += ")";
-  if (do_protect) {
-    defs += protect_str(stmt) + ";\n";
-  }
-  else
-    defs += stmt + ";\n";
-}
-
-
-/* Convenient macro-like things for outputting function applications */
-
-string SubexpBuffer::appl1(string func, string arg) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 1, &arg);
-  return var;
-}
-
-string SubexpBuffer::appl1_unp(string func, string arg) {
-  string var = new_sexp_unp();
-  appl (var, FALSE, func, 1, &arg);
-  return var;
-}
-  
-string SubexpBuffer::appl2(string func, string arg1, string arg2) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 2, &arg1, &arg2);
-  return var;
-}
-  
-string SubexpBuffer::appl2_unp(string func, string arg1, string arg2) {
-  string var = new_sexp_unp();
-  appl (var, FALSE, func, 2, &arg1, &arg2);
-  return var;
-}
-  
-string SubexpBuffer::appl3(string func, 
-			   string arg1, string arg2, string arg3) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
-  return var;
-}
-
-string SubexpBuffer::appl3_unp(string func,
-			       string arg1, string arg2, string arg3) {
-  string var = new_sexp_unp();
-  appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
-  return var;
-}
-
-string SubexpBuffer::appl4(string func, 
-			   string arg1, 
-			   string arg2, 
-			   string arg3, 
-			   string arg4) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
-  return var;
-}
-  
-string SubexpBuffer::appl5(string func, 
-			   string arg1, 
-			   string arg2, 
-			   string arg3, 
-			   string arg4,
-			   string arg5) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
-  return var;
-}
-
-string SubexpBuffer::appl5_unp(string func, 
-			       string arg1, 
-			       string arg2, 
-			       string arg3, 
-			       string arg4,
-			       string arg5) {
-  string var = new_sexp_unp();
-  appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
-  return var;
-}
-  
-string SubexpBuffer::appl6(string func,
-			   string arg1,
-			   string arg2,
-			   string arg3,
-			   string arg4,
-			   string arg5,
-			   string arg6) {
-  string var = new_sexp_unp();
-  appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
-  return var;
-}
-
-void SubexpBuffer::del(Expression exp) {
-  defs += exp.del_text;
-  if (exp.is_alloc) {
-    alloc_list.remove(exp.var);
-  }
 }
 
 Expression SubexpBuffer::op_exp(SEXP e, string rho) {
@@ -345,14 +182,14 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
   Expression exp;
   if (TYPEOF(CAR(e)) == SYMSXP) {
     string r_sym = CHAR(PRINTNAME(CAR(e)));
-    if (is_special(r_sym)) {
+    if (is_direct(r_sym)) {
       //direct function call
       string func = make_c_id(r_sym) + "_direct";
       Expression args = op_list(CDR(e), rho, FALSE); // not local; used for env
       string call = appl1(func, args.var);
       del(args);
       return Expression(call, TRUE, TRUE, unp(call));
-    } else { // not special; call via closure
+    } else { // not direct; call via closure
       op = findVar(CAR(e), R_GlobalEnv);
       if (op == R_UnboundValue) {    // user-defined function
 	string func = appl2("findFun",
@@ -366,15 +203,31 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
 	  return op_special(e, op, rho);
 	} else if (TYPEOF(op) == BUILTINSXP) {
 	  Expression op1 = op_exp(op, rho);
-	  //Expression args1 = op_exp(CDR(e), rho);
-	  Expression args1 = op_list_local(CDR(e), rho, FALSE);
-	  out = appl4(get_name(PRIMOFFSET(op)),
-		      "R_NilValue ",
-		      op1.var,
-		      args1.var,
-		      rho);
+	  SEXP args = CDR(e);
+	  // special case for arithmetic operations
+	  if (PRIMFUN(op) == (SEXP (*)())do_arith) {
+	    if (args != R_NilValue && CDR(args) == R_NilValue && !isObject(CAR(args))) { // one argument, non-object
+	      Expression x = op_exp(CAR(args), rho);
+	      out = appl3("R_unary", "R_NilValue", op1.var, x.var);
+	      del(x);
+	    } else if (CDDR(args) == R_NilValue && 
+		       !isObject(CAR(args)) && !isObject(CADR(args))) { // two args; neither are objects
+	      Expression x = op_exp(CAR(args), rho);
+	      Expression y = op_exp(CADR(args), rho);
+	      out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var);
+	      del(x);
+	      del(y);
+	    }
+	  } else {
+	    Expression args1 = op_list_local(args, rho, FALSE);
+	    out = appl4(get_name(PRIMOFFSET(op)),
+			"R_NilValue ",
+			op1.var,
+			args1.var,
+			rho);
+	    del(args1);
+	  }
 	  del(op1);
-	  del(args1);
 	  return Expression(out, TRUE, 1 - PRIMPRINT(op), unp(out));
 	} else if (TYPEOF(op) == CLOSXP) {
 	  Expression op1;
@@ -581,9 +434,9 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
 
 Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 				   string opt_R_name /* = "" */) {
-  bool special = FALSE;
-  if (!opt_R_name.empty() && is_special(opt_R_name)) {
-    special = TRUE;
+  bool direct = FALSE;
+  if (!opt_R_name.empty() && is_direct(opt_R_name)) {
+    direct = TRUE;
     // make function to be called directly
     if (func_map.find(opt_R_name) != func_map.end()) { // defined already
       string closure_name = func_map.find(opt_R_name)->second;
@@ -627,7 +480,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     global_constants.defs += "setAttrib(" + r_form
           + ", install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n";
     global_constants.del(formals);
-    if (special) func_map.insert(pair<string,string>(opt_R_name, c_clos));
+    if (direct) func_map.insert(pair<string,string>(opt_R_name, c_clos));
     return Expression(r_form, FALSE, FALSE, "");
   } else {
     Expression r_args = op_literal(CAR(e), rho);
@@ -1347,44 +1200,6 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   }
 }
 
-/* Huge functions are hard on compilers like gcc. To generate code
- * that goes down easy, we split up the constant initialization into
- * several functions.
- */
-unsigned int SplitSubexpBuffer::get_n_inits() {
-  return init_fns;
-}
-string SplitSubexpBuffer::get_init_str() {
-  return init_str;
-}
-string SplitSubexpBuffer::new_var() {
-  prot++;
-  return new_var_unp();
-}
-string SplitSubexpBuffer::new_var_unp() {
-  if ((n % threshold) == 0) {
-    if (is_const) decls += "static ";
-    decls += "void " + init_str + i_to_s(init_fns) + "();\n";
-    if (n != 0) defs += "}\n";
-    if (is_const) defs += "static ";
-    defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
-    init_fns++;
-  }
-  return prefix + i_to_s(n++);
-}
-string SplitSubexpBuffer::new_var_unp_name(string name) {
-  if ((n % threshold) == 0) {
-    if (is_const) decls += "static ";
-    decls += "void " + init_str + i_to_s(init_fns) + "();\n";
-    if (n != 0) defs += "}\n";
-    if (is_const) defs += "static ";
-    defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
-    init_fns++;
-  }
-  return prefix + i_to_s(n++) + "_" + make_c_id(name);
-}
-
-
 string SubexpBuffer::output() {
   string out;
   output_ip();
@@ -1415,18 +1230,6 @@ void SubexpBuffer::output_ip() {
   }
 }
 
-SubexpBuffer SubexpBuffer::new_sb() {
-  SubexpBuffer new_sb;
-  new_sb.encl_fn = encl_fn;
-  return new_sb;
-}
-
-SubexpBuffer SubexpBuffer::new_sb(string pref) {
-  SubexpBuffer new_sb(pref);
-  new_sb.encl_fn = encl_fn;
-  return new_sb;
-}
-
 int main(int argc, char *argv[]) {
   unsigned int i, num_exps;
   list<SEXP> e;
@@ -1446,7 +1249,7 @@ int main(int argc, char *argv[]) {
     }
     switch(c) {
     case 'f':
-      special_funcs.push_back(string(optarg));
+      direct_funcs.push_back(string(optarg));
       break;
     case 'l':
       global_self_allocate = TRUE;
@@ -1500,7 +1303,10 @@ int main(int argc, char *argv[]) {
     out_filename = path + libname + ".c";
   }
 
-  global_fundefs = *(new SubexpBuffer(libname + "_f", TRUE));
+  SubexpBuffer *fundefs_ptr;
+  fundefs_ptr = new SubexpBuffer(libname + "_f", TRUE);
+  global_fundefs = *fundefs_ptr;
+  delete fundefs_ptr;
 
   /* build expressions */
   global_constants.decls += "static void exec();\n";
@@ -1574,64 +1380,15 @@ int main(int argc, char *argv[]) {
   }
 }
 
-void arg_err() {
+static void arg_err() {
   cerr << "Usage: rcc [input-file] [-l] [-o output-file] [-f function-name]*\n";
   exit(1);
 }
 
-void set_funcs(int argc, char *argv[]) {
+static void set_funcs(int argc, char *argv[]) {
   int i;
   for(i=0; i<argc; i++) {
-    special_funcs.push_back(string(*argv++));
-  }
-}
-
-string make_symbol(SEXP e) {
-  if (e == R_MissingArg) {
-    return "R_MissingArg";
-  } else if (e == R_UnboundValue) {
-    return "R_UnboundValue";
-  } else {
-    string name = string(CHAR(PRINTNAME(e)));
-    map<string,string>::iterator pr = symbol_map.find(name);
-    if (pr == symbol_map.end()) {  // not found
-      string var = global_constants.new_sexp_unp_name(name);
-      string qname = quote(name);
-      global_constants.appl(var, FALSE, "install", 1, &qname);
-      symbol_map.insert(pair<string,string>(name, var));
-      return var;
-    } else {
-      return pr->second;
-    }
-  }
-}
-
-string make_type(int t) {
-  switch(t) {
-  case NILSXP: return "0 /* NILSXP */";
-  case SYMSXP: return "1 /* SYMSXP */";
-  case LISTSXP: return "2 /* LISTSXP */";
-  case CLOSXP: return "3 /* CLOSXP */";
-  case ENVSXP: return "4 /* ENVSXP */";
-  case PROMSXP: return "5 /* PROMSXP */";
-  case LANGSXP: return "6 /* LANGSXP */";
-  case SPECIALSXP: return "7 /* SPECIALSXP */";
-  case BUILTINSXP: return "8 /* BUILTINSXP */";
-  case CHARSXP: return "9 /* CHARSXP */";
-  case LGLSXP: return "10 /* LGLSXP */";
-  case INTSXP: return "13 /* INTSXP */";
-  case REALSXP: return "14 /* REALSXP */";
-  case CPLXSXP: return "15 /* CPLXSXP */";
-  case STRSXP: return "16 /* STRSXP */";
-  case DOTSXP: return "17 /* DOTSXP */";
-  case ANYSXP: return "18 /* ANYSXP */";
-  case VECSXP: return "19 /* VECSXP */";
-  case EXPRSXP: return "20 /* EXPRSXP */";
-  case BCODESXP: return "21 /* BCODESXP */";
-  case EXTPTRSXP: return "22 /* EXTPTRSXP */";
-  case WEAKREFSXP: return "23 /* WEAKREFSXP */";
-  case FUNSXP: return "99 /* FUNSXP */";
-  default: err("make_type: invalid type"); return "BOGUS";
+    direct_funcs.push_back(string(*argv++));
   }
 }
 
@@ -1788,168 +1545,22 @@ string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP ar
   return f;
 }
 
-const string IND_STR = "  ";
-
-string indent(string str) {
-  if (str.empty()) return "";
-  string newstr = IND_STR;   /* Add indentation to beginning */
-  string::iterator it;
-  /* Indent after every newline (unless there's one at the end) */
-  for(it = str.begin(); it != str.end(); it++) {
-    if (*it == '\n' && it != str.end() - 1) {
-      newstr += '\n' + IND_STR;
+string make_symbol(SEXP e) {
+  if (e == R_MissingArg) {
+    return "R_MissingArg";
+  } else if (e == R_UnboundValue) {
+    return "R_UnboundValue";
+  } else {
+    string name = string(CHAR(PRINTNAME(e)));
+    map<string,string>::iterator pr = symbol_map.find(name);
+    if (pr == symbol_map.end()) {  // not found
+      string var = global_constants.new_sexp_unp_name(name);
+      string qname = quote(name);
+      global_constants.appl(var, FALSE, "install", 1, &qname);
+      symbol_map.insert(pair<string,string>(name, var));
+      return var;
     } else {
-      newstr += *it;
+      return pr->second;
     }
   }
-  return newstr;
 }
-
-/* Rrrrrgh. C++: the language that makes the hard things hard and the
- * easy things hard.
- */
-string i_to_s(const int i) {
-  if (i == (int)0x80000000) {
-    return "0x80000000"; /* Doesn't work as a decimal constant */
-  } else {
-    ostringstream ss;
-    ss << i;
-    return ss.str();
-  }
-}
-
-string d_to_s(double d) {
-  if (d == HUGE_VAL) {
-    return "HUGE_VAL";
-  } else {
-    ostringstream ss;
-    ss << d;
-    return ss.str();
-  }
-}
-
-string c_to_s(Rcomplex c) {
-  return "mk_complex(" + d_to_s(c.r) + "," + d_to_s(c.i) + ")";
-}
-
-/* Escape "'s, \'s and \n's to turn a string into its representation
- * in C code.
- */
-string escape(string str) {
-  unsigned int i;
-  string out = "";
-  for(i=0; i<str.size(); i++) {
-    if (str[i] == '\n') {
-      out += "\\n";
-    } else if (str[i] == '"') {
-      out += "\\\"";
-    } else if (str[i] == '\\') {
-      out += "\\\\";
-    } else {
-      out += str[i];
-    }
-  }
-  return out;
-}
-
-/* Make a string suitable for use as a C identifier. Note that, since
- * "." is the only non-alphanumeric character that can appear in R
- * variable names, two different R functions can't translate to the
- * same C name.
- */
-string make_c_id(string str) {
-  string out;
-  unsigned int i;
-  if (!isalpha(str[0])) {
-    out += 'a';
-  }
-  for(i=0; i<str.size(); i++) {
-    if (!isalnum(str[i])) {
-      out += '_';
-    } else {
-      out += str[i];
-    }
-  }
-  return out;
-}
-
-/* Simple function to add quotation marks around a string */
-string quote(string str) {
-  return "\"" + str + "\"";
-}
-
-string unp(string str) {
-  return "UNPROTECT_PTR(" + str + ");\n";
-}
-
-string strip_suffix(string name) {
-  string::size_type pos = name.rfind(".", name.size());
-  if (pos == string::npos) {
-    return name;
-  } else {
-    return name.erase(pos, name.size() - pos);
-  }
-}
-
-int filename_pos(string str) {
-  string::size_type pos = str.rfind("/", str.size());
-  if (pos == string::npos) {
-    return 0;
-  } else {
-    return pos + 1;
-  }
-}
-
-int parse_R(list<SEXP> & e, char *filename) {
-  SEXP exp;
-  ParseStatus status;
-  int num_exps = 0;
-  FILE *inFile;
-  char *myargs[5];
-  myargs[0] = "/home/garvin/research/tel/rcc/rcc";
-  myargs[1] = "--gui=none";
-  myargs[2] = "--slave";
-  myargs[3] = "--vanilla";
-  myargs[4] = NULL;
-  Rf_initialize_R(4,myargs);
-  setup_Rmainloop();
-
-  if (!filename) {
-    inFile = stdin;
-  } else {
-    inFile = fopen(filename, "r");
-  }
-  if (!inFile) {
-    cerr << "Error: input file \"" << filename << "\" not found\n";
-    exit(1);
-  }
-
-  do {
-    /* parse each expression */
-    PROTECT(exp = R_Parse1File(inFile, 1, &status));
-    switch(status) {
-    case PARSE_NULL:
-      break;
-    case PARSE_OK:
-      num_exps++;
-      e.push_back(exp);
-      break;
-    case PARSE_INCOMPLETE:
-      break;
-    case PARSE_ERROR:
-      err("parsing returned PARSE_ERROR.\n");
-      break;
-    case PARSE_EOF:
-      break;
-    }
-  } while (status != PARSE_EOF && status != PARSE_INCOMPLETE);
-  
-  return num_exps;
-}
-
-void err(string message) {
-  cerr << "Error: " << message;
-  exit(1);
-}
-
-
