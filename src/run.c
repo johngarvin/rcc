@@ -37,7 +37,9 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Usage: run <name of .so file>\n");
     exit(1);
   }
+  //Rf_initialize_R(2, myargv);
   Rf_initEmbeddedR(2, myargv);
+
   v0 = PROTECT(mkPRIMSXP(359,0));
   v1 = PROTECT(mkString(argv[1]));
   v2 = PROTECT(ScalarLogical(0));
