@@ -1,0 +1,21 @@
+#!/bin/bash
+if [[ $1 == "" ]] ; then
+  TEST=`echo tests/test*.r`
+  make ${TEST//\.r/.so} &&
+  for i in tests/test*\.so ; do
+    echo --- $i --- ;
+    echo '     - R -'
+    R --vanilla --slave < `echo $i | sed 's/\.so/.r/'` &&
+    echo '     - C -'
+    ./run $i &&
+    true
+  done ;
+else
+  TEST=`echo tests/test$1_*.r`
+  make ${TEST/\.r/.so} &&
+  echo --- R --- ;
+  R --vanilla --slave < tests/test$1_*.r &&
+  echo --- C --- ;
+  ./run tests/test$1_*.so &&
+  true ;
+fi
