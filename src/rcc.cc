@@ -100,104 +100,15 @@ string SubexpBuffer::new_sexp_unp_name(string name) {
   return str;
 }
 
-
-/* Convenient macro-like things for outputting function applications */
-
-string SubexpBuffer::appl1(string func, string arg) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " + func + "(" + arg + "));\n";
-  return var;
-}
-
-string SubexpBuffer::appl1_unp(string func, string arg) {
-  string var = new_sexp_unp();
-  defs += var + " = " + func + "(" + arg + ");\n";
-  return var;
-}
-  
-string SubexpBuffer::appl2(string func, string arg1, string arg2) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + "));\n";
-  return var;
-}
-  
-string SubexpBuffer::appl2_unp(string func, string arg1, string arg2) {
-  string var = new_sexp_unp();
-  defs += var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ");\n";
-  return var;
-}
-  
-string SubexpBuffer::appl3(string func, 
-			   string arg1, string arg2, string arg3) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + "));\n";
-  return var;
-}
-
-string SubexpBuffer::appl3_unp(string func,
-			       string arg1, string arg2, string arg3) {
-  string var = new_sexp_unp();
-  defs += var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ");\n";
-  return var;
-}
-
-string SubexpBuffer::appl4(string func, 
-			   string arg1, 
-			   string arg2, 
-			   string arg3, 
-			   string arg4) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 + "));\n";
-  return var;
-}
-  
-string SubexpBuffer::appl5(string func, 
-			   string arg1, 
-			   string arg2, 
-			   string arg3, 
-			   string arg4,
-			   string arg5) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 
-    + ", " + arg5 + "));\n";
-  return var;
-}
-
-string SubexpBuffer::appl5_unp(string func, 
-			       string arg1, 
-			       string arg2, 
-			       string arg3, 
-			       string arg4,
-			       string arg5) {
-  string var = new_sexp();
-  defs += var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 
-    + ", " + arg5 + ");\n";
-  return var;
-}
-  
-string SubexpBuffer::appl6(string func,
-			   string arg1,
-			   string arg2,
-			   string arg3,
-			   string arg4,
-			   string arg5,
-			   string arg6) {
-  string var = new_sexp();
-  defs += "PROTECT(" + var + " = " 
-    + func + "(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 
-    + ", " + arg5 + ", " + arg6 + "));\n";
-  return var;
+string
+SubexpBuffer::protect_str (string str)
+{
+    prot++;
+    return "PROTECT(" + str + ")";
 }
 
 void
-SubexpBuffer::appl(string var, int protect, string func, int argc, ...)
+SubexpBuffer::appl(string var, bool do_protect, string func, int argc, ...)
 {
   va_list param_pt;
   string stmt;
@@ -209,14 +120,97 @@ SubexpBuffer::appl(string var, int protect, string func, int argc, ...)
     stmt += *va_arg(param_pt, string *);
   }
   stmt += ")";
-  if (protect) {
-    defs += "PROTECT(" + stmt + ");\n";
-    prot++;
+  if (do_protect) {
+    defs += protect_str(stmt) + ";\n";
   }
   else
     defs += stmt + ";\n";
 }
 
+
+/* Convenient macro-like things for outputting function applications */
+
+string SubexpBuffer::appl1(string func, string arg) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 1, &arg);
+  return var;
+}
+
+string SubexpBuffer::appl1_unp(string func, string arg) {
+  string var = new_sexp_unp();
+  appl (var, FALSE, func, 1, &arg);
+  return var;
+}
+  
+string SubexpBuffer::appl2(string func, string arg1, string arg2) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 2, &arg1, &arg2);
+  return var;
+}
+  
+string SubexpBuffer::appl2_unp(string func, string arg1, string arg2) {
+  string var = new_sexp_unp();
+  appl (var, FALSE, func, 2, &arg1, &arg2);
+  return var;
+}
+  
+string SubexpBuffer::appl3(string func, 
+			   string arg1, string arg2, string arg3) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
+  return var;
+}
+
+string SubexpBuffer::appl3_unp(string func,
+			       string arg1, string arg2, string arg3) {
+  string var = new_sexp_unp();
+  appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
+  return var;
+}
+
+string SubexpBuffer::appl4(string func, 
+			   string arg1, 
+			   string arg2, 
+			   string arg3, 
+			   string arg4) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
+  return var;
+}
+  
+string SubexpBuffer::appl5(string func, 
+			   string arg1, 
+			   string arg2, 
+			   string arg3, 
+			   string arg4,
+			   string arg5) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+  return var;
+}
+
+string SubexpBuffer::appl5_unp(string func, 
+			       string arg1, 
+			       string arg2, 
+			       string arg3, 
+			       string arg4,
+			       string arg5) {
+  string var = new_sexp_unp();
+  appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+  return var;
+}
+  
+string SubexpBuffer::appl6(string func,
+			   string arg1,
+			   string arg2,
+			   string arg3,
+			   string arg4,
+			   string arg5,
+			   string arg6) {
+  string var = new_sexp_unp();
+  appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
+  return var;
+}
 
 void SubexpBuffer::del(Expression exp) {
   defs += exp.del_text;

@@ -206,9 +206,9 @@ public:
  *          environment. If false, the expression can be hoisted out
  *          of an f-function.
  * is_visible = whether the expression should be printed if it
- *              apppears at top level in R.
+ *              appears at top level in R.
  * is_alloc = whether the expression is locally allocated.
-
+ *
  * del_text = code to clean up after the expression has been
  * used. Most commonly a call to UNPROTECT.  */
 struct Expression {
@@ -244,9 +244,11 @@ public:
   virtual string new_var_unp_name(string name);
   int get_n_vars();
   int get_n_prot();
+  string protect_str (string str);	// Wrap str in a PROTECT() and incr prot
   string new_sexp();
   string new_sexp_unp();
   string new_sexp_unp_name(string name);
+  void appl(string var, bool do_protect, string func, int argc, ...);
   string appl1(string func, string arg);
   string appl1_unp(string func, string arg);
   string appl2(string func, string arg1, string arg2);
@@ -277,7 +279,6 @@ public:
 	       string appl4,
 	       string appl5,
 	       string appl6);
-  void appl(string var, int protect, string func, int argc, ...);
   void del(Expression exp);
   Expression op_exp(SEXP e, string rho);
   Expression op_primsxp(SEXP e, string rho);
@@ -344,7 +345,6 @@ public:
 void arg_err();
 void set_funcs(int argc, char *argv[]);
 string make_symbol(SEXP e);
-string make_type(int t);
 string make_fundef(string func_name, SEXP args, SEXP code);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
