@@ -1,6 +1,6 @@
 CC=gcc
 R=/local/software/R-1.6.2
-CPPFLAGS=-g -O2 -Wall -I$(R)/src/include -I.
+CPPFLAGS=-g -O0 -Wall -I$(R)/src/include -I.
 LDFLAGS=-L$(R)/bin -lR -lstdc++
 
 .SECONDARY:  # don't delete intermediate .c files

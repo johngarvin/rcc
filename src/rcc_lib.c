@@ -13,3 +13,11 @@ Rcomplex mk_complex(double r, double i) {
   out.i = i;
   return out;
 }
+
+SEXP rcc_cons(SEXP car, SEXP cdr, int unp_car, int unp_cdr) {
+  SEXP out;
+  PROTECT(out = cons(car, cdr));
+  if (unp_car) UNPROTECT_PTR(car);
+  if (unp_cdr) UNPROTECT_PTR(cdr);
+  return out;
+}
