@@ -15,7 +15,7 @@ TEST_CFLAGS  = $(CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_s
 
 .c.so: ../../lib/.libs/librcc.so
 	$(LIBTOOL) --mode=compile $(CC) -prefer-pic $(CPPFLAGS) $(TEST_CFLAGS) $(LDFLAGS) -shared ../../lib/.libs/librcc.so  $<
-	mv -f $(subst .c,.lo,$<) $(subst .c,.so,$<)
+	mv -f $(subst .c,.o,$<) $(subst .c,.so,$<)
 
 check: run-test ../../src/rcc ../../lib/.libs/librcc.so
 	sh ./run-test
