@@ -1,4 +1,4 @@
-AC_INIT(rcc, 1.1.3, garvin@rice.edu)
+AC_INIT(rcc, 1.1.4, garvin@rice.edu)
 AM_INIT_AUTOMAKE
 AC_PREFIX_DEFAULT([/usr])
 AC_CONFIG_SRCDIR([src/rcc.cc])
@@ -42,7 +42,7 @@ AC_SUBST(R_PREFIX)
 
 ### ** Platform.
 
-AC_CANONICAL_HOST
+#AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(R_PLATFORM, "${host}",
 [Define this to be the canonical name (cpu-vendor-os) of your system.])
 AC_DEFINE_UNQUOTED(R_CPU, "${host_cpu}",
@@ -74,6 +74,14 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 lib/Makefile
 		 R-patches/Makefile
-		 tests/Makefile tests/run-test])
+		 tests/Makefile
+		 tests/regression/Makefile
+		 tests/performance/Makefile])
+
+AC_CONFIG_FILES([tests/regression/run-test],
+                [chmod +x tests/regression/run-test])
+
+AC_CONFIG_FILES([tests/performance/run-test],
+                [chmod +x tests/performance/run-test])
 
 AC_OUTPUT

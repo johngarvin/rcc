@@ -25,8 +25,8 @@
 
 // Settings to change how rcc works
 static const bool global_self_allocate = FALSE;
-
 static bool global_c_return = FALSE;
+
 static bool global_ok = TRUE;
 static unsigned int global_temps = 0;
 static map<string, string> func_map;
@@ -46,6 +46,8 @@ static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, FALSE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, FALSE, "");
 
+// Returns true if the given string represents a function specified
+// for direct calling.
 bool is_special(string func) {
   list<string>::iterator i;
   for(i=special_funcs.begin(); i!=special_funcs.end(); i++) {

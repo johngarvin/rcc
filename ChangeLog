@@ -1,0 +1,4 @@
+2004-05-10  John Garvin  <garvin@rice.edu>
+	* rcc.cc (op_set, op_subscript_set): Added compilation support for
+	assignments to array subscripts.
+	
