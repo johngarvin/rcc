@@ -1,4 +1,4 @@
-AC_INIT(rcc, 1.1.2, garvin@rice.edu)
+AC_INIT(rcc, 1.1.3, garvin@rice.edu)
 AM_INIT_AUTOMAKE
 AC_PREFIX_DEFAULT([/usr])
 AC_CONFIG_SRCDIR([src/rcc.cc])

@@ -510,7 +510,6 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 }
 
 /* Replacement for static VectorAssign in subassign.c */
-#if 0
 SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
     SEXP dim, indx;
@@ -763,4 +762,263 @@ SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     UNPROTECT(4);
     return x;
 }
+
+/* copied from subassign.c */
+/* EnlargeVector() takes a vector "x" and changes its length to "newlen".
+   This allows to assign values "past the end" of the vector or list.
+   Note that, unlike S, we only extend as much as is necessary.
+*/
+SEXP EnlargeVector(SEXP x, R_len_t newlen)
+{
+    R_len_t i, len;
+    SEXP newx, names, newnames;
+
+    /* Sanity Checks */
+    if (!isVector(x))
+	error("attempt to enlarge non-vector");
+
+    /* Enlarge the vector itself. */
+    len = length(x);
+    if (LOGICAL(GetOption(install("check.bounds"), R_NilValue))[0])
+	warning("assignment outside vector/list limits (extending from %d to %d)",
+		len, newlen);
+    PROTECT(x);
+    PROTECT(newx = allocVector(TYPEOF(x), newlen));
+
+    /* Copy the elements into place. */
+    switch(TYPEOF(x)) {
+    case LGLSXP:
+    case INTSXP:
+	for (i = 0; i < len; i++)
+	    INTEGER(newx)[i] = INTEGER(x)[i];
+	for (i = len; i < newlen; i++)
+	    INTEGER(newx)[i] = NA_INTEGER;
+	break;
+    case REALSXP:
+	for (i = 0; i < len; i++)
+	    REAL(newx)[i] = REAL(x)[i];
+	for (i = len; i < newlen; i++)
+	    REAL(newx)[i] = NA_REAL;
+	break;
+    case CPLXSXP:
+	for (i = 0; i < len; i++)
+	    COMPLEX(newx)[i] = COMPLEX(x)[i];
+	for (i = len; i < newlen; i++) {
+	    COMPLEX(newx)[i].r = NA_REAL;
+	    COMPLEX(newx)[i].i = NA_REAL;
+	}
+	break;
+    case STRSXP:
+	for (i = 0; i < len; i++)
+	    SET_STRING_ELT(newx, i, STRING_ELT(x, i));
+	for (i = len; i < newlen; i++)
+	    SET_STRING_ELT(newx, i, NA_STRING); /* was R_BlankString  < 1.6.0 */
+	break;
+    case EXPRSXP:
+    case VECSXP:
+	for (i = 0; i < len; i++)
+	    SET_VECTOR_ELT(newx, i, VECTOR_ELT(x, i));
+	for (i = len; i < newlen; i++)
+	    SET_VECTOR_ELT(newx, i, R_NilValue);
+	break;
+    }
+
+    /* Adjust the attribute list. */
+    names = getAttrib(x, R_NamesSymbol);
+    if (!isNull(names)) {
+	PROTECT(newnames = allocVector(STRSXP, newlen));
+	for (i = 0; i < len; i++)
+	    SET_STRING_ELT(newnames, i, STRING_ELT(names, i));
+	for (i = len; i < newlen; i++)
+	    SET_STRING_ELT(newnames, i, R_BlankString);
+	setAttrib(newx, R_NamesSymbol, newnames);
+	UNPROTECT(1);
+    }
+    copyMostAttrib(x, newx);
+    UNPROTECT(2);
+    return newx;
+}
+
+/* copied from subassign.c */
+int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level, SEXP call)
+{
+    Rboolean redo_which =  (level == 1);
+    int which = 100 * TYPEOF(*x) + TYPEOF(*y);
+    /* coercion can lose the object bit */
+    Rboolean x_is_object = OBJECT(*x);
+
+    switch (which) {
+
+    case 1900:  /* vector     <- null       */
+    case 2000:  /* expression <- null       */
+
+    case 1010:	/* logical    <- logical    */
+    case 1310:	/* integer    <- logical    */
+    case 1410:	/* real	      <- logical    */
+    case 1510:	/* complex    <- logical    */
+    case 1313:	/* integer    <- integer    */
+    case 1413:	/* real	      <- integer    */
+    case 1513:	/* complex    <- integer    */
+    case 1414:	/* real	      <- real	    */
+    case 1514:	/* complex    <- real	    */
+    case 1515:	/* complex    <- complex    */
+    case 1616:	/* character  <- character  */
+    case 1919:  /* vector     <- vector     */
+    case 2020:	/* expression <- expression */
+
+	redo_which = FALSE;
+	break;
+
+    case 1013:	/* logical    <- integer    */
+
+	*x = coerceVector(*x, INTSXP);
+	break;
+
+    case 1014:	/* logical    <- real	    */
+    case 1314:	/* integer    <- real	    */
+
+	*x = coerceVector(*x, REALSXP);
+	break;
+
+    case 1015:	/* logical    <- complex    */
+    case 1315:	/* integer    <- complex    */
+    case 1415:	/* real	      <- complex    */
+
+	*x = coerceVector(*x, CPLXSXP);
+	break;
+
+    case 1610:	/* character  <- logical    */
+    case 1613:	/* character  <- integer    */
+    case 1614:	/* character  <- real	    */
+    case 1615:	/* character  <- complex    */
+
+	*y = coerceVector(*y, STRSXP);
+	break;
+
+    case 1016:	/* logical    <- character  */
+    case 1316:	/* integer    <- character  */
+    case 1416:	/* real	      <- character  */
+    case 1516:	/* complex    <- character  */
+
+	*x = coerceVector(*x, STRSXP);
+	break;
+
+    case 1901:  /* vector     <- symbol   */
+    case 1904:  /* vector     <- environment   */
+    case 1905:  /* vector     <- promise   */
+    case 1906:  /* vector     <- language   */
+    case 1910:  /* vector     <- logical    */
+    case 1913:  /* vector     <- integer    */
+    case 1914:  /* vector     <- real       */
+    case 1915:  /* vector     <- complex    */
+    case 1916:  /* vector     <- character  */
+    case 1920:  /* vector     <- expression  */
+#ifdef BYTECODE
+    case 1921:  /* vector     <- bytecode   */
 #endif
+    case 1922:  /* vector     <- eternal pointer */
+    case 1923:  /* vector     <- weak reference */
+    case 1903: case 1907: case 1908: case 1999: /* functions */
+
+	if (level == 1) {
+	    /* Coerce the RHS into a list */
+	    *y = coerceVector(*y, VECSXP);
+	}
+	else {
+	    /* Wrap the RHS in a list */
+	    SEXP tmp;
+	    PROTECT(tmp = allocVector(VECSXP, 1));
+	    SET_VECTOR_ELT(tmp, 0, NAMED(*y) ? duplicate(*y) : *y);
+	    *y = tmp;
+	    UNPROTECT(1);
+	}
+	break;
+
+    case 1019:  /* logical    <- vector     */
+    case 1319:  /* integer    <- vector     */
+    case 1419:  /* real       <- vector     */
+    case 1519:  /* complex    <- vector     */
+    case 1619:  /* character  <- vector     */
+	*x = coerceVector(*x, VECSXP);
+	break;
+
+    case 2001:	/* expression <- symbol	    */
+    case 2006:	/* expression <- language   */
+    case 2010:	/* expression <- logical    */
+    case 2013:	/* expression <- integer    */
+    case 2014:	/* expression <- real	    */
+    case 2015:	/* expression <- complex    */
+    case 2016:	/* expression <- character  */
+    case 2019:  /* expression <- vector     */
+
+	/* Note : No coercion is needed here. */
+	/* We just insert the RHS into the LHS. */
+	/* FIXME: is this true or should it be just like the "vector" case? */
+	redo_which = FALSE;
+	break;
+
+    default:
+	errorcall(call, "incompatible types");
+
+    }
+
+    if (stretch) {
+	PROTECT(*y);
+	*x = EnlargeVector(*x, stretch);
+	UNPROTECT(1);
+    }
+    SET_OBJECT(*x, x_is_object);
+
+    if(redo_which)
+	return(100 * TYPEOF(*x) + TYPEOF(*y));
+    else
+	return(which);
+}
+
+SEXP DeleteListElements(SEXP x, SEXP which)
+{
+    SEXP include, xnew, xnames, xnewnames;
+    R_len_t i, ii, len, lenw;
+    len = length(x);
+    lenw = length(which);
+    /* calculate the length of the result */
+    PROTECT(include = allocVector(INTSXP, len));
+    for (i = 0; i < len; i++)
+	INTEGER(include)[i] = 1;
+    for (i = 0; i < lenw; i++) {
+	ii = INTEGER(which)[i];
+	if (0 < ii  && ii <= len)
+	    INTEGER(include)[ii - 1] = 0;
+    }
+    ii = 0;
+    for (i = 0; i < len; i++)
+	ii += INTEGER(include)[i];
+    if (ii == len) {
+	UNPROTECT(1);
+	return x;
+    }
+    PROTECT(xnew = allocVector(VECSXP, ii));
+    ii = 0;
+    for (i = 0; i < len; i++) {
+	if (INTEGER(include)[i] == 1) {
+	    SET_VECTOR_ELT(xnew, ii, VECTOR_ELT(x, i));
+	    ii++;
+	}
+    }
+    xnames = getAttrib(x, R_NamesSymbol);
+    if (xnames != R_NilValue) {
+	PROTECT(xnewnames = allocVector(STRSXP, ii));
+	ii = 0;
+	for (i = 0; i < len; i++) {
+	    if (INTEGER(include)[i] == 1) {
+		SET_STRING_ELT(xnewnames, ii, STRING_ELT(xnames, i));
+		ii++;
+	    }
+	}
+	setAttrib(xnew, R_NamesSymbol, xnewnames);
+	UNPROTECT(1);
+    }
+    copyMostAttrib(x, xnew);
+    UNPROTECT(2);
+    return xnew;
+}

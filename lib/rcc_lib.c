@@ -53,7 +53,7 @@ Rboolean my_asLogicalNoNA(SEXP s)
     return cond;
 }
 
-#if 0
+/* Modified from do_subassign in subassign.c */
 SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   int oldtype;
   oldtype = 0;
@@ -99,4 +99,3 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   UNPROTECT(1);
   return x;
 }
-#endif

@@ -707,10 +707,8 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
 	+ body.var + ", " + rho + ");\n";
       del(body);
       return Expression(name, TRUE, FALSE, "");
-      /*
-       *    } else if (isSimpleSubscript(CADR(e))) {
-       *      return op_subscriptset(e, rho);
-       */
+    } else if (isSimpleSubscript(CADR(e))) {
+      return op_subscriptset(e, rho);
     } else if (isLanguage(CADR(e))) {
       Expression func = op_exp(op, rho);
       Expression args = op_list_local(CDR(e), rho);
@@ -755,12 +753,14 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho) {
   SEXP array = CADR(CADR(e));
   SEXP sub = CADDR(CADR(e));
   SEXP rhs = CADDR(e);
+  Expression a_sym = op_literal(array, rho);
   Expression a = op_exp(array, rho);
   Expression s = op_exp(sub, rho);
   Expression r = op_exp(rhs, rho);
   string assign = appl3("rcc_subassign", a.var, s.var, r.var);
-  defs += "defineVar(" + a.var + ", " + assign + ", " + rho + ");\n";
-  del(s); del(r); defs += unp(assign);
+  defs += "defineVar(" + a_sym.var + ", " + assign + ", " + rho + ");\n";
+  del(a_sym); del(s); del(r); defs += unp(assign);
+  a.is_visible = FALSE;
   return a;
 }
 
