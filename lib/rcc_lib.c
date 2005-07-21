@@ -53,12 +53,15 @@ Rboolean my_asLogicalNoNA(SEXP s)
     return cond;
 }
 
-/* Modified from do_subassign in subassign.c */
+/* Modified from do_subassign_dflt in subassign.c */
 SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
-  int oldtype;
-  oldtype = 0;
+  int oldtype = 0;
+
+  if (NAMED(x) == 2) {
+    x = duplicate(x);
+  }
+
   if (TYPEOF(x) == LISTSXP || TYPEOF(x) == LANGSXP) {
-    oldtype = TYPEOF(x);
     PROTECT(x = PairToVectorList(x));
   }
   else if (length(x) == 0) {
@@ -96,5 +99,6 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   }
   
   UNPROTECT(1);
+  SET_NAMED(x,0);
   return x;
 }

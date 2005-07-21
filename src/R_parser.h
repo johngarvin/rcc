@@ -21,28 +21,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
-#include <list>
-#include <iostream>
+#include <stdio.h>
 
-#include "util.h"
-
-using namespace std;
-
-extern "C" {
-
-  // Why isn't this handled in IOStuff.h?
+/* Why isn't this handled in IOStuff.h? */
 #ifndef R_IOSTUFF_H
 #  define R_IOSTUFF_H
 #  include <IOStuff.h>
 #endif
+
 #include <Parse.h>
 extern int Rf_initialize_R(int argc, char **argv);
 extern void setup_Rmainloop(void);
 
-} //extern "C"
-
-// int parse_R(std::list<SEXP> & e, char *inFile);
-
 void init_R();
-list<SEXP> *parse_R(FILE *in_file);
+void parse_R(FILE *in_file, SEXP *exps[]);
 SEXP parse_R_as_function(FILE *in_file);

@@ -1,4 +1,5 @@
-/* Copyright (c) 2003 John Garvin 
+/* -*-C++-*-
+ * Copyright (c) 2003-2005 John Garvin 
  *
  * July 11, 2003 
  *
@@ -20,6 +21,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
+
+#ifndef RCC_H
+#define RCC_H
 
 #define __USE_STD_IOSTREAM
 
@@ -47,6 +51,7 @@ extern "C" {
 #include <alloca.h>
 #include "get_name.h"
 #include "replacements.h"
+#include "R_parser.h"
 
 // Prevent conflict with basicstring::{append, length} on Alpha
 #undef append
@@ -58,7 +63,7 @@ extern void setup_Rmainloop(void);
 } //extern "C"
 
 #include "util.h"
-#include "R_parser.h"
+#include "macro/Macro.hpp"
 
 bool is_special(string func);
 
@@ -203,8 +208,8 @@ public:
  *              appears at top level in R.
  * is_alloc = whether the expression is locally allocated.
  *
- * del_text = code to clean up after the expression has been
- * used. Most commonly a call to UNPROTECT.  */
+ * del_text = code to clean up after the final use of the
+ * expression. Most commonly a call to UNPROTECT_PTR.  */
 struct Expression {
   string var;
   bool is_dep;
@@ -397,6 +402,7 @@ public:
   Expression op_c_return(SEXP e, string rho);
   Expression op_fundef(SEXP e, string rho, string opt_R_name = "");
   Expression op_special(SEXP e, SEXP op, string rho);
+  Expression op_builtin(SEXP e, SEXP op, string rho);
   Expression op_set(SEXP e, SEXP op, string rho);
   Expression op_subscriptset(SEXP e, string rho);
   Expression op_clos_app(Expression op1, SEXP args, string rho);
@@ -475,3 +481,5 @@ static void set_funcs(int argc, char *argv[]);
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_symbol(SEXP e);
+
+#endif // defined RCC_H

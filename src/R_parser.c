@@ -23,10 +23,6 @@
 
 #include "R_parser.h"
 
-// Parses R code. Reads 'filename' if it exists or STDIN if filename
-// is NULL. Sets 'e' to be a list of the resulting R
-// expressions. Returns the number of expressions.
-
 void init_R() {
   char *myargs[5];
   myargs[0] = "";
@@ -38,26 +34,17 @@ void init_R() {
   setup_Rmainloop();
 }
 
-/*
-  if (!filename) {
-    inFile = stdin;
-  } else {
-    inFile = fopen(filename, "r");
-  }
-  if (!inFile) {
-    cerr << "Error: input file \"" << filename << "\" not found\n";
-    exit(1);
-  }
-*/
-
-
-// int parse_R(list<SEXP> & e, char *filename) {
-list<SEXP> *parse_R(FILE *in_file) {
-  list<SEXP> *exps;
+/* Reads 'in_file' and parses it as R code. Sets 'exps' as a
+ * NULL-terminated array of SEXPs representing the list of
+ * expressions.
+ */
+void parse_R(FILE *in_file, SEXP *p_exps[]) {
+  int n = 0;
   SEXP e;
   ParseStatus status;
+  SEXP *exps;
 
-  exps = new list<SEXP>;
+  exps = (SEXP *)malloc(sizeof(SEXP));
 
   do {
     /* parse each expression */
@@ -66,32 +53,58 @@ list<SEXP> *parse_R(FILE *in_file) {
     case PARSE_NULL:
       break;
     case PARSE_OK:
-      exps->push_back(e);
+      n++;
+      exps = (SEXP *)realloc((void *)exps, (n+1)*sizeof(SEXP));
+      exps[n-1] = e;
       break;
     case PARSE_INCOMPLETE:
       break;
     case PARSE_ERROR:
-      err("parsing returned PARSE_ERROR.\n");
+      fprintf(stderr, "Error: parsing returned PARSE_ERROR.\n");
+      exit(1);
       break;
     case PARSE_EOF:
       break;
     }
   } while (status != PARSE_EOF && status != PARSE_INCOMPLETE);
-  
-  return exps;
+  exps[n] = NULL;
+
+  *p_exps = exps;
 }
 
+/* Parse R code into a sequence of R AST expressions, then makes and
+ * returns the sequence as a big function with no arguments. If the
+ * input file containts expressions e1,e2,...en, then the output is
+ * the SEXP representation of something like this:
+ *
+ * function()
+ * {
+ *   e1
+ *   e2
+ *   ...
+ *   en
+ * }
+ *
+ * FIXME: This is done because OpenAnalysis assumes that, as in C or
+ * Fortran, all code is within some function--an assumption that's
+ * invalid for languages like R. This hack alters the semantics:
+ * definitions that were global are now local.
+ */
 SEXP parse_R_as_function(FILE *in_file) {
-  list <SEXP> *exps;
-  exps = parse_R(in_file);
+  SEXP *exps, *e;
   SEXP stmts = R_NilValue;
-  while(!exps->empty()) {
-    SEXP e = exps->back();
-    stmts = CONS(e, stmts);
-    exps->pop_back();
+  parse_R(in_file, &exps);
+  if (*exps != NULL) {
+    e = exps;
+    while(*e != NULL) {
+      e++;
+    }
+    do {
+      e--;
+      stmts = CONS(*e, stmts);
+    } while (e != exps);
   }
   PROTECT(stmts);
-  delete exps;
   SEXP lbrace = Rf_install("{");
   SEXP body = PROTECT(LCONS(lbrace, stmts));
   UNPROTECT_PTR(stmts);
