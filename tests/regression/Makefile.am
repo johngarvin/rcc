@@ -4,18 +4,17 @@ MYTESTFILES = $(wildcard *.r)
 
 EXTRA_DIST = run-test.in $(MYTESTFILES)
 
-src_SCRIPTS = run-test.in
+MOSTLYCLEANFILES = $(subst .r,,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES)) compiled.log interpreted.log
 
-MOSTLYCLEANFILES = $(subst .r,.so,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES))
+check_SCRIPTS = runtests
 
-TEST_CFLAGS  = $(CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib
+interpreted:
+	run-interpreted $(MYTESTFILES) | tee interpreted.log
 
-%.c: %.r ../../src/rcc
-	../../src/rcc $<
+compiled:
+	run-compiled $(MYTESTFILES) | tee compiled.log
 
-%.so: %.c ../../src/rcc
-	$(LIBTOOL) --mode=compile $(CC) -prefer-pic $(CPPFLAGS) $(TEST_CFLAGS) $(LDFLAGS) -shared ../../lib/.libs/librcc.so $<
-	mv -f $(<:.c=.o) $(<:.c=.so)
+diffs:
+	diff compiled.log interpreted.log
 
-check: run-test ../../src/rcc ../../lib/.libs/librcc.so
-	sh ./run-test
+runtests: compiled interpreted diffs

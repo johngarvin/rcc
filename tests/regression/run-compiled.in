@@ -1,0 +1,9 @@
+#!/bin/csh 
+# @configure_input@
+setenv PATH @RCC_BIN_PATH@:${PATH}
+foreach f ( $* ) 
+    echo --- $f ---                                    
+	rcc $f
+	rcc-cc -o `basename $f .r` -g `basename $f .r`.c
+	rcc-run `basename $f .r`
+end

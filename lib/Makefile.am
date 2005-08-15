@@ -1,10 +1,12 @@
 
 lib_LTLIBRARIES = librcc.la
 
-include_HEADERS = \
+include_rccdir = ${includedir}/rcc
+include_rcc_HEADERS = \
 	rcc_lib.h replacements.h
 
-nodist_include_HEADERS = \
+include_rcc_Rdir = ${includedir}/rcc/R
+nodist_include_rcc_R_HEADERS = \
 	$(R_SOURCES)/src/include/Defn.h		\
 	$(R_SOURCES)/src/include/Errormsg.h	\
 	$(R_SOURCES)/src/include/Internal.h	\
@@ -12,8 +14,8 @@ nodist_include_HEADERS = \
 	$(R_SOURCES)/src/include/Parse.h	\
 	$(R_SOURCES)/src/include/Rinternals.h
 
-include_R_extdir = ${includedir}/R_ext
-nodist_include_R_ext_HEADERS = \
+include_rcc_R_R_extdir = ${includedir}/rcc/R/R_ext
+nodist_include_rcc_R_R_ext_HEADERS = \
 	$(R_SOURCES)/src/include/R_ext/Arith.h	\
 	$(R_SOURCES)/src/include/R_ext/Boolean.h \
 	$(R_SOURCES)/src/include/R_ext/Complex.h \
@@ -27,13 +29,13 @@ nodist_include_R_ext_HEADERS = \
 	$(R_SOURCES)/src/include/R_ext/Utils.h	\
 	$(R_SOURCES)/src/include/R_ext/libextern.h
 
-include_maindir = ${includedir}/main
-nodist_include_main_HEADERS = \
+include_rcc_R_maindir = ${includedir}/rcc/R/main
+nodist_include_rcc_R_main_HEADERS = \
 	$(R_SOURCES)/src/main/arithmetic.h
 
 librcc_la_SOURCES = \
 	rcc_lib.c \
 	replacements.c
 
-librcc_la_CFLAGS  = $(BASE_CFLAGS) -I$(R_SOURCES)/src/include -I$(R_SOURCES)/src/main -I.
+librcc_la_CFLAGS  = -static $(BASE_CFLAGS) -I$(R_SOURCES)/src/include -I$(R_SOURCES)/src/main -I.
 

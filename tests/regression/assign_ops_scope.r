@@ -3,7 +3,7 @@ foo <- function() {
   a <- 10
 }
 bar <- function() {
-  a <<- 10
+  a <<- 12
 }
 print(a)
 foo()

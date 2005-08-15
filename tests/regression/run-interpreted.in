@@ -1,0 +1,7 @@
+#!/bin/csh 
+# @configure_input@
+setenv PATH @RCC_BIN_PATH@:${PATH}
+foreach f ( $* ) 
+    echo --- $f ---                                    
+	R --slave < $f | grep -v '^>' | grep -v '^+' | grep -v '^$'
+end

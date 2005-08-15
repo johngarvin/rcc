@@ -1,9 +1,10 @@
-AC_INIT(rcc, 1.1.6, garvin@rice.edu)
-AM_INIT_AUTOMAKE
-AC_PREFIX_DEFAULT([/usr])
+AC_INIT(rcc, 1.1.7, garvin@rice.edu)
+AC_PREFIX_DEFAULT([/usr/local])
+AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([src/rcc.cc])
-AM_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADER([config/config.h])
  
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
@@ -11,7 +12,8 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_LIBTOOL
-AC_PROG_RANLIB
+
+AM_INIT_AUTOMAKE
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -34,13 +36,33 @@ AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
 AC_ARG_WITH(R-sources,
 	    [ --with-R-sources=DIR  Prefix of R source tree],
 	    R_SOURCES="$withval",
-	    R_SOURCES="/usr/src/R")
+	    R_SOURCES="")
 AC_ARG_WITH(R-prefix,
 	    [ --with-R-prefix=DIR   Directory containing R installation],
 	    R_PREFIX="$withval",
-	    R_PREFIX="/usr/lib/R")
+	    R_PREFIX="")
+
+if test ! -d $R_SOURCES; then
+	AC_MSG_ERROR([you must specify the source directory of an R 2.1.1 distribution using --with-R-sources])
+fi
+
+if test ! -d $R_PREFIX; then
+	AC_MSG_ERROR([you must specify the directory of an R 2.1.1 installation using --with-R-prefix])
+fi
+
+
+RCC_MACRO_PATH=${prefix}/macros
+RCC_INCLUDE_PATH=${prefix}/include/rcc
+RCC_LIB_PATH=${prefix}/lib
+RCC_BIN_PATH=${prefix}/bin
+
+AC_SUBST(CC)
 AC_SUBST(R_SOURCES)
+AC_SUBST(RCC_BIN_PATH)
 AC_SUBST(R_PREFIX)
+AC_SUBST(RCC_MACRO_PATH)
+AC_SUBST(RCC_INCLUDE_PATH)
+AC_SUBST(RCC_LIB_PATH)
 
 ### ** Platform.
 
@@ -55,6 +77,7 @@ AC_DEFINE_UNQUOTED(R_OS, "${host_os}",
 
 R_PLATFORM="${host}"
 AC_SUBST(R_PLATFORM)
+AC_SUBST(RCC_INCLUDE_PATH)
 
 case "${host_os}" in
   cygwin*|mingw*|windows*|winnt)
@@ -73,22 +96,28 @@ AC_SUBST(R_OSTYPE)
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
 		 src/Makefile
+		 src/macros/Makefile
 		 lib/Makefile
 		 R-patches/Makefile
+		 tools/Makefile
+		 tools/rcc
+		 tools/rcc-cc
+		 tools/rcc-run
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
-		 tests/hand-opt/Makefile
-		 tests/temp/Makefile
                  ])
 
-AC_CONFIG_FILES([tests/regression/run-test],
-                [chmod +x tests/regression/run-test])
+# config files currently unused
+#		 tests/hand-opt/Makefile tests/temp/Makefile
+
+AC_CONFIG_FILES([tests/regression/run-compiled],
+                [chmod +x tests/regression/run-compiled])
+
+AC_CONFIG_FILES([tests/regression/run-interpreted],
+                [chmod +x tests/regression/run-interpreted])
 
 AC_CONFIG_FILES([tests/performance/run-test],
                 [chmod +x tests/performance/run-test])
-
-AC_CONFIG_FILES([tests/temp/run-test],
-                [chmod +x tests/temp/run-test])
 
 AC_OUTPUT

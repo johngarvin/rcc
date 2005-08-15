@@ -1,17 +1,15 @@
-#!/bin/sh
+#!/bin/csh 
 # @configure_input@
-trap 'echo "Testing halted" ; exit' SIGINT
-export PATH=@R_PREFIX@/lib/R/bin:$PATH
-export LD_LIBRARY_PATH=@R_PREFIX@/bin:@top_builddir@/lib/.libs
-TEST=`echo *.r`
-make ${TEST//\.r/.so}                                   \
-&& for i in *\.so ; do
-     echo --- $i ---                                    \
-  && echo '     - R -'                                  \
-  && R --slave < `echo $i | sed 's/\.so/.r/'`           \
-  && R CMD Rprof Rprof.out | grep "^Total run time"     \
-  && echo '     - C -'                                  \
-  && echo 'dyn.load("'$i'")' | R --slave                \
-  && R CMD Rprof Rprof.out | grep "^Total run time"     \
-  && true
-done
+setenv PATH @RCC_BIN_PATH@:${PATH}
+foreach f ( *.r ) 
+    echo --- $f ---
+    echo "  running and timing $f with the R interpreter ..."
+	R --slave < $f
+	R CMD Rprof Rprof.out | grep "^Total run time"
+    echo "  compiling $f with rcc ..."
+	rcc $f
+    echo "  compiling " `basename $f .r`.c "with rcc-cc ..."
+	rcc-cc -o `basename $f .r` -g `basename $f .r`.c
+    echo "  running " `basename $f .r` "with rcc-run ..." 
+	time rcc-run `basename $f .r`
+end
