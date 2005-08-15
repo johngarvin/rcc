@@ -101,6 +101,8 @@ typedef unsigned int SEXPTYPE;
 #define EXTPTRSXP   22    /* external pointer */
 #define WEAKREFSXP  23    /* weak reference */
 #define RAWSXP      24    /* raw bytes */
+#define RCC_CLOSXP  25    /* RCC closure */
+#define RCC_FUNSXP  26    /* RCC compiled function */
 
 #define FUNSXP      99    /* Closure or Builtin */
 
@@ -131,6 +133,8 @@ typedef enum {
     EXTPTRSXP   = 22,   /* external pointer */
     WEAKREFSXP  = 23,   /* weak reference */
     RAWSXP      = 24,   /* raw bytes */
+    RCC_CLOSXP  = 25,   /* RCC closure */
+    RCC_FUNSXP  = 26,   /* RCC function */
 
     FUNSXP	= 99	/* Closure or Builtin */
 } SEXPTYPE;
@@ -193,6 +197,21 @@ struct closxp_struct {
     struct SEXPREC *env;
 };
 
+struct rcc_closxp_struct {
+    struct SEXPREC *formals;
+    struct SEXPREC *function;
+    struct SEXPREC *env;
+};
+
+/* The type of RCC compiled functions. */
+typedef struct SEXPREC *(*RCC_CCODE)();
+
+
+struct rcc_funsxp_struct {
+    RCC_CCODE fun;
+    struct SEXPREC *bodyexpr;
+};
+
 struct promsxp_struct {
     struct SEXPREC *value;
     struct SEXPREC *expr;
@@ -217,6 +236,8 @@ typedef struct SEXPREC {
 	struct listsxp_struct listsxp;
 	struct envsxp_struct envsxp;
 	struct closxp_struct closxp;
+	struct rcc_closxp_struct rcc_closxp;
+	struct rcc_funsxp_struct rcc_funsxp;
 	struct promsxp_struct promsxp;
     } u;
 } SEXPREC, *SEXP;
@@ -316,6 +337,15 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #define SET_DEBUG(x,v)	(((x)->sxpinfo.debug)=(v))
 #define SET_TRACE(x,v)	(((x)->sxpinfo.trace)=(v))
 
+/* RCC Closure Access Macros */
+#define RCC_CLOSXP_FORMALS(x)	((x)->u.rcc_closxp.formals)
+#define RCC_CLOSXP_FUN(x)	((x)->u.rcc_closxp.function)
+#define RCC_CLOSXP_CLOENV(x)	((x)->u.rcc_closxp.env)
+
+/* RCC Function Access Macros */
+#define RCC_FUNSXP_CFUN(x)	((x)->u.rcc_funsxp.fun)
+#define RCC_FUNSXP_BODY_EXPR(x)	((x)->u.rcc_funsxp.bodyexpr)
+
 /* Primitive Access Macros */
 #define PRIMOFFSET(x)	((x)->u.primsxp.offset)
 #define SET_PRIMOFFSET(x,v)	(((x)->u.primsxp.offset)=(v))
@@ -346,6 +376,14 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #endif
 #define ENVFLAGS(x)	((x)->sxpinfo.gp)	/* for environments */
 #define SET_ENVFLAGS(x,v)	(((x)->sxpinfo.gp)=(v))
+
+/* RCC closure access functions */
+SEXP RCC_FUNSXP_SET_CFUN(SEXP x, RCC_CCODE y);
+SEXP RCC_CLOSXP_SET_CLOENV(SEXP x, SEXP y);
+SEXP RCC_CLOSXP_SET_FORMALS(SEXP x, SEXP y);
+SEXP RCC_CLOSXP_SET_FUN(SEXP x, SEXP y);
+SEXP RCC_FUNSXP_SET_BODY_EXPR(SEXP x, SEXP y);
+
 #else
 typedef struct SEXPREC *SEXP;
 #define CONS(a, b)	cons((a), (b))		/* data lists */
@@ -466,6 +504,7 @@ SEXP Rf_allocString(int);
 SEXP Rf_allocVector(SEXPTYPE, R_len_t);
 SEXP Rf_allocList(int);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP Rf_applyRccClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_asChar(SEXP);
 Rcomplex Rf_asComplex(SEXP);
 int Rf_asInteger(SEXP);
@@ -502,6 +541,7 @@ SEXP Rf_findVar(SEXP, SEXP);
 SEXP Rf_findVarInFrame(SEXP, SEXP);
 SEXP Rf_findVarInFrame3(SEXP, SEXP, Rboolean);
 SEXP Rf_findFun(SEXP, SEXP);
+SEXP Rf_findFunUnboundOK(SEXP, SEXP, Rboolean);
 SEXP Rf_getAttrib(SEXP, SEXP);
 void Rf_GetMatrixDimnames(SEXP, SEXP*, SEXP*, char**, char**);
 SEXP Rf_GetArrayDimnames(SEXP);
@@ -888,6 +928,7 @@ int R_system(char *);
 #define allocString		Rf_allocString
 #define allocVector		Rf_allocVector
 #define applyClosure		Rf_applyClosure
+#define applyRccClosure		Rf_applyRccClosure
 #define arraySubscript		Rf_arraySubscript
 #define asChar			Rf_asChar
 #define ascommon		Rf_ascommon
@@ -927,6 +968,7 @@ int R_system(char *);
 #define evalList		Rf_evalList
 #define evalListKeepMissing	Rf_evalListKeepMissing
 #define findFun			Rf_findFun
+#define findFunUnboundOK	Rf_findFunUnboundOK
 #define findVar			Rf_findVar
 #define findVarInFrame		Rf_findVarInFrame
 #define findVarInFrame3		Rf_findVarInFrame3

@@ -43,8 +43,9 @@ static SEXP GetObject(RCNTXT *cptr)
     else
 	PROTECT(b = eval(CAR(funcall), sysp));
     /**** use R_sysfunction here instead */
-    if (TYPEOF(b) != CLOSXP) error(_("generic 'function' is not a function"));
-    formals = FORMALS(b);
+    if (TYPEOF(b) == CLOSXP) formals = FORMALS(b);
+    else if (TYPEOF(b) == RCC_CLOSXP) formals = RCC_CLOSXP_FORMALS(b);
+    else error(_("generic 'function' is not a function"));
 
     tag = TAG(formals);
     if (tag != R_NilValue && tag != R_DotsSymbol) {
@@ -119,6 +120,9 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
     }
     else if (TYPEOF(op) == CLOSXP) {
 	ans = applyClosure(call, op, args, rho, newrho);
+    }
+    else if (TYPEOF(op) == RCC_CLOSXP) {
+	ans = applyRccClosure(call, op, args, rho, newrho);
     }
     else
 	ans = R_NilValue;  /* for -Wall */
@@ -240,6 +244,7 @@ int usemethod(char *generic, SEXP obj, SEXP call, SEXP args,
 	PROTECT(op = eval(op, cptr->sysparent));
 	break;
     case CLOSXP:
+    case RCC_CLOSXP:
     case BUILTINSXP:
     case SPECIALSXP:
 	PROTECT(op);
@@ -248,8 +253,10 @@ int usemethod(char *generic, SEXP obj, SEXP call, SEXP args,
 	error(_("Invalid generic function in 'usemethod'"));
     }
 
-    if (TYPEOF(op) == CLOSXP) {
-	formals = FORMALS(op);
+    if (TYPEOF(op) == CLOSXP || TYPEOF(op) == RCC_CLOSXP) {
+      if (TYPEOF(op) == CLOSXP) formals = FORMALS(op);
+      else if (TYPEOF(op) == RCC_CLOSXP) formals = RCC_CLOSXP_FORMALS(op);
+	
 	for (s = FRAME(cptr->cloenv); s != R_NilValue; s = CDR(s)) {
 	    matched = 0;
 	    for (t = formals; t != R_NilValue; t = CDR(t))
@@ -493,13 +500,14 @@ SEXP do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	s = eval(s, env);
     if (TYPEOF(s) == SYMSXP && s == R_UnboundValue) 
 	error(_("no calling generic was found: was a method called directly?"));
-    if (TYPEOF(s) != CLOSXP){
+    if (TYPEOF(s) != CLOSXP && TYPEOF(s) != RCC_CLOSXP){
 	errorcall(R_NilValue, _("'function' is not a function, but of type %d"), 
 		  TYPEOF(s));
     }
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
-    formals = FORMALS(s);
+    if (TYPEOF(s) == CLOSXP) formals = FORMALS(s);
+    if (TYPEOF(s) == RCC_CLOSXP) formals = RCC_CLOSXP_FORMALS(s);
     PROTECT(actuals = matchArgs(formals, cptr->promargs));
 
     i=0;
@@ -934,6 +942,9 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
 	fun = findVarInFrame3(rho, symbol, TRUE);
 	if(fun == R_UnboundValue) continue;
 	switch(TYPEOF(fun)) {
+	case RCC_CLOSXP:
+	    value = findVarInFrame3(RCC_CLOSXP_CLOENV(fun), dot_Generic, TRUE);
+	    break;
 	case CLOSXP:
 	    value = findVarInFrame3(CLOENV(fun), dot_Generic, TRUE);
 	    if(value == R_UnboundValue) break;
@@ -1112,7 +1123,7 @@ SEXP do_set_prim_method(SEXP op, char *code_string, SEXP fundef, SEXP mlist)
 	prim_mlist[offset] = 0;
     }
     else if(fundef && !isNull(fundef) && !prim_generics[offset]) {
-	if(TYPEOF(fundef) != CLOSXP)
+      if(TYPEOF(fundef) != CLOSXP && TYPEOF(fundef) != RCC_CLOSXP)
 	    error(_("the formal definition of a primitive generic must be a function object (got type '%s')"),
 		  type2str(TYPEOF(fundef)));
 	R_PreserveObject(fundef);
@@ -1191,8 +1202,9 @@ Rboolean R_has_methods(SEXP op)
     R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr(); int offset;
     if(NOT_METHODS_DISPATCH_PTR(ptr))
 	return(FALSE);
-    if(!op || TYPEOF(op) == CLOSXP) /* except for primitives, just test for the package */
-	return(TRUE);
+    if(!op || TYPEOF(op) == CLOSXP || TYPEOF(op) == RCC_CLOSXP) 
+      /* except for primitives, just test for the package */
+      return(TRUE);
     offset = PRIMOFFSET(op);
     if(offset > curMaxOffset || prim_methods[offset] == NO_METHODS
        || prim_methods[offset] == SUPPRESSED)
@@ -1255,7 +1267,7 @@ SEXP R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* else, need to perform full method search */
     }
     fundef = prim_generics[offset];
-    if(!fundef || TYPEOF(fundef) != CLOSXP)
+    if(!fundef || (TYPEOF(fundef) != CLOSXP && TYPEOF(fundef) != RCC_CLOSXP)) 
 	error(_("primitive function \"%s\" has been set for methods but no generic function supplied"),
 	      PRIMNAME(op));
     /* To do:  arrange for the setting to be restored in case of an

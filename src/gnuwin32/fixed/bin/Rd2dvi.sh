@@ -8,7 +8,7 @@
 
 R_PAPERSIZE=${R_PAPERSIZE-a4}
 
-revision='$Revision: 1.1.1.1 $'
+revision='$Revision: 1.2 $'
 version=`set - ${revision}; echo ${2}`
 version="Rd2dvi.sh ${version}
 

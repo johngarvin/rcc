@@ -25,7 +25,7 @@ Furthermore:
 
 /*
 
-  $Id: apse.h,v 1.1.1.1 2005/08/15 15:27:42 johnmc Exp $
+  $Id: apse.h,v 1.2 2005/08/15 16:11:30 johnmc Exp $
 
 */
 

@@ -382,6 +382,7 @@ static R_size_t R_NodesInUse = 0;
   case CPLXSXP: \
   case WEAKREFSXP: \
   case RAWSXP: \
+  case RCC_FUNSXP: \
     break; \
   case STRSXP: \
   case EXPRSXP: \
@@ -398,6 +399,7 @@ static R_size_t R_NodesInUse = 0;
     dc__action__(HASHTAB(__n__), dc__extra__); \
     break; \
   case CLOSXP: \
+  case RCC_CLOSXP: \
   case PROMSXP: \
   case LISTSXP: \
   case LANGSXP: \
@@ -907,6 +909,7 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 {
     switch (TYPEOF(fin)) {
     case NILSXP:
+    case RCC_CLOSXP:
     case CLOSXP:
     case BUILTINSXP:
     case SPECIALSXP:
@@ -1090,7 +1093,7 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(CAR(args)) != ENVSXP && TYPEOF(CAR(args)) != EXTPTRSXP)
 	errorcall(call, _("first argument must be environment or external pointer"));
-    if (TYPEOF(CADR(args)) != CLOSXP)
+    if (TYPEOF(CADR(args)) != CLOSXP && TYPEOF(CADR(args)) != RCC_CLOSXP)
 	errorcall(call, _("second argument must be a function"));
     
     R_RegisterFinalizer(CAR(args), CADR(args));
@@ -2047,6 +2050,7 @@ SEXP do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
     SET_STRING_ELT(nms, SYMSXP, mkChar("SYMSXP"));
     SET_STRING_ELT(nms, LISTSXP, mkChar("LISTSXP"));
     SET_STRING_ELT(nms, CLOSXP, mkChar("CLOSXP"));
+    SET_STRING_ELT(nms, RCC_CLOSXP, mkChar("RCC_CLOSXP"));
     SET_STRING_ELT(nms, ENVSXP, mkChar("ENVSXP"));
     SET_STRING_ELT(nms, PROMSXP, mkChar("PROMSXP"));
     SET_STRING_ELT(nms, LANGSXP, mkChar("LANGSXP"));
@@ -2435,6 +2439,14 @@ void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); BODY(x) = v; }
 void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); CLOENV(x) = v; }
 void (SET_DEBUG)(SEXP x, int v) { SET_DEBUG(x, v); }
 void (SET_TRACE)(SEXP x, int v) { SET_TRACE(x, v); }
+
+/* RCC Closure accessors */
+SEXP (RCC_CLOSXP_SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); RCC_CLOSXP_CLOENV(x) = v; }
+SEXP (RCC_CLOSXP_SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); RCC_CLOSXP_FORMALS(x) = v; }
+SEXP (RCC_CLOSXP_SET_FUN)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); RCC_CLOSXP_FUN(x) = v; }
+
+SEXP (RCC_FUNSXP_SET_BODY_EXPR)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); RCC_FUNSXP_BODY_EXPR(x) = v; }
+SEXP (RCC_FUNSXP_SET_CFUN)(SEXP x, RCC_CCODE v) { RCC_FUNSXP_CFUN(x) = v; }
 
 /* Primitive Accessors */
 int (PRIMOFFSET)(SEXP x) { return PRIMOFFSET(x); }

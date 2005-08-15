@@ -434,7 +434,7 @@ SEXP R_data_class(SEXP obj, Rboolean singleString)
 	else {
 	  SEXPTYPE t = TYPEOF(obj);
 	  switch(t) {
-	  case CLOSXP: case SPECIALSXP: case BUILTINSXP:
+	  case CLOSXP: case SPECIALSXP: case BUILTINSXP: case RCC_CLOSXP:
 	    class = mkChar("function");
 	    break;
 	  case REALSXP:
@@ -480,7 +480,7 @@ SEXP R_data_class2 (SEXP obj)
     }
     PROTECT(class0);
     switch(t = TYPEOF(obj)) {
-    case CLOSXP: case SPECIALSXP: case BUILTINSXP:
+    case CLOSXP: case SPECIALSXP: case BUILTINSXP: case RCC_CLOSXP:
 	class = mkChar("function");
 	break;
     case INTSXP:

@@ -1,4 +1,4 @@
-%% $Id: xyVector.Rd,v 1.1.1.1 2005/08/15 15:27:39 johnmc Exp $
+%% $Id: xyVector.Rd,v 1.2 2005/08/15 16:11:27 johnmc Exp $
 \name{xyVector}
 \alias{xyVector}
 %\alias{as.data.frame.xyVector}

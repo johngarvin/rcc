@@ -1,4 +1,4 @@
-### $Id: Indometh.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: Indometh.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Pharmacokinetic data on the drug Indomethicin
 ### Kwan, Breault, Umbenhauer, McMahon, and Duggan, (1976) J. of Pharmacokinetics
 ###  and Biopharmaceutics, 4, 255-280.

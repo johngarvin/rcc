@@ -84,6 +84,7 @@ SEXP duplicate(SEXP s)
     case BCODESXP:
 #endif
     case WEAKREFSXP:
+    case RCC_FUNSXP:
 	return s;
     case CLOSXP:
 	PROTECT(s);
@@ -91,6 +92,15 @@ SEXP duplicate(SEXP s)
 	SET_FORMALS(t, FORMALS(s));
 	SET_BODY(t, BODY(s));
 	SET_CLOENV(t, CLOENV(s));
+	DUPLICATE_ATTRIB(t, s);
+	UNPROTECT(2);
+	break;
+    case RCC_CLOSXP:
+	PROTECT(s);
+	PROTECT(t = allocSExp(RCC_CLOSXP));
+	RCC_CLOSXP_SET_FORMALS(t, RCC_CLOSXP_FORMALS(s));
+	RCC_CLOSXP_SET_FUN(t, RCC_CLOSXP_FUN(s));
+	RCC_CLOSXP_SET_CLOENV(t, RCC_CLOSXP_CLOENV(s));
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
 	break;

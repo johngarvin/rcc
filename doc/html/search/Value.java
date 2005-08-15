@@ -23,9 +23,9 @@
   
   $Source: /home/garvin/cvs-svn/cvs-repos/developer/R-2.1.1/doc/html/search/Value.java,v $
   
-  $Revision: 1.1.1.1 $
+  $Revision: 1.2 $
 
-  $Date: 2005/08/15 15:27:22 $
+  $Date: 2005/08/15 16:11:22 $
   
   $Author: johnmc $
 
@@ -156,8 +156,8 @@ public class Value extends Object
   HISTORY:
   
   $Log: Value.java,v $
-  Revision 1.1.1.1  2005/08/15 15:27:22  johnmc
-  R-2.1.1 original check in
+  Revision 1.2  2005/08/15 16:11:22  johnmc
+  Updated with changes to support rcc.
 
   Revision 1.4  2002/05/05 22:34:52  pd
   .subset/.subset2, perfomace tweak in [[.data.frame

@@ -137,6 +137,13 @@ SEXP do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_CLOENV(s, R_GlobalEnv);
 	return(s);
     }
+    if (TYPEOF(CAR(args)) == RCC_CLOSXP) {
+	s = allocSExp(CLOSXP);
+	SET_FORMALS(s, RCC_CLOSXP_FORMALS(CAR(args)));
+	SET_BODY(s, R_NilValue);
+	SET_CLOENV(s, R_GlobalEnv);
+	return(s);
+    }
     return R_NilValue;
 }
 
@@ -144,7 +151,9 @@ SEXP do_formals(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     if (TYPEOF(CAR(args)) == CLOSXP)
-	return duplicate(FORMALS(CAR(args)));
+      	return duplicate(FORMALS(CAR(args)));
+    else if (TYPEOF(CAR(args)) == RCC_CLOSXP)
+	return duplicate(RCC_CLOSXP_FORMALS(CAR(args)));
     else
 	return R_NilValue;
 }
@@ -154,6 +163,8 @@ SEXP do_body(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return duplicate(BODY_EXPR(CAR(args)));
+    else if (TYPEOF(CAR(args)) == RCC_CLOSXP)
+      return duplicate(RCC_FUNSXP_BODY_EXPR(RCC_CLOSXP_FUN(CAR(args))));
     else return R_NilValue;
 }
 
@@ -162,6 +173,8 @@ SEXP do_bodyCode(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return duplicate(BODY(CAR(args)));
+    else if (TYPEOF(CAR(args)) == RCC_CLOSXP)
+        return duplicate(RCC_FUNSXP_BODY_EXPR(RCC_CLOSXP_FUN(CAR(args))));
     else return R_NilValue;
 }
 
@@ -170,6 +183,8 @@ SEXP do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
+    else if (TYPEOF(CAR(args)) == RCC_CLOSXP)
+	return RCC_CLOSXP_CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
 	return R_GlobalContext->sysparent;
     else return getAttrib(CAR(args), R_DotEnvSymbol);
@@ -178,10 +193,14 @@ SEXP do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    if (TYPEOF(CAR(args)) == CLOSXP && isEnvironment(CADR(args)))
+    if (isEnvironment(CADR(args))) {
+      if (TYPEOF(CAR(args)) == CLOSXP)
 	SET_CLOENV(CAR(args), CADR(args));
-    else if (isEnvironment(CADR(args)))
+      else if (TYPEOF(CAR(args)) == RCC_CLOSXP)
+	RCC_CLOSXP_SET_CLOENV(CAR(args), CADR(args));
+      else 
 	setAttrib(CAR(args), R_DotEnvSymbol, CADR(args));
+    }
     else
 	errorcall(call, _("replacement object is not an environment"));
     return CAR(args);

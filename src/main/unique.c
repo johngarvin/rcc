@@ -836,7 +836,7 @@ SEXP do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* It must be a closure! */
 
-    if (TYPEOF(b) != CLOSXP) {
+    if (TYPEOF(b) != CLOSXP && TYPEOF(b) != RCC_CLOSXP) {
 	b = deparse1(b, 1, SIMPLEDEPARSE);
 	errorcall(call, _("'%s' is not a function"), CHAR(STRING_ELT(b, 0)));
     }

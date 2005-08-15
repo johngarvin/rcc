@@ -131,6 +131,15 @@ Rboolean compute_identical(SEXP x, SEXP y)
 	}
 	return(y == R_NilValue);
     }
+    case RCC_FUNSXP:
+	return
+	  (compute_identical(RCC_FUNSXP_BODY_EXPR(x), RCC_FUNSXP_BODY_EXPR(y)) &&
+	       RCC_CLOSXP_FUN(x) == RCC_CLOSXP_FUN(y) ? TRUE : FALSE);
+    case RCC_CLOSXP:
+	return
+	  (compute_identical(RCC_CLOSXP_FORMALS(x), RCC_CLOSXP_FORMALS(y)) &&
+	   compute_identical(RCC_CLOSXP_FUN(x), RCC_CLOSXP_FUN(y)) &&
+	       RCC_CLOSXP_CLOENV(x) == RCC_CLOSXP_CLOENV(y) ? TRUE : FALSE);
     case CLOSXP:
 	return(compute_identical(FORMALS(x), FORMALS(y)) &&
 	       compute_identical(BODY_EXPR(x), BODY_EXPR(y)) &&

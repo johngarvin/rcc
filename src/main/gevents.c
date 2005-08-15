@@ -56,7 +56,8 @@ SEXP do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(onMouseDown) == NILSXP) onMouseDown = NULL;
     else if (!nd->canGenMouseDown)
 	errorcall(call, _("'onMouseDown' not supported"));
-    else if (TYPEOF(onMouseDown) != CLOSXP) 
+    else if (TYPEOF(onMouseDown) != CLOSXP || 
+	     TYPEOF(onMouseDown) != RCC_CLOSXP) 
 	errorcall(call, _("invalid 'onMouseDown' callback"));
     args = CDR(args);
     
@@ -64,7 +65,8 @@ SEXP do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(onMouseMove) == NILSXP) onMouseMove = NULL;
     else if (!nd->canGenMouseMove) 
 	errorcall(call, _("'onMouseMove' not supported"));
-    else if (TYPEOF(onMouseMove) != CLOSXP)
+    else if (TYPEOF(onMouseMove) != CLOSXP ||
+	     TYPEOF(onMouseDown) != RCC_CLOSXP) 
 	errorcall(call, _("invalid 'onMouseMove' callback"));
     args = CDR(args);
     
@@ -72,7 +74,8 @@ SEXP do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(onMouseUp) == NILSXP) onMouseUp = NULL;
     else if (!nd->canGenMouseUp) 
 	errorcall(call, _("'onMouseUp' not supported"));
-    else if (TYPEOF(onMouseUp) != CLOSXP) 
+    else if (TYPEOF(onMouseUp) != CLOSXP ||
+	     TYPEOF(onMouseDown) != RCC_CLOSXP) 
 	errorcall(call, _("invalid 'onMouseUp' callback"));
     args = CDR(args);
     
@@ -80,7 +83,8 @@ SEXP do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(onKeybd) == NILSXP) onKeybd = NULL;
     else if (!nd->canGenKeybd) 
 	errorcall(call, _("'onKeybd' not supported"));
-    else if (TYPEOF(onKeybd) != CLOSXP)
+    else if (TYPEOF(onKeybd) != CLOSXP ||
+	     TYPEOF(onMouseDown) != RCC_CLOSXP) 
 	errorcall(call, _("invalid 'onKeybd' callback"));
     
     /* NB:  cleanup of event handlers must be done by driver in onExit handler */

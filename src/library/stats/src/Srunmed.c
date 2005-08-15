@@ -18,7 +18,7 @@
  *  writing to the Free Software Foundation, Inc., 59 Temple Place,
  *  Suite 330, Boston, MA  02111-1307  USA.
  */
-/* --- $Id: Srunmed.c,v 1.1.1.1 2005/08/15 15:27:41 johnmc Exp $ */
+/* --- $Id: Srunmed.c,v 1.2 2005/08/15 16:11:29 johnmc Exp $ */
 
 #include "modreg.h"
 #ifdef ENABLE_NLS

@@ -559,7 +559,11 @@ void PrintValueRec(SEXP s,SEXP env)
     case EXPRSXP:
 	PrintExpression(s);
 	break;
+    case RCC_FUNSXP:
+        Rprintf("<rcc compiled function: %p>\n", RCC_FUNSXP_CFUN(s));
+	break;
     case CLOSXP:
+    case RCC_CLOSXP:
     case LANGSXP:
 	t = getAttrib(s, R_SourceSymbol);
 	if (isNull(t))
@@ -570,7 +574,11 @@ void PrintValueRec(SEXP s,SEXP env)
 	if (TYPEOF(s) == CLOSXP && isByteCode(BODY(s)))
 	    Rprintf("<bytecode: %p>\n", BODY(s));
 #endif
+	if (TYPEOF(s) == RCC_CLOSXP && TYPEOF(RCC_CLOSXP_FUN(s)) == RCC_FUNSXP)
+	  Rprintf("<rcc compiled function: %p>\n", 
+		  RCC_FUNSXP_CFUN(RCC_CLOSXP_FUN(s)));
 	if (TYPEOF(s) == CLOSXP) t = CLOENV(s);
+	else if (TYPEOF(s) == RCC_CLOSXP) t = RCC_CLOSXP_CLOENV(s);
 	else t = R_GlobalEnv;
 	if (t != R_GlobalEnv)
 	    PrintEnvir(t);

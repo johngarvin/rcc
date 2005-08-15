@@ -1055,6 +1055,14 @@ SEXP do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 	funarg = s;
 	SET_BODY(funarg, exprlist);
     }
+    else if (TYPEOF(funarg) == RCC_CLOSXP)
+    {
+	s = allocSExp(CLOSXP);
+	SET_FORMALS(s, RCC_CLOSXP_FORMALS(funarg));
+	SET_CLOENV(s, RCC_CLOSXP_CLOENV(funarg));
+	funarg = s;
+	SET_BODY(funarg, exprlist);
+    }
     else if (isString(funarg)) {
 	PROTECT(names = duplicate(funarg));
 	PROTECT(funarg = allocSExp(CLOSXP));

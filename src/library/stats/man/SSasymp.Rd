@@ -1,4 +1,4 @@
-% $Id: SSasymp.Rd,v 1.1.1.1 2005/08/15 15:27:40 johnmc Exp $
+% $Id: SSasymp.Rd,v 1.2 2005/08/15 16:11:28 johnmc Exp $
 \name{SSasymp}
 \title{Asymptotic Regression Model}
 \usage{

@@ -1,4 +1,4 @@
-### $Id: pkg2tex.pl,v 1.1.1.1 2005/08/15 15:27:47 johnmc Exp $
+### $Id: pkg2tex.pl,v 1.2 2005/08/15 16:11:32 johnmc Exp $
 
 ## Create a single pkgname-pkg.tex file from the Latex subdirectories
 ## Copyright (C) 1998 Douglas M. Bates <bates@stat.wisc.edu>
@@ -32,7 +32,7 @@ use R::Utils;
 
 my $help;
 
-my $revision = ' $Revision: 1.1.1.1 $ ';
+my $revision = ' $Revision: 1.2 $ ';
 my $version;
 my $name;
 

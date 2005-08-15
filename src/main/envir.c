@@ -997,6 +997,7 @@ SEXP findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
 	    }
 	    if (TYPEOF(vl) == mode) return vl;
 	    if (mode == FUNSXP && (TYPEOF(vl) == CLOSXP ||
+				   TYPEOF(vl) == RCC_CLOSXP ||
 				   TYPEOF(vl) == BUILTINSXP ||
 				   TYPEOF(vl) == SPECIALSXP))
 		return (vl);
@@ -1018,6 +1019,7 @@ SEXP findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
 	}
 	if (TYPEOF(vl) == mode) return vl;
 	if (mode == FUNSXP && (TYPEOF(vl) == CLOSXP ||
+			       TYPEOF(vl) == RCC_CLOSXP ||
 			       TYPEOF(vl) == BUILTINSXP ||
 			       TYPEOF(vl) == SPECIALSXP))
 	    return (vl);
@@ -1034,7 +1036,8 @@ SEXP findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits, Rboolean d
     SEXP vl;
     int tl;
     if (mode == INTSXP) mode = REALSXP;
-    if (mode == FUNSXP || mode ==  BUILTINSXP || mode == SPECIALSXP) 
+    if (mode == FUNSXP || mode ==  BUILTINSXP || mode == SPECIALSXP || 
+	mode == RCC_CLOSXP) 
 	mode = CLOSXP;
     while (rho != R_NilValue) {
 	vl = findVarInFrame3(rho, symbol, doGet);
@@ -1048,7 +1051,8 @@ SEXP findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits, Rboolean d
 	    }
 	    tl = TYPEOF(vl);
 	    if (tl == INTSXP) tl = REALSXP;
-	    if (tl == FUNSXP || tl ==  BUILTINSXP || tl == SPECIALSXP) 
+	    if (tl == FUNSXP || tl ==  BUILTINSXP || tl == SPECIALSXP || 
+		tl == RCC_CLOSXP) 
 		tl = CLOSXP;
 	    if (tl == mode) return vl;
 	}
@@ -1069,7 +1073,8 @@ SEXP findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits, Rboolean d
 	}
 	tl = TYPEOF(vl);
 	if (tl == INTSXP) tl = REALSXP;
-	if (tl == FUNSXP || tl ==  BUILTINSXP || tl == SPECIALSXP)
+	if (tl == FUNSXP || tl ==  BUILTINSXP || tl == SPECIALSXP || 
+	    tl == RCC_CLOSXP)
 	    tl = CLOSXP;
 	if (tl == mode) return vl;
     }
@@ -1191,7 +1196,7 @@ SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
 
 */
 
-SEXP findFun(SEXP symbol, SEXP rho)
+SEXP findFunUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundOK)
 {
     SEXP vl;
     while (rho != R_NilValue) {
@@ -1209,8 +1214,8 @@ SEXP findFun(SEXP symbol, SEXP rho)
 		vl = eval(vl, rho);
 		UNPROTECT(1);
 	    }
-	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == BUILTINSXP ||
-		TYPEOF(vl) == SPECIALSXP)
+	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == RCC_CLOSXP || 
+		TYPEOF(vl) == BUILTINSXP || TYPEOF(vl) == SPECIALSXP)
 		return (vl);
 	    if (vl == R_MissingArg)
 		error(_("argument \"%s\" is missing, with no default"),
@@ -1218,11 +1223,18 @@ SEXP findFun(SEXP symbol, SEXP rho)
 	}
 	rho = ENCLOS(rho);
     }
-    if (SYMVALUE(symbol) == R_UnboundValue)
-	error(_("couldn't find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    if (SYMVALUE(symbol) == R_UnboundValue) {
+      if (unboundOK) return SYMBOL_BINDING_VALUE(symbol);
+      else error(_("couldn't find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    }
     if (TYPEOF(SYMBOL_BINDING_VALUE(symbol)) == PROMSXP)
 	return eval(SYMBOL_BINDING_VALUE(symbol), rho);
     return SYMBOL_BINDING_VALUE(symbol);
+}
+
+SEXP findFun(SEXP symbol, SEXP rho)
+{
+  return findFunUnboundOK(symbol, rho, FALSE);
 }
 
 
@@ -2440,6 +2452,10 @@ SEXP do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    while (p != R_NilValue) {
 		if (TYPEOF(CAR(p)) == CLOSXP && CLOENV(CAR(p)) == loadenv)
 		    SET_CLOENV(CAR(p), R_GlobalEnv);
+		else if (TYPEOF(CAR(p)) == RCC_CLOSXP && 
+			 RCC_CLOSXP_CLOENV(CAR(p)) == loadenv)
+		  RCC_CLOSXP_SET_CLOENV(CAR(p), R_GlobalEnv);
+		/* johnmc - more work needed here to reconstitute rcc_function */
 		defineVar(TAG(p), CAR(p), libenv);
 		p = CDR(p);
 	    }
@@ -2450,6 +2466,9 @@ SEXP do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while (p != R_NilValue) {
 	    if (TYPEOF(CAR(p)) == CLOSXP && CLOENV(CAR(p)) == loadenv)
 		SET_CLOENV(CAR(p), R_GlobalEnv);
+	    else if (TYPEOF(CAR(p)) == RCC_CLOSXP && 
+		     RCC_CLOSXP_CLOENV(CAR(p)) == loadenv)
+	      RCC_CLOSXP_SET_CLOENV(CAR(p), R_GlobalEnv);
 	    defineVar(TAG(p), CAR(p), libenv);
 	    p = CDR(p);
 	}

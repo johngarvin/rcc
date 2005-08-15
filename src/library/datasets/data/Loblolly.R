@@ -1,4 +1,4 @@
-### $Id: Loblolly.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: Loblolly.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Growth of Loblolly pine trees
 ### Kung (1986), ASA Proc. of the Statistical Computing Section, 340-343.
 "Loblolly" <-

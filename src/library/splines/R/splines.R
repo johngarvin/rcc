@@ -1,4 +1,4 @@
-### $Id: splines.R,v 1.1.1.1 2005/08/15 15:27:39 johnmc Exp $
+### $Id: splines.R,v 1.2 2005/08/15 16:11:27 johnmc Exp $
 
 bs <- function(x, df = NULL, knots = NULL, degree = 3, intercept = FALSE,
                Boundary.knots = range(x))

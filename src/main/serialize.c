@@ -798,6 +798,13 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
     int i;
     SEXP t;
 
+    if (TYPEOF(s) == RCC_FUNSXP) {
+      /* a RCC_CLOSXP will be converted to a CLOSXP when writing; 
+	 thus for now, always write out only a slow, uncompiled 
+	 representation for the body of a CLOSXP */
+      s = RCC_FUNSXP_BODY_EXPR(s);
+    }
+
  tailcall:
     if ((t = GetPersistentName(stream, s)) != R_NilValue) {
 	R_assert(TYPEOF(t) == STRSXP && LENGTH(t) > 0);
@@ -843,22 +850,26 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	}
     }
     else {
-	int flags, hastag;
+      int flags, hastag, stype;
 	switch(TYPEOF(s)) {
 	case LISTSXP:
 	case LANGSXP:
 	case CLOSXP:
+	case RCC_CLOSXP:
 	case PROMSXP:
 	case DOTSXP: hastag = TAG(s) != R_NilValue; break;
 	default: hastag = FALSE;
 	}
-	flags = PackFlags(TYPEOF(s), LEVELS(s), OBJECT(s),
+	if (TYPEOF(s) == RCC_CLOSXP) stype = CLOSXP;
+	else stype = TYPEOF(s);
+	flags = PackFlags(stype, LEVELS(s), OBJECT(s),
                              ATTRIB(s) != R_NilValue, hastag);
 	OutInteger(stream, flags);
 	switch (TYPEOF(s)) {
 	case LISTSXP:
 	case LANGSXP:
 	case CLOSXP:
+	case RCC_CLOSXP:
 	case PROMSXP:
 	case DOTSXP:
 	    /* Dotted pair objects */
@@ -1248,6 +1259,9 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    UNPROTECT(1);
 	    return s;
 	}
+    case RCC_CLOSXP:
+	error(_("this version of R cannot read RCC compiled objects"));
+	break;
     case LISTSXP:
     case LANGSXP:
     case CLOSXP:

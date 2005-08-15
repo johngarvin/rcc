@@ -96,6 +96,61 @@ Should NEVER happen; please bug.report() [mkCLOSXP]"));
     return c;
 }
 
+/*  mkRCC_FUNSXP - return a SEXPR for an RCC compiled function with  */
+/*             a C function pointer cfun and an expression for the  */
+/*             function body bodyexpr */
+
+
+SEXP mkRCC_FUNSXP(CCODE cfun, SEXP bodyexpr)
+{
+    SEXP c;
+    PROTECT(bodyexpr);
+    c = allocSExp(RCC_FUNSXP);
+    RCC_FUNSXP_SET_CFUN(c, cfun);
+    RCC_FUNSXP_SET_BODY_EXPR(c, bodyexpr);
+    UNPROTECT(1);
+    return c;
+}
+
+/*  mkRCC_CLOSXP - return a closure for an RCC compiled funciton with    */
+/*             with formals f,  a C function pointer cfun, an expression */
+/*             for the function body bodyexpr, and environment rho       */
+
+SEXP mkRCC_CLOSXP(SEXP formals, CCODE cfun, SEXP bodyexpr, SEXP rho)
+{
+    SEXP c;
+    PROTECT(formals);
+    PROTECT(bodyexpr);
+    PROTECT(rho);
+    c = allocSExp(RCC_CLOSXP);
+
+#ifdef not_used_CheckFormals
+    if(isList(formals))
+	RCC_CLOSXP_SET_FORMALS(c, formals);
+    else
+        error(_("invalid formal arguments for \"function\""));
+#else
+    RCC_CLOSXP_SET_FORMALS(c, formals);
+#endif
+    if(isList(bodyexpr) || isLanguage(bodyexpr) || isSymbol(bodyexpr)
+       || isExpression(bodyexpr) || isVector(bodyexpr)
+#ifdef BYTECODE
+       || isByteCode(bodyexpr)
+#endif
+       )
+      RCC_CLOSXP_SET_FUN(c, mkRCC_FUNSXP(cfun, bodyexpr));
+    else
+        error(_("invalid body argument for \"function\"\n\
+Should NEVER happen; please bug.report() [mkRCC_CLOSXP]"));
+
+    if(rho == R_NilValue)
+	RCC_CLOSXP_SET_CLOENV(c, R_GlobalEnv);
+    else
+	RCC_CLOSXP_SET_CLOENV(c, rho);
+    UNPROTECT(3);
+    return c;
+}
+
 /* mkChar - make a character (CHARSXP) variable */
 
 SEXP mkChar(const char *name)

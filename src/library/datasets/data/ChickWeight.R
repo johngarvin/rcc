@@ -1,4 +1,4 @@
-### $Id: ChickWeight.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: ChickWeight.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Data on the growth of chicks on different diets.
 ### Hand and Crowder (1996), Table A.2, p. 172
 "ChickWeight" <-

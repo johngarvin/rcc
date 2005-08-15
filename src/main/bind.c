@@ -875,8 +875,8 @@ SEXP FetchMethod(char *generic, char *classname, SEXP env)
     method = findVar(install(buf), env);
     if (TYPEOF(method)==PROMSXP)
 	method = eval(method, env);
-    if (TYPEOF(method) != CLOSXP)
-	method = R_NilValue;
+    if (TYPEOF(method) != CLOSXP &&TYPEOF(method) != RCC_CLOSXP)
+	  method = R_NilValue;
     return method;
 }
 
@@ -894,7 +894,7 @@ SEXP do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
      * ghastly.
      *
      * We build promises to evaluate the arguments and then force the
-     * promises so that if we despatch to a closure below, the closure
+     * promises so that if we dispatch to a closure below, the closure
      * is still in a position to use "substitute" to get the actual
      * expressions which generated the argument (for naming purposes).
      *

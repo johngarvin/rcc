@@ -264,6 +264,7 @@ typedef struct {
 /* This table can be found in ../main/names.c */
 typedef struct {
     char   *name;    /* print name */
+	char   *cfun_name; /* string name of c function */
     CCODE  cfun;     /* c-code address */
     int	   code;     /* offset within c-code */
     int	   eval;     /* evaluate args? */
@@ -452,7 +453,7 @@ typedef enum {
 extern
 #endif
 FUNTAB	R_FunTab[];	    /* Built in functions */
-
+extern int R_FunTab_NumEntries;
 
 #include <R_ext/libextern.h>
 
@@ -631,6 +632,7 @@ extern int R_dec_min_exponent		INI_as(-308);
 # define ParseBrowser	Rf_ParseBrowser
 # define mat2indsub		Rf_mat2indsub
 # define Mbrtowc		Rf_mbrtowc
+# define mkRCC_CLOSXP		Rf_mkRCC_CLOSXP
 # define mkCLOSXP		Rf_mkCLOSXP
 # define mkComplex              Rf_mkComplex
 # define mkFalse		Rf_mkFalse
@@ -771,6 +773,7 @@ void mainloop(void);
 SEXP mat2indsub(SEXP, SEXP);
 SEXP match(SEXP, SEXP, int);
 SEXP mkCLOSXP(SEXP, SEXP, SEXP);
+SEXP mkRCC_CLOSXP(SEXP, CCODE, SEXP, SEXP);
 SEXP mkComplex(char *s);
 /* SEXP mkEnv(SEXP, SEXP, SEXP); */
 SEXP mkFalse(void);

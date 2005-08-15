@@ -321,6 +321,7 @@ Rboolean isNull(SEXP s)
 Rboolean isFunction(SEXP s)
 {
     return (TYPEOF(s) == CLOSXP ||
+	    TYPEOF(s) == RCC_CLOSXP ||
 	    TYPEOF(s) == BUILTINSXP ||
 	    TYPEOF(s) == SPECIALSXP);
 }
@@ -674,6 +675,8 @@ TypeTable[] = {
     /* aliases : */
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
+    { "rcc closure",	RCC_CLOSXP },
+    { "rcc function",	RCC_FUNSXP },
 
     { (char *)0,	-1	   }
 };

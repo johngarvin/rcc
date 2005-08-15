@@ -292,6 +292,10 @@ SEXP do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
+    else if (TYPEOF(tval) == RCC_CLOSXP) {
+	PROTECT(saveenv = RCC_CLOSXP_CLOENV(tval));
+	RCC_CLOSXP_SET_CLOENV(tval, R_GlobalEnv);
+    }
     opts = SHOWATTRIBUTES;
     if(!isNull(CADDR(args)))
        	opts = asInteger(CADDR(args));
@@ -299,6 +303,10 @@ SEXP do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     tval = deparse1(tval, 0, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
 	SET_CLOENV(CAR(args), saveenv);
+	UNPROTECT(1);
+    }
+    else if (TYPEOF(tval) == RCC_CLOSXP) {
+	RCC_CLOSXP_SET_CLOENV(CAR(args), saveenv);
 	UNPROTECT(1);
     }
     ifile = asInteger(CADR(args));
@@ -498,7 +506,8 @@ static Rboolean hasAttributes(SEXP s)
     SEXP a = ATTRIB(s);
     if (length(a) > 1
     	|| (length(a) == 1
-    		&& (TYPEOF(s) != CLOSXP || TAG(a) != R_SourceSymbol)))
+    		&& ((TYPEOF(s) != CLOSXP && TYPEOF(s) != RCC_CLOSXP) || 
+		    TAG(a) != R_SourceSymbol)))
     	return(TRUE);
     else
     	return(FALSE);
@@ -665,7 +674,16 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    UNPROTECT(1);
 	}
 	break;
+    case RCC_FUNSXP:
+      {
+	SEXP body = RCC_FUNSXP_BODY_EXPR(s);
+	d->opts = SIMPLEDEPARSE;
+	deparse2buff(body, d);
+	d->opts = localOpts;
+	break;
+      }
     case CLOSXP:
+    case RCC_CLOSXP:
         if (localOpts & SHOWATTRIBUTES) attr1(s, d);
         if ((d->opts & USESOURCE) && (n = length(t = getAttrib(s, R_SourceSymbol))) > 0) {
     	    for(i = 0 ; i < n ; i++) {
@@ -673,17 +691,27 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    	writeline(d);
 	    }
 	} else {
+	    SEXP formals, body;
+	    if (TYPEOF(s) == CLOSXP) {
+	      formals = FORMALS(s);
+	      body = BODY_EXPR(s);
+	    } else {
+	      formals = RCC_CLOSXP_FORMALS(s);
+	      body = RCC_CLOSXP_FUN(s);
+	    }
+	 
 	    d->opts = SIMPLEDEPARSE;
 	    print2buff("function (", d);
-	    args2buff(FORMALS(s), 0, 1, d);
+	    args2buff(formals, 0, 1, d);
 	    print2buff(") ", d);
 
 	    writeline(d);
-	    deparse2buff(BODY_EXPR(s), d);
+	    deparse2buff(body, d);
 	    d->opts = localOpts;
 	}
 	if (localOpts & SHOWATTRIBUTES) attr2(s, d);
 	break;
+
     case ENVSXP:
         d->sourceable = FALSE;
 	print2buff("<environment>", d);
@@ -1034,8 +1062,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		}
 	    }
 	}
-	else if (TYPEOF(CAR(s)) == CLOSXP || TYPEOF(CAR(s)) == SPECIALSXP
-		 || TYPEOF(CAR(s)) == BUILTINSXP) {
+	else if (TYPEOF(CAR(s)) == CLOSXP || TYPEOF(CAR(s)) == SPECIALSXP ||
+		 TYPEOF(CAR(s)) == RCC_CLOSXP || TYPEOF(CAR(s)) == BUILTINSXP) {
 	    deparse2buff(CAR(s), d);
 	    print2buff("(", d);
 	    args2buff(CDR(s), 0, 0, d);

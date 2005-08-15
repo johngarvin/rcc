@@ -491,6 +491,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     case LISTSXP:
     case LANGSXP:
     case CLOSXP:
+    case RCC_CLOSXP:
     case PROMSXP:
     case ENVSXP:
 	s = allocSExp(type);
@@ -499,6 +500,9 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* CDR(s) = */ m->InInteger(fp, d);
 	/* TAG(s) = */ m->InInteger(fp, d);
 	break;
+    case RCC_FUNSXP:
+        error(_("RCC_FUNSXP not yet handled"));
+        break;
     case SPECIALSXP:
     case BUILTINSXP:
 	s = allocSExp(type);
@@ -569,11 +573,15 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
     case LISTSXP:
     case LANGSXP:
     case CLOSXP:
+    case RCC_CLOSXP:
     case PROMSXP:
     case ENVSXP:
 	SETCAR(s, OffsetToNode(m->InInteger(fp, d), node));
 	SETCDR(s, OffsetToNode(m->InInteger(fp, d), node));
 	SET_TAG(s, OffsetToNode(m->InInteger(fp, d), node));
+	break;
+    case RCC_FUNSXP:
+        error(_("restore RCC_FUNSXP not yet handled"));
 	break;
     case SPECIALSXP:
     case BUILTINSXP:
@@ -926,11 +934,15 @@ in version 1 workspaces"));
     case LISTSXP:
     case LANGSXP:
     case CLOSXP:
+    case RCC_CLOSXP:
     case PROMSXP:
     case DOTSXP:
 	NewMakeLists(TAG(obj), sym_list, env_list);
 	NewMakeLists(CAR(obj), sym_list, env_list);
 	NewMakeLists(CDR(obj), sym_list, env_list);
+	break;
+    case RCC_FUNSXP:
+        error(_("NewMakeLists RCC_FUNSXP not yet handled"));
 	break;
     case EXTPTRSXP:
 	NewMakeLists(EXTPTR_PROT(obj), sym_list, env_list);
@@ -1053,12 +1065,16 @@ static void NewWriteItem (SEXP s, SEXP sym_list, SEXP env_list, FILE *fp, Output
 	case LISTSXP:
 	case LANGSXP:
 	case CLOSXP:
+	case RCC_CLOSXP:
 	case PROMSXP:
 	case DOTSXP:
 	    /* Dotted pair objects */
 	    NewWriteItem(TAG(s), sym_list, env_list, fp, m, d);
 	    NewWriteItem(CAR(s), sym_list, env_list, fp, m, d);
 	    NewWriteItem(CDR(s), sym_list, env_list, fp, m, d);
+	    break;
+	case RCC_FUNSXP:
+	    error(_("NewWriteItem RCC_FUNSXP not yet handled"));
 	    break;
 	case EXTPTRSXP:
 	    NewWriteItem(EXTPTR_PROT(s), sym_list, env_list, fp, m, d);
@@ -1247,6 +1263,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp, InputRoutines
     case LISTSXP:
     case LANGSXP:
     case CLOSXP:
+    case RCC_CLOSXP:
     case PROMSXP:
     case DOTSXP:
 	PROTECT(s = allocSExp(type));

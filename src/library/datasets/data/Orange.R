@@ -1,4 +1,4 @@
-### $Id: Orange.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: Orange.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Growth of orange trees
 ### Draper and Smith (1981), Exercise 10.N, p. 524.
 "Orange" <-

@@ -618,7 +618,8 @@ void setup_Rmainloop(void)
 	PROTECT(cmd = install(".First"));
 	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
-	    TYPEOF(R_CurrentExpr) == CLOSXP) {
+	    (TYPEOF(R_CurrentExpr) == CLOSXP || 
+	     TYPEOF(R_CurrentExpr) == RCC_CLOSXP)) {
 	        PROTECT(R_CurrentExpr = lang1(cmd));
 	        R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
 	        UNPROTECT(1);
@@ -639,7 +640,8 @@ void setup_Rmainloop(void)
 	PROTECT(cmd = install(".First.sys"));
 	R_CurrentExpr = findVar(cmd, baseEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
-	    TYPEOF(R_CurrentExpr) == CLOSXP) {
+	    (TYPEOF(R_CurrentExpr) == CLOSXP ||
+	     TYPEOF(R_CurrentExpr) == RCC_CLOSXP)) {
 	        PROTECT(R_CurrentExpr = lang1(cmd));
 	        R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
 	        UNPROTECT(1);
@@ -841,10 +843,12 @@ void R_dot_Last(void)
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
     PROTECT(cmd = install(".Last"));
     R_CurrentExpr = findVar(cmd, R_GlobalEnv);
-    if (R_CurrentExpr != R_UnboundValue && TYPEOF(R_CurrentExpr) == CLOSXP) {
-	PROTECT(R_CurrentExpr = lang1(cmd));
-	R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
-	UNPROTECT(1);
+    if (R_CurrentExpr != R_UnboundValue && 
+	(TYPEOF(R_CurrentExpr) == CLOSXP ||
+	 TYPEOF(R_CurrentExpr) == RCC_CLOSXP)) {
+	  PROTECT(R_CurrentExpr = lang1(cmd));
+	  R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
+	  UNPROTECT(1);
     }
     UNPROTECT(1);
 }

@@ -1,4 +1,4 @@
-### $Id: nls-profile.R,v 1.1.1.1 2005/08/15 15:27:41 johnmc Exp $
+### $Id: nls-profile.R,v 1.2 2005/08/15 16:11:28 johnmc Exp $
 ###
 ### Profiling nonlinear least squares for R
 ###

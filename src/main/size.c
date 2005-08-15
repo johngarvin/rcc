@@ -54,6 +54,15 @@ static unsigned long objectsize(SEXP s)
 	cnt += objectsize(CAR(s));
 	cnt += objectsize(CDR(s));
 	break;
+    case RCC_FUNSXP:
+	cnt += objectsize(RCC_FUNSXP_BODY_EXPR(s));
+	/* no charge for the C object code */
+	break;
+    case RCC_CLOSXP:
+	cnt += objectsize(RCC_CLOSXP_FORMALS(s));
+	cnt += objectsize(RCC_CLOSXP_FUN(s));
+	/* no charge for the environment */
+	break;
     case CLOSXP:
 	cnt += objectsize(FORMALS(s));
 	cnt += objectsize(BODY(s));

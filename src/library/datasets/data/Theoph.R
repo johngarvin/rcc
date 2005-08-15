@@ -1,4 +1,4 @@
-### $Id: Theoph.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: Theoph.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Theophylline pharmacokinetic data
 ### Boeckmann, Sheiner, and Beal (1994), NONMEM Users Guide - Part V.
 "Theoph" <-

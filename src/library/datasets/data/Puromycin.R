@@ -1,4 +1,4 @@
-### $Id: Puromycin.R,v 1.1.1.1 2005/08/15 15:27:29 johnmc Exp $
+### $Id: Puromycin.R,v 1.2 2005/08/15 16:11:26 johnmc Exp $
 ### Reaction rate versus concentration for samples treated with
 ### Puromycin or untreated.  Bates and Watts (1988), Appendix A1.3
 "Puromycin" <-
