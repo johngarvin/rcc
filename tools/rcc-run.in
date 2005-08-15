@@ -1,0 +1,2 @@
+#!/bin/bash
+R_HOME=@R_PREFIX@ exec $*

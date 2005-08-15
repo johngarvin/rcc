@@ -1,0 +1,4 @@
+#!/bin/bash
+export R_HOME=@R_PREFIX@
+BINDIR=`dirname $0`
+exec $BINDIR/rcc.bin $*
