@@ -51,7 +51,6 @@ extern "C" {
 #include <alloca.h>
 #include "get_name.h"
 #include "replacements.h"
-#include "R_parser.h"
 
 // Prevent conflict with basicstring::{append, length} on Alpha
 #undef append
@@ -63,7 +62,9 @@ extern void setup_Rmainloop(void);
 } //extern "C"
 
 #include "util.h"
-#include "macro/Macro.hpp"
+#include "parser.h"
+#include "visibility.h"
+#include "Macro.hpp"
 
 bool is_special(string func);
 
@@ -213,11 +214,11 @@ public:
 struct Expression {
   string var;
   bool is_dep;
-  bool is_visible;
+  visibility is_visible;
   bool is_alloc;
   string del_text;
   Expression() {}
-  Expression(string v, bool d, bool vis, string dt) {
+  Expression(string v, bool d, visibility vis, string dt) {
     var = v;
     is_dep = d;
     is_visible = vis;
@@ -233,12 +234,18 @@ protected:
 			  // following class definition
   unsigned int prot;
   AllocList alloc_list;
+  string edefs;
 public:
+  virtual void finalize() { };
+  const string &output_decls() { return decls; }
+  const string &output_defs() { return edefs; }
+  string decls;
   SubexpBuffer * encl_fn;
   bool has_i;
   const bool is_const;
-  string decls;
-  string defs;
+  virtual void append_defs(string s) {
+    edefs += s;
+  }
   virtual string new_var() {
     prot++;
     return new_var_unp();
@@ -295,11 +302,13 @@ public:
       stmt += *va_arg(param_pt, string *);
     }
     stmt += ")";
+    string defs;
     if (do_protect) {
       defs += protect_str(stmt) + ";\n";
     }
     else
       defs += stmt + ";\n";
+    append_defs(defs);
   }
 
   /* Convenient macro-like things for outputting function applications */
@@ -385,16 +394,17 @@ public:
   }
 
   void del(Expression exp) {
-    defs += exp.del_text;
+    append_defs(exp.del_text);
     if (exp.is_alloc) {
       alloc_list.remove(exp.var);
     }
   }
 
-  Expression op_exp(SEXP e, string rho);
+  Expression op_exp(SEXP e, string rho, bool primFuncArg = FALSE);
   Expression op_primsxp(SEXP e, string rho);
   Expression op_symlist(SEXP e, string rho);
   Expression op_lang(SEXP e, string rho);
+  Expression op_promise(SEXP e);
   Expression op_begin(SEXP exp, string rho);
   Expression op_if(SEXP e, string rho);
   Expression op_for(SEXP e, string rho);
@@ -409,9 +419,9 @@ public:
   Expression op_arglist(SEXP e, string rho);
   Expression op_arglist_local(SEXP e, string rho);
   Expression op_literal(SEXP e, string rho);
-  Expression op_list_local(SEXP e, string rho, bool literal = TRUE,
-			   string opt_l_car = "");
-  Expression op_list(SEXP e, string rho, bool literal = TRUE);
+  Expression op_list_local(SEXP e, string rho, bool literal = TRUE, 
+			   bool primFuncArgList = FALSE, string opt_l_car = "");
+  Expression op_list(SEXP e, string rho, bool literal, bool primFuncArgList = FALSE);
   Expression op_list_help(SEXP e, string rho, 
 			  SubexpBuffer & consts, 
 			  string & out_const, bool literal);
@@ -433,7 +443,7 @@ public:
     : prefix(pref), is_const(is_c) {
     has_i = FALSE;
     prot = 0;
-    decls = defs = "";
+    decls = edefs = "";
     encl_fn = this;
   }
   virtual ~SubexpBuffer() {};
@@ -451,20 +461,33 @@ private:
   const unsigned int threshold;
   const string init_str;
   unsigned int init_fns;
+  string split_defs;
+  void flush_defs() { 
+    if (split_defs.length() > 0) {
+      edefs += "\n";
+      if (is_const) { decls += "static "; edefs += "static "; }
+      decls += "void " + init_str + i_to_s(init_fns) + "();\n";
+      edefs += "void " + init_str + i_to_s(init_fns) + "() {\n";
+      edefs += indent(split_defs);
+      edefs += "}\n";
+      split_defs = "";
+      init_fns++;
+    }
+  }
 public:
+  virtual void finalize() { flush_defs(); };
+
+  void virtual append_defs(string d) { split_defs += d; }
+  int virtual defs_location() { flush_defs(); return edefs.length(); }
+  void virtual insert_def(int loc, string d) { 
+    flush_defs(); edefs.insert(loc, d); 
+  }
   static SplitSubexpBuffer global_constants;
   unsigned int get_n_inits() { return init_fns; }
   string get_init_str() { return init_str; }
   virtual string new_var() { prot++; return new_var_unp(); }
   virtual string new_var_unp() {
-    if ((SubexpBuffer::n % threshold) == 0) {
-      if (is_const) decls += "static ";
-      decls += "void " + init_str + i_to_s(init_fns) + "();\n";
-      if (SubexpBuffer::n != 0) defs += "}\n";
-      if (is_const) defs += "static ";
-      defs += "void " + init_str + i_to_s(init_fns) + "() {\n";
-      init_fns++;
-    }
+    if ((SubexpBuffer::n % threshold) == 0) flush_defs();
     return prefix + i_to_s(SubexpBuffer::n++);
   }
   virtual string new_var_unp_name(string name) {

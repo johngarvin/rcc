@@ -1,9 +1,9 @@
-/* Copyright (c) 2003 John Garvin
+/* Copyright (c) 2005 John Garvin 
  *
- * Preliminary version v06, July 11, 2003 
+ * May 27, 2005
  *
- * get_name maps R internal function table indices to R function names.
- *
+ * RCC uses macros to output common patterns.
+ *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -19,33 +19,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
+#ifndef Macro_hpp
+#define Macro_hpp
 
-#include <Defn.h>       /* includes Internals.h, which defines do_ functions */
+#include <string>
 
-#if 0
-#include <main/arithmetic.h>
-#include <IOStuff.h>
-#include <Parse.h>
-#include <R_ext/RConverters.h>
-#include <config.h>     /* OS #defines */
-#endif
-
-#include "get_name.h"
-
-/* #define Unix 1 */
-
-struct map {
-  char *name;
-  CCODE cfun;
+class Macro {
+public:
+  Macro(const std::string b) : body(b) { }
+  const std::string call(const int nargs, const std::string args[]) const;
+private:
+  const std::string body;
 };
 
-const char *get_name(int n) 
-{
-	if (n >= 0 && n < R_FunTab_NumEntries)
-		return R_FunTab[n].cfun_name;
-	else {
-		fprintf (stderr, "get_name: Illegal name index (%d)\n", n);
-		return ("illegal_name");
-	}
-}
+class MacroFactory {
+public:
+  static MacroFactory * Instance();
+  const Macro getMacro(const std::string name) const;
+protected:
+  MacroFactory() {}
+private:
+  static MacroFactory * _instance;
+  static const std::string directory;
+};
 
+extern const MacroFactory mf;
+extern const Macro mac_primsxp;
+extern const Macro mac_ifelse; 
+
+#endif

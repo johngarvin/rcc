@@ -1,18 +1,26 @@
-bin_PROGRAMS = rcc
+SUBDIRS = macros
+bin_PROGRAMS = rcc.bin
 
-rcc_SOURCES = \
+rcc_bin_SOURCES = \
 	      rcc.cc rcc.h \
-              util.cc util.h \
-              R_parser.c R_parser.h \
-	      get_name.c get_name.h \
-              macro/Macro.cpp macro/Macro.hpp
+		  codegen.cc codegen.h \
+          parser.cc parser.h \
+          util.cc util.h \
+		  visibility.cc visibility.h \
+          Macro.cpp Macro.hpp \
+	      get_name.c get_name.h 
 
-#              MacroCollection.cpp MacroCollection.hpp
+#--------------------------------------
+# The use of variables defined by -D below in MY_COMMON_INCLUDES 
+# within rcc.cc files makes it necessary that its object file 
+# depend on the Makefile 
+#--------------------------------------
+rcc_bin-rcc.$(OBJEXT): Makefile
 
 
-rcc_LIBRARIES = ../lib/librcc.so
+MY_COMMON_INCLUDES = -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\" -DR_HOME=\"@R_PREFIX@\" -DRCC_INCLUDE_PATH=\"@RCC_INCLUDE_PATH@\"
 
-rcc_CFLAGS  = $(BASE_CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib -DR_HOME=\"$(R_PREFIX)\"
-rcc_CXXFLAGS= $(BASE_CFLAGS) -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib -DR_HOME=\"$(R_PREFIX)\"
-rcc_LDFLAGS =-L$(R_PREFIX)/lib/R/bin -lR
+rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(MY_COMMON_INCLUDES)
+rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(MY_COMMON_INCLUDES)
+rcc_bin_LDFLAGS =-L$(R_PREFIX)/lib -lR
 
