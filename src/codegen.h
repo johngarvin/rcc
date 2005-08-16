@@ -37,4 +37,4 @@ std::string emit_call2(std::string fname, const std::string arg1,
 //          all will be interpreted as strings 
 //    note: statement terminated 
 //------------------------------------------------------------------------------
-std::string emit_call_stmt(const std::string fname, ...);
+// std::string emit_call_stmt(const std::string fname, ...);

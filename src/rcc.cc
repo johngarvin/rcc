@@ -1448,7 +1448,8 @@ int main(int argc, char *argv[]) {
     UNPROTECT_PTR(expressions[i]);
     exprs += indent("{\n");
     exprs += indent(indent(Visibility::emit_set_if_visible(exp.is_visible)));
-    exprs += indent(indent(subexps.output()));
+    exprs += indent(indent("{\n"));
+    exprs += indent(indent(indent(subexps.output())));
     if (exp.is_visible != INVISIBLE) {
       string evar = "e" + i_to_s(i);  
       string printexpn = evar  + " = " + exp.var + ";\n";
@@ -1460,9 +1461,10 @@ int main(int argc, char *argv[]) {
 			     emit_call2("PrintValueEnv", 
 					evar , "R_GlobalEnv"));
 
-      exprs += indent(indent(printexpn));
+      exprs += indent(indent(indent(printexpn)));
     }
-    exprs += indent(indent(exp.del_text));
+    exprs += indent(indent(indent(exp.del_text)));
+    exprs += indent(indent("}\n"));
     exprs += indent("}\n");
     e++;
   }

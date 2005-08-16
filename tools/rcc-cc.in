@@ -1,2 +1,2 @@
 #!/bin/bash
-exec @CC@ -I@RCC_INCLUDE_PATH@/R $* -L@RCC_LIB_PATH@ -lrcc -L@R_PREFIX@/lib -lR
+exec @CC@ -I@RCC_INCLUDE_PATH@/R $* -L@RCC_LIB_PATH@ -lrcc -L@R_LIB_PATH@ -lR

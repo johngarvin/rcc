@@ -4,6 +4,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([src/rcc.cc])
 AM_CONFIG_HEADER([config.h])
  
+AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_CC
@@ -51,6 +52,18 @@ if test ! -d $R_PREFIX; then
 fi
 
 
+case ${host} in
+  powerpc-apple-darwin*)
+    R_HOME=${R_PREFIX}
+    ;;
+
+  *)
+    R_HOME=${R_PREFIX}/lib/R
+    ;;
+esac
+
+R_LIB_PATH=${R_HOME}/lib
+
 RCC_MACRO_PATH=${prefix}/macros
 RCC_INCLUDE_PATH=${prefix}/include/rcc
 RCC_LIB_PATH=${prefix}/lib
@@ -63,6 +76,8 @@ AC_SUBST(R_PREFIX)
 AC_SUBST(RCC_MACRO_PATH)
 AC_SUBST(RCC_INCLUDE_PATH)
 AC_SUBST(RCC_LIB_PATH)
+AC_SUBST(R_LIB_PATH)
+AC_SUBST(R_HOME)
 
 ### ** Platform.
 

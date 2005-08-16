@@ -1,3 +1,4 @@
+#include <cstdarg>
 #include "codegen.h"
 
 using namespace std;
@@ -10,7 +11,7 @@ using namespace std;
 
 
 // end of statement string
-const string eos = "\n;";
+const string eos = ";\n";
 
 
 
@@ -64,6 +65,7 @@ string emit_call2(string fname, const string arg1, const string arg2)
   return emit_call_internal(fname, &arg1, &arg2, NULL);
 } 
 
+#if 0
 string emit_call_stmt(const string fname, ...)
 {
   va_list args;
@@ -72,13 +74,12 @@ string emit_call_stmt(const string fname, ...)
   va_end(args);
   return cstmt;
 }
-
+#endif
 
 
 //******************************************************************************
 // private functions
 //******************************************************************************
-
 static string emit_call_internal(string fname, ...) 
 {
   va_list args;

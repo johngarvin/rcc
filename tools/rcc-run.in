@@ -1,2 +1,2 @@
 #!/bin/bash
-R_HOME=@R_PREFIX@ exec $*
+LD_LIBRARY_PATH=@RCC_LIB_PATH@:@R_LIB_PATH@ R_HOME=@R_HOME@ exec $*

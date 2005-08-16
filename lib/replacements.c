@@ -29,12 +29,16 @@ static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
 double R_tmp;
 
+#if 0
+
 static double myfmod(double x1, double x2)
 {
     double q = x1 / x2;
     return x1 - floor(q) * x2;
 }
 
+/* Copy of R_binary that doesn't use 'class' as a variable name. Was
+   preventing C++ compilation. */
 SEXP rcc_R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 {
     SEXP clazz, dims, tsp, xnames, ynames;
@@ -508,6 +512,8 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     return ans;
 }
+
+#endif
 
 /* Replacement for static VectorAssign in subassign.c */
 SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
@@ -1022,3 +1028,4 @@ SEXP DeleteListElements(SEXP x, SEXP which)
     UNPROTECT(2);
     return xnew;
 }
+
