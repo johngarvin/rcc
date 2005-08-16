@@ -2,7 +2,7 @@ AC_INIT(rcc, 1.1.7, garvin@rice.edu)
 AC_PREFIX_DEFAULT([/usr/local])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([src/rcc.cc])
-AM_CONFIG_HEADER([config/config.h])
+AM_CONFIG_HEADER([config.h])
  
 
 # Checks for programs.
