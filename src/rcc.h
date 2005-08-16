@@ -62,7 +62,7 @@ extern void setup_Rmainloop(void);
 } //extern "C"
 
 #include "util.h"
-#include "parser.h"
+#include "R_parser.h"
 #include "visibility.h"
 #include "Macro.hpp"
 
