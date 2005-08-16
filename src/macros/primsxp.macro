@@ -1,0 +1,1 @@
+PROTECT($1$ = mkPRIMSXP($2$,$3$)); /* $4$ */
