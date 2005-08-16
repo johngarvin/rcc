@@ -285,14 +285,16 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
     Expression te = op_exp(CADR(e), rho);
     append_defs(indent("PROTECT(" + out + " = " + te.var + ");\n"));
     del(te);
+    append_defs(indent(Visibility::emit_set(te.is_visible)));
     append_defs("} else {\n");
     del(cond);
     Expression fe = op_exp(CADDR(e), rho);
     append_defs(indent("PROTECT(" + out + " = " + fe.var + ");\n"));
     del(fe);
+    append_defs(indent(Visibility::emit_set(fe.is_visible)));
     append_defs("}\n");
     //del(cond);
-    return Expression(out, FALSE, VISIBLE, unp(out));
+    return Expression(out, FALSE, CHECK_VISIBLE, unp(out));
 #else
     Expression cond = op_exp(CAR(e), rho);
     Expression te = op_exp(CADR(e), rho);
@@ -314,10 +316,10 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
     Expression te = op_exp(CADR(e), rho);
     append_defs(indent("PROTECT(" + out + " = " + te.var + ");\n"));
     del(te);
-	append_defs(indent(Visibility::emit_set(VISIBLE)));
+    append_defs(indent(Visibility::emit_set(te.is_visible)));
     append_defs("} else {\n");
-	append_defs(indent(Visibility::emit_set(INVISIBLE)));
     del(cond);
+    append_defs(indent(Visibility::emit_set(INVISIBLE)));
     append_defs(indent("PROTECT(" + out + " = R_NilValue);\n") + "}\n");
     return Expression(out, FALSE, CHECK_VISIBLE, unp(out));
   }
