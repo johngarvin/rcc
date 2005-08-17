@@ -9,10 +9,10 @@ MOSTLYCLEANFILES = $(subst .r,,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES)) com
 check_SCRIPTS = runtests
 
 interpreted:
-	run-interpreted $(MYTESTFILES) | tee interpreted.log
+	./run-interpreted $(MYTESTFILES) | tee interpreted.log
 
 compiled:
-	run-compiled $(MYTESTFILES) | tee compiled.log
+	./run-compiled $(MYTESTFILES) | tee compiled.log
 
 diffs:
 	diff compiled.log interpreted.log
