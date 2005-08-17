@@ -1,10 +1,12 @@
 /* Matrix multiplication with transposed arguments */
 /* altered version of array.c from the R sources */
 
-#include <Defn.h>
+#include "rinternals.h"
+#if 0
 #include <Rmath.h>
 #include <IOStuff.h>
 #include <Parse.h>
+#endif
 
 SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info);
 static void matprod_t(double *x, int nrx, int ncx,

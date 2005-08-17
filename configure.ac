@@ -6,6 +6,36 @@ AM_CONFIG_HEADER([config.h])
  
 AC_CANONICAL_HOST
 
+
+AC_ARG_WITH(R-sources,
+	    [ --with-R-sources=DIR  Prefix of R source tree],
+	    R_SOURCES="$withval",
+	    R_SOURCES="non_existent_directory")
+
+AC_ARG_WITH(R-prefix,
+	    [ --with-R-prefix=DIR   Directory containing R installation],
+	    R_PREFIX="$withval",
+	    R_PREFIX="non_existent_directory")
+
+
+AC_ARG_WITH(OA-prefix,
+	    [ --with-OA-prefix=DIR  Directory containing OpenAnalysis installation],
+	    OA_PREFIX="$withval",
+	    OA_PREFIX="non_existent_directory")
+
+if test ! -d ${R_SOURCES}; then
+	AC_MSG_ERROR([you must specify the source directory of an R 2.1.1 distribution using --with-R-sources])
+fi
+
+if test ! -d ${R_PREFIX}; then
+	AC_MSG_ERROR([you must specify the directory of an R 2.1.1 installation using --with-R-prefix])
+fi
+
+
+if test ! -d ${OA_PREFIX}; then
+	AC_MSG_ERROR([you must specify the installation directory of an OpenAnalysis distribution using --with-OA-prefix])
+fi
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
@@ -34,24 +64,6 @@ AC_FUNC_ALLOCA
 AC_FUNC_ERROR_AT_LINE
 AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
 
-AC_ARG_WITH(R-sources,
-	    [ --with-R-sources=DIR  Prefix of R source tree],
-	    R_SOURCES="$withval",
-	    R_SOURCES="")
-AC_ARG_WITH(R-prefix,
-	    [ --with-R-prefix=DIR   Directory containing R installation],
-	    R_PREFIX="$withval",
-	    R_PREFIX="")
-
-if test ! -d $R_SOURCES; then
-	AC_MSG_ERROR([you must specify the source directory of an R 2.1.1 distribution using --with-R-sources])
-fi
-
-if test ! -d $R_PREFIX; then
-	AC_MSG_ERROR([you must specify the directory of an R 2.1.1 installation using --with-R-prefix])
-fi
-
-
 case ${host} in
   powerpc-apple-darwin*)
     R_HOME=${R_PREFIX}
@@ -78,6 +90,7 @@ AC_SUBST(RCC_INCLUDE_PATH)
 AC_SUBST(RCC_LIB_PATH)
 AC_SUBST(R_LIB_PATH)
 AC_SUBST(R_HOME)
+AC_SUBST(OA_PREFIX)
 
 ### ** Platform.
 
@@ -110,17 +123,19 @@ AC_SUBST(R_OSTYPE)
 
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
+		 lib/Makefile
 		 src/Makefile
 		 src/macros/Makefile
-		 lib/Makefile
-		 R-patches/Makefile
+		 src/annotations/Makefile
+		 src/analysis/Makefile
+		 src/support/Makefile
+		 tests/Makefile
+		 tests/regression/Makefile
+		 tests/performance/Makefile
 		 tools/Makefile
 		 tools/rcc
 		 tools/rcc-cc
 		 tools/rcc-run
-		 tests/Makefile
-		 tests/regression/Makefile
-		 tests/performance/Makefile
                  ])
 
 # config files currently unused

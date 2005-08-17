@@ -1,9 +1,11 @@
-/* Copyright (c) 2003 John Garvin
+/* Copyright (c) 2003-2004 John Garvin 
  *
- * Preliminary version v06, July 11, 2003 
+ * July 11, 2003 
  *
- * get_name maps R internal function table indices to R function names.
- *
+ * Parses R code, turns into C code that uses internal R functions.
+ * Attempts to output some code in regular C rather than using R
+ * functions.
+ *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -19,23 +21,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
+#include <stdio.h>
 
-#include "rinternals.h"       /* includes Internals.h, which defines do_ functions */
+#include "rinternals.h"
 
-#include "get_name.h"
-
-struct map {
-  char *name;
-  CCODE cfun;
-};
-
-const char *get_name(int n) 
-{
-	if (n >= 0 && n < R_FunTab_NumEntries)
-		return R_FunTab[n].cfun_name;
-	else {
-		fprintf (stderr, "get_name: Illegal name index (%d)\n", n);
-		return ("illegal_name");
-	}
-}
-
+void init_R();
+void parse_R(FILE *in_file, SEXP *exps[]);
+SEXP parse_R_as_function(FILE *in_file);
