@@ -47,15 +47,13 @@
 #include <list>
 #include <string>
 #include <assert.h>
-#include "tree.hh"
+#include "SimpleIterators.hpp"
 #include "R_Analyst.h"
 #include "R_Utils.hpp"
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
-
-tree<SEXP> build_scope_tree(SEXP e);
 
 #include <rinternals.h>
 
@@ -323,136 +321,8 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 // ITERATORS
 //--------------------------------------------------------------------
 
-//! Abstract class to enumerate a set of R expressions.
-class R_ExpIterator
-{
-public:
-  virtual ~R_ExpIterator() { }
-  
-  virtual SEXP current() const = 0;
-  virtual bool isValid() const = 0;
-  virtual void operator++() = 0;
-  void operator++(int) { ++*this; }
-  virtual void reset() = 0;
-};
-
-#if 0
-// Folding into R_ListIterator (treated as an empty list)
-
-//! Empty iterator for nil value
-class R_EmptyIterator : public R_ExpIterator
-{
-public:
-  R_EmptyIterator(SEXP _exp) { assert(_exp == R_NilValue); }
-
-  SEXP current() const { assert(0); }
-  bool isValid() const { return false; }
-  void operator++() { assert(0); }
-  void reset() { }
-};
-#endif
-
-//! Singleton iterator for a single statement.
-class R_SingletonIterator : public R_ExpIterator
-{
-protected:
-  const SEXP exp;
-  bool valid;
-public:
-  R_SingletonIterator(SEXP _exp) : exp(_exp) { valid = true; }
-
-  SEXP current() const { return exp; }
-  bool isValid() const { return valid; }
-  void operator++() { valid = false; }
-  void reset() { valid = true; }
-};
-
-//! Enumerate the elements of a list (in R, a chain of CONS cells).
-//! To make sure all locations are unique, the iterator gives you the
-//! cons cell; take the CAR to get the data you want.
-class R_ListIterator : public R_ExpIterator
-{
-protected:
-  const SEXP exp;
-  SEXP curr;
-public:
-  R_ListIterator(SEXP _exp) : exp(_exp)
-  {
-    // make sure it's of list type: data cons cell, language cons cell, or nil
-    assert(TYPEOF(exp) == LISTSXP || TYPEOF(exp) == LANGSXP || exp == R_NilValue);
-    curr = exp;
-  }
-  virtual ~R_ListIterator() { }
-  
-  //  SEXP current() const { return CAR(curr); }
-  SEXP current() const { return curr; }
-  bool isValid() const { return (curr != R_NilValue); }
-  void operator++()
-  {
-    // must be a data or language cons cell to be able to take the CDR
-    assert(TYPEOF(curr) == LISTSXP || TYPEOF(curr) == LANGSXP);
-    curr = CDR(curr);
-  }
-  void reset() { curr = exp; }
-};
-
-#if 0
-
-// is this needed?
-
-//! Enumerate the elements of a list or a singleton. The constructor
-//! takes a cons cell where the CAR is the actual data.
-//! To make sure all locations are unique, the iterator gives you the
-//! cons cell; take the CAR to get the data you want.
-class R_ListIterator_c : public R_ExpIterator
-{
-protected:
-  const SEXP cell;
-  SEXP curr;
-public:
-  R_ListIterator_c(SEXP _cell) : cell(_cell)
-  {
-    // make sure it's of list type: data cons cell, language cons cell, or nil
-    assert(TYPEOF(exp) == LISTSXP || TYPEOF(exp) == LANGSXP || exp == R_NilValue);
-    curr = exp;
-  }
-  virtual ~R_ListIterator() { }
-  
-  //  SEXP current() const { return CAR(curr); }
-  SEXP current() const { return curr; }
-  bool isValid() const { return (curr != R_NilValue); }
-  void operator++()
-  {
-    // must be a data or language cons cell to be able to take the CDR
-    assert(TYPEOF(curr) == LISTSXP || TYPEOF(curr) == LANGSXP);
-    curr = CDR(curr);
-  }
-  void reset() { curr = exp; }
-};
-#endif
-
-//! preorder traversal of an R object through CARs and CDRs
-class R_PreorderIterator
-{
-private:
-  std::list<SEXP> preorder;
-  std::list<SEXP>::iterator iter;
-  const SEXP exp;
-  SEXP curr;
-  void build_pre(SEXP e);
-public:
-  R_PreorderIterator(SEXP _exp) : exp(_exp)
-  {
-    build_pre(exp);
-    iter = preorder.begin();
-  }
-  virtual ~R_PreorderIterator() { }
-
-  SEXP current() const { return *iter; }
-  bool isValid() const { return (iter != preorder.end()); }
-  void operator++() { ++iter; }
-  void reset() { iter = preorder.begin(); }
-};
+// FIXME: I don't think R_IRProcIterator is being used.
+// If it is, need to change build_procs to use the scope tree.
 
 //! Enumerate all the procedures in a certain IR
 class R_IRProcIterator : public OA::IRProcIterator
@@ -510,25 +380,6 @@ public:
   void reset() { iter.reset(); }
 };
 
-#if 0
-//! Enumerate all the variable uses or variable definitions in a statement.
-//! This is useful for analyses that require information about variable
-//! references or definitions, such as SSA construction.
-class R_IRUseDefIterator : public OA::SSA::IRUseDefIterator
-{
-public:
-  R_IRUseDefIterator(OA::OA_ptr<VarSetIterator> _iter) : iter(_iter) { }
-  virtual ~R_IRUseDefIterator() { }
-  
-  OA::LeafHandle current() const { return OA::LeafHandle((OA::irhandle_t)iter->current()); }
-  bool isValid() { return iter->isValid(); }
-  void operator++() { ++*iter; }
-  void reset() { iter->reset(); }
-protected:
-  OA::OA_ptr<VarSetIterator> iter;
-};
-#endif
-
 //! Enumerate all the variable uses or variable definitions in a statement.
 //! This is useful for analyses that require information about variable
 //! references or definitions, such as SSA construction.
@@ -539,7 +390,7 @@ public:
   virtual ~R_IRUseDefIterator() { }
   
   OA::LeafHandle current() const {
-    return OA::LeafHandle((OA::irhandle_t)iter->current().get_sexp());
+    return OA::LeafHandle((OA::irhandle_t)iter->current()->get_sexp());
   }
   bool isValid() { return iter->isValid(); }
   void operator++() { ++*iter; }

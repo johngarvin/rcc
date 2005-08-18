@@ -41,33 +41,6 @@
 
 using namespace OA;
 
-//void build_scope_tree_rec(SEXP e, tree<SEXP> &t, tree<SEXP>::iterator &curr);
-
-// static map<SEXP,SEXP> proc_names;
-
-
-//! Preorder iterator: building the preorder list of nodes
-void R_PreorderIterator::
-build_pre(SEXP e)
-{
-  assert(e != NULL);
-  switch(TYPEOF(e)) {
-  case NILSXP:
-    return;
-    break;
-  case LISTSXP:
-  case LANGSXP:
-    preorder.push_back(e);
-    build_pre(CAR(e));
-    // build_pre(TAG(e));   // include this?
-    build_pre(CDR(e));
-    break;
-  default:
-    preorder.push_back(e);
-    break;
-  }
-}
-
 //-----------------------------------------------------------------------------
 // Procedure iterator
 

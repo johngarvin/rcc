@@ -1,9 +1,8 @@
-using namespace std;
 #include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
 
-#include "tree.hh"
-
 #include <parser.h>
+
+#include "tree.hh"
 
 #include "R_IRInterface.h"
 #include "R_opt.h"
@@ -76,34 +75,35 @@ void ssa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP exp)
   R_Analyst an(exp);
   CFG::ManagerStandard cfg_man(rir_ptr);
   SSA::ManagerStandard ssa_man(rir_ptr);
-  OA_ptr<tree<SEXP> > t = an.get_scope_tree();
-  tree<SEXP>::iterator proc_iter;
+  OA_ptr<RScopeTree> t = an.get_scope_tree();
+  RScopeTree::iterator proc_iter;
   // each procedure...
   for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter)
   {
+    SEXP r_exp = (*proc_iter)->get_defn();
     // top procedure is nil; skip it
     if (proc_iter == t->begin()) {
-      assert(*proc_iter == R_NilValue);
+      assert(r_exp == R_NilValue);
       continue;
     }
     cout << "New procedure:\n";
-    PrintValue(*proc_iter);
+    PrintValue(r_exp);
     cout << "SSA info:" << endl;
     OA_ptr<CFG::CFGStandard> cfg_ptr;
-    cfg_ptr = cfg_man.performAnalysis((irhandle_t)*proc_iter);
+    cfg_ptr = cfg_man.performAnalysis((irhandle_t)r_exp);
     cfg_ptr->dump(cout, rir_ptr);
     OA_ptr<SSA::SSAStandard> ssa_ptr;
-    ssa_ptr = ssa_man.performAnalysis((irhandle_t)*proc_iter, cfg_ptr);
+    ssa_ptr = ssa_man.performAnalysis((irhandle_t)r_exp, cfg_ptr);
     ssa_ptr->dump(cout);
   } // procedures
 }
 
 void scope_test(SEXP e) {
   R_Analyst an(e);
-  OA_ptr<tree<SEXP> > t = an.get_scope_tree();
+  OA_ptr<RScopeTree > t = an.get_scope_tree();
   cout << "Scopes: " << t->size() << endl;
-  for(tree<SEXP>::iterator i = t->begin(); i != t->end(); ++i) {
-    PrintValue(*i);
+  for(RScopeTree::iterator i = t->begin(); i != t->end(); ++i) {
+    PrintValue((*i)->get_defn());
     cout << endl;
   }
 }
@@ -112,18 +112,19 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
   R_Analyst an(e);
   CFG::ManagerStandard cfg_man(rir_ptr);
   SSA::ManagerStandard ssa_man(rir_ptr);
-  OA_ptr<tree<SEXP> > t = an.get_scope_tree();
-  tree<SEXP>::iterator proc_iter;
+  OA_ptr<RScopeTree > t = an.get_scope_tree();
+  RScopeTree::iterator proc_iter;
   // each procedure...
   for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter) {
+    SEXP r_exp = (*proc_iter)->get_defn();
     if (proc_iter == t->begin()) {
-      assert(*proc_iter == R_NilValue);
+      assert(r_exp == R_NilValue);
       continue;
     }
     cout << "New procedure:\n";
-    PrintValue(*proc_iter);
+    PrintValue(r_exp);
     OA_ptr<CFG::Interface> cfg;
-    cfg = cfg_man.performAnalysis((irhandle_t)*proc_iter);
+    cfg = cfg_man.performAnalysis((irhandle_t)r_exp);
     OA_ptr<CFG::Interface::NodesIterator> bb_iter;
     bb_iter = cfg->getNodesIterator();
     // each basic block (CFG node)
@@ -179,12 +180,12 @@ void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
   OA_ptr<CFG::Interface> cfg_ptr;
   OA_ptr<RAnnot::AnnotationSet> aset;
   R_Analyst an(e);
-  OA_ptr<tree<SEXP> > t = an.get_scope_tree();
-  for(tree<SEXP>::iterator i = t->begin(); i != t->end(); ++i) {
+  OA_ptr<RScopeTree > t = an.get_scope_tree();
+  for(RScopeTree::iterator i = t->begin(); i != t->end(); ++i) {
     //    PrintValue(*i);
     cout << "New scope tree procedure" << endl;
     if (i == t->begin()) { // top of scope tree is defined as nil
-      assert(*i == R_NilValue);
+      assert((*i)->get_defn() == R_NilValue);
       continue;
     }
     cfg_ptr = cfg_man.performAnalysis((irhandle_t)*i);

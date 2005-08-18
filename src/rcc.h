@@ -31,8 +31,6 @@
 #include <list>
 #include <string>
 
-using namespace std;
-
 extern "C" {
 
 #include <stdarg.h>
@@ -65,6 +63,8 @@ extern void setup_Rmainloop(void);
 #include "R_parser.h"
 #include "visibility.h"
 #include "Macro.hpp"
+
+using namespace std;
 
 bool is_special(string func);
 

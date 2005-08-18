@@ -47,18 +47,7 @@ private:
 private:
   OA::OA_ptr<R_IRInterface> rir;
 
-  void initialize_top_and_bottom();
-
-  //!  map each node to set of local defs [DEFS in data flow problem]
-  //!  map each node to set of free defs
-  // Are these necessary?
-  //map<OA::OA_ptr<OA::CFG::Interface::Node>,OA::OA_ptr<VarSet> > local_defs;
-  //map<OA::OA_ptr<OA::CFG::Interface::Node>,OA::OA_ptr<VarSet> > free_defs;
-
-  //!  map each use location seen to {T,L,F,I}
-  // Are these necessary?
-  //  map<OA::OA_ptr<R_VarRef>, VarType> app_uses;
-  //  map<OA::OA_ptr<R_VarRef>, VarType> non_app_uses;
+  void initialize_sets();
 
   OA::OA_ptr<R_UseSet> all_top;
   OA::OA_ptr<R_UseSet> all_bottom;

@@ -28,6 +28,7 @@ R_UseDefSolver::R_UseDefSolver(OA::OA_ptr<R_IRInterface> _rir)
 OA::OA_ptr<RAnnot::AnnotationSet> R_UseDefSolver::
 perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg) {
   m_cfg = cfg;
+  m_proc = proc;
 
   // Note: ReachConsts uses:
   //  OA::DataFlow::CFGDFProblem::solve(cfg);
@@ -80,7 +81,7 @@ void R_UseDefSolver::dump_node_maps() {
 //! Create a set of all variables set to TOP
 OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseDefSolver::initializeTop() {
   if (all_top.ptrEqual(NULL)) {
-    initialize_top_and_bottom();
+    initialize_sets();
   }
   return all_top->clone();
 }
@@ -88,12 +89,12 @@ OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseDefSolver::initializeTop() {
 //! Create a set of all variable set to BOTTOM
 OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseDefSolver::initializeBottom() {
   if (all_bottom.ptrEqual(NULL)) {
-    initialize_top_and_bottom();
+    initialize_sets();
   }
   return all_bottom->clone();
 }
 
-void R_UseDefSolver::initialize_top_and_bottom() {
+void R_UseDefSolver::initialize_sets() {
   all_top = new R_UseSet;
   all_bottom = new R_UseSet;
   entry_values = new R_UseSet;
@@ -101,10 +102,6 @@ void R_UseDefSolver::initialize_top_and_bottom() {
   node_it = m_cfg->getNodesIterator();
   OA::OA_ptr<OA::CFG::Interface::NodeStatementsIterator> stmt_it;
   for ( ; node_it->isValid(); ++*node_it) {
-    // initialize local_defs and free_defs for each CFG node
-    //local_defs[node_it->current()] = new VarSet;
-    //free_defs[node_it->current()] = new VarSet;
-
     // add vars found in each statement
     stmt_it = node_it->current()->getNodeStatementsIterator();
     for( ; stmt_it->isValid(); ++*stmt_it) {
@@ -115,6 +112,9 @@ void R_UseDefSolver::initialize_top_and_bottom() {
       }
 
       R_ExpUDLocInfo info(stmt_r);
+
+      // all_top and all_bottom: all variables set to TOP/BOTTOM,
+      // must be initialized for OA data flow analysis
       all_top->insert_varset(info.get_local_defs(), TOP);
       all_top->insert_varset(info.get_free_defs(), TOP);
       all_top->insert_varset(info.get_app_uses(), TOP);
@@ -123,22 +123,22 @@ void R_UseDefSolver::initialize_top_and_bottom() {
       all_bottom->insert_varset(info.get_free_defs(), BOTTOM);
       all_bottom->insert_varset(info.get_app_uses(), BOTTOM);
       all_bottom->insert_varset(info.get_non_app_uses(), BOTTOM);
+
+      // entry_values: initial in set for entry node.  Formal
+      // arguments are LOCAL; all other variables are FREE.  We add
+      // all variables as FREE here, then reset the formals as LOCAL
+      // after the per-node and per-statement stuff.
       entry_values->insert_varset(info.get_local_defs(), FREE);
       entry_values->insert_varset(info.get_free_defs(), FREE);
       entry_values->insert_varset(info.get_app_uses(), FREE);
       entry_values->insert_varset(info.get_non_app_uses(), FREE);
 
-      // record the variables defined in the statement
-      //local_defs[node_it->current()]->set_union(info.get_local_defs());
-      //free_defs[node_it->current()]->set_union(info.get_free_defs());
-      
-      // record the locations of uses
-      //const VarSet & app_set = info.get_app_uses();
-      //const VarSet & non_app_set = info.get_non_app_uses();
     } // statements
-FIX ME
-    entry_values->insert_varset(formals(r_ir), LOCAL);
   } // CFG nodes
+  
+  // set all formals LOCAL instead of FREE on entry
+  SEXP arglist = fundef_args_c((SEXP)m_proc.hval());
+  entry_values->insert_varset(refs_from_arglist(arglist), LOCAL);
 }
 
 //! Creates in and out R_UseSets and stores them in mNodeInSetMap and
@@ -327,10 +327,8 @@ void R_UseSet::insert_varset(OA::OA_ptr<R_VarRefSet> vars,
 			    VarType type) {
   OA::OA_ptr<R_VarRefSetIterator> it = vars->get_iterator();
   OA::OA_ptr<R_Use> use;
-  OA::OA_ptr<R_VarRef> loc;
   for (; it->isValid(); ++*it) {
-    loc = new R_VarRef(it->current());
-    replace(loc,type);
+    replace(it->current(),type);
   }
 }
 

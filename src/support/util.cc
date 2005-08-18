@@ -23,7 +23,7 @@
 
 #include "util.h"
 
-string make_type(int t) {
+std::string make_type(int t) {
   switch(t) {
   case NILSXP: return "0 /* NILSXP */";
   case SYMSXP: return "1 /* SYMSXP */";
@@ -52,11 +52,11 @@ string make_type(int t) {
   }
 }
 
-string indent(string str) {
-  const string IND_STR = "  ";
+std::string indent(std::string str) {
+  const std::string IND_STR = "  ";
   if (str.empty()) return "";
-  string newstr = IND_STR;   /* Add indentation to beginning */
-  string::iterator it;
+  std::string newstr = IND_STR;   /* Add indentation to beginning */
+  std::string::iterator it;
   /* Indent after every newline (unless there's one at the end) */
   for(it = str.begin(); it != str.end(); it++) {
     if (*it == '\n' && it != str.end() - 1) {
@@ -71,36 +71,36 @@ string indent(string str) {
 /* Rrrrrgh. C++: the language that makes the hard things hard and the
  * easy things hard.
  */
-string i_to_s(const int i) {
+std::string i_to_s(const int i) {
   if (i == (int)0x80000000) {
     return "0x80000000"; /* Doesn't work as a decimal constant */
   } else {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << i;
     return ss.str();
   }
 }
 
-string d_to_s(double d) {
+std::string d_to_s(double d) {
   if (d == HUGE_VAL) {
     return "HUGE_VAL";
   } else {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << d;
     return ss.str();
   }
 }
 
-string c_to_s(Rcomplex c) {
+std::string c_to_s(Rcomplex c) {
   return "mk_complex(" + d_to_s(c.r) + "," + d_to_s(c.i) + ")";
 }
 
 /* Escape "'s, \'s and \n's to turn a string into its representation
  * in C code.
  */
-string escape(string str) {
+std::string escape(std::string str) {
   unsigned int i;
-  string out = "";
+  std::string out = "";
   for(i=0; i<str.size(); i++) {
     if (str[i] == '\n') {
       out += "\\n";
@@ -115,13 +115,13 @@ string escape(string str) {
   return out;
 }
 
-/* Make a string suitable for use as a C identifier. Used for both R
+/* Make a std::string suitable for use as a C identifier. Used for both R
  * identifiers and arbitrary strings for syntactic sugar in
  * variable names. It's important that no two R identifiers can map to
  * the same C name, but for arbitrary strings it doesn't matter.
  */
-string make_c_id(string str) {
-  string out;
+std::string make_c_id(std::string str) {
+  std::string out;
   unsigned int i;
   if (!isalpha(str[0])) {
     out += 'a';
@@ -137,33 +137,33 @@ string make_c_id(string str) {
 }
 
 /* Simple function to add quotation marks around a string */
-string quote(string str) {
+std::string quote(std::string str) {
   return "\"" + str + "\"";
 }
 
-string unp(string str) {
+std::string unp(std::string str) {
   return "UNPROTECT_PTR(" + str + ");\n";
 }
 
-string strip_suffix(string name) {
-  string::size_type pos = name.rfind(".", name.size());
-  if (pos == string::npos) {
+std::string strip_suffix(std::string name) {
+  std::string::size_type pos = name.rfind(".", name.size());
+  if (pos == std::string::npos) {
     return name;
   } else {
     return name.erase(pos, name.size() - pos);
   }
 }
 
-int filename_pos(string str) {
-  string::size_type pos = str.rfind("/", str.size());
-  if (pos == string::npos) {
+int filename_pos(std::string str) {
+  std::string::size_type pos = str.rfind("/", str.size());
+  if (pos == std::string::npos) {
     return 0;
   } else {
     return pos + 1;
   }
 }
 
-void err(string message) {
-  cerr << "Error: " << message;
+void err(std::string message) {
+  std::cerr << "Error: " << message;
   exit(1);
 }

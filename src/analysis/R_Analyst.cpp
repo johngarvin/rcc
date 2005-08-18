@@ -67,33 +67,95 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
 }
 
 //--------------------------------------------------------------------
-// R_VarRef methods
+// R_BodyVarRef methods
 //--------------------------------------------------------------------
 
-bool R_VarRef::operator<(R_VarRef & loc2) const {
-  return (CAR(m_loc) < CAR(loc2.m_loc));
+// Comparison operators for use in STL containers
+
+bool R_BodyVarRef::operator<(R_VarRef & loc2) const {
+  return (get_name() < loc2.get_name());
 }
 
-bool R_VarRef::operator<(const R_VarRef & loc2) const {
-  return (CAR(m_loc) < CAR(loc2.m_loc));
+bool R_BodyVarRef::operator<(const R_VarRef & loc2) const {
+  // FIXME: find that chapter on how to const cast to get rid of repeated code
+  return (get_name() < loc2.get_name());
 }
 
 //! Do the locations refer to the same name?
-bool R_VarRef::operator==(R_VarRef & loc2) const {
-  return (CAR(m_loc) == CAR(loc2.m_loc));
+bool R_BodyVarRef::operator==(R_VarRef & loc2) const {
+  return (get_name() == loc2.get_name());
 }
 
 //! Are they the same location?
-bool R_VarRef::equiv(R_VarRef & loc2) const {
-  return (m_loc == loc2.m_loc);
+bool R_BodyVarRef::equiv(R_VarRef & loc2) const {
+  return (m_loc == loc2.get_sexp());
 }
 
-std::string R_VarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const {
+std::string R_BodyVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const {
   return toString();
 }
 
-std::string R_VarRef::toString() const {
+std::string R_BodyVarRef::toString() const {
   return std::string(CHAR(PRINTNAME(CAR(m_loc))));
+}
+
+SEXP R_BodyVarRef::get_sexp() const {
+  return m_loc;
+}
+
+SEXP R_BodyVarRef::get_name() const {
+  return CAR(m_loc);
+}
+
+//--------------------------------------------------------------------
+// R_ArgVarRef methods
+//--------------------------------------------------------------------
+
+// Comparison operators for use in STL containers
+
+bool R_ArgVarRef::operator<(R_VarRef & loc2) const {
+  return (get_name() < loc2.get_name());
+}
+
+bool R_ArgVarRef::operator<(const R_VarRef & loc2) const {
+  return (get_name() < loc2.get_name());
+}
+
+//! Do the locations refer to the same name?
+bool R_ArgVarRef::operator==(R_VarRef & loc2) const {
+  return (get_name() == loc2.get_name());
+}
+
+//! Are they the same location?
+bool R_ArgVarRef::equiv(R_VarRef & loc2) const {
+  return (m_loc == loc2.get_sexp());
+}
+
+std::string R_ArgVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const {
+  return toString();
+}
+
+std::string R_ArgVarRef::toString() const {
+  return std::string(CHAR(PRINTNAME(TAG(m_loc))));
+}
+
+SEXP R_ArgVarRef::get_sexp() const {
+  return m_loc;
+}
+
+SEXP R_ArgVarRef::get_name() const {
+  return TAG(m_loc);
+}
+
+OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist) {
+  OA::OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
+  R_ListIterator iter(arglist);
+  for( ; iter.isValid(); ++iter) {
+    OA::OA_ptr<R_ArgVarRef> arg;
+    arg = new R_ArgVarRef(iter.current());
+    refs->insert_arg(arg);
+  }
+  return refs;
 }
 
 
@@ -347,7 +409,8 @@ void R_ExpUDLocInfo::build_ud_rhs(const SEXP cell) {
   if (is_const(e)) {
     // ignore
   } else if (is_var(e)) {
-    non_app_uses->insert(cell);
+    OA::OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef(cell);
+    non_app_uses->insert_ref(ref);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), LOCAL);
     build_ud_rhs(assign_rhs_c(e));
@@ -378,10 +441,12 @@ void R_ExpUDLocInfo::build_ud_rhs(const SEXP cell) {
     }
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
     if (is_var(CAR(e))) {
-      app_uses->insert(e);
+      OA::OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef(e);
+      app_uses->insert_ref(ref);
     } else {
       build_ud_rhs(e);
     }
+    // recur on args
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
       build_ud_rhs(stmt);
     }
@@ -400,9 +465,11 @@ void R_ExpUDLocInfo::build_ud_lhs(const SEXP cell, local_pred is_local) {
   SEXP e = CAR(cell);
   if (is_var(e)) {
     if (is_local == LOCAL) {
-      local_defs->insert(cell);
+      OA::OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef(cell);
+      local_defs->insert_ref(ref);
     } else {
-      free_defs->insert(cell);
+      OA::OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef(cell);
+      free_defs->insert_ref(ref);
     }
   } else if (is_struct_field(e)) {
     build_ud_lhs(CDR(e), is_local);
@@ -426,7 +493,11 @@ void R_ExpUDLocInfo::build_ud_lhs(const SEXP cell, local_pred is_local) {
 // R_VarRefSet methods
 //--------------------------------------------------------------------
 
-void R_VarRefSet::insert(const R_VarRef var) {
+void R_VarRefSet::insert_ref(const OA::OA_ptr<R_BodyVarRef> var) {
+  vars->insert(var);
+}
+
+void R_VarRefSet::insert_arg(const OA::OA_ptr<R_ArgVarRef> var) {
   vars->insert(var);
 }
 
@@ -471,6 +542,7 @@ void VarSet::set_union(OA::OA_ptr<VarSet> set2) {
   }
 }
 
+#if 0
 //! Insert each member of set2 into our set
 void VarSet::set_union(OA::OA_ptr<std::set<R_VarRef> > set2) {
   std::set<R_VarRef>::iterator it;
@@ -478,6 +550,7 @@ void VarSet::set_union(OA::OA_ptr<std::set<R_VarRef> > set2) {
     vars->insert(it->get_sexp());
   }
 }
+#endif
 
 void VarSet::dump() {
   OA::OA_ptr<VarSetIterator> it; it = get_iterator();

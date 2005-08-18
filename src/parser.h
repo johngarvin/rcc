@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 
-#include "rinternals.h"
+#include <rinternals.h>
 
 void init_R();
 void parse_R(FILE *in_file, SEXP *exps[]);

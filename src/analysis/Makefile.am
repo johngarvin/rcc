@@ -1,18 +1,18 @@
-
-MY_INCLUDES = -I@R_SOURCES@/src/include \
-        -I@OA_PREFIX@/include \
-        -I.. -I../annotations  -I../support
-
-
-#        -I /local/software/TeleGen 
+MY_INCLUDES =           \
+  -I@R_HOME@/include    \
+  -I@OA_PREFIX@/include \
+  -I..                  \
+  -I../annotations      \
+  -I../support
 
 bin_PROGRAMS = tra
 
-tra_SOURCES = TestHarness.cc		\
+tra_SOURCES = TestHarness.cc		        \
   R_IRInterface.cpp R_IRInterface.h		\
   R_Analyst.cpp R_Analyst.h			\
   R_UseDefSolver.cpp R_UseDefSolver.hpp		\
-  R_Utils.hpp
+  R_Utils.hpp                                   \
+  SimpleIterators.cpp SimpleIterators.hpp
 
 tra_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)
 

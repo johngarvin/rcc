@@ -19,9 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
-
-#include "rinternals.h"       /* includes Internals.h, which defines do_ functions */
-
+#include <Defn.h>
 #include "get_name.h"
 
 struct map {

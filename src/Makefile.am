@@ -16,7 +16,7 @@ rcc_bin_SOURCES = \
 rcc_bin-rcc.$(OBJEXT): Makefile
 
 
-MY_COMMON_INCLUDES = -I$(R_SOURCES)/src -I$(R_SOURCES)/src/include -I$(top_srcdir)/lib -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\" -DR_HOME=\"@R_HOME@\" -DRCC_INCLUDE_PATH=\"@RCC_INCLUDE_PATH@\" -I./support
+MY_COMMON_INCLUDES = -I$(R_SOURCES)/src/include -I$(R_HOME)/include -I$(top_srcdir)/lib -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\" -DR_HOME=\"@R_HOME@\" -DRCC_INCLUDE_PATH=\"@RCC_INCLUDE_PATH@\" -I./support
 
 rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(MY_COMMON_INCLUDES)
 rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(MY_COMMON_INCLUDES)
