@@ -27,13 +27,12 @@ struct map {
   CCODE cfun;
 };
 
-const char *get_name(int n) 
-{
-	if (n >= 0 && n < R_FunTab_NumEntries)
-		return R_FunTab[n].cfun_name;
-	else {
-		fprintf (stderr, "get_name: Illegal name index (%d)\n", n);
-		return ("illegal_name");
-	}
+const char *get_name(int n) {
+  if (n >= 0 && n < R_FunTab_NumEntries) {
+    return R_FunTab[n].cfun_name;
+  } else {
+    fprintf (stderr, "get_name: Illegal name index (%d)\n", n);
+    return ("illegal_name");
+  }
 }
 

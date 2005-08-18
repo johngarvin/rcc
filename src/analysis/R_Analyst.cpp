@@ -43,19 +43,19 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
     build_scope_tree_rec(CDR(e), t, curr);
     break;
   case LANGSXP:
-    if (is_simple_assign(e)            // if binding a variable to a function
-	// CADDR = RHS of assignment
-	&& TYPEOF(CADDR(e)) == LANGSXP
-	&& is_fundef(CADDR(e))) {
-      RScopeTree::iterator newfun = t->append_child(curr, new RFunctionScopeInfo(CAR(assign_lhs_c(e)), CADDR(e)));
+    if (is_simple_assign(e)) {            // a variable bound to a function
+      RScopeTree::iterator newfun;
+      SEXP var = CAR(assign_lhs_c(e));
+      SEXP fundef = CAR(assign_rhs_c(e));
+      newfun = t->append_child(curr, new RFunctionScopeInfo(var, fundef));
 
       // now skip to body of function to prevent a later pass from
       // finding the function definition; we don't want it to be
       // flagged as a duplicate "anonymous" function.
-      build_scope_tree_rec(CADDR(CADDR(e)), t, newfun);
+      build_scope_tree_rec(CAR(fundef_body_c(fundef)), t, newfun);
     } else if (is_fundef(e)) {  // anonymous function
       RScopeTree::iterator newfun = t->append_child(curr, new RFunctionScopeInfo(R_NilValue, e));
-      build_scope_tree_rec(CADDR(e), t, newfun);
+      build_scope_tree_rec(CAR(fundef_body_c(e)), t, newfun);
     } else {                   // ordinary function call
       build_scope_tree_rec(CAR(e), t, curr);
       build_scope_tree_rec(CDR(e), t, curr);

@@ -1,8 +1,9 @@
-MY_INCLUDES =           \
-  -I@R_HOME@/include    \
-  -I@OA_PREFIX@/include \
-  -I..                  \
-  -I../annotations      \
+MY_INCLUDES =               \
+  -I@R_HOME@/include        \
+  -I@R_SOURCES@/src/include \
+  -I@OA_PREFIX@/include     \
+  -I..                      \
+  -I../annotations          \
   -I../support
 
 bin_PROGRAMS = tra
@@ -11,25 +12,21 @@ tra_SOURCES = TestHarness.cc		        \
   R_IRInterface.cpp R_IRInterface.h		\
   R_Analyst.cpp R_Analyst.h			\
   R_UseDefSolver.cpp R_UseDefSolver.hpp		\
-  R_Utils.hpp                                   \
+  R_Utils.cpp R_Utils.hpp                       \
   SimpleIterators.cpp SimpleIterators.hpp
 
 tra_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)
 
-
-# TI.C R_IRInterface.h TI.h
-
 MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a 
 
-MY_TRA_LIBS =		\
-  $(MY_OA_LIBS)		\
+MY_TRA_LIBS =		        \
+  $(MY_OA_LIBS)		        \
+  -L@R_LIB_PATH@ -lR		\
   -lrcca			\
   -L../annotations -lannot	\
-  -L../support -lsupport	\
-  -L@R_LIB_PATH@ -lR		
+  -L../support -lsupport
 
-tra_LDFLAGS = $(MY_TRA_LIBS) 
-
+tra_LDADD = $(MY_TRA_LIBS) 
 
 lib_LTLIBRARIES = librcca.la
 

@@ -298,7 +298,7 @@ R_IRInterface::getProcType(ProcHandle h) {
 //! Given a ProcHandle, return an IRRegionStmtIterator for the
 //! procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
-  SEXP e = (SEXP)h.hval();  // h is a cell
+  SEXP e = (SEXP)h.hval();
 
   OA_ptr<IRRegionStmtIterator> ptr;
   ptr = new R_RegionStmtIterator((irhandle_t)fundef_body_c(e));

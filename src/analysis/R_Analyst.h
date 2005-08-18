@@ -14,7 +14,7 @@
 class RFunctionScopeInfo {
 public:
   RFunctionScopeInfo(SEXP _name, SEXP _defn) : name(_name), defn(_defn) {};
-  SEXP get_args() { return fundef_args_c(defn); };
+  SEXP get_args() { return CAR(fundef_args_c(defn)); };
   SEXP get_defn() { return defn; };
 private:
   SEXP name;

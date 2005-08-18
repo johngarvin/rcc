@@ -24,9 +24,6 @@
 #include "parser.h"
 
 extern "C" {
-  extern int Rf_initialize_R(int argc, char **argv);
-  extern void setup_Rmainloop(void);
-
   // Why isn't this handled in IOStuff.h?
 #ifndef R_IOSTUFF_H
 #  define R_IOSTUFF_H
@@ -43,8 +40,9 @@ void init_R() {
   myargs[2] = "--slave";
   myargs[3] = "--vanilla";
   myargs[4] = NULL;
-  Rf_initialize_R(4,myargs);
-  setup_Rmainloop();
+  Rf_initEmbeddedR(4, myargs);
+  //  Rf_initialize_R(4,myargs);
+  //  setup_Rmainloop();
 }
 
 /* Reads 'in_file' and parses it as R code. Sets 'exps' as a

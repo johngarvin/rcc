@@ -26,12 +26,7 @@
 #include <string>
 #include <map>
 
-#include "rinternals.h"
-
-
-// Prevent conflict with basicstring::{append, length} on Alpha
-#undef append
-#undef length
+#include <rinternals.h>
 
 std::string make_symbol(SEXP e);
 std::string make_type(int t);

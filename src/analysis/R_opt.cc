@@ -2,8 +2,7 @@
 
 using namespace OA;
 
-void opt_matmul(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp)
-{
+SEXP opt_matmul(SEXP exp) {
   // For matrix multiplication where one or more arguments is
   // transposed (e.g. "t(x) %*% y"), replace with a form that does the
   // transposition in the computation. This avoids the need to create
@@ -46,13 +45,3 @@ void opt_matmul(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp)
   }
 }
 
-// callable from C
-SEXP opt_matmul_plain(SEXP e)
-{
-  R_IRInterface *rir = new R_IRInterface;
-  OA_ptr<CFG::CFGIRInterface> rir_ptr;
-  rir_ptr = rir;
-
-  opt_matmul(rir_ptr, e);
-  return e;
-}

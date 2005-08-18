@@ -4,6 +4,8 @@ libsupport_la_SOURCES = \
 	parser.cc parser.h\
 	util.cc util.h
 
-MYINCLUDES =  -I@R_HOME@/include -I@R_SOURCES@/src/main -I..
+MYINCLUDES = -I@R_HOME@/include -I@R_SOURCES@/src/include -I..
 
 libsupport_la_CXXFLAGS  = -static $(BASE_CFLAGS) $(MYINCLUDES)
+
+libsupport_la_LIBADD = -L@R_LIB_PATH@ -lR

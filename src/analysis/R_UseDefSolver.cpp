@@ -137,7 +137,7 @@ void R_UseDefSolver::initialize_sets() {
   } // CFG nodes
   
   // set all formals LOCAL instead of FREE on entry
-  SEXP arglist = fundef_args_c((SEXP)m_proc.hval());
+  SEXP arglist = CAR(fundef_args_c((SEXP)m_proc.hval()));
   entry_values->insert_varset(refs_from_arglist(arglist), LOCAL);
 }
 

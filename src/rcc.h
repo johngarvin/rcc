@@ -33,34 +33,17 @@
 
 extern "C" {
 
-#include <stdarg.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <unistd.h>
 #include <sys/file.h>
 
-// Why isn't this handled in IOStuff.h?
-#ifndef R_IOSTUFF_H
-#  define R_IOSTUFF_H
-#  include <IOStuff.h>
-#endif
-
-#include <Parse.h>
-#include <alloca.h>
-#include "get_name.h"
-#include "replacements.h"
-
-// Prevent conflict with basicstring::{append, length} on Alpha
-#undef append
-#undef length
-
-extern int Rf_initialize_R(int argc, char **argv);
-extern void setup_Rmainloop(void);
-
 } //extern "C"
 
-#include "util.h"
-#include "R_parser.h"
+#include <rinternals.h>
+#include <util.h>
+#include <parser.h>
+#include "get_name.h"
+#include "replacements.h"
 #include "visibility.h"
 #include "Macro.hpp"
 

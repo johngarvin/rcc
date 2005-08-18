@@ -25,6 +25,16 @@
 
 #include <rinternals.h>
 
+//extern void setup_Rmainloop(void);
+//#include <R_ext/RStartup.h>
+
+// function from R_SOURCE/src/unix/system.c. Not declared in an include file.
+//int Rf_initialize_R(int argc, char **argv);
+
+extern "C" {
+#include <Defn.h>
+}
+
 void init_R();
 void parse_R(FILE *in_file, SEXP *exps[]);
 SEXP parse_R_as_function(FILE *in_file);

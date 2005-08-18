@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
   // CFG::ManagerStandard cfg_man(rir_ptr);    
 
-  opt_matmul(rir_ptr, exp);
+  exp = opt_matmul(exp);
 
   // print out program
   R_Analyst an(exp);
@@ -176,22 +176,22 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
   CFG::ManagerStandard cfg_man(rir_ptr, true);
   //  CFG::ManagerStandard cfg_man(rir_ptr);
-  //  OA_ptr<CFG::CFGStandard> cfg_ptr;
   OA_ptr<CFG::Interface> cfg_ptr;
   OA_ptr<RAnnot::AnnotationSet> aset;
   R_Analyst an(e);
-  OA_ptr<RScopeTree > t = an.get_scope_tree();
+  OA_ptr<RScopeTree> t = an.get_scope_tree();
   for(RScopeTree::iterator i = t->begin(); i != t->end(); ++i) {
-    //    PrintValue(*i);
     cout << "New scope tree procedure" << endl;
+    SEXP fundef = (*i)->get_defn();
     if (i == t->begin()) { // top of scope tree is defined as nil
-      assert((*i)->get_defn() == R_NilValue);
+      assert(fundef == R_NilValue);
       continue;
     }
-    cfg_ptr = cfg_man.performAnalysis((irhandle_t)*i);
+    ProcHandle ph((irhandle_t)fundef);
+    cfg_ptr = cfg_man.performAnalysis(ph);
     cfg_ptr->dump(cout, rir_ptr);
     R_UseDefSolver uds(rir_ptr);
-    aset = uds.perform_analysis((irhandle_t)*i, cfg_ptr);
+    aset = uds.perform_analysis(ph, cfg_ptr);
     uds.dump_node_maps();
   }
 

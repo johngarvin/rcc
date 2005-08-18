@@ -43,18 +43,17 @@
 //
 //-----------------------------------------------------------------------------
 
-#include <util.h>
 #include <list>
 #include <string>
 #include <assert.h>
-#include "SimpleIterators.hpp"
-#include "R_Analyst.h"
-#include "R_Utils.hpp"
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
-
+#include <util.h>
+#include "SimpleIterators.hpp"
+#include "R_Analyst.h"
+#include "R_Utils.hpp"
 #include <rinternals.h>
 
 //-----------------------------------------------------------------------------
