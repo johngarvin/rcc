@@ -29,7 +29,8 @@ OA::OA_ptr<RScopeTree> R_Analyst::get_scope_tree() {
 //! the current function definition.
 void R_Analyst::build_scope_tree_rec(SEXP e,
 				     OA::OA_ptr<RScopeTree> t,
-				     RScopeTree::iterator &curr) {
+				     RScopeTree::iterator &curr)
+{
   switch(TYPEOF(e)) {
   case NILSXP:
   case REALSXP:
@@ -168,8 +169,7 @@ OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist) {
 // defunct; now we build uses and defs together
 
 // build list of uses, LHS of assignment statement
-void build_uses_lhs(SEXP e)
-{
+void build_uses_lhs(SEXP e) {
   switch(TYPEOF(e)) {
   case SYMSXP:
     break;
@@ -187,8 +187,7 @@ void build_uses_lhs(SEXP e)
 }
 
 // build list of uses, RHS of assignment statement
-void build_uses_rhs(SEXP e)
-{
+void build_uses_rhs(SEXP e) {
   switch(TYPEOF(e)) {
   case SYMSXP:
     // current var is a use
@@ -229,8 +228,7 @@ void build_uses_rhs(SEXP e)
 
 // build list of defs, LHS of a local (single-arrow) assignment
 // statement
-void build_defs_lhs_local(SEXP e)
-{
+void build_defs_lhs_local(SEXP e) {
   switch(TYPEOF(e)) {
   case SYMSXP:
     // current var is a def
@@ -251,8 +249,7 @@ void build_defs_lhs_local(SEXP e)
 
 // build list of defs, LHS of a free (double-arrow) assignment
 // statement
-void build_defs_lhs_free(SEXP e)
-{
+void build_defs_lhs_free(SEXP e) {
   switch(TYPEOF(e)) {
   case SYMSXP:
     // current var is a def
@@ -273,8 +270,7 @@ void build_defs_lhs_free(SEXP e)
 
 
 // build list of defs, RHS of assignment statement
-void build_defs_rhs(SEXP e)
-{
+void build_defs_rhs(SEXP e) {
   switch(TYPEOF(e)) {
   case SYMSXP:
   case REALSXP:
@@ -308,10 +304,12 @@ void build_defs_rhs(SEXP e)
 #endif
 
 //! build the sets of uses and defs, non-lvalue (right-hand side of
-//! assignment, or non-assignment expression)
-//! Uses and defs must be mutually exclusive for different
-//! statements--that is, in a compound statement only the variables
-//! directly used or modified count, not those found in the loop body.
+//! assignment, or non-assignment expression) Uses and defs must be
+//! mutually exclusive for different statements--that is, in a loop or
+//! if statement, we count only the variables used/defined in the
+//! conditional expression, not those in the body or the true or false
+//! clauses.
+
 void R_ExpUDInfo::build_ud_rhs(const SEXP e) {
   switch (TYPEOF(e)) {
   case NILSXP:
@@ -558,4 +556,3 @@ void VarSet::dump() {
     std::cout << CHAR(PRINTNAME(it->current())) << std::endl;
   }
 }
-

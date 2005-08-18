@@ -118,11 +118,10 @@ public:
       to the same instances of R_Use's that the rhs points to.  Use
       clone if you want separate instances of the R_Use's
   */
-  R_UseSet& operator= (const R_UseSet& other) 
-      {
-        mSet = other.mSet; 
-        return *this;
-      }
+  R_UseSet& operator= (const R_UseSet& other) {
+    mSet = other.mSet; 
+    return *this;
+  }
   OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() {
     OA::OA_ptr<R_UseSet> retval;
     retval = new R_UseSet(); 

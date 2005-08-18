@@ -143,8 +143,7 @@ void R_UseDefSolver::initialize_sets() {
 
 //! Creates in and out R_UseSets and stores them in mNodeInSetMap and
 //! mNodeOutSetMap.
-void R_UseDefSolver::initializeNode(OA::OA_ptr<OA::CFG::Interface::Node> n)
-{
+void R_UseDefSolver::initializeNode(OA::OA_ptr<OA::CFG::Interface::Node> n) {
   //  local_defs[n] = new VarSet();
   //  free_defs[n] = new VarSet();
   // now done in initialize_top_and_bottom
@@ -161,8 +160,7 @@ void R_UseDefSolver::initializeNode(OA::OA_ptr<OA::CFG::Interface::Node> n)
 //! to modify set1 and return it as result, because solver only passes
 //! a tempSet in as set1
 OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseDefSolver::
-meet(OA::OA_ptr<OA::DataFlow::DataFlowSet> set1, OA::OA_ptr<OA::DataFlow::DataFlowSet> set2)
-{
+meet(OA::OA_ptr<OA::DataFlow::DataFlowSet> set1, OA::OA_ptr<OA::DataFlow::DataFlowSet> set2) {
   OA::OA_ptr<R_UseSet> retval;
   OA::OA_ptr<OA::DataFlow::DataFlowSet> set2clone = set2->clone();
   retval = meet_use_set(set1.convert<R_UseSet>(), set2clone.convert<R_UseSet>());
@@ -258,9 +256,7 @@ void R_UseSet::replace(OA::OA_ptr<R_VarRef> loc, VarType type) {
 //! R_UseSet, namely a R_Use, only considers the contents of the
 //! location pointer and not any of the other fields.  So, need to use
 //! R_Use's equal() method here instead.
-bool R_UseSet::operator==(OA::DataFlow::DataFlowSet &other) const
-{
-
+bool R_UseSet::operator==(OA::DataFlow::DataFlowSet &other) const {
   // first dynamic cast to a R_UseSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
   R_UseSet& recastOther = dynamic_cast<R_UseSet&>(other);
@@ -310,7 +306,8 @@ OA::OA_ptr<R_Use> R_UseSet::find(OA::OA_ptr<R_VarRef> loc) const {
 //! Union in a set of variables associated with a given statement
 void R_UseSet::insert_varset(OA::StmtHandle stmt,
 			    OA::OA_ptr<VarSet> vars,
-			    VarType type) {
+			    VarType type)
+{
   OA::OA_ptr<VarSetIterator> it; it = vars->get_iterator();
   OA::OA_ptr<R_Use> use;
   OA::OA_ptr<R_VarRef> loc;
@@ -324,7 +321,8 @@ void R_UseSet::insert_varset(OA::StmtHandle stmt,
 
 //! Union in a set of variables associated with a given statement
 void R_UseSet::insert_varset(OA::OA_ptr<R_VarRefSet> vars,
-			    VarType type) {
+			    VarType type)
+{
   OA::OA_ptr<R_VarRefSetIterator> it = vars->get_iterator();
   OA::OA_ptr<R_Use> use;
   for (; it->isValid(); ++*it) {

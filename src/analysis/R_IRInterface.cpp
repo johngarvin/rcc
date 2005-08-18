@@ -35,20 +35,17 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <ostream>
-
 #include "R_IRInterface.h"
 
 using namespace OA;
 
-//-----------------------------------------------------------------------------
+//--------------------------------------------------------------------
 // Procedure iterator
+//--------------------------------------------------------------------
 
 // Iterate over the scope tree instead.
 #if 0
-void R_IRProcIterator::
-build_procs()
-{
+void R_IRProcIterator::build_procs() {
   // iter is R_PreorderIterator(exp)
 
   // Tempted to make these file static? Me too, but that'll blow up
@@ -61,14 +58,12 @@ build_procs()
   // over.
 
   // Find functions of the form var <- function(...) ...
-  for(iter.reset(); iter.isValid(); ++iter)
-  {
+  for(iter.reset(); iter.isValid(); ++iter) {
     if (TYPEOF(iter.current()) == LANGSXP
         && CAR(iter.current()) == leftarrow_sym
 	  // CADDR = RHS of assignment
 	&& TYPEOF(CADDR(iter.current())) == LANGSXP
-	&& CAR(CADDR(iter.current())) == function_sym)
-    {
+	&& CAR(CADDR(iter.current())) == function_sym) {
       procs.push_back(CADDR(iter.current()));
       proc_names[CADDR(iter.current())] = CADR(iter.current());
     }
@@ -77,12 +72,10 @@ build_procs()
   // Find anonymous functions
   iter.reset();
   int n = 0;
-  for( ; iter.isValid(); ++iter)
-  {
+  for( ; iter.isValid(); ++iter) {
     if (TYPEOF(iter.current()) == LANGSXP
 	&& CAR(iter.current()) == function_sym
-	&& proc_names.find(iter.current()) == proc_names.end())
-    {
+	&& proc_names.find(iter.current()) == proc_names.end()) {
       procs.push_back(iter.current());
       string name = "anon*" + i_to_s(n++);
       proc_names[iter.current()] = Rf_install(name.c_str());
@@ -140,129 +133,12 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
   }
 }
 
-//-----------------------------------------------------------------------------
-// use/def iterator
-
-#if 0
-// build list of uses, LHS of assignment statement
-void R_IRUseIterator::
-build_vars_lhs(SEXP e)
-{
-  switch(TYPEOF(e)) {
-  case SYMSXP:
-    break;
-  case LANGSXP:
-    if (is_subscript(e)) {
-      build_vars_lhs(CADR(e));
-      build_vars_rhs(CADDR(e));
-    } else if (is_struct_field(e)) {
-      build_vars_lhs(CADR(e));
-    }
-    break;
-  default:
-    assert(0);
-  }
-}
-
-// build list of uses, RHS of assignment statement
-void R_IRUseIterator::
-build_vars_rhs(SEXP e)
-{
-  switch(TYPEOF(e)) {
-  case SYMSXP:
-    // current var is a use
-    vars.push_back(e);
-    break;
-  case REALSXP:
-  case NILSXP:
-    ; // do nothing
-    break;
-  case LISTSXP:
-    build_vars_rhs(CAR(e));
-    build_vars_rhs(CDR(e));
-    break;
-  case LANGSXP:
-    if (is_assign(e)) {
-      build_vars_lhs(CADR(e));
-      build_vars_rhs(CADDR(e));
-    } else if (is_fundef(e)) {
-      ; // ignore
-    } else if (is_struct_field(e)) {
-      build_vars_rhs(CADR(e));
-    } else {
-      build_vars_rhs(CAR(e));
-      build_vars_rhs(CDR(e));
-    }
-    break;
-  default:
-    assert(0);
-  }
-}
-
-// build list of defs, LHS of assignment statement
-void R_IRDefIterator::
-build_vars_lhs(SEXP e)
-{
-  switch(TYPEOF(e)) {
-  case SYMSXP:
-    // current var is a def
-    vars.push_back(e);
-    break;
-  case LANGSXP:
-    if (is_subscript(e)) {
-      build_vars_lhs(CADR(e));
-      build_vars_rhs(CADDR(e));
-    } else if (is_struct_field(e)) {
-      build_vars_lhs(CADR(e));
-    }
-    break;
-  default:
-    assert(0);
-  }
-}
-
-// build list of defs, RHS of assignment statement
-void R_IRDefIterator::
-build_vars_rhs(SEXP e)
-{
-  switch(TYPEOF(e)) {
-  case SYMSXP:
-  case REALSXP:
-  case NILSXP:
-    // do nothing
-    break;
-  case LISTSXP:
-    build_vars_rhs(CAR(e));
-    build_vars_rhs(CDR(e));
-    break;
-  case LANGSXP:
-    if (is_assign(e)) {
-      build_vars_lhs(CADR(e));
-      build_vars_rhs(CADDR(e));
-    } else if (is_fundef(e)) {
-      ; // ignore
-    } else if (is_struct_field(e)) {
-      build_vars_rhs(CADR(e));
-    } else {
-      build_vars_rhs(CAR(e));
-      build_vars_rhs(CDR(e));
-    }
-    break;
-  default:
-    assert(0);
-  }
-}
-#endif
-
-
-//-----------------------------------------------------------------------------
+//--------------------------------------------------------------------
 // Callsite iterator
-
+//--------------------------------------------------------------------
 
 #if 0
-void R_IRCallsiteIterator::
-build_callsites()
-{
+void R_IRCallsiteIterator::build_callsites() {
   for( ; exp_iter.isValid(); ++exp_iter) {
     if (TYPEOF(exp_iter.current()) == LANGSXP
 	&& TYPEOF(CAR(exp_iter.current())) == SYMSXP) {
@@ -273,14 +149,7 @@ build_callsites()
     }
   }
 }
-
 #endif
-
-//-----------------------------------------------------------------------------
-// Callsite actual parameter iterator (trivial)
-
-//-----------------------------------------------------------------------------
-// R IR representation
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -288,8 +157,7 @@ build_callsites()
 
 #if 0
 // Given a procedure, return its IRProcType.
-IRProcType
-R_IRInterface::getProcType(ProcHandle h) {
+IRProcType R_IRInterface::getProcType(ProcHandle h) {
   return ProcType_FUNC;  // a procedure always returns a value, but sometimes it's nil and/or invisible.
 }
 
@@ -299,7 +167,6 @@ R_IRInterface::getProcType(ProcHandle h) {
 //! procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
   SEXP e = (SEXP)h.hval();
-
   OA_ptr<IRRegionStmtIterator> ptr;
   ptr = new R_RegionStmtIterator((irhandle_t)fundef_body_c(e));
   return ptr;
@@ -391,23 +258,17 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
 //! Given a loop statement, return the loop header statement.  This 
 //! would be the initialization statement in a C 'for' loop, for example.
 //!
-//! FIXME:
 //! This doesn't exactly exist in R. Currently just returning the whole
 //! compound statement pointer so later analyses can parse it.
-StmtHandle R_IRInterface::
-loopHeader(StmtHandle h)
-{
+StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
   return h;
 }
 
 //! Given a loop statement, return the increment statement.
 //!
-//! FIXME:
 //! This doesn't exactly exist in R. Currently just returning the whole
 //! compound statement pointer so later analyses can parse it.
-StmtHandle R_IRInterface::
-getLoopIncrement(StmtHandle h)
-{
+StmtHandle R_IRInterface::getLoopIncrement(StmtHandle h) {
   return h;
 }
 
@@ -425,42 +286,9 @@ getLoopIncrement(StmtHandle h)
 // reach uses in the conditional test. For C style semantics, the 
 // increment itself may be a separate statement. if so, it will appear
 // explicitly at the bottom of the loop. 
-bool R_IRInterface::
-loopIterationsDefinedAtEntry(StmtHandle h)
-{
+bool R_IRInterface::loopIterationsDefinedAtEntry(StmtHandle h) {
   return true;
 }
-
-//--------------------------------------------------------
-// Invariant: a two-way conditional or a multi-way conditional MUST provide
-// provide either a target, or a target label
-//--------------------------------------------------------
-
-//--------------------------------------------------------
-// Structured two-way conditionals
-//
-// Note: An important pre-condition for structured conditionals is
-// that chains of else-ifs must be represented as nested elses.  For
-// example, this Matlab statement:
-//   if (c1)
-//     s1;
-//   elseif (c2)
-//     s2;
-//   else
-//     s3;
-//   end;
-//
-// would need be represented by the underlying IR as:
-//   if (c1)
-//     s1;
-//   else
-//     if (c2)
-//       s2;
-//     else
-//       s3;
-//     end;
-//   end; 
-//--------------------------------------------------------
 
 //! Given a structured two-way conditional statement, return an
 //! IRRegionStmtIterator for the "true" part (i.e., the statements
@@ -499,9 +327,7 @@ int R_IRInterface::numMultiCases(StmtHandle h) {
 // IRRegionStmtIterator* for the body corresponding to target
 // 'bodyIndex'. The n targets are indexed [0..n-1].  The user must
 // free the iterator's memory via delete.
-OA_ptr<IRRegionStmtIterator> R_IRInterface::
-multiBody(StmtHandle h, int bodyIndex)
-{
+OA_ptr<IRRegionStmtIterator> R_IRInterface::multiBody(StmtHandle h, int bodyIndex) {
   err("multicase branches don't exist in R\n");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
@@ -513,18 +339,14 @@ multiBody(StmtHandle h, int bodyIndex)
 // explicit break statement.  Matlab, on the other hand, implicitly exits
 // the switch statement once a particular case has executed, so this
 // method would return true.
-bool R_IRInterface::
-isBreakImplied(StmtHandle multicond)
-{
+bool R_IRInterface::isBreakImplied(StmtHandle multicond) {
   err("multicase branches don't exist in R\n");
   return false;
 }
 
 // Given a structured multi-way branch, return true if the body 
 // corresponding to target 'bodyIndex' is the default/catchall/ case.
-bool R_IRInterface::
-isCatchAll(StmtHandle h, int bodyIndex)
-{
+bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
   err("multicase branches don't exist in R\n");
   return false;
 }
@@ -532,9 +354,7 @@ isCatchAll(StmtHandle h, int bodyIndex)
 // Given a structured multi-way branch, return an IRRegionStmtIterator*
 // for the body corresponding to default/catchall case.  The user
 // must free the iterator's memory via delete.
-OA_ptr<IRRegionStmtIterator> R_IRInterface::
-getMultiCatchall (StmtHandle h)
-{
+OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
   err("multicase branches don't exist R\n");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
@@ -543,9 +363,7 @@ getMultiCatchall (StmtHandle h)
 //! Given a structured multi-way branch, return the condition
 //! expression corresponding to target 'bodyIndex'. The n targets are
 //! indexed [0..n-1].
-ExprHandle R_IRInterface::
-getSMultiCondition(StmtHandle h, int bodyIndex)
-{
+ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
   err("multicase branches don't exist R\n");
   return 0;
 }
@@ -557,9 +375,7 @@ getSMultiCondition(StmtHandle h, int bodyIndex)
 
 // Given an unstructured two-way branch, return the label of the
 // target statement.  The second parameter is currently unused.
-StmtLabel R_IRInterface::
-getTargetLabel(StmtHandle h, int n)
-{
+StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
   err("unstructured two-way branches don't exist in R");
   return 0;
 }
@@ -571,18 +387,14 @@ getTargetLabel(StmtHandle h, int n)
 
 // Given an unstructured multi-way branch, return the number of targets.
 // The count does not include the optional default/catchall case.
-int R_IRInterface::
-numUMultiTargets(StmtHandle h)
-{
+int R_IRInterface::numUMultiTargets(StmtHandle h) {
   err("unstructured multi-way branches don't exist in R");
   return -1;
 }
 
 // Given an unstructured multi-way branch, return the label of the target
 // statement at 'targetIndex'. The n targets are indexed [0..n-1]. 
-StmtLabel R_IRInterface::
-getUMultiTargetLabel(StmtHandle h, int targetIndex)
-{
+StmtLabel R_IRInterface::getUMultiTargetLabel(StmtHandle h, int targetIndex) {
   err("unstructured multi-way branches don't exist in R");
   return 0;
 }
@@ -590,9 +402,7 @@ getUMultiTargetLabel(StmtHandle h, int targetIndex)
 // Given an unstructured multi-way branch, return label of the target
 // corresponding to the optional default/catchall case.  Return 0
 // if there is no default target.
-StmtLabel R_IRInterface::
-getUMultiCatchallLabel(StmtHandle h)
-{
+StmtLabel R_IRInterface::getUMultiCatchallLabel(StmtHandle h) {
   err("unstructured multi-way branches don't exist in R");
   return 0;
 }
@@ -601,9 +411,7 @@ getUMultiCatchallLabel(StmtHandle h)
 // expression corresponding to target 'targetIndex'. The n targets
 // are indexed [0..n-1].
 // multiway target condition 
-ExprHandle R_IRInterface::
-getUMultiCondition(StmtHandle h, int targetIndex)
-{
+ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
   err("unstructured multi-way branches don't exist in R");
   return 0;
 }
@@ -664,35 +472,23 @@ void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
 //--------------------------------------------------------
 
 // FIXME
-SymHandle R_IRInterface::getProcSymHandle(ProcHandle h)
-{
-//   SEXP e = (SEXP)h.hval();
-//   map<SEXP,SEXP>::iterator name = proc_names.find(e);
-//   assert(name != proc_names.end());
-//   e = name->second;
-//   assert(TYPEOF(e) == SYMSXP);
-//   return (irhandle_t)e;
+SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   return (irhandle_t)Rf_install("<procedure>");
 }
 
 // FIXME: symbols in different scopes should be called
 // different, even if they have the same name
-SymHandle R_IRInterface::getSymHandle(LeafHandle h)
-{
+SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   SEXP e = (SEXP)h.hval();
   assert(TYPEOF(e) == SYMSXP);
   return (irhandle_t)e;
 }
 
 #if 0
-
 // Given a ConstHandle, return the textual name.
-const char *
-R_IRInterface::GetConstNameFromConstHandle(ConstHandle ch)
-{
+const char *R_IRInterface::GetConstNameFromConstHandle(ConstHandle ch) {
   SEXP e = (SEXP)ch;
-  switch(TYPEOF(e))
-  {
+  switch(TYPEOF(e)) {
   case INTSXP:                              // Does this happen in code?
     return i_to_s(INTEGER(e)[0]).c_str();
     break;
@@ -704,60 +500,4 @@ R_IRInterface::GetConstNameFromConstHandle(ConstHandle ch)
     break;
   }
 }
-
-#endif
-
-
-#if 0
-
-tree<SEXP> build_scope_tree(SEXP e) {
-  tree<SEXP> t;
-  tree<SEXP>::iterator top = t.begin();
-  tree<SEXP>::iterator first = t.insert(top, R_NilValue);
-  build_scope_tree_rec(e, t, first);
-  return t;
-}
-
-void build_scope_tree_rec(SEXP e, tree<SEXP> &t, tree<SEXP>::iterator &curr) {
-  switch(TYPEOF(e)) {
-  case NILSXP:
-  case REALSXP:
-  case SYMSXP:
-    return;
-    break;
-  case LISTSXP:
-    build_scope_tree_rec(CAR(e), t, curr);
-    build_scope_tree_rec(CDR(e), t, curr);
-    break;
-  case LANGSXP:
-    if (is_simple_assign(e)
-	// CADDR = RHS of assignment
-	&& TYPEOF(CADDR(e)) == LANGSXP
-	&& is_fundef(CADDR(e)))
-    {
-      tree<SEXP>::iterator newfun = t.append_child(curr, e);
-      
-      // now skip to body of function.
-      // This avoids the function definition; we don't want it to be flagged
-      // as a duplicate "anonymous" function.
-      build_scope_tree_rec(CADDR(CADDR(e)), t, newfun);
-    }
-    else if (is_fundef(e)) // anonymous function
-    {
-      tree<SEXP>::iterator newfun = t.append_child(curr, e);
-
-      t = t.append_child(curr, e);
-      build_scope_tree_rec(CADDR(e), t, newfun);
-    }
-    else  // ordinary function call
-    {
-      build_scope_tree_rec(CAR(e), t, curr);
-      build_scope_tree_rec(CDR(e), t, curr);
-    }
-    break;
-  default:
-    assert(0);
-  }
-}
-
 #endif

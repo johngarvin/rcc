@@ -45,8 +45,7 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
 
   // each procedure
   tree<SEXP>::iterator proc_iter;
-  for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter)
-  {
+  for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter) {
     // top procedure is nil; skip it
     if (proc_iter == t->begin()) {
       assert(*proc_iter == R_NilValue);
@@ -70,16 +69,14 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
 }
 #endif
 
-void ssa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP exp)
-{
+void ssa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP exp) {
   R_Analyst an(exp);
   CFG::ManagerStandard cfg_man(rir_ptr);
   SSA::ManagerStandard ssa_man(rir_ptr);
   OA_ptr<RScopeTree> t = an.get_scope_tree();
   RScopeTree::iterator proc_iter;
   // each procedure...
-  for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter)
-  {
+  for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter) {
     SEXP r_exp = (*proc_iter)->get_defn();
     // top procedure is nil; skip it
     if (proc_iter == t->begin()) {
@@ -170,7 +167,7 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 	}
       } // statements
     } // basic blocks (CFG nodes)
-    } // procedures
+  } // procedures
 }
 
 void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
@@ -194,5 +191,4 @@ void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
     aset = uds.perform_analysis(ph, cfg_ptr);
     uds.dump_node_maps();
   }
-
 }

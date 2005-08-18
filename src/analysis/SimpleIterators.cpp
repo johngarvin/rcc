@@ -1,9 +1,9 @@
 #include "SimpleIterators.hpp"
 
+
+
 //! Preorder iterator: building the preorder list of nodes
-void R_PreorderIterator::
-build_pre(SEXP e)
-{
+void R_PreorderIterator::build_pre(SEXP e) {
   assert(e != NULL);
   switch(TYPEOF(e)) {
   case NILSXP:

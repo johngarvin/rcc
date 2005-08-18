@@ -45,6 +45,7 @@
 
 #include <list>
 #include <string>
+#include <ostream>
 #include <assert.h>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
@@ -264,28 +265,23 @@ public:
   OA::SymHandle getSymHandle(OA::LeafHandle h);
 
   // toString routines
-  std::string toString(OA::ProcHandle h)
-  {
+  std::string toString(OA::ProcHandle h) {
     return "";
   }
 
-  std::string toString(OA::StmtHandle h)
-  {
+  std::string toString(OA::StmtHandle h) {
     return "";
   }
 
-  std::string toString(OA::ExprHandle h)
-  {
+  std::string toString(OA::ExprHandle h) {
     return "";
   }
 
-  std::string toString(OA::OpHandle h)
-  {
+  std::string toString(OA::OpHandle h) {
     return "";
   }
 
-  std::string toString(OA::MemRefHandle h)
-  {
+  std::string toString(OA::MemRefHandle h) {
     return "";
   }
 
@@ -295,13 +291,11 @@ public:
     return std::string(CHAR(PRINTNAME(e)));
   }
 
-  std::string toString(OA::ConstSymHandle h)
-  {
+  std::string toString(OA::ConstSymHandle h) {
     return "";
   }
 
-  std::string toString(OA::ConstValHandle h)
-  {
+  std::string toString(OA::ConstValHandle h) {
     return "";
   }
 
@@ -324,8 +318,7 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 // If it is, need to change build_procs to use the scope tree.
 
 //! Enumerate all the procedures in a certain IR
-class R_IRProcIterator : public OA::IRProcIterator
-{
+class R_IRProcIterator : public OA::IRProcIterator {
 private:
   const SEXP exp;
   R_PreorderIterator iter;
@@ -334,8 +327,7 @@ private:
   void build_procs();
 public:
   R_IRProcIterator(OA::StmtHandle _exp)
-    : exp((SEXP)_exp.hval()), iter((SEXP)_exp.hval())
-  {
+    : exp((SEXP)_exp.hval()), iter((SEXP)_exp.hval()) {
     build_procs();
     proc_iter = procs.begin();
   }
@@ -382,8 +374,7 @@ public:
 //! Enumerate all the variable uses or variable definitions in a statement.
 //! This is useful for analyses that require information about variable
 //! references or definitions, such as SSA construction.
-class R_IRUseDefIterator : public OA::SSA::IRUseDefIterator
-{
+class R_IRUseDefIterator : public OA::SSA::IRUseDefIterator {
 public:
   R_IRUseDefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter) : iter(_iter) { }
   virtual ~R_IRUseDefIterator() { }
@@ -400,8 +391,7 @@ protected:
 
 
 #if 0
-class R_IRUseIterator : public R_IRUseDefIterator
-{
+class R_IRUseIterator : public R_IRUseDefIterator {
 private:
   void build_vars_lhs(SEXP e);
   void build_vars_rhs(SEXP e);
@@ -413,15 +403,13 @@ public:
   }
 };
 
-class R_IRDefIterator : public R_IRUseDefIterator
-{
+class R_IRDefIterator : public R_IRUseDefIterator {
 private:
   void build_vars_lhs(SEXP e);
   void build_vars_rhs(SEXP e);
 
 public:
-  R_IRDefIterator(OA::StmtHandle stmt)
-  {
+  R_IRDefIterator(OA::StmtHandle stmt) {
     build_vars_rhs((SEXP)stmt.hval());
     vars_iter = vars.begin();
   }
@@ -434,32 +422,30 @@ class ScopeTreeIterator {
 
 #endif // #ifndef R_IRInterface_h
 
-/*
+#if 0
 // Enumerate all the procedure calls in a statement.
 // Not yet implemented.
 
-class R_IRCallsiteIterator : public IRCallsiteIterator
-{
+class R_IRCallsiteIterator : public IRCallsiteIterator {
 private:
-const SEXP stmt;
-R_PreorderIterator exp_iter;
-std::list<SEXP> callsites;
-std::list<SEXP>::iterator cs_iter;
-void build_callsites();
+  const SEXP stmt;
+  R_PreorderIterator exp_iter;
+  std::list<SEXP> callsites;
+  std::list<SEXP>::iterator cs_iter;
+  void build_callsites();
 public:
-R_IRCallsiteIterator(OA::StmtHandle _stmt)
-: stmt((SEXP)_stmt), exp_iter(stmt) { build_callsites(); cs_iter = callsites.begin();}
-virtual ~R_IRCallsiteIterator() { }
+  R_IRCallsiteIterator(OA::StmtHandle _stmt)
+    : stmt((SEXP)_stmt), exp_iter(stmt) { build_callsites(); cs_iter = callsites.begin();}
+  virtual ~R_IRCallsiteIterator() { }
 
-OA::ExprHandle current() const { return (OA::ExprHandle)*cs_iter; }
-bool isValid() const { return (cs_iter != callsites.end()); }
-void operator++() { ++cs_iter; }
-void reset() { cs_iter = callsites.begin(); }
+  OA::ExprHandle current() const { return (OA::ExprHandle)*cs_iter; }
+  bool isValid() const { return (cs_iter != callsites.end()); }
+  void operator++() { ++cs_iter; }
+  void reset() { cs_iter = callsites.begin(); }
 };
 
 //! Enumerate all (actual) parameters within a callsite
-class R_IRCallsiteParamIterator : public IRCallsiteParamIterator
-{
+class R_IRCallsiteParamIterator : public IRCallsiteParamIterator {
 private:
   const SEXP args;
   R_ListIterator args_iter;
@@ -474,4 +460,4 @@ public:
   void reset() { args_iter.reset(); }
 };
 
-*/
+#endif

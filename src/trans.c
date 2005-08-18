@@ -15,8 +15,7 @@ static void matprod_t(double *x, int nrx, int ncx,
 
 /* Note: assumes non-complex args */
 
-SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info)
-{
+SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   int ldx, ldy, nrx, ncx, nry, ncy, mode;
   SEXP xdims, ydims, ans;
   Rboolean sym;

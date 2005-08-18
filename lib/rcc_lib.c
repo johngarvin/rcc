@@ -41,8 +41,7 @@ SEXP rcc_cons(SEXP car, SEXP cdr, int unp_car, int unp_cdr) {
   return out;
 }
 
-Rboolean my_asLogicalNoNA(SEXP s)
-{
+Rboolean my_asLogicalNoNA(SEXP s) {
     Rboolean cond = asLogical(s);
     if (cond == NA_LOGICAL) {
 	char *msg = isLogical(s) ?

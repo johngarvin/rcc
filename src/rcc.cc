@@ -1,25 +1,25 @@
-/* Copyright (c) 2003-2005 John Garvin 
- *
- * July 11, 2003 
- *
- * Parses R code, turns into C code that uses internal R functions.
- * Attempts to output some code in regular C rather than using R
- * functions.
- *  
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
- */
+// Copyright (c) 2003-2005 John Garvin 
+//
+// July 11, 2003 
+//
+// Parses R code, turns into C code that uses internal R functions.
+// Attempts to output some code in regular C rather than using R
+// functions.
+//  
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+///
 
 #include "rcc.h"
 #include "codegen.h"
@@ -557,10 +557,10 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     return op_if(CDR(e), rho);
   } else if (PRIMFUN(op) == (SEXP (*)())do_for) {
     return op_for(CDR(e), rho);
-    /*
-     * } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
-     *   return op_while(CDR(e), rho);
-     */
+    //
+    // } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
+    //   return op_while(CDR(e), rho);
+    //
   } else if (PRIMFUN(op) == (SEXP (*)())do_return && global_c_return) {
     return op_c_return(CDR(e), rho);
   } else {
@@ -631,7 +631,7 @@ bool isSimpleSubscript(SEXP e) {
   
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
   string out;
-  if (PRIMVAL(op) == 1 || PRIMVAL(op) == 3) {    /* <-, = */
+  if (PRIMVAL(op) == 1 || PRIMVAL(op) == 3) {    //    <-, =
     if (isString(CADR(e))) {
       SETCAR(CDR(e), install(CHAR(STRING_ELT(CADR(e), 0))));
     }
@@ -669,7 +669,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
       return Expression("<<assignment with unrecognized LHS>>",
 			TRUE, INVISIBLE, "");
     }
-  } else if (PRIMVAL(op) == 2) {  /* <<- */
+  } else if (PRIMVAL(op) == 2) {  //     <<-
     Expression op1 = op_exp(op, rho);
     Expression args1 = op_list(CDR(e), rho, TRUE);
     out = appl4(get_name(PRIMOFFSET(op)),
@@ -782,7 +782,7 @@ Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
     arg = CDR(arg);
   }
     
-  /* Don't unprotect R_NilValue, just the conses */
+  // Don't unprotect R_NilValue, just the conses
   tmp = buf.appl2("cons", make_symbol(TAG(args[len-1])), "R_NilValue");
   if (len > 1) {
     for(i=len-2; i>=0; i--) {
@@ -897,13 +897,13 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   }
 }
 
-/* Output a list using locally allocated storage instead of R's
- * allocation mechanism. The literal argument determines whether the
- * CARs are to be output literally or programatically. opt_l_car is an
- * optional string used mostly for applyClosure arguments. If it is
- * nonempty, it makes the first CONS a LANGSXP whose CAR is the given
- * string.
- */
+//  Output a list using locally allocated storage instead of R's
+//  allocation mechanism. The literal argument determines whether the
+//  CARs are to be output literally or programatically. opt_l_car is an
+//  optional string used mostly for applyClosure arguments. If it is
+//  nonempty, it makes the first CONS a LANGSXP whose CAR is the given
+//  string.
+
 Expression SubexpBuffer::op_list_local(SEXP e, string rho,
 				       bool literal /* = TRUE */, 
 				       bool primFuncArgList /* = FALSE */,
@@ -1151,9 +1151,9 @@ op_list_help(SEXP e, string rho,
       consts.del(car);
       consts.del(cdr);
       return Expression(out_const, FALSE, VISIBLE, "");
-      /* If this is dependent but some subexpression is constant, create
-       * the bridge between the constant subexpression and the global 
-       * constants. */
+      // If this is dependent but some subexpression is constant, create
+      // the bridge between the constant subexpression and the global 
+      // constants.
     } else if (car.is_dep && !cdr.is_dep) {
       string out = appl2_unp(my_cons, car.var, cdr.var);
       del(car);
@@ -1165,7 +1165,7 @@ op_list_help(SEXP e, string rho,
       del(cdr);
       return Expression(out, TRUE, VISIBLE, "");
     }
-  } else { /* It's a tagged cons */
+  } else {                         // It's a tagged cons
     if (my_cons == "lcons") {
       err("Internal error: op_list encountered tagged lcons\n");
     }
@@ -1489,7 +1489,8 @@ int main(int argc, char *argv[]) {
   
   string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
   string r_path_prefix = rcc_path_prefix + "R/";
-  /* output to file */
+
+  // output to file
   out_file << r_path_prefix << "IOStuff.h\"\n";
   out_file << r_path_prefix << "Parse.h\"\n";
   out_file << r_path_prefix << "Internal.h\"\n";
@@ -1508,18 +1509,17 @@ int main(int argc, char *argv[]) {
   out_file << global_constants.output_decls();
 
   string file_initializer_name = string("R_init_") + libname;
-  {
-    string header;
-    header += "\nvoid " + file_initializer_name + "() {\n";
-    /* The name R_init_<libname> causes the R dynamic loader to execute the
-     * function immediately. */
-    for(i=0; i<global_constants.get_n_inits(); i++) {
-      header += indent(global_constants.get_init_str() + i_to_s(i) + "();\n");
-    }
-    header += indent("exec();\n");
-    header += "}\n";
-    out_file << header;
+
+  string header;
+  header += "\nvoid " + file_initializer_name + "() {\n";
+  // The name R_init_<libname> causes the R dynamic loader to execute the
+  // function immediately.
+  for(i=0; i<global_constants.get_n_inits(); i++) {
+    header += indent(global_constants.get_init_str() + i_to_s(i) + "();\n");
   }
+  header += indent("exec();\n");
+  header += "}\n";
+  out_file << header;
 
   out_file << global_constants.output_defs();
   out_file << exprs;
@@ -1562,7 +1562,7 @@ static void set_funcs(int argc, char *argv[]) {
   }
 }
 
-/***
+#if 0
 string make_fundef(string func_name, SEXP args, SEXP code) {
   int i;
   string f, header;
@@ -1624,16 +1624,14 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   global_formals_len = old_formals_len;
   return f;
 }
+#endif
 
-***/
+//  Make a function where the arguments of the R function are packed in
+//  a list to form a single f-function argument, as opposed to
+//  make_fundef where the mapping is one-to-one. This version is used
+//  for functions that include the "..." object.
 
-/* Make a function where the arguments of the R function are packed in
- * a list to form a single f-function argument, as opposed to
- * make_fundef where the mapping is one-to-one. This version is used
- * for functions that include the "..." object.
- *
- * Actually, at the moment it's being used all the time for simplicity.
- */
+//  Actually, at the moment it's being used all the time for simplicity.
 string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
   string f, header;
   SubexpBuffer out_subexps;

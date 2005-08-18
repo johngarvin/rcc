@@ -6,8 +6,7 @@
 #include <rinternals.h>
 
 //! Abstract class to enumerate a set of R expressions.
-class R_ExpIterator
-{
+class R_ExpIterator {
 public:
   virtual ~R_ExpIterator() { }
   
@@ -19,8 +18,7 @@ public:
 };
 
 //! Singleton iterator for a single statement.
-class R_SingletonIterator : public R_ExpIterator
-{
+class R_SingletonIterator : public R_ExpIterator {
 protected:
   const SEXP exp;
   bool valid;
@@ -36,14 +34,12 @@ public:
 //! Enumerate the elements of a list (in R, a chain of CONS cells).
 //! To make sure all locations are unique, the iterator gives you the
 //! cons cell; take the CAR to get the data you want.
-class R_ListIterator : public R_ExpIterator
-{
+class R_ListIterator : public R_ExpIterator {
 protected:
   const SEXP exp;
   SEXP curr;
 public:
-  R_ListIterator(SEXP _exp) : exp(_exp)
-  {
+  R_ListIterator(SEXP _exp) : exp(_exp) {
     // make sure it's of list type: data cons cell, language cons cell, or nil
     assert(TYPEOF(exp) == LISTSXP || TYPEOF(exp) == LANGSXP || exp == R_NilValue);
     curr = exp;
@@ -53,8 +49,7 @@ public:
   //  SEXP current() const { return CAR(curr); }
   SEXP current() const { return curr; }
   bool isValid() const { return (curr != R_NilValue); }
-  void operator++()
-  {
+  void operator++() {
     // must be a data or language cons cell to be able to take the CDR
     assert(TYPEOF(curr) == LISTSXP || TYPEOF(curr) == LANGSXP);
     curr = CDR(curr);
@@ -63,8 +58,7 @@ public:
 };
 
 //! preorder traversal of an R object through CARs and CDRs
-class R_PreorderIterator
-{
+class R_PreorderIterator {
 private:
   std::list<SEXP> preorder;
   std::list<SEXP>::iterator iter;
@@ -72,8 +66,7 @@ private:
   SEXP curr;
   void build_pre(SEXP e);
 public:
-  R_PreorderIterator(SEXP _exp) : exp(_exp)
-  {
+  R_PreorderIterator(SEXP _exp) : exp(_exp) {
     build_pre(exp);
     iter = preorder.begin();
   }
