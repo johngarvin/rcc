@@ -32,6 +32,13 @@
 //int Rf_initialize_R(int argc, char **argv);
 
 extern "C" {
+  // required for Parse.h
+  // Why isn't the ifndef handled in IOStuff.h?
+#ifndef R_IOSTUFF_H
+#  define R_IOSTUFF_H
+#  include <IOStuff.h>
+#endif
+#include <Parse.h>
 #include <Defn.h>
 }
 

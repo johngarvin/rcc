@@ -51,9 +51,9 @@ using namespace std;
 
 bool is_special(string func);
 
-/* VarRef: reference to an allocated variable inside a string: its
- * name, location, and length of the list it represents.
- */
+// VarRef: reference to an allocated variable inside a string: its
+// name, location, and length of the list it represents.
+//
 struct VarRef {
   string name;
   int location;
@@ -65,12 +65,12 @@ struct VarRef {
   }
 };
 
-/* AllocList keeps track of locally-allocated lists (LALs). When more
- * than one LAL is live at the same time, they must be in different
- * places in memory, but if they have different live ranges, they can
- * use the same memory. Each memory location must be as big as the
- * biggest list allocated there. 
- */
+// AllocList keeps track of locally-allocated lists (LALs). When more
+// than one LAL is live at the same time, they must be in different
+// places in memory, but if they have different live ranges, they can
+// use the same memory. Each memory location must be as big as the
+// biggest list allocated there. 
+//
 struct AllocListElem {
   int max;
   bool occupied;
@@ -122,8 +122,8 @@ class AllocList {
   }
 };
 
-/***
 
+#if 0
 // Sorted sequence of the lengths of lists currently allocated
 class SortedIntList {
 private:
@@ -179,21 +179,19 @@ public:
   }
 };
 
-***/
+#endif
 
-/* Expression is a struct returned by the op_ functions representing a
- * subexpression in the output.
- *
- * var = the name of the variable storing the expression
- * is_dep = whether the expression depends on the current
- *          environment. If false, the expression can be hoisted out
- *          of an f-function.
- * is_visible = whether the expression should be printed if it
- *              appears at top level in R.
- * is_alloc = whether the expression is locally allocated.
- *
- * del_text = code to clean up after the final use of the
- * expression. Most commonly a call to UNPROTECT_PTR.  */
+//!  Expression is a struct returned by the op_ functions representing a
+//!  subexpression in the output.
+//!  var = the name of the variable storing the expression
+//!  is_dep = whether the expression depends on the current
+//!           environment. If false, the expression can be hoisted out
+//!           of an f-function.
+//!  is_visible = whether the expression should be printed if it
+//!               appears at top level in R.
+//!  is_alloc = whether the expression is locally allocated.
+//!  del_text = code to clean up after the final use of the
+//!  expression. Most commonly a call to UNPROTECT_PTR.
 struct Expression {
   string var;
   bool is_dep;
@@ -435,10 +433,9 @@ public:
 
 unsigned int SubexpBuffer::n;
 
-/* Huge functions are hard on compilers like gcc. To generate code
- * that goes down easy, we split up the constant initialization into
- * several functions.
- */
+//! Huge functions are hard on compilers like gcc. To generate code
+//! that goes down easy, we split up the constant initialization into
+//! several functions.
 class SplitSubexpBuffer : public SubexpBuffer {
 private:
   const unsigned int threshold;

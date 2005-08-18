@@ -1,37 +1,25 @@
-/* Copyright (c) 2003-2004 John Garvin 
- *
- * July 11, 2003 
- *
- * Parses R code, turns into C code that uses internal R functions.
- * Attempts to output some code in regular C rather than using R
- * functions.
- *  
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
- */
+// Copyright (c) 2003-2005 John Garvin
+//
+// July 11, 2003 
+//
+// Interface to the R parser. Parses R code, returns S-expressions.
+// 
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//   This program is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+//   You should have received a copy of the GNU General Public License
+//   along with this program; if not, write to the Free Software
+//   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+//
 
 #include "parser.h"
-
-extern "C" {
-  // Why isn't this handled in IOStuff.h?
-#ifndef R_IOSTUFF_H
-#  define R_IOSTUFF_H
-#  include <IOStuff.h>
-#endif
-#include <Parse.h>
-
-} //extern "C"
 
 void init_R() {
   char *myargs[5];
@@ -45,10 +33,10 @@ void init_R() {
   //  setup_Rmainloop();
 }
 
-/* Reads 'in_file' and parses it as R code. Sets 'exps' as a
- * NULL-terminated array of SEXPs representing the list of
- * expressions.
- */
+//! Reads 'in_file' and parses it as R code. Sets 'exps' as a
+//! NULL-terminated array of SEXPs representing the list of
+//! expressions.
+//!
 void parse_R(FILE *in_file, SEXP *p_exps[]) {
   int n = 0;
   SEXP e;
@@ -58,7 +46,7 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
   exps = (SEXP *)malloc(sizeof(SEXP));
 
   do {
-    /* parse each expression */
+    // parse each expression
     PROTECT(e = R_Parse1File(in_file, 1, &status));
     switch(status) {
     case PARSE_NULL:
@@ -83,24 +71,24 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
   *p_exps = exps;
 }
 
-/* Parse R code into a sequence of R AST expressions, then makes and
- * returns the sequence as a big function with no arguments. If the
- * input file containts expressions e1,e2,...en, then the output is
- * the SEXP representation of something like this:
- *
- * function()
- * {
- *   e1
- *   e2
- *   ...
- *   en
- * }
- *
- * FIXME: This is done because OpenAnalysis assumes that, as in C or
- * Fortran, all code is within some function--an assumption that's
- * invalid for languages like R. This hack alters the semantics:
- * definitions that were global are now local.
- */
+//!  Parse R code into a sequence of R AST expressions, then makes and
+//!  returns the sequence as a big function with no arguments. If the
+//!  input file containts expressions e1,e2,...en, then the output is
+//!  the SEXP representation of something like this:
+//!  *
+//!  function()
+//!  {
+//!    e1
+//!    e2
+//!    ...
+//!    en
+//!  }
+//!  *
+//!  FIXME: This is done because OpenAnalysis assumes that, as in C or
+//!  Fortran, all code is within some function--an assumption that's
+//!  invalid for languages like R. This hack alters the semantics:
+//!  definitions that were global are now local.
+//!
 SEXP parse_R_as_function(FILE *in_file) {
   SEXP *exps, *e;
   SEXP stmts = R_NilValue;

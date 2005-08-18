@@ -1684,7 +1684,7 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
   return f;
 }
 
-/* Like make_fundef_arglist but for directly-called functions. */
+// Like make_fundef_arglist but for directly-called functions.
 string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
   string f, header;
   SubexpBuffer out_subexps;

@@ -1,25 +1,25 @@
-/* Copyright (c) 2003 John Garvin 
- *
- * July 11, 2003 
- *
- * Parses R code, turns into C code that uses internal R functions.
- * Attempts to output some code in regular C rather than using R
- * functions.
- *  
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
- */
+// Copyright (c) 2003-2005 John Garvin 
+//
+//  July 11, 2003 
+//
+//  Parses R code, turns into C code that uses internal R functions.
+//  Attempts to output some code in regular C rather than using R
+//  functions.
+//  
+//   This program is free software; you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation; either version 2 of the License, or
+//   (at your option) any later version.
+//
+//   This program is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+//   You should have received a copy of the GNU General Public License
+//   along with this program; if not, write to the Free Software
+//   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+//
 
 #include "util.h"
 
@@ -55,9 +55,10 @@ std::string make_type(int t) {
 std::string indent(std::string str) {
   const std::string IND_STR = "  ";
   if (str.empty()) return "";
-  std::string newstr = IND_STR;   /* Add indentation to beginning */
+  std::string newstr = IND_STR;   // Add indentation to beginning
   std::string::iterator it;
-  /* Indent after every newline (unless there's one at the end) */
+
+  // Indent after every newline (unless there's one at the end)
   for(it = str.begin(); it != str.end(); it++) {
     if (*it == '\n' && it != str.end() - 1) {
       newstr += '\n' + IND_STR;
@@ -68,12 +69,12 @@ std::string indent(std::string str) {
   return newstr;
 }
 
-/* Rrrrrgh. C++: the language that makes the hard things hard and the
- * easy things hard.
- */
+// Rrrrrgh. C++: the language that makes the hard things hard and the
+// easy things hard.
+//
 std::string i_to_s(const int i) {
   if (i == (int)0x80000000) {
-    return "0x80000000"; /* Doesn't work as a decimal constant */
+    return "0x80000000";      // Doesn't parse as a decimal constant
   } else {
     std::ostringstream ss;
     ss << i;
@@ -83,7 +84,7 @@ std::string i_to_s(const int i) {
 
 std::string d_to_s(double d) {
   if (d == HUGE_VAL) {
-    return "HUGE_VAL";
+    return "HUGE_VAL";         // special R value
   } else {
     std::ostringstream ss;
     ss << d;
@@ -95,9 +96,9 @@ std::string c_to_s(Rcomplex c) {
   return "mk_complex(" + d_to_s(c.r) + "," + d_to_s(c.i) + ")";
 }
 
-/* Escape "'s, \'s and \n's to turn a string into its representation
- * in C code.
- */
+// Escape "'s, \'s and \n's to turn a string into its representation
+// in C code.
+//
 std::string escape(std::string str) {
   unsigned int i;
   std::string out = "";
@@ -115,11 +116,11 @@ std::string escape(std::string str) {
   return out;
 }
 
-/* Make a std::string suitable for use as a C identifier. Used for both R
- * identifiers and arbitrary strings for syntactic sugar in
- * variable names. It's important that no two R identifiers can map to
- * the same C name, but for arbitrary strings it doesn't matter.
- */
+// Make a std::string suitable for use as a C identifier. Used for both R
+// identifiers and arbitrary strings for syntactic sugar in
+// variable names. It's important that no two R identifiers can map to
+// the same C name, but for arbitrary strings it doesn't matter.
+//
 std::string make_c_id(std::string str) {
   std::string out;
   unsigned int i;
@@ -136,7 +137,7 @@ std::string make_c_id(std::string str) {
   return out;
 }
 
-/* Simple function to add quotation marks around a string */
+// Simple function to add quotation marks around a string
 std::string quote(std::string str) {
   return "\"" + str + "\"";
 }

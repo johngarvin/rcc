@@ -112,12 +112,10 @@ public:
   R_UseSet() { mSet = new std::set<OA::OA_ptr<R_Use> >; }
   R_UseSet(const R_UseSet& other) : mSet(other.mSet) {}
   ~R_UseSet() { }
-
   
-  /*! After the assignment operation, the lhs R_UseSet will point
-      to the same instances of R_Use's that the rhs points to.  Use
-      clone if you want separate instances of the R_Use's
-  */
+  // After the assignment operation, the lhs R_UseSet will point to
+  // the same instances of R_Use's that the rhs points to.  Use clone
+  // if you want separate instances of the R_Use's
   R_UseSet& operator= (const R_UseSet& other) {
     mSet = other.mSet; 
     return *this;
