@@ -1,4 +1,5 @@
 #include <string>
+#include <util.h>
 
 //------------------------------------------------------------------------------
 // emit conditional: if(expn) 
@@ -38,3 +39,5 @@ std::string emit_call2(std::string fname, const std::string arg1,
 //    note: statement terminated 
 //------------------------------------------------------------------------------
 // std::string emit_call_stmt(const std::string fname, ...);
+
+std::string emit_in_braces(std::string code);

@@ -25,29 +25,29 @@
 
 std::string make_type(int t) {
   switch(t) {
-  case NILSXP: return "0 /* NILSXP */";
-  case SYMSXP: return "1 /* SYMSXP */";
-  case LISTSXP: return "2 /* LISTSXP */";
-  case CLOSXP: return "3 /* CLOSXP */";
-  case ENVSXP: return "4 /* ENVSXP */";
-  case PROMSXP: return "5 /* PROMSXP */";
-  case LANGSXP: return "6 /* LANGSXP */";
-  case SPECIALSXP: return "7 /* SPECIALSXP */";
-  case BUILTINSXP: return "8 /* BUILTINSXP */";
-  case CHARSXP: return "9 /* CHARSXP */";
-  case LGLSXP: return "10 /* LGLSXP */";
-  case INTSXP: return "13 /* INTSXP */";
-  case REALSXP: return "14 /* REALSXP */";
-  case CPLXSXP: return "15 /* CPLXSXP */";
-  case STRSXP: return "16 /* STRSXP */";
-  case DOTSXP: return "17 /* DOTSXP */";
-  case ANYSXP: return "18 /* ANYSXP */";
-  case VECSXP: return "19 /* VECSXP */";
-  case EXPRSXP: return "20 /* EXPRSXP */";
-  case BCODESXP: return "21 /* BCODESXP */";
-  case EXTPTRSXP: return "22 /* EXTPTRSXP */";
+  case NILSXP:     return  "0 /* NILSXP */";
+  case SYMSXP:     return  "1 /* SYMSXP */";
+  case LISTSXP:    return  "2 /* LISTSXP */";
+  case CLOSXP:     return  "3 /* CLOSXP */";
+  case ENVSXP:     return  "4 /* ENVSXP */";
+  case PROMSXP:    return  "5 /* PROMSXP */";
+  case LANGSXP:    return  "6 /* LANGSXP */";
+  case SPECIALSXP: return  "7 /* SPECIALSXP */";
+  case BUILTINSXP: return  "8 /* BUILTINSXP */";
+  case CHARSXP:    return  "9 /* CHARSXP */";
+  case LGLSXP:     return "10 /* LGLSXP */";
+  case INTSXP:     return "13 /* INTSXP */";
+  case REALSXP:    return "14 /* REALSXP */";
+  case CPLXSXP:    return "15 /* CPLXSXP */";
+  case STRSXP:     return "16 /* STRSXP */";
+  case DOTSXP:     return "17 /* DOTSXP */";
+  case ANYSXP:     return "18 /* ANYSXP */";
+  case VECSXP:     return "19 /* VECSXP */";
+  case EXPRSXP:    return "20 /* EXPRSXP */";
+  case BCODESXP:   return "21 /* BCODESXP */";
+  case EXTPTRSXP:  return "22 /* EXTPTRSXP */";
   case WEAKREFSXP: return "23 /* WEAKREFSXP */";
-  case FUNSXP: return "99 /* FUNSXP */";
+  case FUNSXP:     return "99 /* FUNSXP */";
   default: err("make_type: invalid type"); return "BOGUS";
   }
 }

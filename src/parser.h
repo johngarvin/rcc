@@ -25,12 +25,6 @@
 
 #include <rinternals.h>
 
-//extern void setup_Rmainloop(void);
-//#include <R_ext/RStartup.h>
-
-// function from R_SOURCE/src/unix/system.c. Not declared in an include file.
-//int Rf_initialize_R(int argc, char **argv);
-
 extern "C" {
   // required for Parse.h
   // Why isn't the ifndef handled in IOStuff.h?

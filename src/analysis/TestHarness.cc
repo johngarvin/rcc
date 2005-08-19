@@ -22,9 +22,7 @@ int main(int argc, char *argv[]) {
   SEXP exp;
   init_R();
   exp = parse_R_as_function(stdin);
-  R_IRInterface *rir = new R_IRInterface;
-  OA_ptr<R_IRInterface> rir_ptr;
-  rir_ptr = rir;
+  OA_ptr<R_IRInterface> rir_ptr; rir_ptr = new R_IRInterface;
 
   //opt_matmul_test(rir_ptr, exp);
   //  ssa_test(rir_ptr, exp);
@@ -171,8 +169,7 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 }
 
 void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
-  CFG::ManagerStandard cfg_man(rir_ptr, true);
-  //  CFG::ManagerStandard cfg_man(rir_ptr);
+  CFG::ManagerStandard cfg_man(rir_ptr, true);         // statement-level CFG
   OA_ptr<CFG::Interface> cfg_ptr;
   OA_ptr<RAnnot::AnnotationSet> aset;
   R_Analyst an(e);

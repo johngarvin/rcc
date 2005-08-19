@@ -76,6 +76,10 @@ string emit_call_stmt(const string fname, ...)
 }
 #endif
 
+string emit_in_braces(string code) {
+  return "{\n" + indent(code) + "}\n";
+}
+
 
 //******************************************************************************
 // private functions

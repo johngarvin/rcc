@@ -42,6 +42,8 @@ extern "C" {
 #include <rinternals.h>
 #include <util.h>
 #include <parser.h>
+#include <R_Analyst.h>
+#include <R_Utils.hpp>
 #include "get_name.h"
 #include "replacements.h"
 #include "visibility.h"
@@ -191,7 +193,7 @@ public:
 //!               appears at top level in R.
 //!  is_alloc = whether the expression is locally allocated.
 //!  del_text = code to clean up after the final use of the
-//!  expression. Most commonly a call to UNPROTECT_PTR.
+//!             expression. Most commonly a call to UNPROTECT_PTR.
 struct Expression {
   string var;
   bool is_dep;
@@ -481,8 +483,8 @@ public:
 
 static void arg_err();
 static void set_funcs(int argc, char *argv[]);
-string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
-string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
+string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
+string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
 string make_symbol(SEXP e);
 
 #endif // defined RCC_H

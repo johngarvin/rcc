@@ -47,10 +47,6 @@ static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, INVISIBLE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, INVISIBLE, "");
 
-
-
-
-
 // Returns true if the given string represents a function specified
 // for direct calling.
 bool is_direct(string func) {
@@ -232,7 +228,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
 	  return out_exp;
 	} else if (TYPEOF(op) == PROMSXP) {
 	  // ***************** TEST ME! ******************
-	  err("Hey! I don't think we should see a promis in  LANGSXP!\n");
+	  err("Hey! I don't think we should see a promise in LANGSXP!\n");
 	  return op_exp(PREXPR(op), rho);
 	} else {
 	  err("Internal error: LANGSXP encountered non-function op\n");
@@ -249,6 +245,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
   }
 }
 
+//! Output a sequence of statements
 Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
   Expression e;
   string var = new_sexp();
@@ -256,13 +253,15 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
     SubexpBuffer temp = new_sb("tmp_be_" + i_to_s(global_temps++) + "_");
     //    temp.encl_fn = this;
     e = temp.op_exp(CAR(exp), rho);
-    append_defs(string("{\n") + indent(temp.output()));
+
+    string code;
+    code += temp.output();
     if (CDR(exp) == R_NilValue) {
-      append_defs(indent(var + " = " + e.var + ";\n"));
+      code += emit_assign(var, e.var);
     } else {
-      del(e);
+      code += e.del_text;
     }
-    append_defs("}\n");
+    append_defs(emit_in_braces(code));
     exp = CDR(exp);
   }
   if (e.del_text.empty()) {
@@ -276,7 +275,7 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
 }
   
 Expression SubexpBuffer::op_if(SEXP e, string rho) {
-  if (Rf_length(e) > 2) {
+  if (Rf_length(e) > 2) {                            // both true and false clauses present
 #if 1
     Expression cond = op_exp(CAR(e), rho);
     string out = new_sexp();
@@ -296,6 +295,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
     //del(cond);
     return Expression(out, FALSE, CHECK_VISIBLE, unp(out));
 #else
+    // Macro version. Waiting on better code generation.
     Expression cond = op_exp(CAR(e), rho);
     Expression te = op_exp(CADR(e), rho);
     Expression fe = op_exp(CADDR(e), rho);
@@ -308,7 +308,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
 			    fe.text,
 			    fe.var));
 #endif
-  } else {
+  } else {                                        // just the one clause, no else
     Expression cond = op_exp(CAR(e), rho);
     string out = new_sexp();
     append_defs("if (my_asLogicalNoNA(" + cond.var + ")) {\n");
@@ -325,6 +325,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho) {
   }
 }
 
+//! Output a for loop
 Expression SubexpBuffer::op_for(SEXP e, string rho) {
   SEXP sym, body, val;
   sym = CAR(e);
@@ -448,6 +449,7 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
   return Expression("R_NilValue", TRUE, INVISIBLE, "");
 }
 
+//! Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 				   string opt_R_name /* = "" */) {
   bool direct = FALSE;
@@ -464,10 +466,10 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
       } else {
 	global_c_return = TRUE;
 	global_fundefs.append_defs( 
-	  make_fundef_argslist_c(this,
-				 make_c_id(opt_R_name) + "_direct",
-				 CAR(e),
-				 CADR(e)));
+	  make_fundef_c(this,
+			make_c_id(opt_R_name) + "_direct",
+			CAR(e),
+			CADR(e)));
 	global_c_return = FALSE;
       }
       // in any case, continue to closure version
@@ -475,10 +477,10 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
   }
   // closure version
   string func_name = global_fundefs.new_var();
-  global_fundefs.append_defs(make_fundef_argslist(this,
-					      func_name,
-					      CAR(e),
-					      CADR(e)));
+  global_fundefs.append_defs(make_fundef(this,
+					 func_name,
+					 CAR(e),
+					 CADR(e)));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = global_constants.op_list(CAR(e), rho, TRUE);
@@ -629,6 +631,7 @@ bool isSimpleSubscript(SEXP e) {
 	  && TYPEOF(CADR(e)) == SYMSXP);
 }
   
+//! Output an assignment statement
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
   string out;
   if (PRIMVAL(op) == 1 || PRIMVAL(op) == 3) {    //    <-, =
@@ -709,8 +712,8 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho) {
   return a;
 }
 
-// Returns true iff the given list only contains CARs that are
-// R_MissingArg and TAGs that are either symbolic or null.
+//! Returns true iff the given list only contains CARs that are
+//! R_MissingArg and TAGs that are either symbolic or null.
 bool just_sym_tags(SEXP ls) {
   if (TYPEOF(ls) != LISTSXP && TYPEOF(ls) != NILSXP) {
     err("just_sym_tags internal error: non-list given\n");
@@ -725,7 +728,7 @@ bool just_sym_tags(SEXP ls) {
   return TRUE;
 }
 
-// Output an application of a closure to actual arguments.
+//! Output an application of a closure to actual arguments.
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
   // see eval.c:438-9
   Expression call;
@@ -764,9 +767,9 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
   return Expression(out, TRUE, CHECK_VISIBLE, unp(out));
 }
   
-// Output the argument list for an external function (generally a list
-// where the CARs are R_MissingArg and the TAGs are SYMSXPs
-// representing the formal arguments)
+//! Output the argument list for an external function (generally a list
+//! where the CARs are R_MissingArg and the TAGs are SYMSXPs
+//! representing the formal arguments)
 Expression SubexpBuffer::op_arglist(SEXP e, string rho) {
   int i;
   string out, tmp, tmp1;
@@ -897,13 +900,12 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   }
 }
 
-//  Output a list using locally allocated storage instead of R's
-//  allocation mechanism. The literal argument determines whether the
-//  CARs are to be output literally or programatically. opt_l_car is an
-//  optional string used mostly for applyClosure arguments. If it is
-//  nonempty, it makes the first CONS a LANGSXP whose CAR is the given
-//  string.
-
+//!  Output a list using locally allocated storage instead of R's
+//!  allocation mechanism. The literal argument determines whether the
+//!  CARs are to be output literally or programatically. opt_l_car is an
+//!  optional string used mostly for applyClosure arguments. If it is
+//!  nonempty, it makes the first CONS a LANGSXP whose CAR is the given
+//!  string.
 Expression SubexpBuffer::op_list_local(SEXP e, string rho,
 				       bool literal /* = TRUE */, 
 				       bool primFuncArgList /* = FALSE */,
@@ -1054,22 +1056,18 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
     if (list_dep) {
       string handle = new_sexp();
       string defs;
-      defs += "{\n";
-      defs += indent(tmp_buf.output());
-      defs += indent("PROTECT(" + handle + " = " + cdr + ");\n");
-      defs += indent(unp_cars);
-      defs += "}\n";
-      append_defs(defs);
+      defs += tmp_buf.output();
+      defs += "PROTECT(" + handle + " = " + cdr + ");\n";
+      defs += unp_cars;
+      append_defs(emit_in_braces(defs));
       return Expression(handle, list_dep, VISIBLE, unp(handle));
     } else {
       string handle = global_constants.new_sexp();
       string defs;
-      defs += "{\n";
-      defs += indent(tmp_buf.output());
-      defs += indent("PROTECT(" + handle + " = " + cdr + ");\n");
-      defs += indent(unp_cars);
-      defs += "}\n";
-      global_constants.append_defs(defs);
+      defs += tmp_buf.output();
+      defs += "PROTECT(" + handle + " = " + cdr + ");\n";
+      defs += unp_cars;
+      global_constants.append_defs(emit_in_braces(defs));
       return Expression(handle, list_dep, VISIBLE, "");
     }
   }
@@ -1077,8 +1075,9 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
 
 #if 0
 
-// Old version of op_list: recursive instead of iterative.  Changed to
-// handle the constant/non-constant distinction in a more natural way.
+// Former implementation of op_list: recursive instead of iterative.
+// Changed to handle the constant/non-constant distinction in a more
+// natural way.
 
 Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
   SubexpBuffer temp_f = new_sb("tmp_" + i_to_s(global_temps++) + "_");
@@ -1327,7 +1326,6 @@ void SubexpBuffer::output_ip() {
 
 int main(int argc, char *argv[]) {
   int i;
-  SEXP *expressions;
   char *fullname_c;
   string fullname, libname, out_filename, path, exprs;
   bool in_file_exists, out_file_exists = FALSE;
@@ -1339,6 +1337,7 @@ int main(int argc, char *argv[]) {
   extern char *optarg;
   extern int optind, opterr, optopt;
 
+  // get options
   while(1) {
     c = getopt(argc, argv, "f:lo:");
     if (c == -1) {
@@ -1373,6 +1372,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // get filename, if it exists
   if (optind < argc) {
     in_file_exists = TRUE;
     fullname_c = argv[optind++];
@@ -1387,9 +1387,10 @@ int main(int argc, char *argv[]) {
     in_file_exists = FALSE;
   }
 
-  // Initialize R interface and parse
+  // Initialize R interface
   init_R();
 
+  // set in_file, libname, and path depending on what we're given
   if (in_file_exists) {
     in_file = fopen(fullname_c, "r");
     if (in_file == NULL) {
@@ -1410,50 +1411,59 @@ int main(int argc, char *argv[]) {
     string filename = fullname.substr(pos, fullname.size() - pos);
     libname = make_c_id(strip_suffix(filename));
     // Lib name must be alphanumerical to be part of R_init_<library>
-    // function (explained below)
+    // function
   } else {
     in_file = stdin;
     libname = "R_output";
     path = "";
   }
 
-  parse_R(in_file, &expressions);
-
+  // set output filename if no "-o filename" option was found
   if (!out_file_exists) {
     out_filename = path + libname + ".c";
   }
 
+  // create global_fundefs
   SubexpBuffer *fundefs_ptr;
   fundefs_ptr = new SubexpBuffer(libname + "_f", TRUE);
   global_fundefs = *fundefs_ptr;
   delete fundefs_ptr;
 
-  // build expressions
   global_constants.decls += "static void exec();\n";
   exprs += "\nstatic void exec() {\n";
 
-  SEXP *e;
-  e = expressions;
+  SEXP program = parse_R_as_function(in_file);
+
+  R_Analyst an(program);
+  // other analysis
+
+  // We had to make our program one big function to use
+  // OpenAnalysis. Now forget the function definition and assignment
+  // and just look at the list of expressions.
+  SEXP expressions = CAR(fundef_body_c(CAR(assign_rhs_c(program))));
+
+  // count expressions
+  SEXP e = expressions;
   n_exprs = 0;
-  while (*e != NULL) {
+  while (e != R_NilValue) {
     n_exprs++;
-    e++;
+    e = CDR(e);
   }
 
   for(i=0; i<n_exprs; i++) {
     exprs += indent("SEXP e" + i_to_s(i) + ";\n");
   }
 
+  // output expressions
   for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
-    Expression exp = subexps.op_exp(expressions[i], "R_GlobalEnv");
-    UNPROTECT_PTR(expressions[i]);
+    Expression exp = subexps.op_exp(CAR(expressions), "R_GlobalEnv");
     exprs += indent("{\n");
     exprs += indent(indent(Visibility::emit_set_if_visible(exp.is_visible)));
     exprs += indent(indent("{\n"));
     exprs += indent(indent(indent(subexps.output())));
     if (exp.is_visible != INVISIBLE) {
-      string evar = "e" + i_to_s(i);  
+      string evar = "e" + i_to_s(i);
       string printexpn = evar  + " = " + exp.var + ";\n";
       string check;
       if (exp.is_visible == CHECK_VISIBLE) 
@@ -1468,13 +1478,11 @@ int main(int argc, char *argv[]) {
     exprs += indent(indent(indent(exp.del_text)));
     exprs += indent(indent("}\n"));
     exprs += indent("}\n");
-    e++;
+    expressions = CDR(expressions);
   }
   exprs += indent("UNPROTECT(" + i_to_s(global_constants.get_n_prot())
 		  + "); /* c_ */\n");
   exprs += "}\n\n";
-  
-
   
   if (!global_ok) {
     out_filename += ".bad";
@@ -1563,6 +1571,11 @@ static void set_funcs(int argc, char *argv[]) {
 }
 
 #if 0
+
+// Old version of make_fundef: maps each R argument to a C argument
+// instead of putting them in a list. Not used because it doesn't
+// handle "...", named arguments, default arguments, etc. We could use
+// this idea once we figure out compile-time argument matching.
 string make_fundef(string func_name, SEXP args, SEXP code) {
   int i;
   string f, header;
@@ -1626,13 +1639,11 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
 }
 #endif
 
-//  Make a function where the arguments of the R function are packed in
-//  a list to form a single f-function argument, as opposed to
-//  make_fundef where the mapping is one-to-one. This version is used
-//  for functions that include the "..." object.
-
-//  Actually, at the moment it's being used all the time for simplicity.
-string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+//!  Given an R function, emit a C function with two arguments. The
+//!  first is a list containing all the R arguments. (This is to work
+//!  easily with "...", default arguments, etc.) The second is the
+//!  environment in which the function is to be executed.
+string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
@@ -1685,7 +1696,7 @@ string make_fundef_argslist(SubexpBuffer * this_buf, string func_name, SEXP args
 }
 
 // Like make_fundef_arglist but for directly-called functions.
-string make_fundef_argslist_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
