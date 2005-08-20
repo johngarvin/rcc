@@ -1,4 +1,4 @@
-#include "R_opt.h"
+#include "TransformMatMul.h"
 
 SEXP opt_matmul(SEXP exp) {
   // For matrix multiplication where one or more arguments is

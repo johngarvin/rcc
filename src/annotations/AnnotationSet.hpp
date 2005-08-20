@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.2 2005/08/20 21:54:41 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -24,7 +24,7 @@
 
 //**************************** R Include Files ******************************
 
-#include "rinternals.h"
+#include "Rinternals.h"
 
 //*************************** User Include Files ****************************
 

@@ -1,9 +1,10 @@
-#ifndef R_SimpleIterators_hpp
-#define R_SimpleIterators_hpp
+#ifndef SIMPLE_ITERATORS_H
+#define SIMPLE_ITERATORS_H
 
 #include <list>
 #include <assert.h>
-#include <rinternals.h>
+
+#include <MyRInternals.h>
 
 //! Abstract class to enumerate a set of R expressions.
 class R_ExpIterator {

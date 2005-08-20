@@ -1,7 +1,7 @@
 AC_INIT(rcc, 1.1.7, garvin@rice.edu)
 AC_PREFIX_DEFAULT([/usr/local])
 AC_CONFIG_AUX_DIR([config])
-AC_CONFIG_SRCDIR([src/rcc.cc])
+AC_CONFIG_SRCDIR([src/Main.cc])
 AM_CONFIG_HEADER([config.h])
  
 AC_CANONICAL_HOST
@@ -129,6 +129,7 @@ AC_CONFIG_FILES([Makefile
 		 src/annotations/Makefile
 		 src/analysis/Makefile
 		 src/support/Makefile
+                 src/matmul/Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile

@@ -1,4 +1,4 @@
-#include "R_Analyst.h"
+#include "Analyst.h"
 #include <algorithm>
 
 // TODO: move these to separate file for everyone to access

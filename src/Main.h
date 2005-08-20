@@ -1,3 +1,6 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 /* -*-C++-*-
  * Copyright (c) 2003-2005 John Garvin 
  *
@@ -22,9 +25,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
-#ifndef RCC_H
-#define RCC_H
-
 #define __USE_STD_IOSTREAM
 
 #include <fstream>
@@ -39,28 +39,25 @@ extern "C" {
 
 } //extern "C"
 
-#include <rinternals.h>
-#include <util.h>
-#include <parser.h>
-#include <R_Analyst.h>
-#include <R_Utils.hpp>
-#include "get_name.h"
-#include "replacements.h"
-#include "visibility.h"
-#include "Macro.hpp"
+#include <MyRInternals.h>
+#include <StringUtils.h>
+#include <Parser.h>
+#include <Analyst.h>
+#include <Utils.h>
+#include "GetName.h"
+#include "Visibility.h"
+#include "Macro.h"
 
-using namespace std;
-
-bool is_special(string func);
+bool is_special(std::string func);
 
 // VarRef: reference to an allocated variable inside a string: its
 // name, location, and length of the list it represents.
 //
 struct VarRef {
-  string name;
+  std::string name;
   int location;
   int size;
-  VarRef(string nm, int loc, int sz) {
+  VarRef(std::string nm, int loc, int sz) {
     name = nm;
     location = loc;
     size = sz;
@@ -76,8 +73,8 @@ struct VarRef {
 struct AllocListElem {
   int max;
   bool occupied;
-  list<VarRef> vars;
-  AllocListElem(int m, bool o, list<VarRef> vs) {
+  std::list<VarRef> vars;
+  AllocListElem(int m, bool o, std::list<VarRef> vs) {
     max = m;
     occupied = o;
     vars = vs;
@@ -86,18 +83,18 @@ struct AllocListElem {
 
 class AllocList {
  private:
-  list<AllocListElem> ls;
+  std::list<AllocListElem> ls;
  public:
-  void add(string name, int loc, int sz) {
-    list<AllocListElem>::iterator i;
+  void add(std::string name, int loc, int sz) {
+    std::list<AllocListElem>::iterator i;
     for(i=ls.begin(); ; i++) {
       if (i == ls.end()) {
-	list<VarRef> vs;
+	std::list<VarRef> vs;
 	vs.push_back(VarRef(name, loc, sz));
         ls.push_back(AllocListElem(sz, TRUE, vs));
 	break;
       } else if (!i->occupied) {
-	i->max = max(sz, i->max);
+	i->max = std::max(sz, i->max);
 	i->occupied = TRUE;
 	i->vars.push_back(VarRef(name, loc, sz));
 	break;
@@ -105,9 +102,9 @@ class AllocList {
     }
   }
   
-  void remove(string name) {
-    list<AllocListElem>::iterator i;
-    list<VarRef>::iterator j;
+  void remove(std::string name) {
+    std::list<AllocListElem>::iterator i;
+    std::list<VarRef>::iterator j;
     for(i=ls.begin(); i != ls.end(); i++) {
       for(j = i->vars.begin(); j != i->vars.end(); j++) {
 	if (j->name == name) {
@@ -119,7 +116,7 @@ class AllocList {
     err("AllocList::remove: item not found");
   }
 
-  list<AllocListElem> get() {
+  std::list<AllocListElem> get() {
     return ls;
   }
 };
@@ -129,11 +126,11 @@ class AllocList {
 // Sorted sequence of the lengths of lists currently allocated
 class SortedIntList {
 private:
-  list<int> ls;
+  std::list<int> ls;
 public:
 
   void add(int n) {
-    list<int>::iterator i;
+    std::list<int>::iterator i;
     for(i = ls.begin(); i != ls.end() && *i < n; i++)
       ;
     ls.insert(i,n);
@@ -143,7 +140,7 @@ public:
     if (ls.empty()) {
       err("SortedIntList::remove: list empty");
     }
-    list<int>::iterator i;
+    std::list<int>::iterator i;
     for(i = ls.begin(); *i != n; i++) {
       if (i == ls.end()) {
 	err("SortedIntList::remove: item not found");
@@ -152,12 +149,12 @@ public:
     ls.erase(i);
   }
   
-  list<int> get() {
+  std::list<int> get() {
     return ls;
   }
   
-  void set_max(list<int> new_ls) {
-    list<int>::iterator p, q;
+  void set_max(std::list<int> new_ls) {
+    std::list<int>::iterator p, q;
     for(p = ls.begin(), q = new_ls.begin();
 	p != ls.end();
 	p++, q++) {
@@ -170,7 +167,7 @@ public:
   }
   
   void print() {
-    list<int>::iterator i;    
+    std::list<int>::iterator i;    
     for(i = ls.begin(); i != ls.end(); i++) {
       cout << *i << " ";
     }
@@ -182,6 +179,17 @@ public:
 };
 
 #endif
+
+struct Output {
+  std::string decls;
+  std::string code;
+  std::string global_decls;
+  std::string global_code;
+  std::string handle;
+  std::string del_text;
+  bool is_dep;
+  visibility is_visible;
+};
 
 //!  Expression is a struct returned by the op_ functions representing a
 //!  subexpression in the output.
@@ -195,13 +203,13 @@ public:
 //!  del_text = code to clean up after the final use of the
 //!             expression. Most commonly a call to UNPROTECT_PTR.
 struct Expression {
-  string var;
+  std::string var;
   bool is_dep;
   visibility is_visible;
   bool is_alloc;
-  string del_text;
+  std::string del_text;
   Expression() {}
-  Expression(string v, bool d, visibility vis, string dt) {
+  Expression(std::string v, bool d, visibility vis, std::string dt) {
     var = v;
     is_dep = d;
     is_visible = vis;
@@ -212,37 +220,37 @@ struct Expression {
 
 class SubexpBuffer {
 protected:
-  const string prefix;
+  const std::string prefix;
   static unsigned int n;  // see also definition immediately
 			  // following class definition
   unsigned int prot;
   AllocList alloc_list;
-  string edefs;
+  std::string edefs;
 public:
   virtual void finalize() { };
-  const string &output_decls() { return decls; }
-  const string &output_defs() { return edefs; }
-  string decls;
+  const std::string &output_decls() { return decls; }
+  const std::string &output_defs() { return edefs; }
+  std::string decls;
   SubexpBuffer * encl_fn;
   bool has_i;
   const bool is_const;
-  virtual void append_defs(string s) {
+  virtual void append_defs(std::string s) {
     edefs += s;
   }
-  virtual string new_var() {
+  virtual std::string new_var() {
     prot++;
     return new_var_unp();
   }
-  virtual string new_var_unp() {
+  virtual std::string new_var_unp() {
     return prefix + i_to_s(SubexpBuffer::n++);
   }
-  virtual string new_var_unp_name(string name) {
+  virtual std::string new_var_unp_name(std::string name) {
     return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
   }
   int get_n_vars() { return n; }
   int get_n_prot() { return prot; }
-  string new_sexp() {
-    string str = new_var();
+  std::string new_sexp() {
+    std::string str = new_var();
     if (is_const) {
       decls += "static SEXP " + str + ";\n";
     } else {
@@ -250,8 +258,8 @@ public:
     }
     return str;
   }
-  string new_sexp_unp() {
-    string str = new_var_unp();
+  std::string new_sexp_unp() {
+    std::string str = new_var_unp();
     if (is_const) {
       decls += "static SEXP " + str + ";\n";
     } else {
@@ -259,8 +267,8 @@ public:
     }
     return str;
   }
-  string new_sexp_unp_name(string name) {
-    string str = new_var_unp_name(name);
+  std::string new_sexp_unp_name(std::string name) {
+    std::string str = new_var_unp_name(name);
     if (is_const) {
       decls += "static SEXP " + str + ";\n";
     } else {
@@ -269,23 +277,23 @@ public:
     return str;
   }
 
-  string protect_str (string str) {
+  std::string protect_str (std::string str) {
     prot++;
     return "PROTECT(" + str + ")";
   }
 
-  void appl(string var, bool do_protect, string func, int argc, ...) {
+  void appl(std::string var, bool do_protect, std::string func, int argc, ...) {
     va_list param_pt;
-    string stmt;
+    std::string stmt;
     
     stmt = var + " = " + func + "(";
     va_start (param_pt, argc);
     for (int i = 0; i < argc; i++) {
       if (i > 0) stmt += ", ";
-      stmt += *va_arg(param_pt, string *);
+      stmt += *va_arg(param_pt, std::string *);
     }
     stmt += ")";
-    string defs;
+    std::string defs;
     if (do_protect) {
       defs += protect_str(stmt) + ";\n";
     }
@@ -296,82 +304,82 @@ public:
 
   /* Convenient macro-like things for outputting function applications */
   
-  string appl1(string func, string arg) {
-    string var = new_sexp_unp();
+  std::string appl1(std::string func, std::string arg) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 1, &arg);
     return var;
   }
   
-  string appl1_unp(string func, string arg) {
-    string var = new_sexp_unp();
+  std::string appl1_unp(std::string func, std::string arg) {
+    std::string var = new_sexp_unp();
     appl (var, FALSE, func, 1, &arg);
     return var;
   }
   
-  string appl2(string func, string arg1, string arg2) {
-    string var = new_sexp_unp();
+  std::string appl2(std::string func, std::string arg1, std::string arg2) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 2, &arg1, &arg2);
     return var;
   }
   
-  string appl2_unp(string func, string arg1, string arg2) {
-    string var = new_sexp_unp();
+  std::string appl2_unp(std::string func, std::string arg1, std::string arg2) {
+    std::string var = new_sexp_unp();
     appl (var, FALSE, func, 2, &arg1, &arg2);
     return var;
   }
   
-  string appl3(string func, string arg1, string arg2, string arg3) {
-    string var = new_sexp_unp();
+  std::string appl3(std::string func, std::string arg1, std::string arg2, std::string arg3) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
     return var;
   }
 
-  string appl3_unp(string func, string arg1, string arg2, string arg3) {
-    string var = new_sexp_unp();
+  std::string appl3_unp(std::string func, std::string arg1, std::string arg2, std::string arg3) {
+    std::string var = new_sexp_unp();
     appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
     return var;
   }
 
-  string appl4(string func,
-               string arg1, 
-	       string arg2, 
-	       string arg3, 
-	       string arg4) {
-    string var = new_sexp_unp();
+  std::string appl4(std::string func,
+               std::string arg1, 
+	       std::string arg2, 
+	       std::string arg3, 
+	       std::string arg4) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
     return var;
   }
   
-  string appl5(string func,
-               string arg1, 
-	       string arg2, 
-	       string arg3, 
-	       string arg4,
-	       string arg5) {
-    string var = new_sexp_unp();
+  std::string appl5(std::string func,
+               std::string arg1, 
+	       std::string arg2, 
+	       std::string arg3, 
+	       std::string arg4,
+	       std::string arg5) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
     return var;
   }
 
-  string appl5_unp(string func, 
-		   string arg1, 
-		   string arg2, 
-		   string arg3, 
-		   string arg4,
-		   string arg5) {
-    string var = new_sexp_unp();
+  std::string appl5_unp(std::string func, 
+		   std::string arg1, 
+		   std::string arg2, 
+		   std::string arg3, 
+		   std::string arg4,
+		   std::string arg5) {
+    std::string var = new_sexp_unp();
     appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
     return var;
   }
   
-  string appl6(string func,
-	       string arg1,
-	       string arg2,
-	       string arg3,
-	       string arg4,
-	       string arg5,
-	       string arg6) {
-    string var = new_sexp_unp();
+  std::string appl6(std::string func,
+	       std::string arg1,
+	       std::string arg2,
+	       std::string arg3,
+	       std::string arg4,
+	       std::string arg5,
+	       std::string arg6) {
+    std::string var = new_sexp_unp();
     appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
     return var;
   }
@@ -383,46 +391,46 @@ public:
     }
   }
 
-  Expression op_exp(SEXP e, string rho, bool primFuncArg = FALSE);
-  Expression op_primsxp(SEXP e, string rho);
-  Expression op_symlist(SEXP e, string rho);
-  Expression op_lang(SEXP e, string rho);
+  Expression op_exp(SEXP e, std::string rho, bool primFuncArg = FALSE);
+  Expression op_primsxp(SEXP e, std::string rho);
+  Expression op_symlist(SEXP e, std::string rho);
+  Expression op_lang(SEXP e, std::string rho);
   Expression op_promise(SEXP e);
-  Expression op_begin(SEXP exp, string rho);
-  Expression op_if(SEXP e, string rho);
-  Expression op_for(SEXP e, string rho);
-  Expression op_while(SEXP e, string rho);
-  Expression op_c_return(SEXP e, string rho);
-  Expression op_fundef(SEXP e, string rho, string opt_R_name = "");
-  Expression op_special(SEXP e, SEXP op, string rho);
-  Expression op_builtin(SEXP e, SEXP op, string rho);
-  Expression op_set(SEXP e, SEXP op, string rho);
-  Expression op_subscriptset(SEXP e, string rho);
-  Expression op_clos_app(Expression op1, SEXP args, string rho);
-  Expression op_arglist(SEXP e, string rho);
-  Expression op_arglist_local(SEXP e, string rho);
-  Expression op_literal(SEXP e, string rho);
-  Expression op_list_local(SEXP e, string rho, bool literal = TRUE, 
-			   bool primFuncArgList = FALSE, string opt_l_car = "");
-  Expression op_list(SEXP e, string rho, bool literal, bool primFuncArgList = FALSE);
-  Expression op_list_help(SEXP e, string rho, 
+  Expression op_begin(SEXP exp, std::string rho);
+  Expression op_if(SEXP e, std::string rho);
+  Expression op_for(SEXP e, std::string rho);
+  Expression op_while(SEXP e, std::string rho);
+  Expression op_c_return(SEXP e, std::string rho);
+  Expression op_fundef(SEXP e, std::string rho, std::string opt_R_name = "");
+  Expression op_special(SEXP e, SEXP op, std::string rho);
+  Expression op_builtin(SEXP e, SEXP op, std::string rho);
+  Expression op_set(SEXP e, SEXP op, std::string rho);
+  Expression op_subscriptset(SEXP e, std::string rho);
+  Expression op_clos_app(Expression op1, SEXP args, std::string rho);
+  Expression op_arglist(SEXP e, std::string rho);
+  Expression op_arglist_local(SEXP e, std::string rho);
+  Expression op_literal(SEXP e, std::string rho);
+  Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 
+			   bool primFuncArgList = FALSE, std::string opt_l_car = "");
+  Expression op_list(SEXP e, std::string rho, bool literal, bool primFuncArgList = FALSE);
+  Expression op_list_help(SEXP e, std::string rho, 
 			  SubexpBuffer & consts, 
-			  string & out_const, bool literal);
+			  std::string & out_const, bool literal);
   Expression op_string(SEXP s);
   Expression op_vector(SEXP e);
-  string output();
+  std::string output();
   void output_ip();
   SubexpBuffer new_sb() {
     SubexpBuffer new_sb;
     new_sb.encl_fn = encl_fn;
     return new_sb;
   }
-  SubexpBuffer new_sb(string pref) {
+  SubexpBuffer new_sb(std::string pref) {
     SubexpBuffer new_sb(pref);
     new_sb.encl_fn = encl_fn;
     return new_sb;
   }
-  SubexpBuffer(string pref = "v", bool is_c = FALSE)
+  SubexpBuffer(std::string pref = "v", bool is_c = FALSE)
     : prefix(pref), is_const(is_c) {
     has_i = FALSE;
     prot = 0;
@@ -441,9 +449,9 @@ unsigned int SubexpBuffer::n;
 class SplitSubexpBuffer : public SubexpBuffer {
 private:
   const unsigned int threshold;
-  const string init_str;
+  const std::string init_str;
   unsigned int init_fns;
-  string split_defs;
+  std::string split_defs;
   void flush_defs() { 
     if (split_defs.length() > 0) {
       edefs += "\n";
@@ -459,23 +467,23 @@ private:
 public:
   virtual void finalize() { flush_defs(); };
 
-  void virtual append_defs(string d) { split_defs += d; }
+  void virtual append_defs(std::string d) { split_defs += d; }
   int virtual defs_location() { flush_defs(); return edefs.length(); }
-  void virtual insert_def(int loc, string d) { 
+  void virtual insert_def(int loc, std::string d) { 
     flush_defs(); edefs.insert(loc, d); 
   }
   static SplitSubexpBuffer global_constants;
   unsigned int get_n_inits() { return init_fns; }
-  string get_init_str() { return init_str; }
-  virtual string new_var() { prot++; return new_var_unp(); }
-  virtual string new_var_unp() {
+  std::string get_init_str() { return init_str; }
+  virtual std::string new_var() { prot++; return new_var_unp(); }
+  virtual std::string new_var_unp() {
     if ((SubexpBuffer::n % threshold) == 0) flush_defs();
     return prefix + i_to_s(SubexpBuffer::n++);
   }
-  virtual string new_var_unp_name(string name) {
+  virtual std::string new_var_unp_name(std::string name) {
     return new_var_unp() + "_" + make_c_id(name);
   }
-  SplitSubexpBuffer(string pref = "v", bool is_c = FALSE, int thr = 300, string is = "init")
+  SplitSubexpBuffer(std::string pref = "v", bool is_c = FALSE, int thr = 300, std::string is = "init")
     : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;
   }
@@ -483,8 +491,8 @@ public:
 
 static void arg_err();
 static void set_funcs(int argc, char *argv[]);
-string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
-string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code);
-string make_symbol(SEXP e);
+std::string make_fundef_argslist(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
+std::string make_fundef_argslist_c(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
+std::string make_symbol(SEXP e);
 
 #endif // defined RCC_H

@@ -1,7 +1,7 @@
 /* Matrix multiplication with transposed arguments */
 /* altered version of array.c from the R sources */
 
-#include "rinternals.h"
+#include <MyRInternals.h>
 #if 0
 #include <Rmath.h>
 #include <IOStuff.h>
@@ -13,32 +13,26 @@ static void matprod_t(double *x, int nrx, int ncx,
 	              double *y, int nry, int ncy, double *z,
 	              char *transa, char *transb);
 
-/* Note: assumes non-complex args */
-
+/* Note: assumes non-complex args          */
+/* manual specialization: PRIMVAL(op) == 0 */
+/* because we are %*%, not crossprod       */
 SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   int ldx, ldy, nrx, ncx, nry, ncy, mode;
   SEXP xdims, ydims, ans;
   Rboolean sym;
   
   sym = isNull(y);
-  if (sym && (PRIMVAL(op) == 1)) y = x;
   if ( !(isNumeric(x) || isComplex(x)) || !(isNumeric(y) || isComplex(y)) )
-    errorcall(call, "requires numeric matrix/vector arguments");
+    Rf_errorcall("requires numeric matrix/vector arguments");
   
   xdims = getAttrib(x, R_DimSymbol);
   ydims = getAttrib(y, R_DimSymbol);
-  ldx = length(xdims);
-  ldy = length(ydims);
+  ldx = Rf_length(xdims);
+  ldy = Rf_length(ydims);
   
   if (ldx != 2 && ldy != 2) {		/* x and y non-matrices */
-    if (PRIMVAL(op) == 0) {
-      nrx = 1;
-      ncx = LENGTH(x);
-    }
-    else {
-      nrx = LENGTH(x);
-      ncx = 1;
-    }
+    nrx = 1;
+    ncx = LENGTH(x);
     nry = LENGTH(y);
     ncy = 1;
   }
@@ -47,21 +41,13 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     ncy = INTEGER(ydims)[1];
     nrx = 0;
     ncx = 0;
-    if (PRIMVAL(op) == 0) {
-      if (LENGTH(x) == nry) {	/* x as row vector */
-	nrx = 1;
-	ncx = LENGTH(x);
-      }
-      else if (nry == 1) {	/* x as col vector */
-	nrx = LENGTH(x);
-	ncx = 1;
-      }
+    if (LENGTH(x) == nry) {	/* x as row vector */
+      nrx = 1;
+      ncx = LENGTH(x);
     }
-    else {
-      if (LENGTH(x) == nry) {	/* x is a row vector */
-	nrx = LENGTH(x);
-	ncx = 1;
-      }
+    else if (nry == 1) {	/* x as col vector */
+      nrx = LENGTH(x);
+      ncx = 1;
     }
   }
   else if (ldy != 2) {		/* y not a matrix */
@@ -69,21 +55,13 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     ncx = INTEGER(xdims)[1];
     nry = 0;
     ncy = 0;
-    if (PRIMVAL(op) == 0) {
-      if (LENGTH(y) == ncx) {	/* y as col vector */
-	nry = LENGTH(y);
-	ncy = 1;
-      }
-      else if (ncx == 1) {	/* y as row vector */
-	nry = 1;
-	ncy = LENGTH(y);
-      }
+    if (LENGTH(y) == ncx) {	/* y as col vector */
+      nry = LENGTH(y);
+      ncy = 1;
     }
-    else {
-      if (LENGTH(y) == nrx) {	/* y is a row vector */
-	nry = LENGTH(y);
-	ncy = 1;
-      }
+    else if (ncx == 1) {	/* y as row vector */
+      nry = 1;
+      ncy = LENGTH(y);
     }
   }
   else {				/* x and y matrices */
@@ -94,7 +72,7 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   }
   
   if (isComplex(x) || isComplex(y))
-    errorcall("Matrix transpose optimization not yet implemented for complex matrices");
+    Rf_errorcall("Matrix transpose optimization not yet implemented for complex matrices");
   else
     mode = REALSXP;
 
@@ -178,6 +156,6 @@ static void matprod_t(double *x, int nrx, int ncx,
 }
 #else
 {
-  errorcall("Matrix multiplication with transposition without BLAS is not yet implemented");
+  Rf_errorcall("Matrix multiplication with transposition without BLAS is not yet implemented");
 }
 #endif

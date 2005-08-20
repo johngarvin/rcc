@@ -1,9 +1,9 @@
 // Extends the R AST to perform type inference.
 
-#ifndef R_TI_h
-#define R_TI_h
+#ifndef R_TYPE_INFERENCE_H
+#define R_TYPE_INFERENCE_H
 
-#include "R_IRInterface.h"
+#include "MyIRInterface.h"
 
 // resolve conflict: different version in OpenAnalysis and Mint
 #undef Iterator_H

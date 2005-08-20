@@ -1,15 +1,15 @@
-#ifndef R_UseDefSolver_h
-#define R_UseDefSolver_h
+#ifndef USE_DEF_SOLVER_H
+#define USE_DEF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/CFG/Interface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include "R_IRInterface.h"
-#include "R_Analyst.h"
-
 #include <AnnotationSet.hpp>
+
+#include "IRInterface.h"
+#include "Analyst.h"
 
 class R_UseSet;
 

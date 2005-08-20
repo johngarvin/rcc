@@ -1,8 +1,8 @@
 lib_LTLIBRARIES = libsupport.la
 
-libsupport_la_SOURCES = \
-	parser.cc parser.h\
-	util.cc util.h
+libsupport_la_SOURCES =              \
+	Parser.cc Parser.h           \
+	StringUtils.cc StringUtils.h
 
 MYINCLUDES = -I@R_HOME@/include -I@R_SOURCES@/src/include -I..
 

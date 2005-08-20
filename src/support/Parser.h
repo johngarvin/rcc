@@ -1,4 +1,7 @@
-/* Copyright (c) 2003 John Garvin 
+#ifndef PARSER_H
+#define PARSER_H
+
+/* Copyright (c) 2003-2005 John Garvin 
  *
  * July 11, 2003 
  *
@@ -21,23 +24,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <map>
+#include <stdio.h>
 
-#include <rinternals.h>
+#include <MyRInternals.h>
 
-std::string make_symbol(SEXP e);
-std::string make_type(int t);
-std::string indent(std::string str);
-std::string i_to_s(const int i);
-std::string d_to_s(double d);
-std::string c_to_s(Rcomplex c);
-std::string escape(std::string str);
-std::string make_c_id(std::string s);
-std::string quote(std::string str);
-std::string unp(std::string str);
-std::string strip_suffix(std::string str);
-int filename_pos(std::string str);
-void err(std::string message);
+extern "C" {
+  // required for Parse.h
+  // Why isn't the ifndef handled in IOStuff.h?
+#ifndef R_IOSTUFF_H
+#  define R_IOSTUFF_H
+#  include <IOStuff.h>
+#endif
+#include <Parse.h>
+#include <Defn.h>
+}
+
+void init_R();
+void parse_R(FILE *in_file, SEXP *exps[]);
+SEXP parse_R_as_function(FILE *in_file);
+
+#endif

@@ -20,7 +20,7 @@
  */
 
 #include <Defn.h>
-#include "get_name.h"
+#include "GetName.h"
 
 struct map {
   char *name;

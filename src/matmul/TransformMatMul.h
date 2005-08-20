@@ -1,4 +1,7 @@
-#include "R_IRInterface.h"
+#ifndef TRANSFORM_MAT_MUL_H
+#define TRANSFORM_MAT_MUL_H
+
+#include <SimpleIterators.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,4 +11,6 @@ SEXP opt_matmul(SEXP e);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

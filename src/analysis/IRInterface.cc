@@ -35,7 +35,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "R_IRInterface.h"
+#include "IRInterface.h"
 
 using namespace OA;
 

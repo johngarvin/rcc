@@ -1,12 +1,12 @@
-SUBDIRS = macros support annotations analysis
+SUBDIRS = analysis annotations macros matmul support
 bin_PROGRAMS = rcc.bin
 
-rcc_bin_SOURCES = \
-	      rcc.cc rcc.h \
-		  codegen.cc codegen.h \
-		  visibility.cc visibility.h \
-          Macro.cpp Macro.hpp \
-	      get_name.c get_name.h 
+rcc_bin_SOURCES =            \
+  Main.cc Main.h             \
+  CodeGen.cc CodeGen.h       \
+  Visibility.cc Visibility.h \
+  Macro.cc Macro.h           \
+  GetName.c GetName.h
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 

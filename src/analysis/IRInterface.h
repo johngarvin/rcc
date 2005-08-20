@@ -1,4 +1,8 @@
-// -*-C++-*-
+// Mode: -*-C++-*-
+
+#ifndef IR_INTERFACE_H
+#define IR_INTERFACE_H
+
 // * BeginRiceCopyright *****************************************************
 // 
 // Copyright ((c)) 2004, Rice University 
@@ -35,9 +39,6 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef R_IRInterface_h
-#define R_IRInterface_h
-
 //-----------------------------------------------------------------------------
 // Derived class for the IR interface to the R AST.
 //
@@ -47,15 +48,17 @@
 #include <string>
 #include <ostream>
 #include <assert.h>
+
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
-#include <util.h>
-#include "SimpleIterators.hpp"
-#include "R_Analyst.h"
-#include "R_Utils.hpp"
-#include <rinternals.h>
+
+#include <MyRInternals.h>
+#include <StringUtils.h>
+#include "SimpleIterators.h"
+#include "Analyst.h"
+#include "Utils.h"
 
 //-----------------------------------------------------------------------------
 // R IR representation

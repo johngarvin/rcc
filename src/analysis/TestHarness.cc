@@ -1,13 +1,11 @@
 #include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
 
-#include <parser.h>
+#include <Parser.h>
+#include <TransformMatMul.h>
 
-#include "tree.hh"
-
-#include "R_IRInterface.h"
-#include "R_opt.h"
-#include "R_Analyst.h"
-#include "R_UseDefSolver.hpp"
+#include "IRInterface.h"
+#include "Analyst.h"
+#include "UseDefSolver.h"
 
 using namespace std;
 using namespace OA;
@@ -31,7 +29,6 @@ int main(int argc, char *argv[]) {
   dfa_test(rir_ptr, exp);
 }
 
-#if 0
 void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
   // CFG::ManagerStandard cfg_man(rir_ptr);    
 
@@ -39,22 +36,23 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
 
   // print out program
   R_Analyst an(exp);
-  OA_ptr<tree<SEXP> > t = an.get_scope_tree();
+  OA_ptr<RScopeTree> t = an.get_scope_tree();
 
   // each procedure
-  tree<SEXP>::iterator proc_iter;
+  RScopeTree::iterator proc_iter;
   for(proc_iter = t->begin(); proc_iter != t->end(); ++proc_iter) {
     // top procedure is nil; skip it
     if (proc_iter == t->begin()) {
-      assert(*proc_iter == R_NilValue);
+      assert((*proc_iter)->get_defn() == R_NilValue);
       continue;
     }
     cout << "Procedure:\n";
-    PrintValue(*proc_iter);
+    PrintValue((*proc_iter)->get_defn());
 
     // each statement
     OA_ptr<IRRegionStmtIterator> stmt_iter_ptr;
-    stmt_iter_ptr = rir_ptr->procBody((irhandle_t)*proc_iter);
+    ProcHandle ph((irhandle_t)(*proc_iter)->get_defn());
+    stmt_iter_ptr = rir_ptr->procBody(ph);
     for( ; stmt_iter_ptr->isValid(); ++*stmt_iter_ptr) {
       cout << "Statement:\n";
       PrintValue((SEXP)stmt_iter_ptr->current().hval());
@@ -65,7 +63,6 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
     // cfg_ptr->dumpdot(cout, rir_ptr);
   }
 }
-#endif
 
 void ssa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP exp) {
   R_Analyst an(exp);

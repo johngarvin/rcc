@@ -1,9 +1,9 @@
-#ifndef R_Utils_h
-#define R_Utils_h
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <assert.h>
 
-#include <rinternals.h>
+#include <MyRInternals.h>
 
 bool is_local_assign(const SEXP e);
 bool is_free_assign(const SEXP e);

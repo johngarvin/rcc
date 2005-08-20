@@ -1,15 +1,16 @@
 // -*-Mode: C++;-*-
-#ifndef R_Analyst_h
-#define R_Analyst_h
+#ifndef ANALYST_H
+#define ANALYST_H
 
 #include <set>
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include "tree.hh"
-#include "R_Utils.hpp"
-#include "SimpleIterators.hpp"
 
-#include <rinternals.h>
+#include <PeetersTree/tree.hh>
+
+#include <MyRInternals.h>
+#include "Utils.h"
+#include "SimpleIterators.h"
 
 class RFunctionScopeInfo {
 public:
