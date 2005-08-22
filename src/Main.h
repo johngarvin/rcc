@@ -191,6 +191,12 @@ struct Output {
   visibility is_visible;
 };
 
+//! static new_var function
+std::string new_var() {
+  static unsigned int n = 0;
+  return "g" + i_to_s(n++);
+}
+
 //!  Expression is a struct returned by the op_ functions representing a
 //!  subexpression in the output.
 //!  var = the name of the variable storing the expression
@@ -491,8 +497,8 @@ public:
 
 static void arg_err();
 static void set_funcs(int argc, char *argv[]);
-std::string make_fundef_argslist(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
-std::string make_fundef_argslist_c(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
+std::string make_fundef(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
+std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
 std::string make_symbol(SEXP e);
 
-#endif // defined RCC_H
+#endif

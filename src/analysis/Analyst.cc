@@ -1,15 +1,6 @@
 #include "Analyst.h"
 #include <algorithm>
 
-// TODO: move these to separate file for everyone to access
-// static bool is_local_assign(SEXP e);
-// static bool is_free_assign(SEXP e);
-// static bool is_assign(SEXP e);
-// static bool is_simple_assign(SEXP e);
-// static bool is_fundef(SEXP e);
-// static bool is_struct_field(SEXP e);
-// static bool is_subscript(SEXP e);
-
 //! If necessary, analyze the SEXP exp to find the scope tree. In any
 //! case, return a pointer to the generated tree. TODO: create a
 //! datatype for the scope tree to hide the implementation, and to have
@@ -47,13 +38,15 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
     if (is_simple_assign(e)) {            // a variable bound to a function
       RScopeTree::iterator newfun;
       SEXP var = CAR(assign_lhs_c(e));
-      SEXP fundef = CAR(assign_rhs_c(e));
-      newfun = t->append_child(curr, new RFunctionScopeInfo(var, fundef));
+      SEXP rhs = CAR(assign_rhs_c(e));
+      if (is_fundef(rhs)) {
+	newfun = t->append_child(curr, new RFunctionScopeInfo(var, rhs));
 
-      // now skip to body of function to prevent a later pass from
-      // finding the function definition; we don't want it to be
-      // flagged as a duplicate "anonymous" function.
-      build_scope_tree_rec(CAR(fundef_body_c(fundef)), t, newfun);
+	// now skip to body of function to prevent a later pass from
+	// finding the function definition; we don't want it to be
+	// flagged as a duplicate "anonymous" function.
+	build_scope_tree_rec(CAR(fundef_body_c(rhs)), t, newfun);
+      }
     } else if (is_fundef(e)) {  // anonymous function
       RScopeTree::iterator newfun = t->append_child(curr, new RFunctionScopeInfo(R_NilValue, e));
       build_scope_tree_rec(CAR(fundef_body_c(e)), t, newfun);

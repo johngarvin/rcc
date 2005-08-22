@@ -419,11 +419,7 @@ public:
 };
 #endif
 
-//! Iterates over the tree of nested scopes. Needed?
-class ScopeTreeIterator {
-};
-
-#endif // #ifndef R_IRInterface_h
+#endif // #ifndef IR_INTERFACE_H
 
 #if 0
 // Enumerate all the procedure calls in a statement.

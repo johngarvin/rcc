@@ -24,6 +24,24 @@ private:
 
 typedef tree<RFunctionScopeInfo *> RScopeTree;
 
+class ScopeTree;
+
+class ScopeTreeIterator {
+private:
+  OA::OA_ptr<ScopeTree> tree;
+};
+
+class ScopeTree {
+public:
+  OA::OA_ptr<ScopeTreeIterator> get_iterator();
+  void insert_scope(const RFunctionScopeInfo &);
+  void get_parent(const RFunctionScopeInfo &);
+private:
+  tree<RFunctionScopeInfo *> st;
+
+  friend class ScopeTreeIterator;
+};
+
 //! R_Analyst
 //! Contains an entire R program along with the results of analysis.
 class R_Analyst {
