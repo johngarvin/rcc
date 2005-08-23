@@ -106,16 +106,16 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       // guaranteed to be a list or nil, so we can call the iterator
       // that doesn't take a cell.
       stmt_iter_ptr = new R_ListIterator(CDR(exp));
+    } else if (is_loop(exp)) {
+      stmt_iter_ptr = new R_SingletonIterator(cell);
     } else {
-      // We have a compound statement with a body. (body_c is the cell
-      // containing the body.) This body might be a list for which
-      // we're returning an iterator, or it might be some other
+      // We have a non-loop compound statement with a body. (body_c is
+      // the cell containing the body.) This body might be a list for
+      // which we're returning an iterator, or it might be some other
       // thing. First we figure out what the body is.
       SEXP body_c;
       if (is_fundef(exp)) {
 	body_c = fundef_body_c(exp);
-      } else if (is_loop(exp)) {
-	body_c = loop_body_c(exp);
       } else if (is_paren_exp(exp)) {
 	body_c = paren_body_c(exp);
       }

@@ -180,16 +180,85 @@ public:
 
 #endif
 
-struct Output {
+#if 0
+// moved to Output.{cc,h}
+
+class Decls {
+ public:
+  Decls(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+class Code {
+ public:
+  Code(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+class GDecls {
+ public:
+  GDecls(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+class GCode {
+ public:
+  GCode(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+class Handle {
+ public:
+  Handle(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+class DelText {
+ public:
+  DelText(std::string _str) : m_str(_str) {}
+  std::string get() {return m_str;}
+ private:
+  std::string m_str;
+};
+
+typedef enum {DEP, CONST} dependence;
+
+class Output {
+ public:
+  Output(Decls _d, Code _c, GDecls _gd, GCode _gc, 
+	 Handle _h, DelText _dt, dependence _id, visibility _v)
+    : decls(_d.get()), code(_c.get()), g_decls(_gd.get()), g_code(_gc.get()), 
+    handle(_h.get()), del_text(_dt.get()), is_dep(_id), is_visible(_v)
+    {};
+  static const Output & bogus;
+  create_global(GDecls _gd, GCode _gc, Handle _h, visibility _v);
+ private:
   std::string decls;
   std::string code;
-  std::string global_decls;
-  std::string global_code;
+  std::string g_decls;
+  std::string g_code;
   std::string handle;
   std::string del_text;
-  bool is_dep;
+  dependence is_dep;
   visibility is_visible;
 };
+
+const Output & Output::bogus = Output(Decls(""), Code(""), GDecls(""), GCode(""),
+				    Handle(""), DelText(""), CONST, INVISIBLE);
+
+#endif
+
+Output op_vect(SEXP vec);
 
 //! static new_var function
 std::string new_var() {
@@ -240,6 +309,9 @@ public:
   SubexpBuffer * encl_fn;
   bool has_i;
   const bool is_const;
+  virtual void append_decls(std::string s) {
+    decls += s;
+  }
   virtual void append_defs(std::string s) {
     edefs += s;
   }

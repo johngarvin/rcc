@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include "CodeGen.h"
+#include "Output.h"
 #include "Main.h"
 
 using namespace std;
@@ -74,7 +75,19 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
   case INTSXP:
   case REALSXP:
   case CPLXSXP:
+#if 1
+    {
+      Output op = op_vect(e);
+      append_decls(op.get_decls());
+      append_defs(op.get_code());
+      global_constants.append_decls(op.get_g_decls());
+      global_constants.append_defs(op.get_g_code());
+      return Expression(op.get_handle(), op.get_is_dep() == DEP, op.get_is_visible(), op.get_del_text());
+    }
+#endif
+#if 0
     return op_vector(e);
+#endif
     break;
   case VECSXP:
     global_ok = 0;
@@ -1217,38 +1230,57 @@ Expression SubexpBuffer::op_string(SEXP s) {
   return Expression(out, FALSE, VISIBLE, "");
 }
 
-Output op_vector(SEXP vec) {
-  Output op;
+Output op_vect(SEXP vec) {
   int len = Rf_length(vec);
+  if (len != 1) {
+    err("unexpected non-scalar vector encountered");
+    return Output::bogus;
+  }
+  int value;
   switch(TYPEOF(vec)) {
   case LGLSXP:
-    if (len == 1) {
+    {
       int value = INTEGER(vec)[0];
-      string var = new_var();
       map<int,string>::iterator pr = sc_logical_map.find(value);
       if (pr == sc_logical_map.end()) {  // not found
+	string var = new_var();
 	sc_logical_map.insert(pair<int,string>(value, var));
-	op.global_decls = emit_static_decl(var);
-	op.global_code = emit_assign(var, emit_call1("ScalarLogical", i_to_s(value)));
-	op.handle = var;
-	op.is_dep = false;
-	op.is_visible = VISIBLE;
+	Output op(Decls(""), Code(""),
+		  GDecls(emit_static_decl(var)),
+		  GCode(emit_assign(var, emit_call1("ScalarLogical", i_to_s(value)))),
+		  Handle(var), DelText(""), CONST, VISIBLE);
 	return op;
       } else {
-	op.global_decls = emit_static_decl(var);
-	op.handle = pr->second;
-	op.is_dep = false;
-	op.is_visible = VISIBLE;
+	Output op(Decls(""), Code(""),
+		  GDecls(""), GCode(""),
+		  Handle(pr->second), DelText(""), CONST, VISIBLE);
 	return op;
       }
-    } else {
-      global_ok = 0;
-      op.handle = "<<unimplemented logical vector>>";
-      op.is_dep = false;
-      op.is_visible = INVISIBLE;
-      return op;
     }
     break;
+  case REALSXP:
+    {
+      double value = REAL(vec)[0];
+      map<double,string>::iterator pr = sc_real_map.find(value);
+      if (pr == sc_real_map.end()) {  // not found
+	string var = new_var();
+	sc_real_map.insert(pair<double,string>(value, var));
+	Output op(Decls(""), Code(""),
+		  GDecls(emit_static_decl(var)),
+		  GCode(emit_assign(var, emit_call1("ScalarReal", d_to_s(value)))),
+		  Handle(var), DelText(""), CONST, VISIBLE);
+	return op;
+      } else {
+	Output op(Decls(""), Code(""),
+		  GDecls(""), GCode(""),
+		  Handle(pr->second), DelText(""), CONST, VISIBLE);
+	return op;
+      }
+    }
+    break;
+  default:
+    err("Unhandled type in op_vector");
+    return Output::bogus;
   }
 }
 
@@ -1534,7 +1566,7 @@ int main(int argc, char *argv[]) {
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment
   // and just look at the list of expressions.
-  SEXP expressions = CAR(fundef_body_c(CAR(assign_rhs_c(program))));
+  SEXP expressions = curly_body(CAR(fundef_body_c(CAR(assign_rhs_c(program)))));
 
   // count expressions so we can number them
   SEXP e = expressions;

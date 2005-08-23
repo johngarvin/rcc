@@ -166,7 +166,8 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 }
 
 void dfa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
-  CFG::ManagerStandard cfg_man(rir_ptr, true);         // statement-level CFG
+  //  CFG::ManagerStandard cfg_man(rir_ptr, true);         // statement-level CFG
+  CFG::ManagerStandard cfg_man(rir_ptr, false);         // temp. turn off statement-level CFG
   OA_ptr<CFG::Interface> cfg_ptr;
   OA_ptr<RAnnot::AnnotationSet> aset;
   R_Analyst an(e);
