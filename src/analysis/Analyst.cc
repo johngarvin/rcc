@@ -1,6 +1,8 @@
 #include "Analyst.h"
 #include <algorithm>
 
+
+
 //! If necessary, analyze the SEXP exp to find the scope tree. In any
 //! case, return a pointer to the generated tree. TODO: create a
 //! datatype for the scope tree to hide the implementation, and to have
@@ -367,6 +369,11 @@ void R_VarRefSet::set_union(OA::OA_ptr<R_VarRefSet> set2) {
   }
 }
 
+OA::OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
+  OA::OA_ptr<R_VarRefSetIterator> it;
+  it = new R_VarRefSetIterator(vars);
+  return it;
+}
 
 //--------------------------------------------------------------------
 // VarSet methods

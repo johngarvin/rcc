@@ -1,12 +1,13 @@
 SUBDIRS = analysis annotations macros matmul support
 bin_PROGRAMS = rcc.bin
 
-rcc_bin_SOURCES =            \
-  Main.cc Main.h             \
-  CodeGen.cc CodeGen.h       \
-  Visibility.cc Visibility.h \
-  Macro.cc Macro.h           \
-  GetName.c GetName.h        \
+rcc_bin_SOURCES =                \
+  Main.cc Main.h                 \
+  CodeGen.cc CodeGen.h           \
+  CodeGenUtils.cc CodeGenUtils.h \
+  Visibility.cc Visibility.h     \
+  Macro.cc Macro.h               \
+  GetName.c GetName.h            \
   Output.cc Output.h
 
 #--------------------------------------
@@ -25,7 +26,8 @@ MY_COMMON_INCLUDES =         \
   -I$(OA_PREFIX)/include     \
   -I$(top_srcdir)/lib        \
   -I./support                \
-  -I./analysis
+  -I./analysis               \
+  -I./annotations
 
 MY_COMMON_MACROS =                          \
   -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\"     \

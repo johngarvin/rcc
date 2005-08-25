@@ -22,13 +22,24 @@ private:
   SEXP defn;
 };
 
-typedef tree<RFunctionScopeInfo *> RScopeTree;
+typedef tree<OA::OA_ptr<RFunctionScopeInfo> > ScopeTreeImp;
 
-class ScopeTree;
+typedef tree<RFunctionScopeInfo *> RScopeTree;
+// TODO: change users of RScopeTree to use ScopeTree instead
 
 class ScopeTreeIterator {
+public:
+  ScopeTreeIterator(OA::OA_ptr<ScopeTreeImp> _tree) : tree(_tree) {
+    assert(!tree.ptrEqual(NULL)); it = tree->begin();
+  }
+  OA::OA_ptr<RFunctionScopeInfo> current() const { return *it; }
+  bool isValid() const { return (it != tree->end()); }
+  void operator++() { ++it; }
+  void reset() { it = tree->begin(); }
+
 private:
-  OA::OA_ptr<ScopeTree> tree;
+  OA::OA_ptr<ScopeTreeImp> tree;
+  ScopeTreeImp::iterator it;
 };
 
 class ScopeTree {
@@ -37,7 +48,7 @@ public:
   void insert_scope(const RFunctionScopeInfo &);
   void get_parent(const RFunctionScopeInfo &);
 private:
-  tree<RFunctionScopeInfo *> st;
+  ScopeTreeImp st;
 
   friend class ScopeTreeIterator;
 };
@@ -166,11 +177,7 @@ class R_VarRefSet {
   void set_union(OA::OA_ptr<R_VarRefSet> set2);
   //void remove(SEXP var);
 
-  OA::OA_ptr<R_VarRefSetIterator> get_iterator() const {
-    OA::OA_ptr<R_VarRefSetIterator> it;
-    it = new R_VarRefSetIterator(vars);
-    return it;
-  }
+  OA::OA_ptr<R_VarRefSetIterator> get_iterator() const;
 
   void dump();
 

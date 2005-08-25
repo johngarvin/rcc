@@ -56,6 +56,10 @@ perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg) {
 }
 
 void R_UseDefSolver::dump_node_maps() {
+  dump_node_maps(std::cout);
+}
+
+void R_UseDefSolver::dump_node_maps(ostream &os) {
   OA::OA_ptr<OA::DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA::OA_ptr<R_UseSet> in_set, out_set;
   OA::OA_ptr<OA::CFG::Interface::NodesIterator> node_it = m_cfg->getNodesIterator();
@@ -64,12 +68,11 @@ void R_UseDefSolver::dump_node_maps() {
     df_out_set = mNodeOutSetMap[node_it->current()];
     in_set = df_in_set.convert<R_UseSet>();
     out_set = df_out_set.convert<R_UseSet>();
-    //node_it->current()->dump(std::cout);
-    std::cout << "CFG NODE #" << node_it->current()->getId() << ":\n";
-    std::cout << "IN SET:\n";
-    in_set->dump(std::cout, rir);
-    std::cout << "OUT SET:\n";
-    out_set->dump(std::cout, rir);
+    os << "CFG NODE #" << node_it->current()->getId() << ":\n";
+    os << "IN SET:\n";
+    in_set->dump(os, rir);
+    os << "OUT SET:\n";
+    out_set->dump(os, rir);
   }
 }
 

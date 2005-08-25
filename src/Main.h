@@ -1,7 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
-
-/* -*-C++-*-
+/* mode: -*-C++-*-
  * Copyright (c) 2003-2005 John Garvin 
  *
  * July 11, 2003 
@@ -25,6 +22,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  */
 
+#ifndef MAIN_H
+#define MAIN_H
+
 #define __USE_STD_IOSTREAM
 
 #include <fstream>
@@ -39,6 +39,9 @@ extern "C" {
 
 } //extern "C"
 
+#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
+#include <AnnotationSet.hpp>
 #include <MyRInternals.h>
 #include <StringUtils.h>
 #include <Parser.h>
@@ -180,91 +183,11 @@ public:
 
 #endif
 
-#if 0
-// moved to Output.{cc,h}
-
-class Decls {
- public:
-  Decls(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-class Code {
- public:
-  Code(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-class GDecls {
- public:
-  GDecls(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-class GCode {
- public:
-  GCode(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-class Handle {
- public:
-  Handle(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-class DelText {
- public:
-  DelText(std::string _str) : m_str(_str) {}
-  std::string get() {return m_str;}
- private:
-  std::string m_str;
-};
-
-typedef enum {DEP, CONST} dependence;
-
-class Output {
- public:
-  Output(Decls _d, Code _c, GDecls _gd, GCode _gc, 
-	 Handle _h, DelText _dt, dependence _id, visibility _v)
-    : decls(_d.get()), code(_c.get()), g_decls(_gd.get()), g_code(_gc.get()), 
-    handle(_h.get()), del_text(_dt.get()), is_dep(_id), is_visible(_v)
-    {};
-  static const Output & bogus;
-  create_global(GDecls _gd, GCode _gc, Handle _h, visibility _v);
- private:
-  std::string decls;
-  std::string code;
-  std::string g_decls;
-  std::string g_code;
-  std::string handle;
-  std::string del_text;
-  dependence is_dep;
-  visibility is_visible;
-};
-
-const Output & Output::bogus = Output(Decls(""), Code(""), GDecls(""), GCode(""),
-				    Handle(""), DelText(""), CONST, INVISIBLE);
-
-#endif
-
-Output op_vect(SEXP vec);
-
 //! static new_var function
-std::string new_var() {
-  static unsigned int n = 0;
-  return "g" + i_to_s(n++);
-}
+// std::string new_var() {
+//   static unsigned int n = 0;
+//   return "g" + i_to_s(n++);
+// }
 
 //!  Expression is a struct returned by the op_ functions representing a
 //!  subexpression in the output.
@@ -519,8 +442,6 @@ public:
   SubexpBuffer &operator=(SubexpBuffer &sb) { return sb; }
 };
 
-unsigned int SubexpBuffer::n;
-
 //! Huge functions are hard on compilers like gcc. To generate code
 //! that goes down easy, we split up the constant initialization into
 //! several functions.
@@ -565,6 +486,29 @@ public:
     : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
     init_fns = 0;
   }
+};
+
+//! ProgramInfo:
+//! collection of information about the whole program
+// TODO: encapsulate
+class ProgramInfo {
+ public:
+  // coming from analysis
+  static OA::OA_ptr<R_Analyst> m_an;
+  static std::map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > m_cfg_map;
+  static std::map<OA::ProcHandle, RAnnot::AnnotationSet> m_annot_map;
+
+  // coming from parsing
+  static std::map<std::string, std::string> func_map;
+  static std::map<std::string, std::string> symbol_map;
+  static std::map<double, std::string> sc_real_map;
+  static std::map<int, std::string> sc_logical_map;
+  static std::map<int, std::string> sc_integer_map;
+  static std::map<int, std::string> primsxp_map;
+  static std::list<std::string> direct_funcs;
+  static SubexpBuffer global_fundefs;
+  static SplitSubexpBuffer global_constants;
+  static SubexpBuffer global_labels;
 };
 
 static void arg_err();

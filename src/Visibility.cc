@@ -1,5 +1,5 @@
 #include "Visibility.h"
-#include "CodeGen.h"
+#include "CodeGenUtils.h"
 
 using namespace std;
 

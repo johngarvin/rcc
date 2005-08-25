@@ -23,31 +23,37 @@
 
 #include <iostream>
 
+#include <IRInterface.h>
+#include <UseDefSolver.h>
+#include "CodeGenUtils.h"
 #include "CodeGen.h"
 #include "Output.h"
 #include "Main.h"
 
 using namespace std;
 
-// Settings to change how rcc works
-static bool global_self_allocate = FALSE;
-static bool output_main_program = TRUE;
-static bool output_default_args = TRUE;
-static bool global_c_return = FALSE;
+// debugging
 
-static bool global_ok = TRUE;
+static const bool analysis_debug = false;
+
+// Settings to change how rcc works
+static bool global_self_allocate = false;
+static bool output_main_program = true;
+static bool output_default_args = true;
+static bool global_c_return = false;
+
+static bool global_ok = true;
 static unsigned int global_temps = 0;
-static map<string, string> func_map;
-static map<string, string> symbol_map;
-static map<double, string> sc_real_map;
-static map<int, string> sc_logical_map;
-static map<int, string> sc_integer_map;
-static map<int, string> primsxp_map;
-static map<string, bool> vis_map;
-static list<string> direct_funcs;
-static SubexpBuffer global_fundefs;
-static SplitSubexpBuffer global_constants("c", TRUE);
-static SubexpBuffer global_labels("l");
+// static map<string, string> func_map;
+// static map<string, string> symbol_map;
+// static map<double, string> sc_real_map;
+// static map<int, string> sc_logical_map;
+// static map<int, string> sc_integer_map;
+// static map<int, string> primsxp_map;
+// static list<string> direct_funcs;
+// static SubexpBuffer global_fundefs;
+// static SplitSubexpBuffer global_constants("c", TRUE);
+// static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, INVISIBLE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, INVISIBLE, "");
 
@@ -55,7 +61,7 @@ static Expression nil_exp = Expression("R_NilValue", FALSE, INVISIBLE, "");
 // for direct calling.
 bool is_direct(string func) {
   list<string>::iterator i;
-  for(i=direct_funcs.begin(); i!=direct_funcs.end(); i++) {
+  for(i=ProgramInfo::direct_funcs.begin(); i!=ProgramInfo::direct_funcs.end(); i++) {
     if (*i == func) return TRUE;
   }
   return FALSE;
@@ -77,11 +83,11 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
   case CPLXSXP:
 #if 1
     {
-      Output op = op_vect(e);
+      Output op = CodeGen::op_vector(e);
       append_decls(op.get_decls());
       append_defs(op.get_code());
-      global_constants.append_decls(op.get_g_decls());
-      global_constants.append_defs(op.get_g_code());
+      ProgramInfo::global_constants.append_decls(op.get_g_decls());
+      ProgramInfo::global_constants.append_defs(op.get_g_code());
       return Expression(op.get_handle(), op.get_is_dep() == DEP, op.get_is_visible(), op.get_del_text());
     }
 #endif
@@ -111,12 +117,12 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
     formals = op_symlist(FORMALS(e), rho);
     body = op_literal(BODY(e), rho);
     if (rho == "R_GlobalEnv" && !formals.is_dep && !body.is_dep) {
-      string v = global_constants.appl3("mkCLOSXP",
+      string v = ProgramInfo::global_constants.appl3("mkCLOSXP",
 					formals.var,
 					body.var,
 					rho);
-      global_constants.del(formals);
-      global_constants.del(body);
+      ProgramInfo::global_constants.del(formals);
+      ProgramInfo::global_constants.del(body);
       out = Expression(v, FALSE, INVISIBLE, "");
     } else {
       string v = appl3("mkCLOSXP",
@@ -148,7 +154,7 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
     break;
   case SPECIALSXP:
   case BUILTINSXP:
-    return global_constants.op_primsxp(e, rho);
+    return ProgramInfo::global_constants.op_primsxp(e, rho);
   case EXPRSXP:
   case EXTPTRSXP:
   case WEAKREFSXP:
@@ -180,15 +186,15 @@ Expression SubexpBuffer::op_primsxp(SEXP e, string rho) {
   
   // unique combination of offset and is_builtin for memoization
   int value = 2 * PRIMOFFSET(e) + is_builtin;
-  map<int,string>::iterator pr = primsxp_map.find(value);
-  if (pr != primsxp_map.end()) {  // primsxp already defined
+  map<int,string>::iterator pr = ProgramInfo::primsxp_map.find(value);
+  if (pr != ProgramInfo::primsxp_map.end()) {  // primsxp already defined
     return Expression(pr->second, TRUE, INVISIBLE, "");
   } else {
     string var = new_sexp();
     const string args[] = {var, i_to_s(PRIMOFFSET(e)),
 			   i_to_s(is_builtin), string(PRIMNAME(e))};
     append_defs(mac_primsxp.call(4, args));
-    primsxp_map.insert(pair<int,string>(value, var));
+    ProgramInfo::primsxp_map.insert(pair<int,string>(value, var));
     return Expression(var, TRUE, INVISIBLE, "");
   }
 }
@@ -371,7 +377,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   defs += "begincontext(&cntxt, CTXT_LOOP, R_NilValue, " + rho
     + ", R_NilValue, R_NilValue, R_NilValue);\n";
   defs += "switch (SETJMP(cntxt.cjmpbuf)) {\n";
-  string lab = global_labels.new_var();
+  string lab = ProgramInfo::global_labels.new_var();
   defs += indent("case CTXT_BREAK: goto for_break_" + lab + ";\n");
   defs += indent("case CTXT_NEXT: goto for_next_" + lab + ";\n");
   defs += "}\n";
@@ -472,8 +478,8 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
   if (!opt_R_name.empty() && is_direct(opt_R_name)) {
     direct = TRUE;
     // make function to be called directly
-    if (func_map.find(opt_R_name) != func_map.end()) { // defined already
-      string closure_name = func_map.find(opt_R_name)->second;
+    if (ProgramInfo::func_map.find(opt_R_name) != ProgramInfo::func_map.end()) { // defined already
+      string closure_name = ProgramInfo::func_map.find(opt_R_name)->second;
       return Expression(closure_name, FALSE, INVISIBLE, "");
     } else { // not yet defined
       // direct version
@@ -481,7 +487,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 	cerr << "Warning: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
       } else {
 	global_c_return = TRUE;
-	global_fundefs.append_defs( 
+	ProgramInfo::global_fundefs.append_defs( 
 	  make_fundef_c(this,
 			make_c_id(opt_R_name) + "_direct",
 			CAR(e),
@@ -492,34 +498,34 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     }
   }
   // closure version
-  string func_name = global_fundefs.new_var();
-  global_fundefs.append_defs(make_fundef(this,
+  string func_name = ProgramInfo::global_fundefs.new_var();
+  ProgramInfo::global_fundefs.append_defs(make_fundef(this,
 					 func_name,
 					 CAR(e),
 					 CADR(e)));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
-    Expression r_args = global_constants.op_list(CAR(e), rho, TRUE);
-    Expression r_code = global_constants.op_literal(CADR(e), rho);
+    Expression r_args = ProgramInfo::global_constants.op_list(CAR(e), rho, TRUE);
+    Expression r_code = ProgramInfo::global_constants.op_literal(CADR(e), rho);
 #if 0
-    string r_form = global_constants.appl3("mkCLOSXP", r_args.var, r_code.var, rho);
-    Expression c_f_args = global_constants.op_arglist(CAR(e), rho);
-    string c_args = global_constants.appl2("cons", rho, c_f_args.var);
-    string c_call = global_constants.appl2("cons", func_sym, c_args);
-    string r_call = global_constants.appl2("lcons",
+    string r_form = ProgramInfo::global_constants.appl3("mkCLOSXP", r_args.var, r_code.var, rho);
+    Expression c_f_args = ProgramInfo::global_constants.op_arglist(CAR(e), rho);
+    string c_args = ProgramInfo::global_constants.appl2("cons", rho, c_f_args.var);
+    string c_call = ProgramInfo::global_constants.appl2("cons", func_sym, c_args);
+    string r_call = ProgramInfo::global_constants.appl2("lcons",
 			  make_symbol(install(".External")),
 			  c_call);
-    string c_clos = global_constants.appl3("mkCLOSXP ", formals.var,
+    string c_clos = ProgramInfo::global_constants.appl3("mkCLOSXP ", formals.var,
 				   func_name, rho);
 #endif
     string r_form = 
-      global_constants.appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho);
+      ProgramInfo::global_constants.appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho);
 #if 0
-    global_constants.append_defs("setAttrib(" + r_form
+    ProgramInfo::global_constants.append_defs("setAttrib(" + r_form
           + ", install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n");
 #endif
-    global_constants.del(formals);
-    if (direct) func_map.insert(pair<string,string>(opt_R_name, r_form));
+    ProgramInfo::global_constants.del(formals);
+    if (direct) ProgramInfo::func_map.insert(pair<string,string>(opt_R_name, r_form));
     return Expression(r_form, FALSE, INVISIBLE, "");
   } else {
     Expression r_args = op_literal(CAR(e), rho);
@@ -775,11 +781,6 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
   del(call);
   del(op1);
   if (call.var != "R_NilValue") append_defs(unp(arglist));
-  //string func_name = string(CHAR(PRINTNAME(CAR(e))));
-  //bool fun_visible = vis_map.find(func_name)->second;
-  // Punt here; can't easily tell whether the result of the closure
-  // is visible, so we just call it visible.
-  // This will result in some extra expressions being printed at toplevel.
   return Expression(out, TRUE, CHECK_VISIBLE, unp(out));
 }
   
@@ -900,7 +901,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case SPECIALSXP:
   case BUILTINSXP:
-    return global_constants.op_primsxp(e, rho);
+    return ProgramInfo::global_constants.op_primsxp(e, rho);
     break;
   case EXPRSXP:
   case EXTPTRSXP:
@@ -1019,13 +1020,13 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
       return Expression(out, TRUE, VISIBLE, unp(out));
     } else {  // not dep
       if (TAG(e) == R_NilValue) {
-	out = global_constants.appl2(my_cons, car.var, "R_NilValue");
-	global_constants.del(car);
+	out = ProgramInfo::global_constants.appl2(my_cons, car.var, "R_NilValue");
+	ProgramInfo::global_constants.del(car);
       } else {
-	Expression tag = global_constants.op_literal(TAG(e), rho);
-	out = global_constants.appl3("tagged_cons", car.var, tag.var, "R_NilValue");
-	global_constants.del(car);
-	global_constants.del(tag);
+	Expression tag = ProgramInfo::global_constants.op_literal(TAG(e), rho);
+	out = ProgramInfo::global_constants.appl3("tagged_cons", car.var, tag.var, "R_NilValue");
+	ProgramInfo::global_constants.del(car);
+	ProgramInfo::global_constants.del(tag);
       }
       return Expression(out, FALSE, VISIBLE, "");
     }
@@ -1078,12 +1079,12 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
       append_defs(emit_in_braces(defs));
       return Expression(handle, list_dep, VISIBLE, unp(handle));
     } else {
-      string handle = global_constants.new_sexp();
+      string handle = ProgramInfo::global_constants.new_sexp();
       string defs;
       defs += tmp_buf.output();
       defs += "PROTECT(" + handle + " = " + cdr + ");\n";
       defs += unp_cars;
-      global_constants.append_defs(emit_in_braces(defs));
+      ProgramInfo::global_constants.append_defs(emit_in_braces(defs));
       return Expression(handle, list_dep, VISIBLE, "");
     }
   }
@@ -1101,12 +1102,12 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal = TRUE) {
   string out_const, var_c;
   Expression exp = temp_f.op_list_help(e, rho, temp_c, out_const, literal);
   if (!out_const.empty()) {
-    var_c = global_constants.new_sexp();
-    global_constants.defs += "{\n";
-    global_constants.defs += indent(temp_c.output());
-    global_constants.defs += 
+    var_c = ProgramInfo::global_constants.new_sexp();
+    ProgramInfo::global_constants.defs += "{\n";
+    ProgramInfo::global_constants.defs += indent(temp_c.output());
+    ProgramInfo::global_constants.defs += 
       indent("PROTECT(" + var_c + " = " + out_const + ");\n");
-    global_constants.defs += "}\n";
+    ProgramInfo::global_constants.defs += "}\n";
   } else {
     var_c = exp.var;
   }
@@ -1205,7 +1206,7 @@ Expression SubexpBuffer::op_list_help(SEXP e, string rho,
       consts.del(cdr);
       return Expression(out_const, FALSE, VISIBLE, "");
     } else {
-      global_constants.append_defs(consts.output());
+      ProgramInfo::global_constants.append_defs(consts.output());
       string out = appl3_unp("tagged_cons  ", car.var, tag.var, cdr.var);
       del(car);
       del(tag);
@@ -1225,121 +1226,10 @@ Expression SubexpBuffer::op_string(SEXP s) {
   for(i=0; i<len; i++) {
     str += string(CHAR(STRING_ELT(s, i)));
   }
-  string out = global_constants.appl1("mkString", 
+  string out = ProgramInfo::global_constants.appl1("mkString", 
 				      quote(escape(str)));
   return Expression(out, FALSE, VISIBLE, "");
 }
-
-Output op_vect(SEXP vec) {
-  int len = Rf_length(vec);
-  if (len != 1) {
-    err("unexpected non-scalar vector encountered");
-    return Output::bogus;
-  }
-  int value;
-  switch(TYPEOF(vec)) {
-  case LGLSXP:
-    {
-      int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = sc_logical_map.find(value);
-      if (pr == sc_logical_map.end()) {  // not found
-	string var = new_var();
-	sc_logical_map.insert(pair<int,string>(value, var));
-	Output op(Decls(""), Code(""),
-		  GDecls(emit_static_decl(var)),
-		  GCode(emit_assign(var, emit_call1("ScalarLogical", i_to_s(value)))),
-		  Handle(var), DelText(""), CONST, VISIBLE);
-	return op;
-      } else {
-	Output op(Decls(""), Code(""),
-		  GDecls(""), GCode(""),
-		  Handle(pr->second), DelText(""), CONST, VISIBLE);
-	return op;
-      }
-    }
-    break;
-  case REALSXP:
-    {
-      double value = REAL(vec)[0];
-      map<double,string>::iterator pr = sc_real_map.find(value);
-      if (pr == sc_real_map.end()) {  // not found
-	string var = new_var();
-	sc_real_map.insert(pair<double,string>(value, var));
-	Output op(Decls(""), Code(""),
-		  GDecls(emit_static_decl(var)),
-		  GCode(emit_assign(var, emit_call1("ScalarReal", d_to_s(value)))),
-		  Handle(var), DelText(""), CONST, VISIBLE);
-	return op;
-      } else {
-	Output op(Decls(""), Code(""),
-		  GDecls(""), GCode(""),
-		  Handle(pr->second), DelText(""), CONST, VISIBLE);
-	return op;
-      }
-    }
-    break;
-  default:
-    err("Unhandled type in op_vector");
-    return Output::bogus;
-  }
-}
-
-#if 0
-  case INTSXP:
-    if (len == 1) {
-      int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = sc_integer_map.find(value);
-      if (pr == sc_integer_map.end()) {  // not found
-	string var = global_constants.appl1("ScalarInteger",
-					    i_to_s(value));
-	sc_integer_map.insert(pair<int,string>(value, var));
-	return Expression(var, FALSE, VISIBLE, "");
-      } else {
-	return Expression(pr->second, FALSE, VISIBLE, "");
-      }
-    } else {
-      global_ok = 0;
-      return Expression("<<unimplemented integer vector>>",
-			FALSE, INVISIBLE, "");
-    }
-    break;
-  case REALSXP:
-    if (len == 1) {
-      double value = REAL(vec)[0];
-      map<double,string>::iterator pr = sc_real_map.find(value);
-      if (pr == sc_real_map.end()) {  // not found
-	string var = global_constants.appl1("ScalarReal",
-					    d_to_s(value));
-	sc_real_map.insert(pair<double,string>(value, var));
-	return Expression(var, FALSE, VISIBLE, "");
-      } else {
-	return Expression(pr->second, FALSE, VISIBLE, "");
-      }
-    } else {
-      global_ok = 0;
-      return Expression("<<unimplemented real vector>>",
-			FALSE, INVISIBLE, "");
-    }
-    break;
-  case CPLXSXP:
-    if (len == 1) {
-      Rcomplex value = COMPLEX(vec)[0];
-      string var = global_constants.appl1("ScalarComplex",
-					  c_to_s(value));
-      return Expression(var, FALSE, VISIBLE, "");
-    } else {
-      global_ok = 0;
-      return Expression("<<unimplemented complex vector>>",
-			FALSE, INVISIBLE, "");
-    }
-    break;
-  default:
-    err("Internal error: op_vector encountered bad vector type\n");
-    return bogus_exp; // not reached
-    break;
-  } 
-}
-#endif
 
 Expression SubexpBuffer::op_vector(SEXP vec) {
   int len = Rf_length(vec);
@@ -1347,11 +1237,11 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case LGLSXP:
     if (len == 1) {
       int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = sc_logical_map.find(value);
-      if (pr == sc_logical_map.end()) {  // not found
-	string var = global_constants.appl1("ScalarLogical",
+      map<int,string>::iterator pr = ProgramInfo::sc_logical_map.find(value);
+      if (pr == ProgramInfo::sc_logical_map.end()) {  // not found
+	string var = ProgramInfo::global_constants.appl1("ScalarLogical",
 					    i_to_s(value));
-	sc_logical_map.insert(pair<int,string>(value, var));
+	ProgramInfo::sc_logical_map.insert(pair<int,string>(value, var));
 	return Expression(var, FALSE, VISIBLE, "");
       } else {
 	return Expression(pr->second, FALSE, VISIBLE, "");
@@ -1365,11 +1255,11 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case INTSXP:
     if (len == 1) {
       int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = sc_integer_map.find(value);
-      if (pr == sc_integer_map.end()) {  // not found
-	string var = global_constants.appl1("ScalarInteger",
+      map<int,string>::iterator pr = ProgramInfo::sc_integer_map.find(value);
+      if (pr == ProgramInfo::sc_integer_map.end()) {  // not found
+	string var = ProgramInfo::global_constants.appl1("ScalarInteger",
 					    i_to_s(value));
-	sc_integer_map.insert(pair<int,string>(value, var));
+	ProgramInfo::sc_integer_map.insert(pair<int,string>(value, var));
 	return Expression(var, FALSE, VISIBLE, "");
       } else {
 	return Expression(pr->second, FALSE, VISIBLE, "");
@@ -1383,11 +1273,11 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case REALSXP:
     if (len == 1) {
       double value = REAL(vec)[0];
-      map<double,string>::iterator pr = sc_real_map.find(value);
-      if (pr == sc_real_map.end()) {  // not found
-	string var = global_constants.appl1("ScalarReal",
+      map<double,string>::iterator pr = ProgramInfo::sc_real_map.find(value);
+      if (pr == ProgramInfo::sc_real_map.end()) {  // not found
+	string var = ProgramInfo::global_constants.appl1("ScalarReal",
 					    d_to_s(value));
-	sc_real_map.insert(pair<double,string>(value, var));
+	ProgramInfo::sc_real_map.insert(pair<double,string>(value, var));
 	return Expression(var, FALSE, VISIBLE, "");
       } else {
 	return Expression(pr->second, FALSE, VISIBLE, "");
@@ -1401,7 +1291,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case CPLXSXP:
     if (len == 1) {
       Rcomplex value = COMPLEX(vec)[0];
-      string var = global_constants.appl1("ScalarComplex",
+      string var = ProgramInfo::global_constants.appl1("ScalarComplex",
 					  c_to_s(value));
       return Expression(var, FALSE, VISIBLE, "");
     } else {
@@ -1471,7 +1361,7 @@ int main(int argc, char *argv[]) {
     }
     switch(c) {
     case 'f':
-      direct_funcs.push_back(string(optarg));
+      ProgramInfo::direct_funcs.push_back(string(optarg));
       break;
     case 'a':
       output_default_args = FALSE;
@@ -1549,19 +1439,51 @@ int main(int argc, char *argv[]) {
     out_filename = path + libname + ".c";
   }
 
-  // create global_fundefs
+  // create ProgramInfo::global_fundefs
   SubexpBuffer *fundefs_ptr;
   fundefs_ptr = new SubexpBuffer(libname + "_f", TRUE);
-  global_fundefs = *fundefs_ptr;
+  ProgramInfo::global_fundefs = *fundefs_ptr;
   delete fundefs_ptr;
 
-  global_constants.decls += "static void exec();\n";
+  ProgramInfo::global_constants.decls += "static void exec();\n";
   exprs += "\nstatic void exec() {\n";
 
   SEXP program = parse_R_as_function(in_file);
 
+  // analyze code
+
+  // dump analysis to temporary file for now
+//   const string dump_fname = "rcc.analysis.dump.temporary";
+//   ofstream dump_file(dump_fname.c_str());
+//   if (!dump_file) {
+//     err("Couldn't open file " + dump_fname + " for output");
+//   }
+
   R_Analyst an(program);
-  // other analysis
+  OA::OA_ptr<R_IRInterface> rir_ptr; rir_ptr = new R_IRInterface;
+  OA::CFG::ManagerStandard cfg_man(rir_ptr, true); // statement-level CFG
+  OA::OA_ptr<OA::CFG::Interface> cfg_ptr;
+  OA::OA_ptr<RAnnot::AnnotationSet> aset;
+  OA::OA_ptr<RScopeTree> t = an.get_scope_tree();
+  for(RScopeTree::iterator it = t->begin(); it != t->end(); ++it) {
+    if (analysis_debug) {
+      cout << "New procedure" << endl;
+    }
+    SEXP fundef = (*it)->get_defn();
+    if (it == t->begin()) { // top of scope tree is defined as nil
+      assert(fundef == R_NilValue);
+      continue;
+    }
+    OA::ProcHandle ph((OA::irhandle_t)fundef);
+    cfg_ptr = cfg_man.performAnalysis(ph);
+    R_UseDefSolver uds(rir_ptr);
+    aset = uds.perform_analysis(ph, cfg_ptr);
+    if (analysis_debug) {
+      cfg_ptr->dump(cout, rir_ptr);
+      uds.dump_node_maps();
+    }
+  }
+
 
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment
@@ -1606,7 +1528,7 @@ int main(int argc, char *argv[]) {
     exprs += indent("}\n");
     expressions = CDR(expressions);
   }
-  exprs += indent("UNPROTECT(" + i_to_s(global_constants.get_n_prot())
+  exprs += indent("UNPROTECT(" + i_to_s(ProgramInfo::global_constants.get_n_prot())
 		  + "); /* c_ */\n");
   exprs += "}\n\n";
   
@@ -1633,14 +1555,14 @@ int main(int argc, char *argv[]) {
   out_file << rcc_path_prefix << "rcc_lib.h\"\n";
   out_file << "\n";
 
-  global_fundefs.output_ip();
-  global_fundefs.finalize();
+  ProgramInfo::global_fundefs.output_ip();
+  ProgramInfo::global_fundefs.finalize();
 
-  global_constants.output_ip();
-  global_constants.finalize();
+  ProgramInfo::global_constants.output_ip();
+  ProgramInfo::global_constants.finalize();
 
-  out_file << global_fundefs.output_decls();
-  out_file << global_constants.output_decls();
+  out_file << ProgramInfo::global_fundefs.output_decls();
+  out_file << ProgramInfo::global_constants.output_decls();
 
   string file_initializer_name = string("R_init_") + libname;
 
@@ -1648,16 +1570,16 @@ int main(int argc, char *argv[]) {
   header += "\nvoid " + file_initializer_name + "() {\n";
   // The name R_init_<libname> causes the R dynamic loader to execute the
   // function immediately.
-  for(i=0; i<global_constants.get_n_inits(); i++) {
-    header += indent(global_constants.get_init_str() + i_to_s(i) + "();\n");
+  for(i=0; i<ProgramInfo::global_constants.get_n_inits(); i++) {
+    header += indent(ProgramInfo::global_constants.get_init_str() + i_to_s(i) + "();\n");
   }
   header += indent("exec();\n");
   header += "}\n";
   out_file << header;
 
-  out_file << global_constants.output_defs();
+  out_file << ProgramInfo::global_constants.output_defs();
   out_file << exprs;
-  out_file << global_fundefs.output_defs();
+  out_file << ProgramInfo::global_fundefs.output_defs();
   if (output_main_program) {
      string arginit = "int myargc;\n";
      string mainargs = "int argc, char **argv";
@@ -1692,7 +1614,7 @@ static void arg_err() {
 static void set_funcs(int argc, char *argv[]) {
   int i;
   for(i=0; i<argc; i++) {
-    direct_funcs.push_back(string(*argv++));
+    ProgramInfo::direct_funcs.push_back(string(*argv++));
   }
 }
 
@@ -1724,7 +1646,7 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
     header += ", SEXP arg" + i_to_s(i);
   }
   header += ")";
-  global_fundefs.decls += header + ";\n";
+  ProgramInfo::global_fundefs.decls += header + ";\n";
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
@@ -1775,7 +1697,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
   SubexpBuffer env_subexps;
   header = "SEXP " + func_name + "(";
   header += "SEXP args, SEXP env)";
-  global_fundefs.decls += header + ";\n";
+  ProgramInfo::global_fundefs.decls += header + ";\n";
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
@@ -1817,7 +1739,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
   f += indent(unp("out"));
   f += indent("return out;\n");
   f += "}\n";
-  //vis_map[func_name] = outblock.is_visible;
   return f;
 }
 
@@ -1828,7 +1749,7 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP 
   SubexpBuffer env_subexps;
   header = "SEXP " + func_name + "(";
   header += "SEXP args)";
-  global_fundefs.decls += header + ";\n";
+  ProgramInfo::global_fundefs.decls += header + ";\n";
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
@@ -1851,7 +1772,6 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP 
   f += indent(unp("out"));
   f += indent("return out;\n");
   f += "}\n";
-  //vis_map[func_name] = outblock.is_visible;
   return f;
 }
 
@@ -1862,15 +1782,33 @@ string make_symbol(SEXP e) {
     return "R_UnboundValue";
   } else {
     string name = string(CHAR(PRINTNAME(e)));
-    map<string,string>::iterator pr = symbol_map.find(name);
-    if (pr == symbol_map.end()) {  // not found
-      string var = global_constants.new_sexp_unp_name(name);
+    map<string,string>::iterator pr = ProgramInfo::symbol_map.find(name);
+    if (pr == ProgramInfo::symbol_map.end()) {  // not found
+      string var = ProgramInfo::global_constants.new_sexp_unp_name(name);
       string qname = quote(name);
-      global_constants.appl(var, FALSE, "install", 1, &qname);
-      symbol_map.insert(pair<string,string>(name, var));
+      ProgramInfo::global_constants.appl(var, FALSE, "install", 1, &qname);
+      ProgramInfo::symbol_map.insert(pair<string,string>(name, var));
       return var;
     } else {
       return pr->second;
     }
   }
 }
+
+// initialize statics in SubexpBuffer
+unsigned int SubexpBuffer::n = 0;
+
+// initialize statics in ProgramInfo
+OA::OA_ptr<R_Analyst> ProgramInfo::m_an;
+map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > ProgramInfo::m_cfg_map;
+map<OA::ProcHandle, RAnnot::AnnotationSet> ProgramInfo::m_annot_map;
+map<string, string> ProgramInfo::func_map;
+map<string, string> ProgramInfo::symbol_map;
+map<double, string> ProgramInfo::sc_real_map;
+map<int, string> ProgramInfo::sc_logical_map;
+map<int, string> ProgramInfo::sc_integer_map;
+map<int, string> ProgramInfo::primsxp_map;
+list<string> ProgramInfo::direct_funcs;
+SubexpBuffer ProgramInfo::global_fundefs;
+SplitSubexpBuffer ProgramInfo::global_constants("c", true);
+SubexpBuffer ProgramInfo::global_labels("l");

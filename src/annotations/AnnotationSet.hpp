@@ -1,5 +1,8 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.2 2005/08/20 21:54:41 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.3 2005/08/25 22:13:44 garvin Exp $
+
+#ifndef ANNOTATION_SET_HPP
+#define ANNOTATION_SET_HPP
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -83,3 +86,5 @@ private:
 //****************************************************************************
 
 } // end of RAnnot namespace
+
+#endif
