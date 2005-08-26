@@ -498,6 +498,9 @@ class ProgramInfo {
   static std::map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > m_cfg_map;
   static std::map<OA::ProcHandle, RAnnot::AnnotationSet> m_annot_map;
 
+  // map ProcHandles to LocalityInfo
+  // LocalityInfo = map of VarRef's to LOCAL,FREE,etc.
+
   // coming from parsing
   static std::map<std::string, std::string> func_map;
   static std::map<std::string, std::string> symbol_map;

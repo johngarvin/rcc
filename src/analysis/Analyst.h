@@ -9,6 +9,7 @@
 #include <MyRInternals.h>
 #include "Utils.h"
 #include "SimpleIterators.h"
+#include "ScopeTree.h"
 
 //! R_Analyst
 //! Contains an entire R program along with the results of analysis.
