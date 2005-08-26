@@ -2,7 +2,8 @@
 #ifndef SCOPE_TREE_H
 #define SCOPE_TREE_H
 
-#include <PeetersTree.hh>
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <PeetersTree/tree.hh>
 
 class RFunctionScopeInfo {
 public:
@@ -19,29 +20,9 @@ typedef tree<OA::OA_ptr<RFunctionScopeInfo> > ScopeTreeImp;
 typedef tree<RFunctionScopeInfo *> RScopeTree;
 // TODO: change users of RScopeTree to use ScopeTree instead
 
-//! The tree of enclosing scopes (function definitions)
-class ScopeTree {
-public:
-  OA::OA_ptr<ScopeTreeIterator> get_iterator();
-  ScopeTreePtr get_root();
-  void insert_scope(const ScopeTreePtr &);
-  void get_parent(const ScopeTreePtr &);
-
-private:
-  ScopeTreeImp st;
-
-  friend class ScopeTreeIterator;
-};
-
-//! Handle for a specific scope within a scope tree
-class ScopeTreePtr {
-private:
-  ScopeTreeImp::iterator it;
-};
-
 class PreOrderScopeTreeIterator {
 public:
-  ScopeTreeIterator(OA::OA_ptr<ScopeTreeImp> _tree) : tree(_tree) {
+  PreOrderScopeTreeIterator(OA::OA_ptr<ScopeTreeImp> _tree) : tree(_tree) {
     assert(!tree.ptrEqual(NULL)); it = tree->begin();
   }
   OA::OA_ptr<RFunctionScopeInfo> current() const { return *it; }
@@ -56,3 +37,25 @@ private:
 
 class PostOrderScopeTreeIterator {
 };
+
+//! Handle for a specific scope within a scope tree
+class ScopeTreePtr {
+private:
+  ScopeTreeImp::iterator it;
+};
+
+//! The tree of enclosing scopes (function definitions)
+class ScopeTree {
+public:
+  OA::OA_ptr<PreOrderScopeTreeIterator> get_pre_iterator();
+  ScopeTreePtr get_root();
+  void insert_scope(const ScopeTreePtr &);
+  void get_parent(const ScopeTreePtr &);
+
+private:
+  ScopeTreeImp st;
+
+  friend class PreOrderScopeTreeIterator;
+};
+
+#endif
