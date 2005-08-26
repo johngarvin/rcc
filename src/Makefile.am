@@ -1,4 +1,4 @@
-SUBDIRS = analysis annotations macros matmul support
+SUBDIRS = annotations macros matmul support analysis 
 bin_PROGRAMS = rcc.bin
 
 rcc_bin_SOURCES =                \
