@@ -5,6 +5,9 @@ include_rccdir = ${includedir}/rcc
 include_rcc_HEADERS = \
 	rcc_lib.h replacements.h
 
+include_HEADERS = \
+	rcc_assert.r
+
 include_rcc_Rdir = ${includedir}/rcc/R
 nodist_include_rcc_R_HEADERS = \
 	$(R_SOURCES)/src/include/Defn.h		\
