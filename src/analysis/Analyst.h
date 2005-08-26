@@ -6,52 +6,9 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-#include <PeetersTree/tree.hh>
-
 #include <MyRInternals.h>
 #include "Utils.h"
 #include "SimpleIterators.h"
-
-class RFunctionScopeInfo {
-public:
-  RFunctionScopeInfo(SEXP _name, SEXP _defn) : name(_name), defn(_defn) {};
-  SEXP get_args() { return CAR(fundef_args_c(defn)); };
-  SEXP get_defn() { return defn; };
-private:
-  SEXP name;
-  SEXP defn;
-};
-
-typedef tree<OA::OA_ptr<RFunctionScopeInfo> > ScopeTreeImp;
-
-typedef tree<RFunctionScopeInfo *> RScopeTree;
-// TODO: change users of RScopeTree to use ScopeTree instead
-
-class ScopeTreeIterator {
-public:
-  ScopeTreeIterator(OA::OA_ptr<ScopeTreeImp> _tree) : tree(_tree) {
-    assert(!tree.ptrEqual(NULL)); it = tree->begin();
-  }
-  OA::OA_ptr<RFunctionScopeInfo> current() const { return *it; }
-  bool isValid() const { return (it != tree->end()); }
-  void operator++() { ++it; }
-  void reset() { it = tree->begin(); }
-
-private:
-  OA::OA_ptr<ScopeTreeImp> tree;
-  ScopeTreeImp::iterator it;
-};
-
-class ScopeTree {
-public:
-  OA::OA_ptr<ScopeTreeIterator> get_iterator();
-  void insert_scope(const RFunctionScopeInfo &);
-  void get_parent(const RFunctionScopeInfo &);
-private:
-  ScopeTreeImp st;
-
-  friend class ScopeTreeIterator;
-};
 
 //! R_Analyst
 //! Contains an entire R program along with the results of analysis.
