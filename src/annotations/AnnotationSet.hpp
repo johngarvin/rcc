@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.3 2005/08/25 22:13:44 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.4 2005/08/26 14:14:11 johnmc Exp $
 
 #ifndef ANNOTATION_SET_HPP
 #define ANNOTATION_SET_HPP
@@ -27,7 +27,7 @@
 
 //**************************** R Include Files ******************************
 
-#include "Rinternals.h"
+#include <MyRInternals.h>
 
 //*************************** User Include Files ****************************
 
