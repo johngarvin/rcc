@@ -1,7 +1,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#include "Visibility.h"
+#include <Visibility.h>
 
 class Decls {
  public:

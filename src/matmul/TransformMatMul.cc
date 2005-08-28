@@ -1,4 +1,4 @@
-#include "TransformMatMul.h"
+#include <matmul/TransformMatMul.h>
 
 SEXP opt_matmul(SEXP exp) {
   // For matrix multiplication where one or more arguments is
@@ -6,11 +6,11 @@ SEXP opt_matmul(SEXP exp) {
   // transposition in the computation. This avoids the need to create
   // a whole new transposed matrix.
 
-  const SEXP sym_t_matmul_t = install("t#%*%#t");
-  const SEXP sym_t_matmul = install("t#%*%");
-  const SEXP sym_matmul_t = install("%*%#t");
-  const SEXP sym_matmul = install("%*%");
-  const SEXP sym_t = install("t");
+  const SEXP sym_t_matmul_t = Rf_install("t#%*%#t");
+  const SEXP sym_t_matmul = Rf_install("t#%*%");
+  const SEXP sym_matmul_t = Rf_install("%*%#t");
+  const SEXP sym_matmul = Rf_install("%*%");
+  const SEXP sym_t = Rf_install("t");
   
   R_PreorderIterator pre_iter(exp);
   for( ; pre_iter.isValid(); ++pre_iter) {

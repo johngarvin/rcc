@@ -1,4 +1,4 @@
-#include "Output.h"
+#include <Output.h>
 
 const Output & Output::bogus = Output(Decls(""), Code(""), GDecls(""), GCode(""),
 				    Handle(""), DelText(""), CONST, INVISIBLE);

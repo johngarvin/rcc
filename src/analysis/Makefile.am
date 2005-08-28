@@ -1,11 +1,7 @@
 MY_INCLUDES =               \
-  -I@R_HOME@/include        \
   -I@R_SOURCES@/src/include \
   -I@OA_PREFIX@/include     \
-  -I..                      \
-  -I../annotations          \
-  -I../support              \
-  -I../matmul
+  -I$(top_srcdir)/src   
 
 bin_PROGRAMS = tra
 
@@ -40,5 +36,4 @@ librcca_la_SOURCES =                       \
   Utils.cc Utils.h                         \
   SimpleIterators.cc SimpleIterators.h
 
-librcca_la_LIBADD = $(MY_OA_LIBS) 
 librcca_la_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)

@@ -3,7 +3,8 @@ lib_LTLIBRARIES = librcc.la
 
 include_rccdir = ${includedir}/rcc
 include_rcc_HEADERS = \
-	rcc_lib.h replacements.h
+	rcc_lib.h replacements.h \
+	rcc_generated_header.h
 
 include_HEADERS = \
 	rcc_assert.r

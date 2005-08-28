@@ -3,9 +3,8 @@ libmatmul_la_SOURCES =                 \
   TransposeMatMul.c  
 
 MY_INCLUDES =        \
-  -I@R_HOME@/include \
-  -I..               \
-  -I../analysis
+  -I@R_SOURCES@/src/include \
+  -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libmatmul.la
 

@@ -3,9 +3,9 @@
 #include <string>
 #include <map>
 
-#include "Main.h"
-#include <StringUtils.h>
-#include "CodeGenUtils.h"
+#include <Main.h>
+#include <support/StringUtils.h>
+#include <CodeGenUtils.h>
 
 using namespace std;
 

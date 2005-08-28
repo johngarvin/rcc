@@ -4,7 +4,7 @@
 #include <list>
 #include <assert.h>
 
-#include <MyRInternals.h>
+#include <include/R/R_RInternals.h>
 
 //! Abstract class to enumerate a set of R expressions.
 class R_ExpIterator {

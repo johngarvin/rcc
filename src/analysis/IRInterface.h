@@ -54,11 +54,12 @@
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
 
-#include <MyRInternals.h>
-#include <StringUtils.h>
-#include "SimpleIterators.h"
-#include "Analyst.h"
-#include "Utils.h"
+#include <include/R/R_RInternals.h>
+
+#include <analysis/SimpleIterators.h>
+#include <analysis/Analyst.h>
+#include <analysis/Utils.h>
+#include <support/StringUtils.h>
 
 //-----------------------------------------------------------------------------
 // R IR representation

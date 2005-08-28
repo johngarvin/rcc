@@ -1,11 +1,11 @@
 #include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
 
-#include <Parser.h>
-#include <TransformMatMul.h>
+#include <support/Parser.h>
+#include <matmul/TransformMatMul.h>
 
-#include "IRInterface.h"
-#include "Analyst.h"
-#include "UseDefSolver.h"
+#include <analysis/IRInterface.h>
+#include <analysis/Analyst.h>
+#include <analysis/UseDefSolver.h>
 
 using namespace std;
 using namespace OA;
@@ -47,7 +47,7 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
       continue;
     }
     cout << "Procedure:\n";
-    PrintValue((*proc_iter)->get_defn());
+    Rf_PrintValue((*proc_iter)->get_defn());
 
     // each statement
     OA_ptr<IRRegionStmtIterator> stmt_iter_ptr;
@@ -55,7 +55,7 @@ void opt_matmul_test(OA_ptr<CFG::CFGIRInterface> rir_ptr, SEXP exp) {
     stmt_iter_ptr = rir_ptr->procBody(ph);
     for( ; stmt_iter_ptr->isValid(); ++*stmt_iter_ptr) {
       cout << "Statement:\n";
-      PrintValue((SEXP)stmt_iter_ptr->current().hval());
+      Rf_PrintValue((SEXP)stmt_iter_ptr->current().hval());
     }
     // OA_ptr<CFG::CFGStandard> cfg_ptr;
     // cfg_ptr = cfg_man.performAnalysis(*proc_iter);
@@ -79,7 +79,7 @@ void ssa_test(OA_ptr<R_IRInterface> rir_ptr, SEXP exp) {
       continue;
     }
     cout << "New procedure:\n";
-    PrintValue(r_exp);
+    Rf_PrintValue(r_exp);
     cout << "SSA info:" << endl;
     OA_ptr<CFG::CFGStandard> cfg_ptr;
     cfg_ptr = cfg_man.performAnalysis((irhandle_t)r_exp);
@@ -95,7 +95,7 @@ void scope_test(SEXP e) {
   OA_ptr<RScopeTree > t = an.get_scope_tree();
   cout << "Scopes: " << t->size() << endl;
   for(RScopeTree::iterator i = t->begin(); i != t->end(); ++i) {
-    PrintValue((*i)->get_defn());
+    Rf_PrintValue((*i)->get_defn());
     cout << endl;
   }
 }
@@ -114,7 +114,7 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
       continue;
     }
     cout << "New procedure:\n";
-    PrintValue(r_exp);
+    Rf_PrintValue(r_exp);
     OA_ptr<CFG::Interface> cfg;
     cfg = cfg_man.performAnalysis((irhandle_t)r_exp);
     OA_ptr<CFG::Interface::NodesIterator> bb_iter;
@@ -128,7 +128,7 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
       for( ; stmt_iter_ptr->isValid(); ++*stmt_iter_ptr) {
 	const SEXP stmt = (SEXP)stmt_iter_ptr->current().hval();
 	cout << "New statement:" << endl;
-	PrintValue(stmt);
+	Rf_PrintValue(stmt);
 	R_ExpUDInfo info(stmt);
 	OA_ptr<VarSet> vars;
 	OA_ptr<VarSetIterator> it;
@@ -136,28 +136,28 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 	cout << "Local defs:" << endl;
 	vars = info.get_local_defs();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  PrintValue(it->current());
+	  Rf_PrintValue(it->current());
 	  cout << endl;
 	}
 
 	cout << "Free defs:" << endl;
 	vars = info.get_free_defs();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  PrintValue(it->current());
+	  Rf_PrintValue(it->current());
 	  cout << endl;
 	}
 
 	cout << "Application uses:" << endl;
 	vars = info.get_app_uses();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  PrintValue(it->current());
+	  Rf_PrintValue(it->current());
 	  cout << endl;
 	}
 
 	cout << "Non-application uses:" << endl;
 	vars = info.get_non_app_uses();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  PrintValue(it->current());
+	  Rf_PrintValue(it->current());
 	  cout << endl;
 	}
       } // statements

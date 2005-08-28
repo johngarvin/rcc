@@ -3,7 +3,7 @@
 #define SCOPE_TREE_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <PeetersTree/tree.hh>
+#include <include/tree.hh>
 
 class RFunctionScopeInfo {
 public:

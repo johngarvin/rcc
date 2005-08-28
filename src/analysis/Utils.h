@@ -3,7 +3,7 @@
 
 #include <assert.h>
 
-#include <MyRInternals.h>
+#include <include/R/R_RInternals.h>
 
 bool is_local_assign(const SEXP e);
 bool is_free_assign(const SEXP e);

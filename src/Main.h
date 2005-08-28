@@ -39,17 +39,20 @@ extern "C" {
 
 } //extern "C"
 
+#include <include/R/R_RInternals.h>
+
 #include <OpenAnalysis/CFG/Interface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
-#include <AnnotationSet.hpp>
-#include <MyRInternals.h>
-#include <StringUtils.h>
-#include <Parser.h>
-#include <Analyst.h>
-#include <Utils.h>
-#include "GetName.h"
-#include "Visibility.h"
-#include "Macro.h"
+
+#include <annotations/AnnotationSet.hpp>
+#include <support/StringUtils.h>
+#include <support/Parser.h>
+#include <analysis/Analyst.h>
+#include <analysis/Utils.h>
+
+#include <GetName.h>
+#include <Visibility.h>
+#include <Macro.h>
 
 bool is_special(std::string func);
 

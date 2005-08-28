@@ -1,7 +1,7 @@
 #ifndef TRANSFORM_MAT_MUL_H
 #define TRANSFORM_MAT_MUL_H
 
-#include <SimpleIterators.h>
+#include <analysis/SimpleIterators.h>
 
 #ifdef __cplusplus
 extern "C" {

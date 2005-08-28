@@ -1,4 +1,4 @@
-#include "UseDefSolver.h"
+#include <analysis/UseDefSolver.h>
 
 static const bool debug = false;
 
@@ -110,7 +110,7 @@ void R_UseDefSolver::initialize_sets() {
       SEXP stmt_r = (SEXP)stmt_it->current().hval();
 
       if (debug) {
-	PrintValue(stmt_r);
+	Rf_PrintValue(stmt_r);
       }
 
       R_ExpUDLocInfo info(stmt_r);

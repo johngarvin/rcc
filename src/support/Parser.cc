@@ -19,7 +19,9 @@
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
 
-#include "Parser.h"
+#include <include/R/R_Parse.h>
+
+#include <support/Parser.h>
 
 void init_R() {
   char *myargs[5];
@@ -47,7 +49,7 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
 
   do {
     // parse each expression
-    PROTECT(e = R_Parse1File(in_file, 1, &status));
+    Rf_protect(e = R_Parse1File(in_file, 1, &status));
     switch(status) {
     case PARSE_NULL:
       break;
@@ -100,20 +102,20 @@ SEXP parse_R_as_function(FILE *in_file) {
     }
     do {
       e--;
-      stmts = CONS(*e, stmts);
+      stmts = Rf_cons(*e, stmts);
     } while (e != exps);
   }
-  PROTECT(stmts);
+  Rf_protect(stmts);
   SEXP lbrace = Rf_install("{");
-  SEXP body = PROTECT(LCONS(lbrace, stmts));
-  UNPROTECT_PTR(stmts);
+  SEXP body = Rf_protect(Rf_lcons(lbrace, stmts));
+  Rf_unprotect_ptr(stmts);
   SEXP args = R_NilValue; // empty argument list
   SEXP func_sym = Rf_install("function");
-  SEXP func_exp = PROTECT(LCONS(func_sym, CONS(args, CONS(body, R_NilValue))));
-  UNPROTECT_PTR(body);
+  SEXP func_exp = Rf_protect(Rf_lcons(func_sym, Rf_cons(args, Rf_cons(body, R_NilValue))));
+  Rf_unprotect_ptr(body);
   SEXP fname = Rf_install("<toplevel>");
   SEXP arrow = Rf_install("<-");
-  SEXP big_exp = PROTECT(LCONS(arrow, CONS(fname, CONS(func_exp, R_NilValue))));
-  UNPROTECT_PTR(func_exp);
+  SEXP big_exp = Rf_protect(Rf_lcons(arrow, Rf_cons(fname, Rf_cons(func_exp, R_NilValue))));
+  Rf_unprotect_ptr(func_exp);
   return big_exp;
 }

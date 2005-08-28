@@ -1,5 +1,5 @@
 # -*-Mode: makefile;-*-
-# $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Makefile.am,v 1.2 2005/08/18 05:09:21 garvin Exp $
+# $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Makefile.am,v 1.3 2005/08/28 05:19:28 johnmc Exp $
 
 ## * BeginRiceCopyright *****************************************************
 ## ******************************************************* EndRiceCopyright *
@@ -32,7 +32,7 @@ AUTOMAKE_OPTIONS = foreign
 
 R_LIB_HOME = @R_LIB_PATH@
 
-R_INCLUDE_DIR = @R_HOME@/include
+R_INCLUDES = -I@R_SOURCES@/src/include
 
 MYSOURCES = \
 	AnnotationBase.hpp AnnotationBase.cpp \
@@ -41,9 +41,11 @@ MYSOURCES = \
 	PropertySet.hpp PropertySet.cpp \
 	PropertySetMgr.hpp PropertySetMgr.cpp
 
-MYINCLUDES = -I..
+MYINCLUDES = \
+	-I$(top_srcdir)/src/include   \
+	-I..
 
-MYCFLAGS   = -I$(R_INCLUDE_DIR) $(MYINCLUDES)
+MYCFLAGS   = $(R_INCLUDES) $(MYINCLUDES)
 MYCXXFLAGS = $(MYCFLAGS)
 
 MYLDFLAGS = 

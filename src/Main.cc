@@ -23,12 +23,14 @@
 
 #include <iostream>
 
-#include <IRInterface.h>
-#include <UseDefSolver.h>
-#include "CodeGenUtils.h"
-#include "CodeGen.h"
-#include "Output.h"
-#include "Main.h"
+#include <include/R/R_Internal.h>
+
+#include <analysis/IRInterface.h>
+#include <analysis/UseDefSolver.h>
+#include <CodeGenUtils.h>
+#include <CodeGen.h>
+#include <Output.h>
+#include <Main.h>
 
 using namespace std;
 
@@ -226,7 +228,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
       del(args);
       return Expression(call, TRUE, VISIBLE, unp(call));
     } else { // not direct; call via closure
-      op = findFunUnboundOK(CAR(e), R_GlobalEnv, TRUE);
+      op = Rf_findFunUnboundOK(CAR(e), R_GlobalEnv, TRUE);
       if (op == R_UnboundValue) {    // user-defined function
 	string func = appl2("findFun",
 			    make_symbol(CAR(e)),
@@ -241,7 +243,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
 	  return op_builtin(e, op, rho);
 	} else if (TYPEOF(op) == CLOSXP) {
 	  Expression op1;
-	  if (CAR(BODY(op)) == install(".Internal")) {
+	  if (CAR(BODY(op)) == Rf_install(".Internal")) {
 	    op1 = op_exp(op, "R_GlobalEnv");
 	  } else {
 	    op1 = op_exp(op, rho);
@@ -353,7 +355,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   sym = CAR(e);
   val = CADR(e);
   body = CADDR(e);
-  if ( !isSymbol(sym) ) err("non-symbol loop variable\n");
+  if ( !Rf_isSymbol(sym) ) err("non-symbol loop variable\n");
   Expression val1 = op_exp(val, rho);
   decls += "int n;\n";
   decls += "SEXP ans, v;\n";
@@ -513,7 +515,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     string c_args = ProgramInfo::global_constants.appl2("cons", rho, c_f_args.var);
     string c_call = ProgramInfo::global_constants.appl2("cons", func_sym, c_args);
     string r_call = ProgramInfo::global_constants.appl2("lcons",
-			  make_symbol(install(".External")),
+			  make_symbol(Rf_install(".External")),
 			  c_call);
     string c_clos = ProgramInfo::global_constants.appl3("mkCLOSXP ", formals.var,
 				   func_name, rho);
@@ -522,7 +524,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
       ProgramInfo::global_constants.appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho);
 #if 0
     ProgramInfo::global_constants.append_defs("setAttrib(" + r_form
-          + ", install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n");
+          + ", Rf_install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n");
 #endif
     ProgramInfo::global_constants.del(formals);
     if (direct) ProgramInfo::func_map.insert(pair<string,string>(opt_R_name, r_form));
@@ -540,14 +542,14 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
     string c_call = appl2("cons", func_sym, c_args);
     string defs = unp(c_args);
     string r_call = appl2("lcons",
-			  make_symbol(install(".External")),
+			  make_symbol(Rf_install(".External")),
 			  c_call);
     defs += unp(c_call);
     string out = appl3("mkCLOSXP ", formals.var, r_call, rho);
     del(formals);
     defs += unp(r_call);
     defs += "setAttrib(" + r_form
-          + ", install(\"RCC_CompiledSymbol\"), " + out + ");\n";
+          + ", Rf_install(\"RCC_CompiledSymbol\"), " + out + ");\n";
     defs += unp(out);
     append_defs(defs);
 #endif
@@ -617,15 +619,15 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho) {
     // R_unary if there's one argument and it's a non-object
     if (args != R_NilValue
 	&& CDR(args) == R_NilValue
-	&& !isObject(CAR(args))) { // one argument, non-object
+	&& !Rf_isObject(CAR(args))) { // one argument, non-object
       Expression x = op_exp(CAR(args), rho, TRUE);
       out = appl3("R_unary", "R_NilValue", op1.var, x.var);
       del(x);
 
     // R_binary if two non-object arguments
     } else if (CDDR(args) == R_NilValue && 
-	       !isObject(CAR(args))
-	       && !isObject(CADR(args))) {
+	       !Rf_isObject(CAR(args))
+	       && !Rf_isObject(CADR(args))) {
       Expression x = op_exp(CAR(args), rho, TRUE);
       Expression y = op_exp(CADR(args), rho, TRUE);
       out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var);
@@ -649,7 +651,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho) {
 
 bool isSimpleSubscript(SEXP e) {
   return (TYPEOF(e) == LANGSXP
-	  && CAR(e) == install("[")
+	  && CAR(e) == Rf_install("[")
 	  && TYPEOF(CADR(e)) == SYMSXP);
 }
   
@@ -657,17 +659,17 @@ bool isSimpleSubscript(SEXP e) {
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
   string out;
   if (PRIMVAL(op) == 1 || PRIMVAL(op) == 3) {    //    <-, =
-    if (isString(CADR(e))) {
-      SETCAR(CDR(e), install(CHAR(STRING_ELT(CADR(e), 0))));
+    if (Rf_isString(CADR(e))) {
+      SETCAR(CDR(e), Rf_install(CHAR(STRING_ELT(CADR(e), 0))));
     }
-    if (isSymbol(CADR(e))) {
+    if (Rf_isSymbol(CADR(e))) {
       string name = make_symbol(CADR(e));
       Expression body;
       // if body is a function definition, give op_fundef
       // the R name so that the f-function can be called directly later on
       if (TYPEOF(CADDR(e)) == LANGSXP
 	  && TYPEOF(CAR(CADDR(e))) == SYMSXP
-	  && CAR(CADDR(e)) == install("function")) {
+	  && CAR(CADDR(e)) == Rf_install("function")) {
 	body = op_fundef(CDR(CADDR(e)), rho, CHAR(PRINTNAME(CADR(e))));
       } else {
 	body = op_exp(CADDR(e), rho);
@@ -678,7 +680,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
       return Expression(name, TRUE, INVISIBLE, "");
     } else if (isSimpleSubscript(CADR(e))) {
       return op_subscriptset(e, rho);
-    } else if (isLanguage(CADR(e))) {
+    } else if (Rf_isLanguage(CADR(e))) {
       Expression func = op_exp(op, rho);
       Expression args = op_list_local(CDR(e), rho);
       out = appl4("do_set",
@@ -1544,15 +1546,9 @@ int main(int argc, char *argv[]) {
   }
   
   string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
-  string r_path_prefix = rcc_path_prefix + "R/";
 
   // output to file
-  out_file << r_path_prefix << "IOStuff.h\"\n";
-  out_file << r_path_prefix << "Parse.h\"\n";
-  out_file << r_path_prefix << "Internal.h\"\n";
-  out_file << r_path_prefix << "R_ext/RConverters.h\"\n";
-  out_file << r_path_prefix << "main/arithmetic.h\"\n";
-  out_file << rcc_path_prefix << "rcc_lib.h\"\n";
+  out_file << rcc_path_prefix << "rcc_generated_header.h\"\n";
   out_file << "\n";
 
   ProgramInfo::global_fundefs.output_ip();
@@ -1786,7 +1782,7 @@ string make_symbol(SEXP e) {
     if (pr == ProgramInfo::symbol_map.end()) {  // not found
       string var = ProgramInfo::global_constants.new_sexp_unp_name(name);
       string qname = quote(name);
-      ProgramInfo::global_constants.appl(var, FALSE, "install", 1, &qname);
+      ProgramInfo::global_constants.appl(var, FALSE, "Rf_install", 1, &qname);
       ProgramInfo::symbol_map.insert(pair<string,string>(name, var));
       return var;
     } else {

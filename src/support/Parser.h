@@ -26,18 +26,7 @@
 
 #include <stdio.h>
 
-#include <MyRInternals.h>
-
-extern "C" {
-  // required for Parse.h
-  // Why isn't the ifndef handled in IOStuff.h?
-#ifndef R_IOSTUFF_H
-#  define R_IOSTUFF_H
-#  include <IOStuff.h>
-#endif
-#include <Parse.h>
-#include <Defn.h>
-}
+#include <include/R/R_RInternals.h>
 
 void init_R();
 void parse_R(FILE *in_file, SEXP *exps[]);

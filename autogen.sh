@@ -2,5 +2,5 @@
 aclocal
 libtoolize -f -c
 automake -a -f -c
-aclocal && autoconf && autoheader && automake
+aclocal && autoconf && automake
 

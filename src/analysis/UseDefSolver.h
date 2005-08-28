@@ -6,10 +6,10 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <AnnotationSet.hpp>
+#include <annotations/AnnotationSet.hpp>
 
-#include "IRInterface.h"
-#include "Analyst.h"
+#include <analysis/IRInterface.h>
+#include <analysis/Analyst.h>
 
 class R_UseSet;
 

@@ -1,12 +1,7 @@
 /* Matrix multiplication with transposed arguments */
 /* altered version of array.c from the R sources */
 
-#include <MyRInternals.h>
-#if 0
-#include <Rmath.h>
-#include <IOStuff.h>
-#include <Parse.h>
-#endif
+#include <include/R/R_RInternals.h>
 
 SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info);
 static void matprod_t(double *x, int nrx, int ncx,
@@ -22,11 +17,14 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   Rboolean sym;
   
   sym = isNull(y);
-  if ( !(isNumeric(x) || isComplex(x)) || !(isNumeric(y) || isComplex(y)) )
-    Rf_errorcall("requires numeric matrix/vector arguments");
+  if ( !(isNumeric(x) || isComplex(x))) 
+    Rf_errorcall(x,"Matrix transpose requires numeric matrix/vector arguments");
+
+  if(!(isNumeric(y) || isComplex(y)) )
+    Rf_errorcall(y,"Matrix transpose requires numeric matrix/vector arguments");
   
-  xdims = getAttrib(x, R_DimSymbol);
-  ydims = getAttrib(y, R_DimSymbol);
+  xdims = Rf_getAttrib(x, R_DimSymbol);
+  ydims = Rf_getAttrib(y, R_DimSymbol);
   ldx = Rf_length(xdims);
   ldy = Rf_length(ydims);
   
@@ -71,29 +69,31 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     ncy = INTEGER(ydims)[1];
   }
   
-  if (isComplex(x) || isComplex(y))
-    Rf_errorcall("Matrix transpose optimization not yet implemented for complex matrices");
+  if (isComplex(x))
+    Rf_errorcall(x,"Matrix transpose optimization not yet implemented for complex matrices");
+  else if (isComplex(y))
+    Rf_errorcall(y,"Matrix transpose optimization not yet implemented for complex matrices");
   else
     mode = REALSXP;
 
-  x = coerceVector(x, mode);
-  y = coerceVector(y, mode);
+  x = Rf_coerceVector(x, mode);
+  y = Rf_coerceVector(y, mode);
   
-  PROTECT(ans = allocMatrix(mode, nrx, ncy));
+  PROTECT(ans = Rf_allocMatrix(mode, nrx, ncy));
   matprod_t(REAL(x), nrx, ncx,
 	    REAL(y), nry, ncy, REAL(ans),
 	    "t","t");
   
-  PROTECT(xdims = getAttrib(x, R_DimNamesSymbol));
-  PROTECT(ydims = getAttrib(y, R_DimNamesSymbol));
+  PROTECT(xdims = Rf_getAttrib(x, R_DimNamesSymbol));
+  PROTECT(ydims = Rf_getAttrib(y, R_DimNamesSymbol));
   
   if (xdims != R_NilValue || ydims != R_NilValue) {
     SEXP dimnames, dimnamesnames, dn;
-    PROTECT(dimnames = allocVector(VECSXP, 2));
-    PROTECT(dimnamesnames = allocVector(STRSXP, 2));
+    PROTECT(dimnames = Rf_allocVector(VECSXP, 2));
+    PROTECT(dimnamesnames = Rf_allocVector(STRSXP, 2));
     if (xdims != R_NilValue) {
       if (ldx == 2 || ncx ==1) {
-	dn = getAttrib(xdims, R_NamesSymbol);
+	dn = Rf_getAttrib(xdims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 0, VECTOR_ELT(xdims, 0));
 	if(!isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 0, STRING_ELT(dn, 0));
@@ -101,12 +101,12 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     }
     if (ydims != R_NilValue) {
       if (ldy == 2 ){
-	dn = getAttrib(ydims, R_NamesSymbol);
+	dn = Rf_getAttrib(ydims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 1, VECTOR_ELT(ydims, 1));
 	if(!isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 1, STRING_ELT(dn, 1));
       } else if (nry == 1) {
-	dn = getAttrib(ydims, R_NamesSymbol);
+	dn = Rf_getAttrib(ydims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 1, VECTOR_ELT(ydims, 0));
 	if(!isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 1, STRING_ELT(dn, 0));
@@ -156,6 +156,6 @@ static void matprod_t(double *x, int nrx, int ncx,
 }
 #else
 {
-  Rf_errorcall("Matrix multiplication with transposition without BLAS is not yet implemented");
+  Rf_errorcall(R_NilValue, "Matrix multiplication with transposition without BLAS is not yet implemented");
 }
 #endif

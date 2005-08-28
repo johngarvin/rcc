@@ -1,4 +1,4 @@
-#include "SimpleIterators.h"
+#include <analysis/SimpleIterators.h>
 
 //! Preorder iterator: building the preorder list of nodes
 void R_PreorderIterator::build_pre(SEXP e) {

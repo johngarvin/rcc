@@ -6,10 +6,10 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-#include <MyRInternals.h>
-#include "Utils.h"
-#include "SimpleIterators.h"
-#include "ScopeTree.h"
+#include <include/R/R_RInternals.h>
+#include <analysis/Utils.h>
+#include <analysis/SimpleIterators.h>
+#include <analysis/ScopeTree.h>
 
 //! R_Analyst
 //! Contains an entire R program along with the results of analysis.

@@ -7,7 +7,7 @@ rcc_bin_SOURCES =                \
   CodeGenUtils.cc CodeGenUtils.h \
   Visibility.cc Visibility.h     \
   Macro.cc Macro.h               \
-  GetName.c GetName.h            \
+  GetName.cc GetName.h            \
   Output.cc Output.h
 
 #--------------------------------------
@@ -20,14 +20,11 @@ rcc_bin-rcc.$(OBJEXT): Makefile
 # below: OA_IRHANDLETYPE_UL macro is required for OA
 
 MY_COMMON_INCLUDES =         \
-  -I$(R_SOURCES)/src/include \
-  -I$(R_HOME)/include        \
+  -I@R_SOURCES@/src/include  \
+  -I$(top_srcdir)/src   \
   -DOA_IRHANDLETYPE_UL       \
-  -I$(OA_PREFIX)/include     \
-  -I$(top_srcdir)/lib        \
-  -I./support                \
-  -I./analysis               \
-  -I./annotations
+  -I@OA_PREFIX@/include     \
+  -I$(top_srcdir)/lib        
 
 MY_COMMON_MACROS =                          \
   -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\"     \
@@ -38,4 +35,4 @@ MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a
 
 rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(MY_COMMON_INCLUDES) $(MY_COMMON_MACROS)
 rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(MY_COMMON_INCLUDES) $(MY_COMMON_MACROS)
-rcc_bin_LDADD = -L@R_LIB_PATH@ -lR -Lsupport -lsupport -Lannotations -lannot -Lanalysis -lrcca $(MY_OA_LIBS)
+rcc_bin_LDADD = -Lsupport -lsupport -Lannotations -lannot -Lanalysis -lrcca -L@R_LIB_PATH@ -lR $(MY_OA_LIBS)

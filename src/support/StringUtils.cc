@@ -21,7 +21,7 @@
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
 
-#include "StringUtils.h"
+#include <support/StringUtils.h>
 
 std::string make_type(int t) {
   switch(t) {

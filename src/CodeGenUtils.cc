@@ -1,6 +1,6 @@
 #include <cstdarg>
-#include <StringUtils.h>
-#include "CodeGenUtils.h"
+#include <support/StringUtils.h>
+#include <CodeGenUtils.h>
 
 
 using namespace std;

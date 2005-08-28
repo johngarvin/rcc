@@ -1,6 +1,6 @@
-#include "Analyst.h"
 #include <algorithm>
 
+#include <analysis/Analyst.h>
 
 
 //! If necessary, analyze the SEXP exp to find the scope tree. In any

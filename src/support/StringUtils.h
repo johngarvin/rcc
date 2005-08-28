@@ -29,7 +29,7 @@
 #include <string>
 #include <map>
 
-#include <MyRInternals.h>
+#include <include/R/R_RInternals.h>
 
 std::string make_symbol(SEXP e);
 std::string make_type(int t);

@@ -2,7 +2,8 @@
 #define CODE_GEN_UTILS_H
 
 #include <string>
-#include <StringUtils.h>
+
+#include <support/StringUtils.h>
 
 //------------------------------------------------------------------------------
 // emit conditional: if(expn) 

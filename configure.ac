@@ -17,7 +17,6 @@ AC_ARG_WITH(R-prefix,
 	    R_PREFIX="$withval",
 	    R_PREFIX="non_existent_directory")
 
-
 AC_ARG_WITH(OA-prefix,
 	    [ --with-OA-prefix=DIR  Directory containing OpenAnalysis installation],
 	    OA_PREFIX="$withval",
@@ -28,9 +27,20 @@ if test ! -d ${R_SOURCES}; then
 fi
 
 if test ! -d ${R_PREFIX}; then
-	AC_MSG_ERROR([you must specify the directory of an R 2.1.1 installation using --with-R-prefix])
+	AC_MSG_ERROR([--with-R-prefix does not specify a valid R 2.1.1 installation directory.])
 fi
 
+if test -d ${R_PREFIX}/R.framework/Versions/2.1.1; then
+   R_HOME=${R_PREFIX}/R.framework/Versions/2.1.1/Resources
+fi
+
+if test -d ${R_PREFIX}/lib/R; then
+   R_HOME=${R_PREFIX}/lib/R
+fi
+
+if test -z "${R_HOME}"; then
+	AC_MSG_ERROR([--with-R-prefix does not specify a valid R 2.1.1 installation directory.])
+fi
 
 if test ! -d ${OA_PREFIX}; then
 	AC_MSG_ERROR([you must specify the installation directory of an OpenAnalysis distribution using --with-OA-prefix])
@@ -64,16 +74,6 @@ AC_FUNC_ALLOCA
 AC_FUNC_ERROR_AT_LINE
 AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
 
-case ${host} in
-  powerpc-apple-darwin*)
-    R_HOME=${R_PREFIX}
-    ;;
-
-  *)
-    R_HOME=${R_PREFIX}/lib/R
-    ;;
-esac
-
 R_LIB_PATH=${R_HOME}/lib
 
 RCC_MACRO_PATH=${prefix}/macros
@@ -82,14 +82,17 @@ RCC_LIB_PATH=${prefix}/lib
 RCC_BIN_PATH=${prefix}/bin
 
 AC_SUBST(CC)
+
 AC_SUBST(R_SOURCES)
-AC_SUBST(RCC_BIN_PATH)
+
+AC_SUBST(R_LIB_PATH)
+AC_SUBST(R_HOME)
 AC_SUBST(R_PREFIX)
+
+AC_SUBST(RCC_BIN_PATH)
 AC_SUBST(RCC_MACRO_PATH)
 AC_SUBST(RCC_INCLUDE_PATH)
 AC_SUBST(RCC_LIB_PATH)
-AC_SUBST(R_LIB_PATH)
-AC_SUBST(R_HOME)
 AC_SUBST(OA_PREFIX)
 
 ### ** Platform.

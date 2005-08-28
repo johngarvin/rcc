@@ -3,7 +3,7 @@
 #ifndef R_TYPE_INFERENCE_H
 #define R_TYPE_INFERENCE_H
 
-#include "MyIRInterface.h"
+#include <include/R/R_RInterface.h"
 
 // resolve conflict: different version in OpenAnalysis and Mint
 #undef Iterator_H
