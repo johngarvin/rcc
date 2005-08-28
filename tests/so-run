@@ -1,1 +1,0 @@
-echo "dyn.load(\"$1\")" | R --slave
