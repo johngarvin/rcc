@@ -16,7 +16,7 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   SEXP xdims, ydims, ans;
   Rboolean sym;
   
-  sym = isNull(y);
+  sym = Rf_isNull(y);
   if ( !(Rf_isNumeric(x) || Rf_isComplex(x))) 
     Rf_errorcall(x,"Matrix transpose requires numeric matrix/vector arguments");
 
@@ -95,7 +95,7 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
       if (ldx == 2 || ncx ==1) {
 	dn = Rf_getAttrib(xdims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 0, VECTOR_ELT(xdims, 0));
-	if(!isNull(dn))
+	if(!Rf_isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 0, STRING_ELT(dn, 0));
       }
     }
@@ -103,17 +103,17 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
       if (ldy == 2 ){
 	dn = Rf_getAttrib(ydims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 1, VECTOR_ELT(ydims, 1));
-	if(!isNull(dn))
+	if(!Rf_isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 1, STRING_ELT(dn, 1));
       } else if (nry == 1) {
 	dn = Rf_getAttrib(ydims, R_NamesSymbol);
 	SET_VECTOR_ELT(dimnames, 1, VECTOR_ELT(ydims, 0));
-	if(!isNull(dn))
+	if(!Rf_isNull(dn))
 	  SET_STRING_ELT(dimnamesnames, 1, STRING_ELT(dn, 0));
       }
     }
-    setAttrib(dimnames, R_NamesSymbol, dimnamesnames);
-    setAttrib(ans, R_DimNamesSymbol, dimnames);
+    Rf_setAttrib(dimnames, R_NamesSymbol, dimnamesnames);
+    Rf_setAttrib(ans, R_DimNamesSymbol, dimnames);
     UNPROTECT(2);
   }
 
