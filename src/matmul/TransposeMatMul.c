@@ -79,18 +79,18 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   x = Rf_coerceVector(x, mode);
   y = Rf_coerceVector(y, mode);
   
-  PROTECT(ans = Rf_allocMatrix(mode, nrx, ncy));
+  Rf_protect(ans = Rf_allocMatrix(mode, nrx, ncy));
   matprod_t(REAL(x), nrx, ncx,
 	    REAL(y), nry, ncy, REAL(ans),
 	    "t","t");
   
-  PROTECT(xdims = Rf_getAttrib(x, R_DimNamesSymbol));
-  PROTECT(ydims = Rf_getAttrib(y, R_DimNamesSymbol));
+  Rf_protect(xdims = Rf_getAttrib(x, R_DimNamesSymbol));
+  Rf_protect(ydims = Rf_getAttrib(y, R_DimNamesSymbol));
   
   if (xdims != R_NilValue || ydims != R_NilValue) {
     SEXP dimnames, dimnamesnames, dn;
-    PROTECT(dimnames = Rf_allocVector(VECSXP, 2));
-    PROTECT(dimnamesnames = Rf_allocVector(STRSXP, 2));
+    Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
+    Rf_protect(dimnamesnames = Rf_allocVector(STRSXP, 2));
     if (xdims != R_NilValue) {
       if (ldx == 2 || ncx ==1) {
 	dn = Rf_getAttrib(xdims, R_NamesSymbol);
@@ -114,10 +114,10 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     }
     Rf_setAttrib(dimnames, R_NamesSymbol, dimnamesnames);
     Rf_setAttrib(ans, R_DimNamesSymbol, dimnames);
-    UNPROTECT(2);
+    Rf_unprotect(2);
   }
 
-  UNPROTECT(3);
+  Rf_unprotect(3);
   return ans;
 }
 
