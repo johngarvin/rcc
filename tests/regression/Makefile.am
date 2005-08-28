@@ -1,4 +1,4 @@
-.SECONDARY:  # don't delete intermediate .c files
+.SECONDARY:   # don't delete intermediate .c files
 
 MYTESTFILES = $(wildcard *.r)
 
