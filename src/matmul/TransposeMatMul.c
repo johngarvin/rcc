@@ -17,10 +17,10 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
   Rboolean sym;
   
   sym = isNull(y);
-  if ( !(isNumeric(x) || isComplex(x))) 
+  if ( !(Rf_isNumeric(x) || Rf_isComplex(x))) 
     Rf_errorcall(x,"Matrix transpose requires numeric matrix/vector arguments");
 
-  if(!(isNumeric(y) || isComplex(y)) )
+  if(!(Rf_isNumeric(y) || Rf_isComplex(y)) )
     Rf_errorcall(y,"Matrix transpose requires numeric matrix/vector arguments");
   
   xdims = Rf_getAttrib(x, R_DimSymbol);
@@ -69,9 +69,9 @@ SEXP do_matprod_t(SEXP x, SEXP y, SEXP trans_info) {
     ncy = INTEGER(ydims)[1];
   }
   
-  if (isComplex(x))
+  if (Rf_isComplex(x))
     Rf_errorcall(x,"Matrix transpose optimization not yet implemented for complex matrices");
-  else if (isComplex(y))
+  else if (Rf_isComplex(y))
     Rf_errorcall(y,"Matrix transpose optimization not yet implemented for complex matrices");
   else
     mode = REALSXP;
