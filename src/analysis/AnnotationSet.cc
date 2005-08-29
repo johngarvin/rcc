@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationBase.cpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.cc,v 1.1 2005/08/29 18:04:08 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -7,7 +7,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationBase.cpp,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.cc,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -26,7 +26,7 @@
 
 //*************************** User Include Files ****************************
 
-#include "AnnotationBase.hpp"
+#include "AnnotationSet.h"
 
 //*************************** Forward Declarations ***************************
 
@@ -34,24 +34,37 @@
 
 namespace RAnnot {
 
-//****************************************************************************
-// AnnotationBase
-//****************************************************************************
-
-AnnotationBase::AnnotationBase()
+AnnotationSet::AnnotationSet()
 {
 }
 
 
-AnnotationBase::~AnnotationBase()
+AnnotationSet::~AnnotationSet()
 {
+  for (iterator it = this->begin(); it != this->end(); ++it) {
+    delete it->second;
+  }
+  this->clear();
 }
 
 
 std::ostream&
-AnnotationBase::dumpCout() const
+AnnotationSet::dumpCout() const
 {
   dump(std::cout);
+}
+
+
+std::ostream&
+AnnotationSet::dump(std::ostream& os) const
+{
+  os << "{ AnnotationSet:\n";
+  for (const_iterator it = this->begin(); it != this->end(); ++it) {
+    os << "(" << it->first.hval() << " --> " << it->second << ")\n";
+    it->second->dump(os);
+  }
+  os << "}\n";
+  os.flush();
 }
 
 

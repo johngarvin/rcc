@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/PropertySet.hpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationBase.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -7,7 +7,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/PropertySet.hpp,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationBase.h,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -20,64 +20,50 @@
 //************************* System Include Files ****************************
 
 #include <iostream>
-#include <map>
 
 //**************************** R Include Files ******************************
 
-//*************************** User Include Files ****************************
+// R sexp includes
 
-#include "AnnotationSet.hpp"
+//*************************** User Include Files ****************************
 
 //*************************** Forward Declarations ***************************
 
 //****************************************************************************
 
-namespace RProp {
+namespace RAnnot {
 
 //****************************************************************************
-// R Property Information
+// AnnotationBase
 //****************************************************************************
 
-typedef const char* const* PropertyHndlT;
-
 // ---------------------------------------------------------------------------
-// PropertySet: Associates arbitrary property names with
-// AnnotationSets.  For example, a property might be the result of an
-// analysis pass over the R AST.
+// AnnotationBase: Abstract base class for all R Annotations
 // ---------------------------------------------------------------------------
-class PropertySet
-  : public std::map<PropertyHndlT, RAnnot::AnnotationSet*>
+class AnnotationBase
 {
 public:
-  // -------------------------------------------------------
-  // constructor/destructor
-  // -------------------------------------------------------
-  PropertySet();
-  ~PropertySet();
-
-  // -------------------------------------------------------
-  // cloning (proscribe by hiding copy constructor and operator=)
-  // -------------------------------------------------------
+  AnnotationBase();
+  virtual ~AnnotationBase();
   
   // -------------------------------------------------------
-  // iterator, find/insert, etc 
+  // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  // use inherited std::map routines
-
+  virtual AnnotationBase* clone() = 0;
+  
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  std::ostream& dumpCout() const;
-  std::ostream& dump(std::ostream& os) const;
-
+  std::ostream& dumpCout() const; // overloading can confuse debuggers
+  virtual std::ostream& dump(std::ostream& os) const = 0;
+  
+protected:
 private:
-  PropertySet(const PropertySet& x);
-  PropertySet& operator=(const PropertySet& x) { return *this; }
 
-private:
 };
 
 
 //****************************************************************************
 
-} // end of RProp namespace
+} // end of RAnnot namespace
+

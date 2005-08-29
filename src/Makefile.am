@@ -1,4 +1,4 @@
-SUBDIRS = annotations macros matmul support analysis 
+SUBDIRS = macros matmul support analysis 
 bin_PROGRAMS = rcc.bin
 
 rcc_bin_SOURCES =                \
@@ -39,4 +39,4 @@ ALL_INCLUDES = $(R_INCLUDES) $(OA_INCLUDES) $(MY_COMMON_INCLUDES)
 
 rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
 rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
-rcc_bin_LDADD = -Lsupport -lsupport -Lannotations -lannot -Lanalysis -lrcca -L@R_LIB_PATH@ -lR $(MY_OA_LIBS)
+rcc_bin_LDADD = -Lanalysis -lrcca -Lsupport -lsupport -L@R_LIB_PATH@ -lR $(MY_OA_LIBS)

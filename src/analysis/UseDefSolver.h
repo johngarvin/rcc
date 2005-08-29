@@ -6,7 +6,7 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <annotations/AnnotationSet.hpp>
+#include <analysis/AnnotationSet.h>
 
 #include <analysis/IRInterface.h>
 #include <analysis/Analyst.h>

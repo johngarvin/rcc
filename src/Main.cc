@@ -1729,6 +1729,7 @@ int main(int argc, char *argv[]) {
   for(RScopeTree::iterator it = t->begin(); it != t->end(); ++it) {
     if (analysis_debug) {
       cout << "New procedure" << endl;
+      (*it)->dump(cout);
     }
     SEXP fundef = (*it)->get_defn();
     if (it == t->begin()) { // top of scope tree is defined as nil

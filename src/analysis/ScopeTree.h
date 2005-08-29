@@ -1,15 +1,21 @@
 // -*- mode: C++ -*-
+
 #ifndef SCOPE_TREE_H
 #define SCOPE_TREE_H
 
-#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <include/R/R_RInternals.h>
 #include <include/tree.hh>
+
+#include <analysis/Annotation.h>
+
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
 
 class RFunctionScopeInfo {
 public:
-  RFunctionScopeInfo(SEXP _name, SEXP _defn) : name(_name), defn(_defn) {};
-  SEXP get_args() { return CAR(fundef_args_c(defn)); };
-  SEXP get_defn() { return defn; };
+  RFunctionScopeInfo(SEXP _name, SEXP _defn);
+  ~RFunctionScopeInfo();
+  SEXP get_args();
+  SEXP get_defn();
 private:
   SEXP name;
   SEXP defn;
@@ -17,7 +23,7 @@ private:
 
 typedef tree<OA::OA_ptr<RFunctionScopeInfo> > ScopeTreeImp;
 
-typedef tree<RFunctionScopeInfo *> RScopeTree;
+typedef tree<RAnnot::FuncInfo *> RScopeTree;
 // TODO: change users of RScopeTree to use ScopeTree instead
 
 class PreOrderScopeTreeIterator {

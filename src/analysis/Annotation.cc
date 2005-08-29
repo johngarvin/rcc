@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.cpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.1 2005/08/29 18:04:08 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -7,7 +7,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.cpp,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -26,13 +26,18 @@
 
 //*************************** User Include Files ****************************
 
-#include "Annotation.hpp"
+#include <support/DumpMacros.h>
+#include <analysis/Utils.h>
+
+#include "Annotation.h"
 
 //*************************** Forward Declarations ***************************
 
 //****************************************************************************
 
+
 namespace RAnnot {
+
 
 //****************************************************************************
 // Environment
@@ -51,12 +56,11 @@ Environment::~Environment()
 std::ostream&
 Environment::dump(std::ostream& os) const
 {
-  os << "{ Environment:\n";
+  beginObjDump(os, Environment);
   for (const_iterator it = this->begin(); it != this->end(); ++it) {
     os << "(" << it->first << " --> " << it->second << ")\n";
   }
-  os << "}\n";
-  os.flush();
+  endObjDump(os, Environment);
 }
 
 
@@ -77,9 +81,8 @@ Expression::~Expression()
 std::ostream&
 Expression::dump(std::ostream& os) const
 {
-  os << "{ Expression:\n";
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, Expression);
+  endObjDump(os, Expression);
 }
 
 
@@ -100,9 +103,8 @@ Term::~Term()
 std::ostream&
 Term::dump(std::ostream& os) const
 {
-  os << "{ Term:\n";
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, Term);
+  endObjDump(os, Term);
 }
 
 
@@ -123,10 +125,9 @@ Var::~Var()
 std::ostream&
 Var::dump(std::ostream& os) const
 {
-  os << "{ Var:\n";
-  os << "  mReachingDef:" << mReachingDef->dump(os);
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, Var);
+  dumpObj(os, mReachingDef);
+  endObjDump(os, Var);
 }
 
 
@@ -147,10 +148,9 @@ FuncVar::~FuncVar()
 std::ostream&
 FuncVar::dump(std::ostream& os) const
 {
-  os << "{ FuncVar:\n";
-  os << "  mIsReachingDefKnown:" << mIsReachingDefKnown;
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, FuncVar);
+  dumpVar(os, mIsReachingDefKnown);
+  endObjDump(os, FuncVar);
 }
 
 
@@ -171,9 +171,8 @@ Literal::~Literal()
 std::ostream&
 Literal::dump(std::ostream& os) const
 {
-  os << "{ Literal:\n";
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, Literal);
+  endObjDump(os, Literal);
 }
 
 
@@ -194,10 +193,9 @@ VarInfo::~VarInfo()
 std::ostream&
 VarInfo::dump(std::ostream& os) const
 {
-  os << "{ VarInfo:\n";
+  beginObjDump(os, VarInfo);
   // FIXME: add implementation
-  os << "}\n";
-  os.flush();
+  endObjDump(os, VarInfo);
 }
 
 
@@ -205,8 +203,10 @@ VarInfo::dump(std::ostream& os) const
 // FuncInfo
 //****************************************************************************
 
-FuncInfo::FuncInfo()
+FuncInfo::FuncInfo(FuncInfo *lparent, SEXP name, SEXP defn) :
+  mRequiresContext(true), mFirstName(name), mDefn(defn), mLexicalParent(lparent)
 {
+  mEnv = new Environment();
 }
 
 
@@ -215,13 +215,36 @@ FuncInfo::~FuncInfo()
 }
 
 
+void FuncInfo::setRequiresContext(bool requiresContext) 
+{ 
+  mRequiresContext = requiresContext; 
+}
+
+
+bool FuncInfo::getRequiresContext() 
+{ 
+  return mRequiresContext;
+}
+
+
+
+SEXP FuncInfo::get_args() 
+{ 
+  return CAR(fundef_args_c(mDefn)); 
+}
+
 std::ostream&
 FuncInfo::dump(std::ostream& os) const
 {
-  os << "{ FuncInfo:\n";
-  // FIXME: add implementation
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, FuncInfo);
+  dumpVar(os, mHasVarArgs);
+  dumpVar(os, mCName);
+  dumpVar(os, mRequiresContext);
+  dumpObj(os, mEnv);
+  dumpSEXP(os, mFirstName);
+  dumpSEXP(os, mDefn);
+  dumpPtr(os, mLexicalParent);
+  endObjDump(os, FuncInfo);
 }
 
 
@@ -242,10 +265,10 @@ Phi::~Phi()
 std::ostream&
 Phi::dump(std::ostream& os) const
 {
-  os << "{ Phi:\n";
+  beginObjDump(os, Phi);
   // FIXME: add implementation
-  os << "}\n";
-  os.flush();
+  endObjDump(os, Phi);
+  
 }
 
 
@@ -266,9 +289,8 @@ ArgInfo::~ArgInfo()
 std::ostream&
 ArgInfo::dump(std::ostream& os) const
 {
-  os << "{ ArgInfo:\n";
-  os << "}\n";
-  os.flush();
+  beginObjDump(os, ArgInfo);
+  endObjDump(os, ArgInfo);
 }
 
 
@@ -289,10 +311,9 @@ FormalArg::~FormalArg()
 std::ostream&
 FormalArg::dump(std::ostream& os) const
 {
-  os << "{ FormalArg:\n";
+  beginObjDump(os, FormalArg);
   // FIXME: add implementation
-  os << "}\n";
-  os.flush();
+  endObjDump(os, FormalArg);
 }
 
 

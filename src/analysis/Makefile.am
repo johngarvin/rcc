@@ -6,12 +6,7 @@ MY_INCLUDES =               \
 bin_PROGRAMS = tra
 
 tra_SOURCES =                             \
-  TestHarness.cc                          \
-  IRInterface.cc IRInterface.h	          \
-  Analyst.cc Analyst.h                    \
-  UseDefSolver.cc UseDefSolver.h	  \
-  Utils.cc R_Utils.h                      \
-  SimpleIterators.cc SimpleIterators.h
+  TestHarness.cc                          
 
 tra_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)
 
@@ -33,7 +28,13 @@ librcca_la_SOURCES =                       \
   IRInterface.cc IRInterface.h             \
   Analyst.cc Analyst.h                     \
   UseDefSolver.cc UseDefSolver.h	   \
+  ScopeTree.h                 \
   Utils.cc Utils.h                         \
+  Annotation.cc  Annotation.h  \
+  AnnotationBase.cc  AnnotationBase.h \
+  AnnotationSet.cc   AnnotationSet.h      \
+  PropertySet.cc         PropertySet.h \
+  PropertySetMgr.cc PropertySetMgr.h \
   SimpleIterators.cc SimpleIterators.h
 
 librcca_la_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/PropertySetMgr.hpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -7,7 +7,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/PropertySetMgr.hpp,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -25,7 +25,7 @@
 
 //*************************** User Include Files ****************************
 
-#include "PropertySet.hpp"
+#include "PropertySet.h"
 
 //*************************** Forward Declarations ***************************
 

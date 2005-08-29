@@ -44,10 +44,11 @@ extern "C" {
 #include <OpenAnalysis/CFG/Interface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 
-#include <annotations/AnnotationSet.hpp>
 #include <support/StringUtils.h>
 #include <support/Parser.h>
+
 #include <analysis/Analyst.h>
+#include <analysis/AnnotationSet.h>
 #include <analysis/Utils.h>
 
 #include <GetName.h>

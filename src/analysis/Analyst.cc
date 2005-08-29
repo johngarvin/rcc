@@ -1,6 +1,9 @@
 #include <algorithm>
 
+#include <analysis/Annotation.h>
 #include <analysis/Analyst.h>
+
+using namespace RAnnot;
 
 //! If necessary, analyze the SEXP exp to find the scope tree. In any
 //! case, return a pointer to the generated tree. TODO: create a
@@ -10,7 +13,9 @@ OA::OA_ptr<RScopeTree> R_Analyst::get_scope_tree() {
   if (scope_tree.ptrEqual(NULL)) {
     scope_tree = new RScopeTree();
     RScopeTree::iterator top = scope_tree->begin();
-    RScopeTree::iterator first = scope_tree->insert(top, new RFunctionScopeInfo(R_NilValue, R_NilValue));
+    RScopeTree::iterator first = 
+      scope_tree->insert(top, 
+			 new FuncInfo(NULL,R_NilValue, R_NilValue));
     build_scope_tree_rec(exp, scope_tree, first);
   }
   return scope_tree;
@@ -41,7 +46,7 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
       SEXP var = CAR(assign_lhs_c(e));
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {
-	newfun = t->append_child(curr, new RFunctionScopeInfo(var, rhs));
+	newfun = t->append_child(curr, new FuncInfo(*curr, var, rhs));
 
 	// now skip to body of function to prevent a later pass from
 	// finding the function definition; we don't want it to be
@@ -49,7 +54,8 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
 	build_scope_tree_rec(CAR(fundef_body_c(rhs)), t, newfun);
       }
     } else if (is_fundef(e)) {  // anonymous function
-      RScopeTree::iterator newfun = t->append_child(curr, new RFunctionScopeInfo(R_NilValue, e));
+      RScopeTree::iterator newfun = 
+	t->append_child(curr, new FuncInfo(*curr, R_NilValue, e));
       build_scope_tree_rec(CAR(fundef_body_c(e)), t, newfun);
     } else {                   // ordinary function call
       build_scope_tree_rec(CAR(e), t, curr);

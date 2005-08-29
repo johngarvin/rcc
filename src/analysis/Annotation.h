@@ -1,5 +1,8 @@
+#ifndef ANNOTATION_ANNOTATION_H
+#define ANNOTATION_ANNOTATION_H
+
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.hpp,v 1.5 2005/08/29 09:30:17 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -7,7 +10,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.hpp,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -29,7 +32,7 @@
 
 //*************************** User Include Files ****************************
 
-#include "AnnotationBase.hpp"
+#include "AnnotationBase.h"
 
 //*************************** Forward Declarations ***************************
 
@@ -43,6 +46,7 @@ class VarInfo;
 // should live within and owned by an AnnotationSet.  This allows
 // Annotations to share pointers to other Annotations without
 // worring about reference counting.
+
 
 //****************************************************************************
 // Annotations: Environments
@@ -437,10 +441,9 @@ private:
 // FuncInfo: 'Definition' information about a function
 // ---------------------------------------------------------------------------
 class FuncInfo
-  : public VarInfo
 {
 public:
-  FuncInfo();
+  FuncInfo(FuncInfo *parent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
 
   // -------------------------------------------------------
@@ -453,10 +456,15 @@ public:
   // -------------------------------------------------------
   
   // arguments
-  unsigned int getNumArgs() const
-    { return mNumArgs; }
-  void setNumArgs(unsigned int x)
-    { mNumArgs = x; }
+  unsigned int getNumArgs() const 
+     { return mNumArgs; }
+  void setNumArgs(unsigned int x) 
+     { mNumArgs = x; }
+  SEXP get_args(); 
+
+  // definition
+  SEXP get_defn() 
+     { return mDefn; }
 
   // has-variable-arguments
   bool getHasVarArgs() const
@@ -470,6 +478,11 @@ public:
   void getCName(std::string& x)
     { mCName = x; }
 
+  // context
+  void setRequiresContext(bool requiresContext); 
+  bool getRequiresContext(); 
+
+
   // environment
 
   // -------------------------------------------------------
@@ -481,8 +494,21 @@ private:
   unsigned int mNumArgs; // number of known arguments
   bool mHasVarArgs;      // variable number of arguments
   std::string mCName;    // C linkage name
+  bool mRequiresContext; // is an R context object needed for the function?
   Environment* mEnv;     // (not owned)
+
+  SEXP mDefn;            // function definition
+  SEXP mFirstName;       // name of function at original definition 
+  FuncInfo *mLexicalParent; // parent scope definition
+
   // argument description: types, strict?
+};
+
+class FuncVarInfo
+  : public VarInfo
+{
+public:
+  FuncVarInfo();
 };
 
 
@@ -643,3 +669,4 @@ private:
 
 } // end of RAnnot namespace
 
+#endif
