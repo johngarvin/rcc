@@ -129,36 +129,32 @@ void uses_defs_test(OA_ptr<R_IRInterface> rir_ptr, SEXP e) {
 	const SEXP stmt = (SEXP)stmt_iter_ptr->current().hval();
 	cout << "New statement:" << endl;
 	Rf_PrintValue(stmt);
-	R_ExpUDInfo info(stmt);
-	OA_ptr<VarSet> vars;
-	OA_ptr<VarSetIterator> it;
+	R_ExpUDLocInfo info(stmt);
+	OA_ptr<R_VarRefSet> vars;
+	OA_ptr<R_VarRefSetIterator> it;
 	
 	cout << "Local defs:" << endl;
 	vars = info.get_local_defs();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  Rf_PrintValue(it->current());
-	  cout << endl;
+	  cout << it->current()->toString() << endl;
 	}
 
 	cout << "Free defs:" << endl;
 	vars = info.get_free_defs();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  Rf_PrintValue(it->current());
-	  cout << endl;
+	  cout << it->current()->toString() << endl;
 	}
 
 	cout << "Application uses:" << endl;
 	vars = info.get_app_uses();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  Rf_PrintValue(it->current());
-	  cout << endl;
+	  cout << it->current()->toString() << endl;
 	}
 
 	cout << "Non-application uses:" << endl;
 	vars = info.get_non_app_uses();
 	for (it = vars->get_iterator(); it->isValid(); ++*it) {
-	  Rf_PrintValue(it->current());
-	  cout << endl;
+	  cout << it->current()->toString() << endl;
 	}
       } // statements
     } // basic blocks (CFG nodes)

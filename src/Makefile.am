@@ -17,13 +17,15 @@ rcc_bin_SOURCES =                \
 #--------------------------------------
 rcc_bin-rcc.$(OBJEXT): Makefile
 
-# below: OA_IRHANDLETYPE_UL macro is required for OA
+R_INCLUDES = -I@R_SOURCES@/src/include
+
+# OA requires OA_IRHANDLETYPE_UL macro to be defined
+OA_INCLUDES = \
+  -DOA_IRHANDLETYPE_UL      \
+  -I@OA_PREFIX@/include
 
 MY_COMMON_INCLUDES =         \
-  -I@R_SOURCES@/src/include  \
-  -I$(top_srcdir)/src   \
-  -DOA_IRHANDLETYPE_UL       \
-  -I@OA_PREFIX@/include     \
+  -I$(top_srcdir)/src        \
   -I$(top_srcdir)/lib        
 
 MY_COMMON_MACROS =                          \
@@ -33,6 +35,8 @@ MY_COMMON_MACROS =                          \
 
 MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a 
 
-rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(MY_COMMON_INCLUDES) $(MY_COMMON_MACROS)
-rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(MY_COMMON_INCLUDES) $(MY_COMMON_MACROS)
+ALL_INCLUDES = $(R_INCLUDES) $(OA_INCLUDES) $(MY_COMMON_INCLUDES)
+
+rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
+rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
 rcc_bin_LDADD = -Lsupport -lsupport -Lannotations -lannot -Lanalysis -lrcca -L@R_LIB_PATH@ -lR $(MY_OA_LIBS)

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.hpp,v 1.4 2005/08/28 05:19:28 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Annotation.hpp,v 1.5 2005/08/29 09:30:17 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -209,6 +209,11 @@ public:
     Var_USE,
     Var_DEF
   };
+  
+  enum MayMustT {
+    Var_MAY,
+    Var_MUST 
+  };
 
 public:
   Var();
@@ -223,6 +228,12 @@ public:
     { return mType; }
   void setType(VarT x)
     { mType = x; }
+
+  // may/must type
+  MayMustT getMayMustType() const 
+    { return mmType; }
+  void setMayMustType(MayMustT x)
+    { mmType = x; }
 
   // reaching-definition
   VarInfo* getReachingDef() const
@@ -260,6 +271,7 @@ public:
 
 private:
   VarT mType;
+  MayMustT mmType;
   VarInfo* mReachingDef; // (not owned)
 };
 

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.cpp,v 1.1 2005/08/17 19:01:14 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.cpp,v 1.2 2005/08/29 09:30:17 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -60,7 +60,7 @@ AnnotationSet::dump(std::ostream& os) const
 {
   os << "{ AnnotationSet:\n";
   for (const_iterator it = this->begin(); it != this->end(); ++it) {
-    os << "(" << it->first << " --> " << it->second << ")\n";
+    os << "(" << it->first.hval() << " --> " << it->second << ")\n";
     it->second->dump(os);
   }
   os << "}\n";

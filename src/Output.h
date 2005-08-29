@@ -3,9 +3,12 @@
 
 #include <Visibility.h>
 
+//! Basic wrappers around strings. Helps a lot in getting types right
+//! in the Output constructor.
+
 class Decls {
  public:
-  Decls(std::string _str) : m_str(_str) {}
+  explicit Decls(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;
@@ -13,7 +16,7 @@ class Decls {
 
 class Code {
  public:
-  Code(std::string _str) : m_str(_str) {}
+  explicit Code(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;
@@ -21,7 +24,7 @@ class Code {
 
 class GDecls {
  public:
-  GDecls(std::string _str) : m_str(_str) {}
+  explicit GDecls(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;
@@ -29,7 +32,7 @@ class GDecls {
 
 class GCode {
  public:
-  GCode(std::string _str) : m_str(_str) {}
+  explicit GCode(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;
@@ -37,7 +40,7 @@ class GCode {
 
 class Handle {
  public:
-  Handle(std::string _str) : m_str(_str) {}
+  explicit Handle(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;
@@ -45,7 +48,7 @@ class Handle {
 
 class DelText {
  public:
-  DelText(std::string _str) : m_str(_str) {}
+  explicit DelText(std::string _str) : m_str(_str) {}
   std::string get() {return m_str;}
  private:
   std::string m_str;

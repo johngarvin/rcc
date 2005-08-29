@@ -136,6 +136,16 @@ bool is_loop(const SEXP e) {
   return (is_for(e) || is_while(e) || is_repeat(e));
 }
 
+bool is_loop_header(const SEXP e) {
+  // XXXXX
+  return false;
+}
+
+bool is_loop_increment(const SEXP e) {
+  // XXXXX
+  return false;
+}
+
 SEXP loop_body_c(const SEXP e) {
   assert(is_loop(e));
   if (is_for(e)) {

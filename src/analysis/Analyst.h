@@ -3,6 +3,7 @@
 #define ANALYST_H
 
 #include <set>
+#include <map>
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
@@ -10,30 +11,6 @@
 #include <analysis/Utils.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeTree.h>
-
-//! R_Analyst
-//! Contains an entire R program along with the results of analysis.
-class R_Analyst {
-private:
-  SEXP exp;
-  OA::OA_ptr<RScopeTree> scope_tree;
-  void build_scope_tree_rec(SEXP e, OA::OA_ptr<RScopeTree> t, RScopeTree::iterator &curr);
-  // map<SEXP, CFG> cfg_info;  // CFG of each procedure
-  // map<CFG::Node, R_ExpIterator> // List of simple statements for each CFG node
-  // map<SEXP, R_ExpUDInfo> stmt_info;                  // maps statements to variable information
-  // map<RScopeTree::iterator, vector<SEXP> > scope_stmts; // maps scopes to list of statements
-
-public:
-  R_Analyst(SEXP e) : exp(e) {}
-  OA::OA_ptr<RScopeTree> get_scope_tree();
-  // TODO: memoize results from UDLocInfo
-  //  const set<SEXP> & get_local_defs(const SEXP e);
-  //  const set<SEXP> & get_free_defs(const SEXP e);
-  //  const set<SEXP> & get_app_uses(const SEXP e);
-  //  const set<SEXP> & get_non_app_uses(const SEXP e);
-  //  set<SEXP>::iterator get_defs(SEXP e);
-  //  set<SEXP>::iterator get_uses(SEXP e);
-};
 
 //! R_VarRef
 //! An R_VarRef represents a mention (use or def) of a variable in R
@@ -148,6 +125,9 @@ protected:
 //! construct a VarRefSet from a list of formal arguments
 OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist);
 
+#if 0
+// VarSet, VarSetIterator, and R_ExpUDInfo classes obsolete
+
 //! Iterator over a VarSet.
 //class VarSetIterator : public R_ExpIterator {
 class VarSetIterator {
@@ -220,6 +200,7 @@ private:
   OA::OA_ptr<VarSet> non_app_uses;
 };
 
+#endif
 
 //! Contains basic use and def information about the given
 //! SEXP. Traverses the expression in the constructor to build the
@@ -253,5 +234,25 @@ private:
   OA::OA_ptr<R_VarRefSet> non_app_uses;
 };
 
+//! R_Analyst
+//! Calls the methods that perform analysis on an R program. Stores the results.
+class R_Analyst {
+public:
+  R_Analyst(SEXP e) : exp(e) {}
+
+  OA::OA_ptr<RScopeTree> get_scope_tree();
+  const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
+
+private:
+  SEXP exp;
+  OA::OA_ptr<RScopeTree> scope_tree;
+  void build_scope_tree_rec(SEXP e, OA::OA_ptr<RScopeTree> t, RScopeTree::iterator &curr);
+
+  std::map<OA::StmtHandle, R_ExpUDLocInfo> local_info;
+
+  // map<SEXP, CFG> cfg_info;  // CFG of each procedure
+  // map<SEXP, R_ExpUDInfo> stmt_info;                  // maps statements to variable information
+  // map<RScopeTree::iterator, vector<SEXP> > scope_stmts; // maps scopes to list of statements
+};
 
 #endif

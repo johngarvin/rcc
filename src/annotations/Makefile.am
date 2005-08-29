@@ -1,5 +1,5 @@
 # -*-Mode: makefile;-*-
-# $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Makefile.am,v 1.3 2005/08/28 05:19:28 johnmc Exp $
+# $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/Makefile.am,v 1.4 2005/08/29 09:30:17 garvin Exp $
 
 ## * BeginRiceCopyright *****************************************************
 ## ******************************************************* EndRiceCopyright *
@@ -34,6 +34,8 @@ R_LIB_HOME = @R_LIB_PATH@
 
 R_INCLUDES = -I@R_SOURCES@/src/include
 
+OA_INCLUDES = -DOA_IRHANDLETYPE_UL -I@OA_PREFIX@/include
+
 MYSOURCES = \
 	AnnotationBase.hpp AnnotationBase.cpp \
 	Annotation.hpp Annotation.cpp \
@@ -45,7 +47,7 @@ MYINCLUDES = \
 	-I$(top_srcdir)/src/include   \
 	-I..
 
-MYCFLAGS   = $(R_INCLUDES) $(MYINCLUDES)
+MYCFLAGS   = $(R_INCLUDES) $(OA_INCLUDES) $(MYINCLUDES)
 MYCXXFLAGS = $(MYCFLAGS)
 
 MYLDFLAGS = 

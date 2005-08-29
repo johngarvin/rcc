@@ -7,6 +7,7 @@
 
 class CodeGen {
  public:
+  static Output op_string(SEXP vec);
   static Output op_vector(SEXP vec);
 };
 

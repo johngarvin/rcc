@@ -9,6 +9,19 @@
 
 using namespace std;
 
+Output CodeGen::op_string(SEXP s) {
+  //  TODO: use ProgramInfo::string_map
+  int i, len;
+  string str = "";
+  len = Rf_length(s);
+  for(i=0; i<len; i++) {
+    str += std::string(CHAR(STRING_ELT(s, i)));
+  }
+  string out = ProgramInfo::global_constants.appl1("mkString", 
+						   quote(escape(str)));
+  return Output::text_const(Handle(out));
+}
+
 Output CodeGen::op_vector(SEXP vec) {
   int len = Rf_length(vec);
   if (len != 1) {

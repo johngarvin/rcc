@@ -103,12 +103,34 @@ private:
   VarType type;
 };
 
+//! Iterator over R_Use's in an R_UseSet
+class R_UseSetIterator {
+public:
+  R_UseSetIterator (OA::OA_ptr<std::set<OA::OA_ptr<R_Use> > > _set) : mSet(_set)
+      { assert(!mSet.ptrEqual(NULL)); mIter = mSet->begin(); }
+  ~R_UseSetIterator () {}
+  
+  void operator ++ () { if (isValid()) mIter++; }
+  //! is the iterator at the end
+  bool isValid() { return (mIter != mSet->end()); }
+  //! return copy of current node in iterator
+  OA::OA_ptr<R_Use> current() { assert(isValid()); return (*mIter); }
+  //! reset iterator to beginning of set
+  void reset() { mIter = mSet->begin(); }
+
+private:
+  OA::OA_ptr<std::set<OA::OA_ptr<R_Use> > > mSet;
+  std::set<OA::OA_ptr<R_Use> >::iterator mIter;
+};
+
 //! Set of R_Use objects. Inherits from DataFlowSet to be usable in
 //! CFGDFProblem.
 // Removed "virtual": was giving clone() a hard time returning an R_UseSet.
 //class R_UseSet : public virtual OA::DataFlow::DataFlowSet {
 class R_UseSet : public OA::DataFlow::DataFlowSet {
 public:
+
+  // methods inherited from DataFlowSet
   // construction
   R_UseSet() { mSet = new std::set<OA::OA_ptr<R_Use> >; }
   R_UseSet(const R_UseSet& other) : mSet(other.mSet) {}
@@ -172,31 +194,14 @@ public:
   void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR)
   { os << toString(pIR) << std::endl; }
   void dump(std::ostream &os) { std::cout << "call dump(os,interface) instead"; }
+
+  // new methods not inherited
+  OA::OA_ptr<R_UseSetIterator> get_iterator() const;
   
 protected:
   OA::OA_ptr<std::set<OA::OA_ptr<R_Use> > > mSet;
 
   friend class R_UseSetIterator;  
-};
-
-//! Iterator over R_Use's in a R_UseSet
-class R_UseSetIterator {
-public:
-  R_UseSetIterator (R_UseSet& use_set) : mSet(use_set.mSet)
-      { assert(!mSet.ptrEqual(NULL)); mIter = mSet->begin(); }
-  ~R_UseSetIterator () {}
-  
-  void operator ++ () { if (isValid()) mIter++; }
-  //! is the iterator at the end
-  bool isValid() { return (mIter != mSet->end()); }
-  //! return copy of current node in iterator
-  OA::OA_ptr<R_Use> current() { assert(isValid()); return (*mIter); }
-  //! reset iterator to beginning of set
-  void reset() { mIter = mSet->begin(); }
-
-private:
-  OA::OA_ptr<std::set<OA::OA_ptr<R_Use> > > mSet;
-  std::set<OA::OA_ptr<R_Use> >::iterator mIter;
 };
 
 OA::OA_ptr<R_UseSet> meet_use_set(OA::OA_ptr<R_UseSet> set1, OA::OA_ptr<R_UseSet>);

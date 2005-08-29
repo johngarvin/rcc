@@ -76,34 +76,16 @@ public:
   // Procedures and call sites
   //--------------------------------------------------------
 
-  //! Given a procedure, return its IRProcType.
-  //  CFG::IRProcType GetProcType(OA::ProcHandle h);
-  
   //! Given a ProcHandle, return an IRRegionStmtIterator for the
   //! procedure.
   OA::OA_ptr<OA::IRRegionStmtIterator> procBody(OA::ProcHandle h);
   
-  //! Get IRCallsiteIterator* for a statement. The user must free the
-  //! iterator's memory via delete.
-  //IRCallsiteIterator *GetCallsites(OA::StmtHandle h);
-
-  //! Get IRCallsiteParamIterator* for a statement. The user must free the
-  //! iterator's memory via delete.
-  //IRCallsiteParamIterator *GetCallsiteParams(OA::ExprHandle h);
-
-  //bool IsParamProcRef(OA::ExprHandle h);
-
-  //! Given an expression representing a callsite, is this an
-  //! invocation through a procedure parameter?
-  //bool IsCallThruProcParam(OA::ExprHandle h);
-
-
   //--------------------------------------------------------
   // Statements: General
   //--------------------------------------------------------
 
   //! Are return statements allowed?
-  bool returnStatementsAllowed() { return true; }
+  bool returnStatementsAllowed();
 
   //! Given a statement, return its CFG::IRStmtType.
   OA::CFG::IRStmtType getCFGStmtType(OA::StmtHandle h);
@@ -146,37 +128,6 @@ public:
   //! increment itself may be a separate statement. if so, it will appear
   //! explicitly at the bottom of the loop. 
   bool loopIterationsDefinedAtEntry(OA::StmtHandle h);
-
-  //--------------------------------------------------------
-  // Invariant: a two-way conditional or a multi-way conditional MUST provide
-  // provide either a target, or a target label
-  //--------------------------------------------------------
-
-  //--------------------------------------------------------
-  // Structured two-way conditionals
-  //
-  // Note: An important pre-condition for structured conditionals is
-  // that chains of else-ifs must be represented as nested elses.  For
-  // example, this Matlab statement:
-  //   if (c1)
-  //     s1;
-  //   elseif (c2)
-  //     s2;
-  //   else
-  //     s3;
-  //   end;
-  //
-  // would need be represented by the underlying IR as:
-  //   if (c1)
-  //     s1;
-  //   else
-  //     if (c2)
-  //       s2;
-  //     else
-  //       s3;
-  //     end;
-  //   end; 
-  //--------------------------------------------------------
 
   //! Given a structured two-way conditional statement, return an
   //! IRRegionStmtIterator for the "true" part (i.e., the statements
@@ -230,11 +181,6 @@ public:
   //! target statement.  The second parameter is currently unused.
   OA::StmtLabel getTargetLabel(OA::StmtHandle h, int n);
 
-  //--------------------------------------------------------
-  // Unstructured multi-way conditionals
-  // FIXME: Review all of the multi-way stuff.
-  //--------------------------------------------------------
-
   //! Given an unstructured multi-way branch, return the number of targets.
   //! The count does not include the optional default/catchall case.
   int numUMultiTargets(OA::StmtHandle h);
@@ -261,6 +207,9 @@ public:
   OA::OA_ptr<OA::SSA::IRUseDefIterator> getDefs(OA::StmtHandle h);
   OA::OA_ptr<OA::SSA::IRUseDefIterator> getUses(OA::StmtHandle h);
 
+  void dump(OA::StmtHandle h, ostream &os);
+  void dump(OA::MemRefHandle h, ostream &stream);
+
   //--------------------------------------------------------
   // Symbol Handles
   //--------------------------------------------------------
@@ -268,46 +217,16 @@ public:
   OA::SymHandle getProcSymHandle(OA::ProcHandle h);
   OA::SymHandle getSymHandle(OA::LeafHandle h);
 
-  // toString routines
-  std::string toString(OA::ProcHandle h) {
-    return "";
-  }
+  std::string toString(OA::ProcHandle h);
+  std::string toString(OA::StmtHandle h);
+  std::string toString(OA::ExprHandle h);
+  std::string toString(OA::OpHandle h);
+  std::string toString(OA::MemRefHandle h);
+  std::string toString(OA::SymHandle h);
+  std::string toString(OA::ConstSymHandle h);
+  std::string toString(OA::ConstValHandle h);
 
-  std::string toString(OA::StmtHandle h) {
-    return "";
-  }
-
-  std::string toString(OA::ExprHandle h) {
-    return "";
-  }
-
-  std::string toString(OA::OpHandle h) {
-    return "";
-  }
-
-  std::string toString(OA::MemRefHandle h) {
-    return "";
-  }
-
-  std::string toString(OA::SymHandle h) {
-    SEXP e = (SEXP)h.hval();
-    assert(TYPEOF(e) == SYMSXP);
-    return std::string(CHAR(PRINTNAME(e)));
-  }
-
-  std::string toString(OA::ConstSymHandle h) {
-    return "";
-  }
-
-  std::string toString(OA::ConstValHandle h) {
-    return "";
-  }
-
-  void dump(OA::StmtHandle h, ostream &os);
-  
-  void dump(OA::MemRefHandle h, ostream &stream) {}
-
-  void currentProc(OA::ProcHandle p) {}
+  void currentProc(OA::ProcHandle p);
 
 };
 
@@ -315,7 +234,7 @@ public:
 OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 
 //--------------------------------------------------------------------
-// ITERATORS
+// Iterators
 //--------------------------------------------------------------------
 
 // FIXME: I don't think R_IRProcIterator is being used.
@@ -323,12 +242,6 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 
 //! Enumerate all the procedures in a certain IR
 class R_IRProcIterator : public OA::IRProcIterator {
-private:
-  const SEXP exp;
-  R_PreorderIterator iter;
-  std::list<SEXP> procs;
-  std::list<SEXP>::iterator proc_iter;
-  void build_procs();
 public:
   R_IRProcIterator(OA::StmtHandle _exp)
     : exp((SEXP)_exp.hval()), iter((SEXP)_exp.hval()) {
@@ -337,42 +250,51 @@ public:
   }
   virtual ~R_IRProcIterator() { }
 
-  OA::ProcHandle current() const { return (OA::irhandle_t)(*proc_iter); }
-  bool isValid() const { return (proc_iter != procs.end()); }
-  void operator++() { ++proc_iter; }
-  void reset() { proc_iter = procs.begin(); }
+  OA::ProcHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  const SEXP exp;
+  R_PreorderIterator iter;
+  std::list<SEXP> procs;
+  std::list<SEXP>::iterator proc_iter;
+  void build_procs();
 };
 
 //! Enumerate all the statements in a program region, e.g. all the statements
 //! in a procedure or a loop. Does not descend into compound statements.
 class R_RegionStmtIterator : public OA::IRRegionStmtIterator {
-private:
-  R_ExpIterator *stmt_iter_ptr;
-  void build_stmt_list(OA::StmtHandle stmt);
 public:
   R_RegionStmtIterator(OA::StmtHandle stmt) { build_stmt_list(stmt); }  // stmt_iter_ptr = new ...
   virtual ~R_RegionStmtIterator() { delete stmt_iter_ptr; };
   
-  OA::StmtHandle current() const { return (OA::irhandle_t)stmt_iter_ptr->current(); }
-  bool isValid() const { return stmt_iter_ptr->isValid(); }
-  void operator++() { ++*stmt_iter_ptr; }
-  void reset() { stmt_iter_ptr->reset(); }
+  OA::StmtHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  R_ExpIterator *stmt_iter_ptr;
+  void build_stmt_list(OA::StmtHandle stmt);
 };
 
 //! Special-case version of R_RegionStmtListIterator: iterates through
 //! each of a list of statements. Each element is returned as a cell.
 //! Useful when you can't pass a cell to R_RegionStmtIterator.
 class R_RegionStmtListIterator : public OA::IRRegionStmtIterator {
-private:
-  R_ListIterator iter;
 public:
   R_RegionStmtListIterator(SEXP ls) : iter(ls) { }
   virtual ~R_RegionStmtListIterator() { };
   
-  OA::StmtHandle current() const { return (OA::irhandle_t)iter.current(); }
-  bool isValid() const { return iter.isValid(); }
-  void operator++() { ++iter; }
-  void reset() { iter.reset(); }
+  OA::StmtHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  R_ListIterator iter;
 };
 
 //! Enumerate all the variable uses or variable definitions in a statement.
@@ -383,42 +305,14 @@ public:
   R_IRUseDefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter) : iter(_iter) { }
   virtual ~R_IRUseDefIterator() { }
   
-  OA::LeafHandle current() const {
-    return OA::LeafHandle((OA::irhandle_t)iter->current()->get_sexp());
-  }
-  bool isValid() { return iter->isValid(); }
-  void operator++() { ++*iter; }
-  void reset() { iter->reset(); }
-protected:
+  OA::LeafHandle current() const;
+  bool isValid();
+  void operator++();
+  void reset();
+private:
   OA::OA_ptr<R_VarRefSetIterator> iter;
 };
 
-
-#if 0
-class R_IRUseIterator : public R_IRUseDefIterator {
-private:
-  void build_vars_lhs(SEXP e);
-  void build_vars_rhs(SEXP e);
-
-public:
-  R_IRUseIterator(OA::StmtHandle stmt) {
-    build_vars_rhs((SEXP)stmt.hval());
-    vars_iter = vars.begin();
-  }
-};
-
-class R_IRDefIterator : public R_IRUseDefIterator {
-private:
-  void build_vars_lhs(SEXP e);
-  void build_vars_rhs(SEXP e);
-
-public:
-  R_IRDefIterator(OA::StmtHandle stmt) {
-    build_vars_rhs((SEXP)stmt.hval());
-    vars_iter = vars.begin();
-  }
-};
-#endif
 
 #endif // #ifndef IR_INTERFACE_H
 

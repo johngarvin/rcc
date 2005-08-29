@@ -2,7 +2,6 @@
 
 #include <analysis/Analyst.h>
 
-
 //! If necessary, analyze the SEXP exp to find the scope tree. In any
 //! case, return a pointer to the generated tree. TODO: create a
 //! datatype for the scope tree to hide the implementation, and to have
@@ -154,9 +153,10 @@ OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist) {
   return refs;
 }
 
+#if 0
 
 //--------------------------------------------------------------------
-// R_ExpUDInfo methods
+// R_ExpUDInfo methods -- R_ExpUDInfo is obsolete
 //--------------------------------------------------------------------
 
 //! build the sets of uses and defs, non-lvalue (right-hand side of
@@ -247,6 +247,8 @@ void R_ExpUDInfo::build_ud_lhs(const SEXP e, local_pred is_local) {
   }
 }
 
+#endif
+
 //--------------------------------------------------------------------
 // R_ExpUDLocInfo methods
 //--------------------------------------------------------------------
@@ -283,6 +285,10 @@ void R_ExpUDLocInfo::build_ud_rhs(const SEXP cell) {
   } else if (is_for(e)) {
     build_ud_lhs(for_iv_c(e), LOCAL);
     build_ud_rhs(for_range_c(e));
+  } else if (is_loop_header(e)) {
+    // XXXXX
+  } else if (is_loop_increment(e)) {
+    // XXXXX
   } else if (is_while(e)) {
     build_ud_rhs(while_cond_c(e));
   } else if (is_repeat(e)) {
@@ -375,8 +381,11 @@ OA::OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
   return it;
 }
 
+
+#if 0
+
 //--------------------------------------------------------------------
-// VarSet methods
+// VarSet methods -- VarSet is obsolete
 //--------------------------------------------------------------------
 
 //! Insert the variable into the set
@@ -417,3 +426,5 @@ void VarSet::dump() {
     std::cout << CHAR(PRINTNAME(it->current())) << std::endl;
   }
 }
+
+#endif

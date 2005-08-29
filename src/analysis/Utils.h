@@ -33,6 +33,8 @@ bool is_stop(const SEXP e);
 bool is_next(const SEXP e);
 
 bool is_loop(const SEXP e);
+bool is_loop_header(const SEXP e);
+bool is_loop_increment(const SEXP e);
 SEXP loop_body_c(const SEXP e);
 bool is_for(const SEXP e);
 SEXP for_iv_c(const SEXP e);

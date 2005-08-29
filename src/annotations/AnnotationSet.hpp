@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.5 2005/08/28 05:19:28 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/annotations/Attic/AnnotationSet.hpp,v 1.6 2005/08/29 09:30:17 garvin Exp $
 
 #ifndef ANNOTATION_SET_HPP
 #define ANNOTATION_SET_HPP
@@ -31,6 +31,7 @@
 
 //*************************** User Include Files ****************************
 
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include "Annotation.hpp"
 
 //*************************** Forward Declarations ***************************
@@ -50,7 +51,7 @@ namespace RAnnot {
 // with a RAnnot::Var and a RAnnot::VarInfo.
 // ---------------------------------------------------------------------------
 class AnnotationSet
-  : public std::multimap<SEXP, RAnnot::AnnotationBase*>
+  : public std::multimap<OA::IRHandle, RAnnot::AnnotationBase*>
 {  
 public:
   // -------------------------------------------------------

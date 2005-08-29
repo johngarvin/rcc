@@ -56,142 +56,6 @@ extern "C" {
 
 bool is_special(std::string func);
 
-// VarRef: reference to an allocated variable inside a string: its
-// name, location, and length of the list it represents.
-//
-struct VarRef {
-  std::string name;
-  int location;
-  int size;
-  VarRef(std::string nm, int loc, int sz) {
-    name = nm;
-    location = loc;
-    size = sz;
-  }
-};
-
-// AllocList keeps track of locally-allocated lists (LALs). When more
-// than one LAL is live at the same time, they must be in different
-// places in memory, but if they have different live ranges, they can
-// use the same memory. Each memory location must be as big as the
-// biggest list allocated there. 
-//
-struct AllocListElem {
-  int max;
-  bool occupied;
-  std::list<VarRef> vars;
-  AllocListElem(int m, bool o, std::list<VarRef> vs) {
-    max = m;
-    occupied = o;
-    vars = vs;
-  }
-};
-
-class AllocList {
- private:
-  std::list<AllocListElem> ls;
- public:
-  void add(std::string name, int loc, int sz) {
-    std::list<AllocListElem>::iterator i;
-    for(i=ls.begin(); ; i++) {
-      if (i == ls.end()) {
-	std::list<VarRef> vs;
-	vs.push_back(VarRef(name, loc, sz));
-        ls.push_back(AllocListElem(sz, TRUE, vs));
-	break;
-      } else if (!i->occupied) {
-	i->max = std::max(sz, i->max);
-	i->occupied = TRUE;
-	i->vars.push_back(VarRef(name, loc, sz));
-	break;
-      }
-    }
-  }
-  
-  void remove(std::string name) {
-    std::list<AllocListElem>::iterator i;
-    std::list<VarRef>::iterator j;
-    for(i=ls.begin(); i != ls.end(); i++) {
-      for(j = i->vars.begin(); j != i->vars.end(); j++) {
-	if (j->name == name) {
-	  i->occupied = FALSE;
-	  return;
-	}
-      }
-    }
-    err("AllocList::remove: item not found");
-  }
-
-  std::list<AllocListElem> get() {
-    return ls;
-  }
-};
-
-
-#if 0
-// Sorted sequence of the lengths of lists currently allocated
-class SortedIntList {
-private:
-  std::list<int> ls;
-public:
-
-  void add(int n) {
-    std::list<int>::iterator i;
-    for(i = ls.begin(); i != ls.end() && *i < n; i++)
-      ;
-    ls.insert(i,n);
-  }
-
-  void remove(int n) {
-    if (ls.empty()) {
-      err("SortedIntList::remove: list empty");
-    }
-    std::list<int>::iterator i;
-    for(i = ls.begin(); *i != n; i++) {
-      if (i == ls.end()) {
-	err("SortedIntList::remove: item not found");
-      }
-    }
-    ls.erase(i);
-  }
-  
-  std::list<int> get() {
-    return ls;
-  }
-  
-  void set_max(std::list<int> new_ls) {
-    std::list<int>::iterator p, q;
-    for(p = ls.begin(), q = new_ls.begin();
-	p != ls.end();
-	p++, q++) {
-      if (q == new_ls.end()) {
-	new_ls.insert(q, *p);
-      } else {
-	*q = max(*q,*p);
-      }
-    }
-  }
-  
-  void print() {
-    std::list<int>::iterator i;    
-    for(i = ls.begin(); i != ls.end(); i++) {
-      cout << *i << " ";
-    }
-    cout << "\n";
-  }
-  
-  SortedIntList() {
-  }
-};
-
-#endif
-
-//! static new_var function
-// std::string new_var() {
-//   static unsigned int n = 0;
-//   return "g" + i_to_s(n++);
-// }
-
 //!  Expression is a struct returned by the op_ functions representing a
 //!  subexpression in the output.
 //!  var = the name of the variable storing the expression
@@ -225,175 +89,75 @@ protected:
   static unsigned int n;  // see also definition immediately
 			  // following class definition
   unsigned int prot;
-  AllocList alloc_list;
+  //  AllocList alloc_list;
   std::string edefs;
 public:
-  virtual void finalize() { };
-  const std::string &output_decls() { return decls; }
-  const std::string &output_defs() { return edefs; }
+  SubexpBuffer::SubexpBuffer(std::string pref = "v", bool is_c = FALSE)
+    : prefix(pref), is_const(is_c) {
+    has_i = FALSE;
+    prot = 0;
+    decls = edefs = "";
+    encl_fn = this;
+  }
+  virtual ~SubexpBuffer();
+  SubexpBuffer &operator=(SubexpBuffer &sb);
+
   std::string decls;
   SubexpBuffer * encl_fn;
   bool has_i;
   const bool is_const;
-  virtual void append_decls(std::string s) {
-    decls += s;
-  }
-  virtual void append_defs(std::string s) {
-    edefs += s;
-  }
-  virtual std::string new_var() {
-    prot++;
-    return new_var_unp();
-  }
-  virtual std::string new_var_unp() {
-    return prefix + i_to_s(SubexpBuffer::n++);
-  }
-  virtual std::string new_var_unp_name(std::string name) {
-    return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
-  }
-  int get_n_vars() { return n; }
-  int get_n_prot() { return prot; }
-  std::string new_sexp() {
-    std::string str = new_var();
-    if (is_const) {
-      decls += "static SEXP " + str + ";\n";
-    } else {
-      decls += "SEXP " + str + ";\n";
-    }
-    return str;
-  }
-  std::string new_sexp_unp() {
-    std::string str = new_var_unp();
-    if (is_const) {
-      decls += "static SEXP " + str + ";\n";
-    } else {
-      decls += "SEXP " + str + ";\n";
-    }
-    return str;
-  }
-  std::string new_sexp_unp_name(std::string name) {
-    std::string str = new_var_unp_name(name);
-    if (is_const) {
-      decls += "static SEXP " + str + ";\n";
-    } else {
-      decls += "SEXP " + str + ";\n";
-    }
-    return str;
-  }
 
-  std::string protect_str (std::string str) {
-    prot++;
-    return "PROTECT(" + str + ")";
-  }
+  virtual void finalize();
+  const std::string &output_decls();
+  const std::string &output_defs();
+  virtual void append_decls(std::string s);
+  virtual void append_defs(std::string s);
+  virtual std::string new_var();
+  virtual std::string new_var_unp();
+  virtual std::string new_var_unp_name(std::string name);
+  int get_n_vars();
+  int get_n_prot();
+  std::string new_sexp();
+  std::string new_sexp_unp();
+  std::string new_sexp_unp_name(std::string name);
+  std::string protect_str(std::string str);
+  void del(Expression exp);
+  SubexpBuffer new_sb();
+  SubexpBuffer new_sb(std::string pref);
+  std::string output();
+  void output_ip();
 
-  void appl(std::string var, bool do_protect, std::string func, int argc, ...) {
-    va_list param_pt;
-    std::string stmt;
-    
-    stmt = var + " = " + func + "(";
-    va_start (param_pt, argc);
-    for (int i = 0; i < argc; i++) {
-      if (i > 0) stmt += ", ";
-      stmt += *va_arg(param_pt, std::string *);
-    }
-    stmt += ")";
-    std::string defs;
-    if (do_protect) {
-      defs += protect_str(stmt) + ";\n";
-    }
-    else
-      defs += stmt + ";\n";
-    append_defs(defs);
-  }
-
-  /* Convenient macro-like things for outputting function applications */
-  
-  std::string appl1(std::string func, std::string arg) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 1, &arg);
-    return var;
-  }
-  
-  std::string appl1_unp(std::string func, std::string arg) {
-    std::string var = new_sexp_unp();
-    appl (var, FALSE, func, 1, &arg);
-    return var;
-  }
-  
-  std::string appl2(std::string func, std::string arg1, std::string arg2) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 2, &arg1, &arg2);
-    return var;
-  }
-  
-  std::string appl2_unp(std::string func, std::string arg1, std::string arg2) {
-    std::string var = new_sexp_unp();
-    appl (var, FALSE, func, 2, &arg1, &arg2);
-    return var;
-  }
-  
-  std::string appl3(std::string func, std::string arg1, std::string arg2, std::string arg3) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
-    return var;
-  }
-
-  std::string appl3_unp(std::string func, std::string arg1, std::string arg2, std::string arg3) {
-    std::string var = new_sexp_unp();
-    appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
-    return var;
-  }
-
-  std::string appl4(std::string func,
-               std::string arg1, 
-	       std::string arg2, 
-	       std::string arg3, 
-	       std::string arg4) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
-    return var;
-  }
-  
-  std::string appl5(std::string func,
-               std::string arg1, 
-	       std::string arg2, 
-	       std::string arg3, 
-	       std::string arg4,
-	       std::string arg5) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
-    return var;
-  }
-
-  std::string appl5_unp(std::string func, 
-		   std::string arg1, 
-		   std::string arg2, 
-		   std::string arg3, 
-		   std::string arg4,
-		   std::string arg5) {
-    std::string var = new_sexp_unp();
-    appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
-    return var;
-  }
-  
-  std::string appl6(std::string func,
-	       std::string arg1,
-	       std::string arg2,
-	       std::string arg3,
-	       std::string arg4,
-	       std::string arg5,
-	       std::string arg6) {
-    std::string var = new_sexp_unp();
-    appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
-    return var;
-  }
-
-  void del(Expression exp) {
-    append_defs(exp.del_text);
-    if (exp.is_alloc) {
-      alloc_list.remove(exp.var);
-    }
-  }
+  void appl(std::string var, bool do_protect, std::string func, int argc, ...);
+  std::string SubexpBuffer::appl1(std::string func, std::string arg);
+  std::string SubexpBuffer::appl1_unp(std::string func, std::string arg);
+  std::string SubexpBuffer::appl2(std::string func, std::string arg1, std::string arg2);
+  std::string SubexpBuffer::appl2_unp(std::string func, std::string arg1, std::string arg2);
+  std::string SubexpBuffer::appl3(std::string func, std::string arg1, std::string arg2, std::string arg3);
+  std::string SubexpBuffer::appl3_unp(std::string func, std::string arg1, std::string arg2, std::string arg3);
+  std::string SubexpBuffer::appl4(std::string func,
+				  std::string arg1, 
+				  std::string arg2, 
+				  std::string arg3, 
+				  std::string arg4);
+  std::string SubexpBuffer::appl5(std::string func,
+				  std::string arg1, 
+				  std::string arg2, 
+				  std::string arg3, 
+				  std::string arg4,
+				  std::string arg5);
+  std::string SubexpBuffer::appl5_unp(std::string func, 
+				      std::string arg1, 
+				      std::string arg2, 
+				      std::string arg3, 
+				      std::string arg4,
+				      std::string arg5);
+  std::string SubexpBuffer::appl6(std::string func,
+				  std::string arg1,
+				  std::string arg2,
+				  std::string arg3,
+				  std::string arg4,
+				  std::string arg5,
+				  std::string arg6);
 
   Expression op_exp(SEXP e, std::string rho, bool primFuncArg = FALSE);
   Expression op_primsxp(SEXP e, std::string rho);
@@ -422,91 +186,46 @@ public:
 			  std::string & out_const, bool literal);
   Expression op_string(SEXP s);
   Expression op_vector(SEXP e);
-  std::string output();
-  void output_ip();
-  SubexpBuffer new_sb() {
-    SubexpBuffer new_sb;
-    new_sb.encl_fn = encl_fn;
-    return new_sb;
-  }
-  SubexpBuffer new_sb(std::string pref) {
-    SubexpBuffer new_sb(pref);
-    new_sb.encl_fn = encl_fn;
-    return new_sb;
-  }
-  SubexpBuffer(std::string pref = "v", bool is_c = FALSE)
-    : prefix(pref), is_const(is_c) {
-    has_i = FALSE;
-    prot = 0;
-    decls = edefs = "";
-    encl_fn = this;
-  }
-  virtual ~SubexpBuffer() {};
-  SubexpBuffer &operator=(SubexpBuffer &sb) { return sb; }
 };
 
 //! Huge functions are hard on compilers like gcc. To generate code
 //! that goes down easy, we split up the constant initialization into
 //! several functions.
 class SplitSubexpBuffer : public SubexpBuffer {
+public:
+  SplitSubexpBuffer(std::string pref = "v", bool is_c = FALSE, int thr = 300, std::string is = "init")
+    : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
+    init_fns = 0;
+  }
+
+  static SplitSubexpBuffer global_constants;
+
+  virtual void finalize();
+  void virtual append_defs(std::string d);
+  int virtual defs_location();
+  void virtual insert_def(int loc, std::string d);
+  unsigned int get_n_inits();
+  std::string get_init_str();
+  virtual std::string new_var();
+  virtual std::string new_var_unp();
+  virtual std::string new_var_unp_name(std::string name);
+
 private:
   const unsigned int threshold;
   const std::string init_str;
   unsigned int init_fns;
   std::string split_defs;
-  void flush_defs() { 
-    if (split_defs.length() > 0) {
-      edefs += "\n";
-      if (is_const) { decls += "static "; edefs += "static "; }
-      decls += "void " + init_str + i_to_s(init_fns) + "();\n";
-      edefs += "void " + init_str + i_to_s(init_fns) + "() {\n";
-      edefs += indent(split_defs);
-      edefs += "}\n";
-      split_defs = "";
-      init_fns++;
-    }
-  }
-public:
-  virtual void finalize() { flush_defs(); };
-
-  void virtual append_defs(std::string d) { split_defs += d; }
-  int virtual defs_location() { flush_defs(); return edefs.length(); }
-  void virtual insert_def(int loc, std::string d) { 
-    flush_defs(); edefs.insert(loc, d); 
-  }
-  static SplitSubexpBuffer global_constants;
-  unsigned int get_n_inits() { return init_fns; }
-  std::string get_init_str() { return init_str; }
-  virtual std::string new_var() { prot++; return new_var_unp(); }
-  virtual std::string new_var_unp() {
-    if ((SubexpBuffer::n % threshold) == 0) flush_defs();
-    return prefix + i_to_s(SubexpBuffer::n++);
-  }
-  virtual std::string new_var_unp_name(std::string name) {
-    return new_var_unp() + "_" + make_c_id(name);
-  }
-  SplitSubexpBuffer(std::string pref = "v", bool is_c = FALSE, int thr = 300, std::string is = "init")
-    : SubexpBuffer(pref, is_c), threshold(thr), init_str(is) {
-    init_fns = 0;
-  }
+  void flush_defs();
 };
 
 //! ProgramInfo:
-//! collection of information about the whole program
+//! collection of global (whole-program) information collected during code generation
 // TODO: encapsulate
 class ProgramInfo {
  public:
-  // coming from analysis
-  static OA::OA_ptr<R_Analyst> m_an;
-  static std::map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > m_cfg_map;
-  static std::map<OA::ProcHandle, RAnnot::AnnotationSet> m_annot_map;
-
-  // map ProcHandles to LocalityInfo
-  // LocalityInfo = map of VarRef's to LOCAL,FREE,etc.
-
-  // coming from parsing
   static std::map<std::string, std::string> func_map;
   static std::map<std::string, std::string> symbol_map;
+  static std::map<std::string, std::string> string_map;
   static std::map<double, std::string> sc_real_map;
   static std::map<int, std::string> sc_logical_map;
   static std::map<int, std::string> sc_integer_map;

@@ -39,99 +39,6 @@
 
 using namespace OA;
 
-//--------------------------------------------------------------------
-// Procedure iterator
-//--------------------------------------------------------------------
-
-// Iterate over the scope tree instead.
-#if 0
-void R_IRProcIterator::build_procs() {
-  // iter is R_PreorderIterator(exp)
-
-  // Tempted to make these file static? Me too, but that'll blow up
-  // because they can't be defined until after R_init happens.
-  static const SEXP leftarrow_sym = Rf_install("<-");
-  static const SEXP function_sym = Rf_install("function");
-
-  // Two passes: first, find the common case: functions of the form
-  // var <- function(...) ... Then find the anonymous functions left
-  // over.
-
-  // Find functions of the form var <- function(...) ...
-  for(iter.reset(); iter.isValid(); ++iter) {
-    if (TYPEOF(iter.current()) == LANGSXP
-        && CAR(iter.current()) == leftarrow_sym
-	  // CADDR = RHS of assignment
-	&& TYPEOF(CADDR(iter.current())) == LANGSXP
-	&& CAR(CADDR(iter.current())) == function_sym) {
-      procs.push_back(CADDR(iter.current()));
-      proc_names[CADDR(iter.current())] = CADR(iter.current());
-    }
-  }
-
-  // Find anonymous functions
-  iter.reset();
-  int n = 0;
-  for( ; iter.isValid(); ++iter) {
-    if (TYPEOF(iter.current()) == LANGSXP
-	&& CAR(iter.current()) == function_sym
-	&& proc_names.find(iter.current()) == proc_names.end()) {
-      procs.push_back(iter.current());
-      string name = "anon*" + i_to_s(n++);
-      proc_names[iter.current()] = Rf_install(name.c_str());
-    }
-  }
-}
-#endif
-
-
-//! Statement iterator. Does not descend into compound statements.
-//! The given StmtHandle is a CONS cell whose CAR is the actual
-//! expression.
-void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
-  SEXP cell = (SEXP)stmt.hval();
-  SEXP exp = CAR(cell);
-  switch (getSexpCfgType(exp)) {
-  case CFG::SIMPLE:
-    if (exp == R_NilValue) {
-      stmt_iter_ptr = new R_ListIterator(exp);  // empty iterator
-    } else {
-      stmt_iter_ptr = new R_SingletonIterator(cell);
-    }
-    break;
-  case CFG::COMPOUND:
-    if (is_curly_list(exp)) {
-      // Special case for a list of statments in curly braces.
-      // CDR(exp), our list of statements, is not in a cell. But it is
-      // guaranteed to be a list or nil, so we can call the iterator
-      // that doesn't take a cell.
-      stmt_iter_ptr = new R_ListIterator(CDR(exp));
-    } else if (is_loop(exp)) {
-      stmt_iter_ptr = new R_SingletonIterator(cell);
-    } else {
-      // We have a non-loop compound statement with a body. (body_c is
-      // the cell containing the body.) This body might be a list for
-      // which we're returning an iterator, or it might be some other
-      // thing. First we figure out what the body is.
-      SEXP body_c;
-      if (is_fundef(exp)) {
-	body_c = fundef_body_c(exp);
-      } else if (is_paren_exp(exp)) {
-	body_c = paren_body_c(exp);
-      }
-      // Now return the appropriate iterator.
-      if (TYPEOF(CAR(body_c)) == NILSXP || TYPEOF(CAR(body_c)) == LISTSXP) {
-	stmt_iter_ptr = new R_ListIterator(CAR(body_c));
-      } else {
-	stmt_iter_ptr = new R_SingletonIterator(body_c);
-      }
-    }
-    break;
-  default:
-    stmt_iter_ptr = new R_SingletonIterator(cell);
-    break;
-  }
-}
 
 //--------------------------------------------------------------------
 // Callsite iterator
@@ -155,14 +62,6 @@ void R_IRCallsiteIterator::build_callsites() {
 // Procedures and call sites
 //--------------------------------------------------------
 
-#if 0
-// Given a procedure, return its IRProcType.
-IRProcType R_IRInterface::getProcType(ProcHandle h) {
-  return ProcType_FUNC;  // a procedure always returns a value, but sometimes it's nil and/or invisible.
-}
-
-#endif
-
 //! Given a ProcHandle, return an IRRegionStmtIterator for the
 //! procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
@@ -176,7 +75,11 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
 // Statements: General
 //--------------------------------------------------------
 
-//! Return the CFG type (loop, conditional, etc.) of an SEXP.
+//! Return statements are allowed in R.
+bool R_IRInterface::returnStatementsAllowed() { return true; }
+
+//! Local R-specific function: return the CFG type (loop, conditional,
+//! etc.) of an SEXP.
 CFG::IRStmtType getSexpCfgType(SEXP e) {
   switch(TYPEOF(e)) {
   case NILSXP:  // expressions as statements
@@ -234,8 +137,10 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
     ptr = new R_RegionStmtIterator((irhandle_t)paren_body_c(e));
   } else if (is_fundef(e)) {
     ptr = new R_RegionStmtIterator((irhandle_t)fundef_body_c(e));
+#if 0
   } else if (is_loop(e)) {
     ptr = new R_RegionStmtIterator((irhandle_t)loop_body_c(e));
+#endif
   } else {
     err("getFirstInCompound: unrecognized statement type\n");
   }
@@ -261,6 +166,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
 //! This doesn't exactly exist in R. Currently just returning the whole
 //! compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
+  // XXXXX: signal that this is a header for use/def analysis
   return h;
 }
 
@@ -269,23 +175,24 @@ StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
 //! This doesn't exactly exist in R. Currently just returning the whole
 //! compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::getLoopIncrement(StmtHandle h) {
+  // XXXXX: signal that this is the increment for use/def analysis
   return h;
 }
 
-// Given a loop statement, return:
-// 
-// True: If the number of loop iterations is defined
-// at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
-// to add the loop statement representative to the header node so that
-// definitions from inside the loop don't reach the condition and increment
-// specifications in the loop statement.
-//
-// False: If the number of iterations is not defined at
-// entry (i.e. C semantics), we add the loop statement to a node that
-// is inside the loop in the CFG so definitions inside the loop will 
-// reach uses in the conditional test. For C style semantics, the 
-// increment itself may be a separate statement. if so, it will appear
-// explicitly at the bottom of the loop. 
+//! Given a loop statement, return:
+//! 
+//! True: If the number of loop iterations is defined
+//! at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
+//! to add the loop statement representative to the header node so that
+//! definitions from inside the loop don't reach the condition and increment
+//! specifications in the loop statement.
+//!
+//! False: If the number of iterations is not defined at
+//! entry (i.e. C semantics), we add the loop statement to a node that
+//! is inside the loop in the CFG so definitions inside the loop will 
+//! reach uses in the conditional test. For C style semantics, the 
+//! increment itself may be a separate statement. if so, it will appear
+//! explicitly at the bottom of the loop. 
 bool R_IRInterface::loopIterationsDefinedAtEntry(StmtHandle h) {
   return true;
 }
@@ -467,11 +374,13 @@ void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
   Rf_PrintValue(CAR(cell));
 }
 
+void R_IRInterface::dump(OA::MemRefHandle h, ostream &stream) {}
+void R_IRInterface::currentProc(OA::ProcHandle p) {}
+
 //--------------------------------------------------------
 // Symbol Handles
 //--------------------------------------------------------
 
-// FIXME
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   return (irhandle_t)Rf_install("<procedure>");
 }
@@ -484,20 +393,205 @@ SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   return (irhandle_t)e;
 }
 
+std::string R_IRInterface::toString(OA::ProcHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::StmtHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::ExprHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::OpHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::MemRefHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::SymHandle h) {
+  SEXP e = (SEXP)h.hval();
+  assert(TYPEOF(e) == SYMSXP);
+  return std::string(CHAR(PRINTNAME(e)));
+}
+
+std::string R_IRInterface::toString(OA::ConstSymHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::ConstValHandle h) {
+  return "";
+}
+
+//--------------------------------------------------------------------
+// R_IRProcIterator
+//--------------------------------------------------------------------
+
+OA::ProcHandle R_IRProcIterator::current() const {
+  return (OA::irhandle_t)(*proc_iter);
+}
+
+bool R_IRProcIterator::isValid() const { 
+  return (proc_iter != procs.end());
+}
+
+void R_IRProcIterator::operator++() {
+  ++proc_iter;
+}
+
+void R_IRProcIterator::reset() {
+  proc_iter = procs.begin();
+}
+
+// build_procs is obsolete; iterate over the scope tree instead.
 #if 0
-// Given a ConstHandle, return the textual name.
-const char *R_IRInterface::GetConstNameFromConstHandle(ConstHandle ch) {
-  SEXP e = (SEXP)ch;
-  switch(TYPEOF(e)) {
-  case INTSXP:                              // Does this happen in code?
-    return i_to_s(INTEGER(e)[0]).c_str();
-    break;
-  case REALSXP:
-    return d_to_s(REAL(e)[0]).c_str();
-    break;
-  default:
-    err("Unrecognized as const type\n");
-    break;
+void R_IRProcIterator::build_procs() {
+  // iter is R_PreorderIterator(exp)
+
+  // Tempted to make these file static? Me too, but that'll blow up
+  // because they can't be defined until after R_init happens.
+  static const SEXP leftarrow_sym = Rf_install("<-");
+  static const SEXP function_sym = Rf_install("function");
+
+  // Two passes: first, find the common case: functions of the form
+  // var <- function(...) ... Then find the anonymous functions left
+  // over.
+
+  // Find functions of the form var <- function(...) ...
+  for(iter.reset(); iter.isValid(); ++iter) {
+    if (TYPEOF(iter.current()) == LANGSXP
+        && CAR(iter.current()) == leftarrow_sym
+	  // CADDR = RHS of assignment
+	&& TYPEOF(CADDR(iter.current())) == LANGSXP
+	&& CAR(CADDR(iter.current())) == function_sym) {
+      procs.push_back(CADDR(iter.current()));
+      proc_names[CADDR(iter.current())] = CADR(iter.current());
+    }
+  }
+
+  // Find anonymous functions
+  iter.reset();
+  int n = 0;
+  for( ; iter.isValid(); ++iter) {
+    if (TYPEOF(iter.current()) == LANGSXP
+	&& CAR(iter.current()) == function_sym
+	&& proc_names.find(iter.current()) == proc_names.end()) {
+      procs.push_back(iter.current());
+      string name = "anon*" + i_to_s(n++);
+      proc_names[iter.current()] = Rf_install(name.c_str());
+    }
   }
 }
 #endif
+
+//--------------------------------------------------------------------
+// R_RegionStmtIterator
+//--------------------------------------------------------------------
+
+OA::StmtHandle R_RegionStmtIterator::current() const {
+  return (OA::irhandle_t)stmt_iter_ptr->current();
+}
+
+bool R_RegionStmtIterator::isValid() const { 
+  return stmt_iter_ptr->isValid(); 
+}
+
+void R_RegionStmtIterator::operator++() {
+  ++*stmt_iter_ptr;
+}
+
+void R_RegionStmtIterator::reset() {
+  stmt_iter_ptr->reset();
+}
+
+//! Build the list of statements for iterator. Does not descend into
+//! compound statements. The given StmtHandle is a CONS cell whose CAR
+//! is the actual expression.
+void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
+  SEXP cell = (SEXP)stmt.hval();
+  SEXP exp = CAR(cell);
+  switch (getSexpCfgType(exp)) {
+  case CFG::SIMPLE:
+    if (exp == R_NilValue) {
+      stmt_iter_ptr = new R_ListIterator(exp);  // empty iterator
+    } else {
+      stmt_iter_ptr = new R_SingletonIterator(cell);
+    }
+    break;
+  case CFG::COMPOUND:
+    if (is_curly_list(exp)) {
+      // Special case for a list of statments in curly braces.
+      // CDR(exp), our list of statements, is not in a cell. But it is
+      // guaranteed to be a list or nil, so we can call the iterator
+      // that doesn't take a cell.
+      stmt_iter_ptr = new R_ListIterator(CDR(exp));
+    } else if (is_loop(exp)) {
+      stmt_iter_ptr = new R_SingletonIterator(cell);
+    } else {
+      // We have a non-loop compound statement with a body. (body_c is
+      // the cell containing the body.) This body might be a list for
+      // which we're returning an iterator, or it might be some other
+      // thing. First we figure out what the body is.
+      SEXP body_c;
+      if (is_fundef(exp)) {
+	body_c = fundef_body_c(exp);
+      } else if (is_paren_exp(exp)) {
+	body_c = paren_body_c(exp);
+      }
+      // Now return the appropriate iterator.
+      if (TYPEOF(CAR(body_c)) == NILSXP || TYPEOF(CAR(body_c)) == LISTSXP) {
+	stmt_iter_ptr = new R_ListIterator(CAR(body_c));
+      } else {
+	stmt_iter_ptr = new R_SingletonIterator(body_c);
+      }
+    }
+    break;
+  default:
+    stmt_iter_ptr = new R_SingletonIterator(cell);
+    break;
+  }
+}
+
+//--------------------------------------------------------------------
+// R_RegionStmtListIterator
+//--------------------------------------------------------------------
+
+OA::StmtHandle R_RegionStmtListIterator::current() const {
+  return (OA::irhandle_t)iter.current();
+}
+
+bool R_RegionStmtListIterator::isValid() const {
+  return iter.isValid();
+}
+
+void R_RegionStmtListIterator::operator++() {
+  ++iter;
+}
+
+void R_RegionStmtListIterator::reset() {
+  iter.reset(); 
+}
+
+//--------------------------------------------------------------------
+// R_IRUseDefIterator
+//--------------------------------------------------------------------
+
+OA::LeafHandle R_IRUseDefIterator::current() const {
+  return OA::LeafHandle((OA::irhandle_t)iter->current()->get_sexp());
+}
+ 
+bool R_IRUseDefIterator::isValid() {
+  return iter->isValid();
+}
+
+void R_IRUseDefIterator::operator++() {
+  ++*iter;
+}
+
+void R_IRUseDefIterator::reset() {
+  iter->reset();
+}

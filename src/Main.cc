@@ -34,28 +34,15 @@
 
 using namespace std;
 
-// debugging
-
-static const bool analysis_debug = false;
-
 // Settings to change how rcc works
 static bool global_self_allocate = false;
 static bool output_main_program = true;
 static bool output_default_args = true;
 static bool global_c_return = false;
+static bool analysis_debug = false;
 
 static bool global_ok = true;
 static unsigned int global_temps = 0;
-// static map<string, string> func_map;
-// static map<string, string> symbol_map;
-// static map<double, string> sc_real_map;
-// static map<int, string> sc_logical_map;
-// static map<int, string> sc_integer_map;
-// static map<int, string> primsxp_map;
-// static list<string> direct_funcs;
-// static SubexpBuffer global_fundefs;
-// static SplitSubexpBuffer global_constants("c", TRUE);
-// static SubexpBuffer global_labels("l");
 static Expression bogus_exp = Expression("BOGUS", FALSE, INVISIBLE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, INVISIBLE, "");
 
@@ -67,6 +54,246 @@ bool is_direct(string func) {
     if (*i == func) return TRUE;
   }
   return FALSE;
+}
+
+//--------------------------------------------------------------------
+// SubexpBuffer methods
+//--------------------------------------------------------------------
+
+SubexpBuffer::~SubexpBuffer() {};
+
+SubexpBuffer &SubexpBuffer::operator=(SubexpBuffer &sb) {
+  return sb;
+}
+
+void SubexpBuffer::finalize() {};
+
+const std::string &SubexpBuffer::output_decls() {
+  return decls;
+}
+
+const std::string &SubexpBuffer::output_defs() {
+  return edefs;
+}
+
+void SubexpBuffer::append_decls(std::string s) {
+  decls += s;
+}
+
+void SubexpBuffer::append_defs(std::string s) {
+  edefs += s;
+}
+
+std::string SubexpBuffer::new_var() {
+  prot++;
+  return new_var_unp();
+}
+
+std::string SubexpBuffer::new_var_unp() {
+  return prefix + i_to_s(SubexpBuffer::n++);
+}
+
+std::string SubexpBuffer::new_var_unp_name(std::string name) {
+  return prefix + i_to_s(SubexpBuffer::n++) + "_" + make_c_id(name);
+}
+
+int SubexpBuffer::get_n_vars() {
+  return n;
+}
+
+int SubexpBuffer::get_n_prot() {
+  return prot;
+}
+
+std::string SubexpBuffer::new_sexp() {
+  std::string str = new_var();
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
+  return str;
+}
+
+std::string SubexpBuffer::new_sexp_unp() {
+  std::string str = new_var_unp();
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
+  return str;
+}
+
+std::string SubexpBuffer::new_sexp_unp_name(std::string name) {
+  std::string str = new_var_unp_name(name);
+  if (is_const) {
+    decls += "static SEXP " + str + ";\n";
+  } else {
+    decls += "SEXP " + str + ";\n";
+  }
+  return str;
+}
+
+std::string SubexpBuffer::protect_str(std::string str) {
+  prot++;
+  return "PROTECT(" + str + ")";
+}
+
+void SubexpBuffer::del(Expression exp) {
+  append_defs(exp.del_text);
+#if 0
+  if (exp.is_alloc) {
+    alloc_list.remove(exp.var);
+  }
+#endif
+}
+
+SubexpBuffer SubexpBuffer::new_sb() {
+  SubexpBuffer new_sb;
+  new_sb.encl_fn = encl_fn;
+  return new_sb;
+}
+
+SubexpBuffer SubexpBuffer::new_sb(std::string pref) {
+  SubexpBuffer new_sb(pref);
+  new_sb.encl_fn = encl_fn;
+  return new_sb;
+}
+
+string SubexpBuffer::output() {
+  string out;
+  output_ip();
+  finalize();
+  out += output_decls();
+  out += output_defs();
+  return out;
+}
+
+void SubexpBuffer::output_ip() {
+#if 0
+  int i;
+  static int id;
+  list<AllocListElem> ls = alloc_list.get();
+  list<AllocListElem>::iterator p;
+  list<VarRef>::iterator q;
+  int offset = 0;
+  for(p = ls.begin(), i=0; p != ls.end(); p++, i++) {
+    string var = "mem" + i_to_s(i) + "_" + i_to_s(id++);
+    encl_fn->decls += "SEXP " + var + ";\n";
+    string alloc = var + "= alloca(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
+    alloc += "my_init_memory(" + var + ", " + i_to_s(p->max) + ");\n";
+    encl_fn->defs.insert(0, alloc);
+    if (encl_fn == this) offset += alloc.length();
+    for(q = p->vars.begin(); q != p->vars.end(); q++) {
+      string ref = q->name + " = " + var + "+" + i_to_s(q->size - 1) + ";\n";
+      defs.insert(q->location + offset, ref);
+      offset += ref.length();
+    }
+  }
+#endif
+}
+
+// Outputting function applications
+  
+void SubexpBuffer::appl(std::string var, bool do_protect, std::string func, int argc, ...) {
+  va_list param_pt;
+  std::string stmt;
+    
+  stmt = var + " = " + func + "(";
+  va_start (param_pt, argc);
+  for (int i = 0; i < argc; i++) {
+    if (i > 0) stmt += ", ";
+    stmt += *va_arg(param_pt, std::string *);
+  }
+  stmt += ")";
+  std::string defs;
+  if (do_protect) {
+    defs += protect_str(stmt) + ";\n";
+  }
+  else
+    defs += stmt + ";\n";
+  append_defs(defs);
+}
+
+std::string SubexpBuffer::appl1(std::string func, std::string arg) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 1, &arg);
+  return var;
+}
+  
+std::string SubexpBuffer::appl1_unp(std::string func, std::string arg) {
+  std::string var = new_sexp_unp();
+  appl (var, FALSE, func, 1, &arg);
+  return var;
+}
+
+std::string SubexpBuffer::appl2(std::string func, std::string arg1, std::string arg2) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 2, &arg1, &arg2);
+  return var;
+}
+  
+std::string SubexpBuffer::appl2_unp(std::string func, std::string arg1, std::string arg2) {
+  std::string var = new_sexp_unp();
+  appl (var, FALSE, func, 2, &arg1, &arg2);
+  return var;
+}
+  
+std::string SubexpBuffer::appl3(std::string func, std::string arg1, std::string arg2, std::string arg3) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 3, &arg1, &arg2, &arg3);
+  return var;
+}
+
+std::string SubexpBuffer::appl3_unp(std::string func, std::string arg1, std::string arg2, std::string arg3) {
+  std::string var = new_sexp_unp();
+  appl (var, FALSE, func, 3, &arg1, &arg2, &arg3);
+  return var;
+}
+
+std::string SubexpBuffer::appl4(std::string func,
+				std::string arg1, 
+				std::string arg2, 
+				std::string arg3, 
+				std::string arg4) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 4, &arg1, &arg2, &arg3, &arg4);
+  return var;
+}
+  
+std::string SubexpBuffer::appl5(std::string func,
+				std::string arg1, 
+				std::string arg2, 
+				std::string arg3, 
+				std::string arg4,
+				std::string arg5) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+  return var;
+}
+
+std::string SubexpBuffer::appl5_unp(std::string func, 
+				    std::string arg1, 
+				    std::string arg2, 
+				    std::string arg3, 
+				    std::string arg4,
+				    std::string arg5) {
+  std::string var = new_sexp_unp();
+  appl (var, FALSE, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+  return var;
+}
+
+std::string SubexpBuffer::appl6(std::string func,
+				std::string arg1,
+				std::string arg2,
+				std::string arg3,
+				std::string arg4,
+				std::string arg5,
+				std::string arg6) {
+  std::string var = new_sexp_unp();
+  appl (var, TRUE, func, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
+  return var;
 }
 
 Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
@@ -1309,37 +1536,66 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   }
 }
 
-string SubexpBuffer::output() {
-  string out;
-  output_ip();
-  finalize();
-  out += output_decls();
-  out += output_defs();
-  return out;
+//--------------------------------------------------------------------
+// SplitSubexpBuffer methods
+//--------------------------------------------------------------------
+
+void SplitSubexpBuffer::finalize() {
+  flush_defs();
 }
 
-void SubexpBuffer::output_ip() {
-#if 0
-  int i;
-  static int id;
-  list<AllocListElem> ls = alloc_list.get();
-  list<AllocListElem>::iterator p;
-  list<VarRef>::iterator q;
-  int offset = 0;
-  for(p = ls.begin(), i=0; p != ls.end(); p++, i++) {
-    string var = "mem" + i_to_s(i) + "_" + i_to_s(id++);
-    encl_fn->decls += "SEXP " + var + ";\n";
-    string alloc = var + "= alloca(" + i_to_s(p->max) + "*sizeof(SEXPREC));\n";
-    alloc += "my_init_memory(" + var + ", " + i_to_s(p->max) + ");\n";
-    encl_fn->defs.insert(0, alloc);
-    if (encl_fn == this) offset += alloc.length();
-    for(q = p->vars.begin(); q != p->vars.end(); q++) {
-      string ref = q->name + " = " + var + "+" + i_to_s(q->size - 1) + ";\n";
-      defs.insert(q->location + offset, ref);
-      offset += ref.length();
-    }
+void SplitSubexpBuffer::append_defs(std::string d) {
+  split_defs += d;
+}
+
+int SplitSubexpBuffer::defs_location() {
+  flush_defs();
+  return edefs.length();
+}
+
+void SplitSubexpBuffer::insert_def(int loc, std::string d) { 
+  flush_defs();
+  edefs.insert(loc, d); 
+}
+
+unsigned int SplitSubexpBuffer::get_n_inits() {
+  return init_fns;
+}
+
+std::string SplitSubexpBuffer::get_init_str() {
+  return init_str;
+}
+
+std::string SplitSubexpBuffer::new_var() {
+  prot++;
+  return new_var_unp();
+}
+
+std::string SplitSubexpBuffer::new_var_unp() {
+  if ((SubexpBuffer::n % threshold) == 0) {
+    flush_defs();
   }
-#endif
+  return prefix + i_to_s(SubexpBuffer::n++);
+}
+
+std::string SplitSubexpBuffer::new_var_unp_name(std::string name) {
+  return new_var_unp() + "_" + make_c_id(name);
+}
+
+void SplitSubexpBuffer::flush_defs() { 
+  if (split_defs.length() > 0) {
+    edefs += "\n";
+    if (is_const) {
+      decls += "static ";
+      edefs += "static ";
+    }
+    decls += "void " + init_str + i_to_s(init_fns) + "();\n";
+    edefs += "void " + init_str + i_to_s(init_fns) + "() {\n";
+    edefs += indent(split_defs);
+    edefs += "}\n";
+    split_defs = "";
+    init_fns++;
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -1357,25 +1613,28 @@ int main(int argc, char *argv[]) {
 
   // get options
   while(1) {
-    c = getopt(argc, argv, "f:lo:");
+    c = getopt(argc, argv, "adf:lmo:");
     if (c == -1) {
       break;
     }
     switch(c) {
+    case 'a':
+      output_default_args = false;
+      break;
+    case 'd':
+      analysis_debug = true;
+      break;
     case 'f':
       ProgramInfo::direct_funcs.push_back(string(optarg));
       break;
-    case 'a':
-      output_default_args = FALSE;
+    case 'l':
+      global_self_allocate = true;
       break;
     case 'm':
-      output_main_program = FALSE;
-      break;
-    case 'l':
-      global_self_allocate = TRUE;
+      output_main_program = false;
       break;
     case 'o':
-      out_file_exists = TRUE;
+      out_file_exists = true;
       out_filename = string(optarg);
       break;
     case '?':
@@ -1392,7 +1651,7 @@ int main(int argc, char *argv[]) {
 
   // get filename, if it exists
   if (optind < argc) {
-    in_file_exists = TRUE;
+    in_file_exists = true;
     fullname_c = argv[optind++];
     if (optind < argc) {
       printf("Warning: ignoring extra arguments: ");
@@ -1564,8 +1823,8 @@ int main(int argc, char *argv[]) {
 
   string header;
   header += "\nvoid " + file_initializer_name + "() {\n";
-  // The name R_init_<libname> causes the R dynamic loader to execute the
-  // function immediately.
+  // The name R_init_<libname> is a signal to the R dynamic loader
+  // telling it to execute the function immediately upon loading.
   for(i=0; i<ProgramInfo::global_constants.get_n_inits(); i++) {
     header += indent(ProgramInfo::global_constants.get_init_str() + i_to_s(i) + "();\n");
   }
@@ -1603,7 +1862,7 @@ int main(int argc, char *argv[]) {
 }
 
 static void arg_err() {
-  cerr << "Usage: rcc [input-file] [-l] [-o output-file] [-f function-name]*\n";
+  cerr << "Usage: rcc [input-file] [-a] [-d] [-l] [-m] [-o output-file] [-f function-name]*\n";
   exit(1);
 }
 
@@ -1795,11 +2054,12 @@ string make_symbol(SEXP e) {
 unsigned int SubexpBuffer::n = 0;
 
 // initialize statics in ProgramInfo
-OA::OA_ptr<R_Analyst> ProgramInfo::m_an;
-map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > ProgramInfo::m_cfg_map;
-map<OA::ProcHandle, RAnnot::AnnotationSet> ProgramInfo::m_annot_map;
+//OA::OA_ptr<R_Analyst> ProgramInfo::m_an;
+//map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > ProgramInfo::m_cfg_map;
+//map<OA::ProcHandle, RAnnot::AnnotationSet> ProgramInfo::m_annot_map;
 map<string, string> ProgramInfo::func_map;
 map<string, string> ProgramInfo::symbol_map;
+map<string, string> ProgramInfo::string_map;
 map<double, string> ProgramInfo::sc_real_map;
 map<int, string> ProgramInfo::sc_logical_map;
 map<int, string> ProgramInfo::sc_integer_map;
