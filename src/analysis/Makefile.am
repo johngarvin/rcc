@@ -16,7 +16,6 @@ MY_TRA_LIBS =		        \
   $(MY_OA_LIBS)		        \
   -L@R_LIB_PATH@ -lR		\
   -lrcca			\
-  -L../annotations -lannot	\
   -L../support -lsupport        \
   -L../matmul -lmatmul
 
