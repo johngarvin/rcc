@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.cc,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.cc,v 1.2 2005/08/31 23:28:25 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -32,6 +32,7 @@
 //*************************** Forward Declarations ***************************
 
 //****************************************************************************
+#if 0
 
 namespace RProp {
 
@@ -93,3 +94,4 @@ PropertySetMgr::dump(std::ostream& os) const
 
 
 } // end of RProp namespace
+#endif

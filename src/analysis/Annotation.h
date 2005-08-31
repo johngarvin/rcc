@@ -2,7 +2,7 @@
 #define ANNOTATION_ANNOTATION_H
 
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.3 2005/08/31 17:17:44 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.4 2005/08/31 23:28:25 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,7 +29,6 @@
 //**************************** R Include Files ******************************
 
 #include <include/R/R_RInternals.h>
-#include <support/trees/NonUniformDegreeTreeTmpl.h>
 
 //*********************** OpenAnalysis Include Files ************************
 
@@ -38,6 +37,9 @@
 
 //*************************** User Include Files ****************************
 
+#include <support/trees/NonUniformDegreeTreeTmpl.h>
+
+#include "PropertyHndl.h"
 #include "AnnotationBase.h"
 
 //*************************** Forward Declarations ***************************
@@ -451,8 +453,11 @@ private:
 // ---------------------------------------------------------------------------
 // FuncInfo: 'Definition' information about a function
 // ---------------------------------------------------------------------------
-class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>
+class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>, 
+		 public AnnotationBase
 {
+public:
+  static PropertyHndlT FuncInfoProperty;
 public:
   FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
   virtual ~FuncInfo();

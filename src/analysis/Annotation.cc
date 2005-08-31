@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.2 2005/08/31 05:15:37 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.3 2005/08/31 23:28:25 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -30,6 +30,7 @@
 #include <analysis/Utils.h>
 
 #include "Annotation.h"
+#include "AnalysisResults.h"
 
 //*************************** Forward Declarations ***************************
 
@@ -203,6 +204,8 @@ VarInfo::dump(std::ostream& os) const
 // FuncInfo
 //****************************************************************************
 
+PropertyHndlT FuncInfo::FuncInfoProperty = "FuncInfo";
+
 FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mRequiresContext(true), mFirstName(name), mDefn(defn), NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
@@ -223,7 +226,11 @@ void FuncInfo::setRequiresContext(bool requiresContext)
 
 bool FuncInfo::getRequiresContext() 
 { 
+#if 1
   return mRequiresContext;
+#else
+  return false ; // for now 
+#endif
 }
 
 

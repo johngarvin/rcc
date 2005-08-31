@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.2 2005/08/31 23:28:25 johnmc Exp $
 
 #ifndef ANNOTATION_SET_HPP
 #define ANNOTATION_SET_HPP
@@ -51,7 +51,7 @@ namespace RAnnot {
 // with a RAnnot::Var and a RAnnot::VarInfo.
 // ---------------------------------------------------------------------------
 class AnnotationSet
-  : public std::multimap<OA::IRHandle, RAnnot::AnnotationBase*>
+  : public std::map<OA::IRHandle, RAnnot::AnnotationBase*>
 {  
 public:
   // -------------------------------------------------------

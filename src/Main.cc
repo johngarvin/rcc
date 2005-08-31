@@ -28,6 +28,7 @@
 #include <OpenAnalysis/CFG/Interface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/IRInterface.h>
 #include <analysis/UseDefSolver.h>
 #include <CodeGenUtils.h>
@@ -708,6 +709,9 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
 //! Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 				   string opt_R_name /* = "" */) {
+
+  FuncInfo *fi = getProperty(FuncInfo, e);
+
   bool direct = FALSE;
   if (!opt_R_name.empty() && is_direct(opt_R_name)) {
     direct = TRUE;
@@ -1865,6 +1869,9 @@ static void set_funcs(int argc, char *argv[]) {
 // handle "...", named arguments, default arguments, etc. We could use
 // this idea once we figure out compile-time argument matching.
 string make_fundef(string func_name, SEXP args, SEXP code) {
+
+  FuncInfo *fi = getProperty(FuncInfo, e);
+
   int i;
   string f, header;
   SEXP temp_args = args;
@@ -1890,7 +1897,11 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
-  f += indent("RCNTXT context;\n");
+
+  if (fi->getRequiresContext()) {
+    f += indent("RCNTXT context;\n");
+  }
+
   string formals = env_subexps.op_symlist(args, "env").var;
   string actuals = "R_NilValue";
   for (i=len-1; i>=0; i--) {
@@ -1905,18 +1916,26 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
 		     + indent(formals) + ",\n"
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
-  f += indent("if (SETJMP(context.cjmpbuf)) {\n");
-  f += indent(indent("out = R_ReturnedValue;\n"));
-  f += indent("} else {\n");
-  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
+
+  if (fi->getRequiresContext()) {
+    f += indent("if (SETJMP(context.cjmpbuf)) {\n");
+    f += indent(indent("out = R_ReturnedValue;\n"));
+    f += indent("} else {\n");
+    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
+  }
+
   Expression outblock = out_subexps.op_exp(code, "newenv");
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output())));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   out_subexps.del(outblock); // ?????
   f += indent(indent("}\n"));
-  f += indent("}\n");
-  f += indent("endcontext(&context);\n");
+
+  if (fi->getRequiresContext()) {
+    f += indent("}\n");
+    f += indent("endcontext(&context);\n");
+  }
+
   f += indent("UNPROTECT(" + i_to_s(env_nprot) + ");\n");
   f += indent("return out;\n");
   f += "}\n";
@@ -1932,6 +1951,7 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
 //!  easily with "...", default arguments, etc.) The second is the
 //!  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
@@ -1941,7 +1961,13 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
-  f += indent("RCNTXT context;\n");
+
+  FuncInfo *fi = getProperty(FuncInfo, code);
+
+  if (fi->getRequiresContext()) {
+    f += indent("RCNTXT context;\n");
+  }
+
   Expression formals = env_subexps.op_symlist(args, "env");
   string actuals = "args";
   env_subexps.output_ip();
@@ -1957,10 +1983,14 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
 		     + indent(formals.var) + ",\n"
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
-  f += indent("if (SETJMP(context.cjmpbuf)) {\n");
-  f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
-  f += indent("} else {\n");
-  f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
+
+  if (fi->getRequiresContext()) {
+    f += indent("if (SETJMP(context.cjmpbuf)) {\n");
+    f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
+    f += indent("} else {\n");
+    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
+  }
+
   Expression outblock = out_subexps.op_exp(code, "newenv");
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output() +
@@ -1968,8 +1998,12 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
   f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
   f += indent(indent(indent(outblock.del_text)));
   f += indent(indent("}\n"));
-  f += indent("}     \n");
-  f += indent("endcontext(&context);\n");
+
+  if (fi->getRequiresContext()) {
+    f += indent("}\n");
+    f += indent("endcontext(&context);\n");
+  }
+
 #if 0
   f += indent(unp("env"));
   f += indent(unp("args"));

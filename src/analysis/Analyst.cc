@@ -6,7 +6,10 @@
 
 #include "Analyst.h"
 
+#include <analysis/AnalysisResults.h>
+
 using namespace RAnnot;
+using namespace RProp;
 
 FuncInfo *R_Analyst::get_scope_tree() {
   if (m_scope_tree == NULL) {
@@ -38,6 +41,7 @@ void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {
 	FuncInfo *newfun = new FuncInfo(parent, var, rhs);
+     	putProperty(FuncInfo, rhs, newfun);
 
 	// now skip to body of function to prevent a later pass from
 	// finding the function definition; we don't want it to be
@@ -46,6 +50,7 @@ void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
       }
     } else if (is_fundef(e)) {  // anonymous function
       FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
+      putProperty(FuncInfo, e, newfun);
       build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
     } else {                   // ordinary function call
       build_scope_tree_rec(CAR(e), parent);

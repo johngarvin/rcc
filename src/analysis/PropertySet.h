@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.1 2005/08/29 18:18:21 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.2 2005/08/31 23:28:25 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -26,6 +26,7 @@
 
 //*************************** User Include Files ****************************
 
+#include "PropertyHndl.h"
 #include "AnnotationSet.h"
 
 //*************************** Forward Declarations ***************************
@@ -37,8 +38,6 @@ namespace RProp {
 //****************************************************************************
 // R Property Information
 //****************************************************************************
-
-typedef const char* const* PropertyHndlT;
 
 // ---------------------------------------------------------------------------
 // PropertySet: Associates arbitrary property names with
@@ -54,6 +53,11 @@ public:
   // -------------------------------------------------------
   PropertySet();
   ~PropertySet();
+
+  void insert(PropertyHndlT propertyName, SEXP s, 
+	      RAnnot::AnnotationBase *annot, bool replace = false);
+
+  RAnnot::AnnotationBase *lookup(PropertyHndlT propertyName, SEXP s);
 
   // -------------------------------------------------------
   // cloning (proscribe by hiding copy constructor and operator=)

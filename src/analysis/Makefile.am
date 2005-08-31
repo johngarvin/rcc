@@ -29,13 +29,15 @@ librcca_la_SOURCES =                       \
   UseDefSolver.cc UseDefSolver.h	   \
   ScopeTree.h                 \
   Utils.cc Utils.h                         \
+  AnalysisResults.cc  AnalysisResults.h  \
   Annotation.cc  Annotation.h  \
   AnnotationBase.cc  AnnotationBase.h \
   AnnotationSet.cc   AnnotationSet.h      \
   PropertySet.cc         PropertySet.h \
-  PropertySetMgr.cc PropertySetMgr.h \
   SimpleIterators.cc SimpleIterators.h \
   VarRef.cc VarRef.h \
   VarRefSet.cc VarRefSet.h
 
+
 librcca_la_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)
+librcca_la_LDFLAGS = $(MY_OA_LIBS)
