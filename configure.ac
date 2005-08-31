@@ -129,10 +129,9 @@ AC_CONFIG_FILES([Makefile
 		 lib/Makefile
 		 src/Makefile
 		 src/macros/Makefile
-		 src/annotations/Makefile
 		 src/analysis/Makefile
 		 src/support/Makefile
-                 src/matmul/Makefile
+         src/matmul/Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
