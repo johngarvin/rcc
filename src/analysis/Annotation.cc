@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.2 2005/08/31 05:15:37 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -65,46 +65,46 @@ Environment::dump(std::ostream& os) const
 
 
 //****************************************************************************
-// Expression
+// ExpressionInfo
 //****************************************************************************
 
-Expression::Expression()
+ExpressionInfo::ExpressionInfo()
 {
 }
 
 
-Expression::~Expression()
+ExpressionInfo::~ExpressionInfo()
 {
 }
 
 
 std::ostream&
-Expression::dump(std::ostream& os) const
+ExpressionInfo::dump(std::ostream& os) const
 {
-  beginObjDump(os, Expression);
-  endObjDump(os, Expression);
+  beginObjDump(os, ExpressionInfo);
+  endObjDump(os, ExpressionInfo);
 }
 
 
 //****************************************************************************
-// Term
+// TermInfo
 //****************************************************************************
 
-Term::Term()
+TermInfo::TermInfo()
 {
 }
 
 
-Term::~Term()
+TermInfo::~TermInfo()
 {
 }
 
 
 std::ostream&
-Term::dump(std::ostream& os) const
+TermInfo::dump(std::ostream& os) const
 {
-  beginObjDump(os, Term);
-  endObjDump(os, Term);
+  beginObjDump(os, TermInfo);
+  endObjDump(os, TermInfo);
 }
 
 
@@ -203,8 +203,8 @@ VarInfo::dump(std::ostream& os) const
 // FuncInfo
 //****************************************************************************
 
-FuncInfo::FuncInfo(FuncInfo *lparent, SEXP name, SEXP defn) :
-  mRequiresContext(true), mFirstName(name), mDefn(defn), mLexicalParent(lparent)
+FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
+  mRequiresContext(true), mFirstName(name), mDefn(defn), NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
   mEnv = new Environment();
 }

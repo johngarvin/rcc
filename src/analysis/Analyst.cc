@@ -9,14 +9,10 @@ using namespace RAnnot;
 //! case, return a pointer to the generated tree. TODO: create a
 //! datatype for the scope tree to hide the implementation, and to have
 //! an iterator that matches the others.
-OA::OA_ptr<RScopeTree> R_Analyst::get_scope_tree() {
-  if (scope_tree.ptrEqual(NULL)) {
-    scope_tree = new RScopeTree();
-    RScopeTree::iterator top = scope_tree->begin();
-    RScopeTree::iterator first = 
-      scope_tree->insert(top, 
-			 new FuncInfo(NULL,R_NilValue, R_NilValue));
-    build_scope_tree_rec(exp, scope_tree, first);
+FuncInfo *R_Analyst::get_scope_tree() {
+  if (scope_tree == NULL) {
+    scope_tree = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
+    build_scope_tree_rec(exp, scope_tree);
   }
   return scope_tree;
 }
@@ -24,9 +20,7 @@ OA::OA_ptr<RScopeTree> R_Analyst::get_scope_tree() {
 //! Recursively traverse e to build the scope tree. Each new function
 //! definition found is added to the tree t. The iterator curr points to
 //! the current function definition.
-void R_Analyst::build_scope_tree_rec(SEXP e,
-				     OA::OA_ptr<RScopeTree> t,
-				     RScopeTree::iterator &curr)
+void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent)
 {
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -37,29 +31,27 @@ void R_Analyst::build_scope_tree_rec(SEXP e,
     return;
     break;
   case LISTSXP:
-    build_scope_tree_rec(CAR(e), t, curr);
-    build_scope_tree_rec(CDR(e), t, curr);
+    build_scope_tree_rec(CAR(e), parent);
+    build_scope_tree_rec(CDR(e), parent);
     break;
   case LANGSXP:
     if (is_simple_assign(e)) {            // a variable bound to a function
-      RScopeTree::iterator newfun;
       SEXP var = CAR(assign_lhs_c(e));
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {
-	newfun = t->append_child(curr, new FuncInfo(*curr, var, rhs));
+	FuncInfo *newfun = new FuncInfo(parent, var, rhs);
 
 	// now skip to body of function to prevent a later pass from
 	// finding the function definition; we don't want it to be
 	// flagged as a duplicate "anonymous" function.
-	build_scope_tree_rec(CAR(fundef_body_c(rhs)), t, newfun);
+	build_scope_tree_rec(CAR(fundef_body_c(rhs)),  newfun);
       }
     } else if (is_fundef(e)) {  // anonymous function
-      RScopeTree::iterator newfun = 
-	t->append_child(curr, new FuncInfo(*curr, R_NilValue, e));
-      build_scope_tree_rec(CAR(fundef_body_c(e)), t, newfun);
+      FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
+      build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
     } else {                   // ordinary function call
-      build_scope_tree_rec(CAR(e), t, curr);
-      build_scope_tree_rec(CDR(e), t, curr);
+      build_scope_tree_rec(CAR(e), parent);
+      build_scope_tree_rec(CDR(e), parent);
     }
     break;
   default:

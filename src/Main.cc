@@ -33,6 +33,7 @@
 #include <Main.h>
 
 using namespace std;
+using namespace RAnnot;
 
 // Settings to change how rcc works
 static bool global_self_allocate = false;
@@ -1725,17 +1726,18 @@ int main(int argc, char *argv[]) {
   OA::CFG::ManagerStandard cfg_man(rir_ptr, true); // statement-level CFG
   OA::OA_ptr<OA::CFG::Interface> cfg_ptr;
   OA::OA_ptr<RAnnot::AnnotationSet> aset;
-  OA::OA_ptr<RScopeTree> t = an.get_scope_tree();
-  for(RScopeTree::iterator it = t->begin(); it != t->end(); ++it) {
+  FuncInfo *scopeTree = an.get_scope_tree();
+  FuncInfoIterator fii(scopeTree);
+  for(FuncInfo *fi; fi = fii.Current(); fii++) {
     if (analysis_debug) {
       cout << "New procedure" << endl;
-      (*it)->dump(cout);
+      fi->dump(cout);
     }
-    SEXP fundef = (*it)->get_defn();
-    if (it == t->begin()) { // top of scope tree is defined as nil
-      assert(fundef == R_NilValue);
-      continue;
-    }
+    SEXP fundef = fi->get_defn();
+
+    // skip empty procedures
+    if (fundef == R_NilValue) continue;
+
     OA::ProcHandle ph((OA::irhandle_t)fundef);
     cfg_ptr = cfg_man.performAnalysis(ph);
     R_UseDefSolver uds(rir_ptr);

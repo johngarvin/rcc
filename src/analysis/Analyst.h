@@ -12,6 +12,9 @@
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeTree.h>
 
+#include <analysis/Annotation.h>
+
+
 //! R_VarRef
 //! An R_VarRef represents a mention (use or def) of a variable in R
 //! code. Designed to be compared in different ways: two different
@@ -240,13 +243,13 @@ class R_Analyst {
 public:
   R_Analyst(SEXP e) : exp(e) {}
 
-  OA::OA_ptr<RScopeTree> get_scope_tree();
+  RAnnot::FuncInfo *get_scope_tree();
   const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
 
 private:
   SEXP exp;
-  OA::OA_ptr<RScopeTree> scope_tree;
-  void build_scope_tree_rec(SEXP e, OA::OA_ptr<RScopeTree> t, RScopeTree::iterator &curr);
+  RAnnot::FuncInfo *scope_tree;
+  void build_scope_tree_rec(SEXP e, RAnnot::FuncInfo *parent);
 
   std::map<OA::StmtHandle, R_ExpUDLocInfo> local_info;
 

@@ -2,7 +2,7 @@
 #define ANNOTATION_ANNOTATION_H
 
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.2 2005/08/31 05:15:37 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,6 +29,7 @@
 //**************************** R Include Files ******************************
 
 #include <include/R/R_RInternals.h>
+#include <support/trees/NonUniformDegreeTreeTmpl.h>
 
 //*************************** User Include Files ****************************
 
@@ -157,17 +158,17 @@ private:
 // ---------------------------------------------------------------------------
 // Expression: Abstract base class for expressions
 // ---------------------------------------------------------------------------
-class Expression
+class ExpressionInfo
   : public AnnotationBase
 {
 public:
-  Expression();
-  virtual ~Expression();
+  ExpressionInfo();
+  virtual ~ExpressionInfo();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual Expression* clone() { return new Expression(*this); }
+  virtual ExpressionInfo* clone() { return new ExpressionInfo(*this); }
 
   // -------------------------------------------------------
   // debugging
@@ -179,19 +180,19 @@ private:
 
 
 // ---------------------------------------------------------------------------
-// Term: Base class for terminal expressions
+// TermInfo: Base class for terminal expressions
 // ---------------------------------------------------------------------------
-class Term
-  : public Expression
+class TermInfo
+  : public ExpressionInfo
 {
 public:
-  Term();
-  virtual ~Term();
+  TermInfo();
+  virtual ~TermInfo();
   
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual Term* clone() { return new Term(*this); }
+  virtual TermInfo* clone() { return new TermInfo(*this); }
 
   // -------------------------------------------------------
   // debugging
@@ -206,7 +207,7 @@ private:
 // Var: A variable reference (includes uses and defs)
 // ---------------------------------------------------------------------------
 class Var
-  : public Term
+  : public TermInfo
 {
 public:
   enum VarT {
@@ -313,7 +314,7 @@ private:
 // Literal: A literal value (assumed to be constant)
 // ---------------------------------------------------------------------------
 class Literal
-  : public Term
+  : public TermInfo
 {
 public:
   Literal();
@@ -437,19 +438,24 @@ private:
 };
 
 
+//****************************************************************************
+// Annotations: Function info
+//****************************************************************************
+
+
 // ---------------------------------------------------------------------------
 // FuncInfo: 'Definition' information about a function
 // ---------------------------------------------------------------------------
-class FuncInfo
+class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>
 {
 public:
-  FuncInfo(FuncInfo *parent, SEXP name, SEXP defn);
+  FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual FuncInfo* clone() { return new FuncInfo(*this); }
+  virtual FuncInfo* clone() { return 0; } // don't support this since it is linked! 
 
   // -------------------------------------------------------
   // member data manipulation
@@ -503,6 +509,21 @@ private:
 
   // argument description: types, strict?
 };
+
+class FuncInfoChildIterator: public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {
+public:
+  FuncInfoChildIterator(const FuncInfo *fi, bool firstToLast = true) :
+	NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo>(fi, firstToLast) {};
+};
+
+class FuncInfoIterator: public NonUniformDegreeTreeIteratorTmpl<FuncInfo> {
+public:
+  FuncInfoIterator(const FuncInfo* fi, TraversalOrder torder = PreOrder,
+				   NonUniformDegreeTreeEnumType how =
+				     NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES) :
+	NonUniformDegreeTreeIteratorTmpl<FuncInfo>(fi, torder, how) {};
+};
+
 
 class FuncVarInfo
   : public VarInfo
