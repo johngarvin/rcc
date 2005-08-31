@@ -35,6 +35,8 @@ std::string emit_call1(const std::string fname, const std::string arg1);
 std::string emit_call2(std::string fname, const std::string arg1, 
 		       const std::string arg2);
 
+std::string emit_call3(std::string fname, const std::string arg1,
+		       const std::string arg2, const std::string arg3);
 
 //------------------------------------------------------------------------------
 // emit call statement: fname(arg1, arg2, ...);

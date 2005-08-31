@@ -34,17 +34,17 @@ private:
 
 class MacroFactory {
 public:
-  static MacroFactory * Instance();
-  const Macro getMacro(const std::string name) const;
+  static MacroFactory * instance();
+  const Macro get_macro(const std::string name) const;
 protected:
   MacroFactory() {}
 private:
   static MacroFactory * _instance;
-  static const std::string directory;
+  static const std::string m_path;
 };
 
 extern const MacroFactory mf;
 extern const Macro mac_primsxp;
-extern const Macro mac_ifelse; 
+extern const Macro mac_ifelse;
 
 #endif

@@ -36,6 +36,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <analysis/IRInterface.h>
+#include <analysis/Analyst.h>     // FIXME: delete when ExpUDInfo goes away
 
 using namespace OA;
 

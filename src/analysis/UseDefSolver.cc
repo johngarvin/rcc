@@ -149,7 +149,7 @@ void R_UseDefSolver::initialize_sets() {
   
   // set all formals LOCAL instead of FREE on entry
   SEXP arglist = CAR(fundef_args_c((SEXP)m_proc.hval()));
-  entry_values->insert_varset(refs_from_arglist(arglist), LOCAL);
+  entry_values->insert_varset(R_VarRefSet::refs_from_arglist(arglist), LOCAL);
 }
 
 //! Creates in and out R_UseSets and stores them in mNodeInSetMap and
@@ -191,6 +191,13 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
 // R_Use methods
 //--------------------------------------------------------------------
 
+//! not doing a deep copy
+OA::OA_ptr<R_Use> R_Use::clone() { 
+  OA::OA_ptr<R_Use> retval;
+  retval = new R_Use(*this);
+  return retval;
+}
+  
 //! copy an R_Use, not a deep copy, will refer to same Location
 //! as other
 R_Use& R_Use::operator=(const R_Use& other) {
@@ -204,6 +211,12 @@ bool R_Use::operator== (const R_Use &other) const {
   return (loc==other.getLoc());
 }
 
+//! Inequality operator.
+bool R_Use::operator!= (const R_Use &other) const {
+  return !(*this==other);
+}
+
+
 //! Just based on location, this way when insert a new R_Use it can
 //! override the existing R_Use with same location
 bool R_Use::operator< (const R_Use &other) const { 
@@ -213,6 +226,10 @@ bool R_Use::operator< (const R_Use &other) const {
 //! Equality method for R_Use.
 bool R_Use::equiv(const R_Use& other) {
   return (loc == other.getLoc() && type == other.getVarType());
+}
+
+bool R_Use::sameLoc (const R_Use &other) const {
+  return (loc == other.getLoc());
 }
 
 std::string R_Use::toString(OA_ptr<IRHandlesIRInterface> pIR) {
@@ -239,8 +256,67 @@ std::string R_Use::toString() {
 }
 
 //--------------------------------------------------------------------
+// R_UseSetIterator methods
+//--------------------------------------------------------------------
+
+void R_UseSetIterator::operator++() {
+  if (isValid()) mIter++; 
+}
+
+//! is the iterator at the end
+bool R_UseSetIterator::isValid() {
+  return (mIter != mSet->end());
+}
+
+//! return copy of current node in iterator
+OA::OA_ptr<R_Use> R_UseSetIterator::current() {
+  assert(isValid());
+  return (*mIter);
+}
+
+//! reset iterator to beginning of set
+void R_UseSetIterator::reset() {
+  mIter = mSet->begin();
+}
+
+//--------------------------------------------------------------------
 // R_UseSet methods
 //--------------------------------------------------------------------
+
+// After the assignment operation, the lhs R_UseSet will point to
+// the same instances of R_Use's that the rhs points to.  Use clone
+// if you want separate instances of the R_Use's
+R_UseSet& R_UseSet::operator= (const R_UseSet& other) {
+  mSet = other.mSet; 
+  return *this;
+}
+
+OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseSet::clone() {
+  OA::OA_ptr<R_UseSet> retval;
+  retval = new R_UseSet(); 
+  std::set<OA::OA_ptr<R_Use> >::iterator defIter;
+  for (defIter=mSet->begin(); defIter!=mSet->end(); defIter++) {
+    OA::OA_ptr<R_Use> def = *defIter;
+    retval->insert(def->clone());
+  }
+  return retval;
+}
+  
+void R_UseSet::insert(OA::OA_ptr<R_Use> h) {
+  mSet->insert(h); 
+}
+  
+void R_UseSet::remove(OA::OA_ptr<R_Use> h) {
+  remove_and_tell(h); 
+}
+
+int R_UseSet::insert_and_tell(OA::OA_ptr<R_Use> h) {
+  return (int)((mSet->insert(h)).second); 
+}
+
+int R_UseSet::remove_and_tell(OA::OA_ptr<R_Use> h) {
+  return (mSet->erase(h)); 
+}
 
 //! Replace any R_Use in mSet with the same location as the given use
 void R_UseSet::replace(OA_ptr<R_Use> use) {
@@ -257,10 +333,9 @@ void R_UseSet::replace(OA_ptr<R_VarRef> loc, VarType type) {
   insert(use);
 }
 
-
 //! operator== for an R_UseSet cannot rely upon the == operator for
 //! the underlying sets, because the == operator of an element of a
-//! R_UseSet, namely a R_Use, only considers the contents of the
+//! R_UseSet, namely an R_Use, only considers the contents of the
 //! location pointer and not any of the other fields.  So, need to use
 //! R_Use's equal() method here instead.
 bool R_UseSet::operator==(DataFlow::DataFlowSet &other) const {
@@ -291,7 +366,6 @@ bool R_UseSet::operator==(DataFlow::DataFlowSet &other) const {
 
   // hopefully, if we got here, all elements of set1 equiv set2
   return(true);
-
 }
 
 //! find the R_Use in this R_UseSet with the given location (should
@@ -346,6 +420,15 @@ std::string R_UseSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   oss << "}";
   return oss.str();
 }
+
+void R_UseSet::dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR) {
+  os << toString(pIR) << std::endl;
+}
+
+void R_UseSet::dump(std::ostream &os) {
+  std::cout << "call dump(os,interface) instead";
+}
+
 
 OA_ptr<R_UseSetIterator> R_UseSet::get_iterator() const {
   OA_ptr<R_UseSetIterator> it;

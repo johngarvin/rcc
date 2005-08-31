@@ -11,14 +11,14 @@ string Visibility::emit_check_expn()
   return vstring;
 }
 
-string Visibility::emit_set_if_visible(visibility vis)
+string Visibility::emit_set_if_visible(VisibilityType vis)
 {
   string vstring;
   if (vis == VISIBLE) vstring = emit_set(vis);
   return vstring;
 }
 
-string Visibility::emit_set(visibility vis)
+string Visibility::emit_set(VisibilityType vis)
 {
   string vstring;
   if (vis != CHECK_VISIBLE) {

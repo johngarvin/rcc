@@ -1,27 +1,25 @@
 #include <algorithm>
 
 #include <analysis/Annotation.h>
-#include <analysis/Analyst.h>
+#include <analysis/Utils.h>
+#include <analysis/SimpleIterators.h>
+
+#include "Analyst.h"
 
 using namespace RAnnot;
 
-//! If necessary, analyze the SEXP exp to find the scope tree. In any
-//! case, return a pointer to the generated tree. TODO: create a
-//! datatype for the scope tree to hide the implementation, and to have
-//! an iterator that matches the others.
 FuncInfo *R_Analyst::get_scope_tree() {
-  if (scope_tree == NULL) {
-    scope_tree = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
-    build_scope_tree_rec(exp, scope_tree);
+  if (m_scope_tree == NULL) {
+    m_scope_tree = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
+    build_scope_tree_rec(m_program, m_scope_tree);
   }
-  return scope_tree;
+  return m_scope_tree;
 }
 
 //! Recursively traverse e to build the scope tree. Each new function
 //! definition found is added to the tree t. The iterator curr points to
 //! the current function definition.
-void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent)
-{
+void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
   switch(TYPEOF(e)) {
   case NILSXP:
   case REALSXP:
@@ -59,96 +57,40 @@ void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent)
   }
 }
 
-//--------------------------------------------------------------------
-// R_BodyVarRef methods
-//--------------------------------------------------------------------
-
-// Comparison operators for use in STL containers
-
-bool R_BodyVarRef::operator<(R_VarRef & loc2) const {
-  return (get_name() < loc2.get_name());
-}
-
-bool R_BodyVarRef::operator<(const R_VarRef & loc2) const {
-  // FIXME: find that chapter on how to const cast to get rid of repeated code
-  return (get_name() < loc2.get_name());
-}
-
-//! Do the locations refer to the same name?
-bool R_BodyVarRef::operator==(R_VarRef & loc2) const {
-  return (get_name() == loc2.get_name());
-}
-
-//! Are they the same location?
-bool R_BodyVarRef::equiv(R_VarRef & loc2) const {
-  return (m_loc == loc2.get_sexp());
-}
-
-std::string R_BodyVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const {
-  return toString();
-}
-
-std::string R_BodyVarRef::toString() const {
-  return std::string(CHAR(PRINTNAME(CAR(m_loc))));
-}
-
-SEXP R_BodyVarRef::get_sexp() const {
-  return m_loc;
-}
-
-SEXP R_BodyVarRef::get_name() const {
-  return CAR(m_loc);
-}
-
-//--------------------------------------------------------------------
-// R_ArgVarRef methods
-//--------------------------------------------------------------------
-
-// Comparison operators for use in STL containers
-
-bool R_ArgVarRef::operator<(R_VarRef & loc2) const {
-  return (get_name() < loc2.get_name());
-}
-
-bool R_ArgVarRef::operator<(const R_VarRef & loc2) const {
-  return (get_name() < loc2.get_name());
-}
-
-//! Do the locations refer to the same name?
-bool R_ArgVarRef::operator==(R_VarRef & loc2) const {
-  return (get_name() == loc2.get_name());
-}
-
-//! Are they the same location?
-bool R_ArgVarRef::equiv(R_VarRef & loc2) const {
-  return (m_loc == loc2.get_sexp());
-}
-
-std::string R_ArgVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const {
-  return toString();
-}
-
-std::string R_ArgVarRef::toString() const {
-  return std::string(CHAR(PRINTNAME(TAG(m_loc))));
-}
-
-SEXP R_ArgVarRef::get_sexp() const {
-  return m_loc;
-}
-
-SEXP R_ArgVarRef::get_name() const {
-  return TAG(m_loc);
-}
-
-OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist) {
-  OA::OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
-  R_ListIterator iter(arglist);
-  for( ; iter.isValid(); ++iter) {
-    OA::OA_ptr<R_ArgVarRef> arg;
-    arg = new R_ArgVarRef(iter.current());
-    refs->insert_arg(arg);
+void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
+#if 0
+  OA::ProcHandle ph((OA::irhandle_t)proc);
+  //  if (m_cfgs == NULL) {
+  //    build cfgs
+  //  }
+  AnnotationSet::iterator cfg_p; cfg_p = m_cfgs.find(ph);
+  if (cfg_p == m_cfgs.end()) { // not found
+    // ignore nonexistent CFG
+  } else {
+    cfg_p->second->dump(os);
   }
-  return refs;
+#endif
+}
+
+//! Populate m_cfgs with the CFG for each procedure
+void R_Analyst::build_cfgs() {
+  const RScopeTree &t = get_scope_tree();
+
+  OA::OA_ptr<RAnnot::AnnotationSet> aset;
+  RScopeTree::iterator scope_it;
+
+  // build CFG for each function
+  OA::CFG::ManagerStandard cfg_man(m_interface, true); // build a statement-level CFG
+  for(scope_it = t.begin(); scope_it != t.end(); ++scope_it) {
+    SEXP fundef = (*scope_it)->get_defn();
+    OA::ProcHandle ph((OA::irhandle_t)fundef);
+    OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
+    get_func_info(ph)->setCFG(cfg_ptr);
+  }
+}
+
+RAnnot::FuncInfo *R_Analyst::get_func_info(OA::ProcHandle ph) {
+  return NULL;  // m_func_info[ph]; -- as soon as AnnotationSet is a map instead of multimap
 }
 
 #if 0
@@ -346,39 +288,6 @@ void R_ExpUDLocInfo::build_ud_lhs(const SEXP cell, local_pred is_local) {
     assert(0);
   }
 }
-
-//--------------------------------------------------------------------
-// R_VarRefSet methods
-//--------------------------------------------------------------------
-
-void R_VarRefSet::insert_ref(const OA::OA_ptr<R_BodyVarRef> var) {
-  vars->insert(var);
-}
-
-void R_VarRefSet::insert_arg(const OA::OA_ptr<R_ArgVarRef> var) {
-  vars->insert(var);
-}
-
-void R_VarRefSet::set_union(const R_VarRefSet & set2) {
-  OA::OA_ptr<R_VarRefSetIterator> it; it = set2.get_iterator();
-  for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
-  }
-}
-
-void R_VarRefSet::set_union(OA::OA_ptr<R_VarRefSet> set2) {
-  OA::OA_ptr<R_VarRefSetIterator> it; it = set2->get_iterator();
-  for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
-  }
-}
-
-OA::OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
-  OA::OA_ptr<R_VarRefSetIterator> it;
-  it = new R_VarRefSetIterator(vars);
-  return it;
-}
-
 
 #if 0
 

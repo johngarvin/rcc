@@ -2,7 +2,7 @@
 #define ANNOTATION_ANNOTATION_H
 
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.2 2005/08/31 05:15:37 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.3 2005/08/31 17:17:44 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -30,6 +30,11 @@
 
 #include <include/R/R_RInternals.h>
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
+
+//*********************** OpenAnalysis Include Files ************************
+
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <OpenAnalysis/CFG/Interface.hpp>
 
 //*************************** User Include Files ****************************
 
@@ -491,17 +496,25 @@ public:
 
   // environment
 
+  // CFG
+  OA::OA_ptr<OA::CFG::Interface> getCFG() const
+    { return mCFG; }
+  void setCFG(OA::OA_ptr<OA::CFG::Interface> x)
+    { mCFG = x; }
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  unsigned int mNumArgs; // number of known arguments
-  bool mHasVarArgs;      // variable number of arguments
-  std::string mCName;    // C linkage name
-  bool mRequiresContext; // is an R context object needed for the function?
-  Environment* mEnv;     // (not owned)
+  unsigned int mNumArgs;   // number of known arguments
+  bool mHasVarArgs;        // variable number of arguments
+  std::string mCName;      // C linkage name
+  bool mRequiresContext;   // is an R context object needed for the function?
+  Environment* mEnv;       // (not owned)
+
+  OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
 
   SEXP mDefn;            // function definition
   SEXP mFirstName;       // name of function at original definition 

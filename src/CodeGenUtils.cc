@@ -73,6 +73,12 @@ string emit_call2(string fname, const string arg1, const string arg2)
   return emit_call_internal(fname, &arg1, &arg2, NULL);
 } 
 
+string emit_call3(string fname, const string arg1, const string arg2, const string arg3)
+{
+  return emit_call_internal(fname, &arg1, &arg2, &arg3, NULL);
+} 
+
+
 #if 0
 string emit_call_stmt(const string fname, ...)
 {

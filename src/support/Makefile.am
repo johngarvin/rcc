@@ -9,7 +9,8 @@ libsupport_la_SOURCES = \
 	iterators/StackableIterator.cc \
 	trees/NonUniformDegreeTree.cc \
 	trees/NonUniformDegreeTree.h \
-	trees/NonUniformDegreeTreeTmpl.h
+	trees/NonUniformDegreeTreeTmpl.h \
+        stacks/PointerStack.C stacks/PointerStack.h
 
 MYINCLUDES = -I@R_SOURCES@/src/include -I$(top_srcdir)/src
 

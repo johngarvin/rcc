@@ -7,8 +7,9 @@ rcc_bin_SOURCES =                \
   CodeGenUtils.cc CodeGenUtils.h \
   Visibility.cc Visibility.h     \
   Macro.cc Macro.h               \
-  GetName.cc GetName.h            \
-  Output.cc Output.h
+  GetName.cc GetName.h           \
+  Output.cc Output.h             \
+  ParseInfo.cc ParseInfo.h
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 

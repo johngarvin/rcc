@@ -57,8 +57,8 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/SimpleIterators.h>
-#include <analysis/Analyst.h>
 #include <analysis/Utils.h>
+#include <analysis/VarRefSet.h>
 #include <support/StringUtils.h>
 
 //-----------------------------------------------------------------------------

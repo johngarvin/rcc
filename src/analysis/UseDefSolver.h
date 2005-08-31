@@ -79,22 +79,17 @@ public:
   R_Use& operator= (const R_Use& other);
 
   //! not doing a deep copy
-  OA::OA_ptr<R_Use> clone() { 
-    OA::OA_ptr<R_Use> retval;
-    retval = new R_Use(*this);
-    return retval;
-  }
-  
+  OA::OA_ptr<R_Use> clone();
+    
   //! operator== just compares content of loc
   bool operator== (const R_Use &other) const;
   //! method equiv compares all parts of R_Use as appropriate
   bool equiv(const R_Use& other);
   
-  bool operator!= (const R_Use &other) const { return !(*this==other); }
-  bool operator< (const R_Use &other) const ;
-  bool sameLoc (const R_Use &other) const {
-    return (loc == other.getLoc());
-  }
+  bool operator!= (const R_Use &other) const;
+  bool operator< (const R_Use &other) const;
+  bool sameLoc (const R_Use &other) const;
+
   std::string R_Use::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir);
   std::string R_Use::toString();
 
@@ -110,13 +105,10 @@ public:
       { assert(!mSet.ptrEqual(NULL)); mIter = mSet->begin(); }
   ~R_UseSetIterator () {}
   
-  void operator ++ () { if (isValid()) mIter++; }
-  //! is the iterator at the end
-  bool isValid() { return (mIter != mSet->end()); }
-  //! return copy of current node in iterator
-  OA::OA_ptr<R_Use> current() { assert(isValid()); return (*mIter); }
-  //! reset iterator to beginning of set
-  void reset() { mIter = mSet->begin(); }
+  void operator++();
+  bool isValid();
+  OA::OA_ptr<R_Use> current();
+  void reset();
 
 private:
   OA::OA_ptr<std::set<OA::OA_ptr<R_Use> > > mSet;
@@ -125,7 +117,7 @@ private:
 
 //! Set of R_Use objects. Inherits from DataFlowSet to be usable in
 //! CFGDFProblem.
-// Removed "virtual": was giving clone() a hard time returning an R_UseSet.
+// Removed "virtual": need clone() to be able to return an R_UseSet.
 //class R_UseSet : public virtual OA::DataFlow::DataFlowSet {
 class R_UseSet : public OA::DataFlow::DataFlowSet {
 public:
@@ -139,34 +131,20 @@ public:
   // After the assignment operation, the lhs R_UseSet will point to
   // the same instances of R_Use's that the rhs points to.  Use clone
   // if you want separate instances of the R_Use's
-  R_UseSet& operator= (const R_UseSet& other) {
-    mSet = other.mSet; 
-    return *this;
-  }
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() {
-    OA::OA_ptr<R_UseSet> retval;
-    retval = new R_UseSet(); 
-    std::set<OA::OA_ptr<R_Use> >::iterator defIter;
-    for (defIter=mSet->begin(); defIter!=mSet->end(); defIter++) {
-      OA::OA_ptr<R_Use> def = *defIter;
-      retval->insert(def->clone());
-    }
-    return retval;
-  }
+  R_UseSet& operator= (const R_UseSet& other);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone();
   
-  void insert(OA::OA_ptr<R_Use> h) { mSet->insert(h); }
-  void remove(OA::OA_ptr<R_Use> h) { removeANDtell(h); }
-  int insertANDtell(OA::OA_ptr<R_Use> h) 
-      { return (int)((mSet->insert(h)).second); }
-  int removeANDtell(OA::OA_ptr<R_Use> h) { return (mSet->erase(h)); }
+  void insert(OA::OA_ptr<R_Use> h);
+  void remove(OA::OA_ptr<R_Use> h);
+  int insert_and_tell(OA::OA_ptr<R_Use> h);
+  int remove_and_tell(OA::OA_ptr<R_Use> h);
 
   //! replace any R_Use in mSet with location locPtr 
   //! with R_Use(locPtr,cdType)
   //! must use this instead of insert because std::set::insert will just see
   //! that the element with the same locptr is already in the set and then not
   //! insert the new element
-  void replace(OA::OA_ptr<R_VarRef> loc,
-               VarType varType);
+  void replace(OA::OA_ptr<R_VarRef> loc, VarType varType);
   void replace(OA::OA_ptr<R_Use> ru);
 
   // relationship
@@ -191,9 +169,8 @@ public:
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   std::string toString();
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR)
-  { os << toString(pIR) << std::endl; }
-  void dump(std::ostream &os) { std::cout << "call dump(os,interface) instead"; }
+  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
+  void dump(std::ostream &os);
 
   // new methods not inherited
   OA::OA_ptr<R_UseSetIterator> get_iterator() const;

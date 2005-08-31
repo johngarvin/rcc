@@ -7,7 +7,14 @@
 
 class CodeGen {
  public:
-  static Output op_string(SEXP vec);
+  static Output op_exp(SEXP e, std::string rho, bool primFuncArg);
+  static Output op_literal(SEXP e, std::string rho);
+  static Output op_list(SubexpBuffer & buf,
+			SEXP e,
+			std::string rho,
+			bool literal,
+			bool promFuncArgList /* = false */);
+  static Output op_string(SEXP e);
   static Output op_vector(SEXP vec);
 };
 

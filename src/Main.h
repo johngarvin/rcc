@@ -41,9 +41,6 @@ extern "C" {
 
 #include <include/R/R_RInternals.h>
 
-#include <OpenAnalysis/CFG/Interface.hpp>
-#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
-
 #include <support/StringUtils.h>
 #include <support/Parser.h>
 
@@ -71,11 +68,11 @@ bool is_special(std::string func);
 struct Expression {
   std::string var;
   bool is_dep;
-  visibility is_visible;
+  VisibilityType is_visible;
   bool is_alloc;
   std::string del_text;
   Expression() {}
-  Expression(std::string v, bool d, visibility vis, std::string dt) {
+  Expression(std::string v, bool d, VisibilityType vis, std::string dt) {
     var = v;
     is_dep = d;
     is_visible = vis;
@@ -217,24 +214,6 @@ private:
   unsigned int init_fns;
   std::string split_defs;
   void flush_defs();
-};
-
-//! ProgramInfo:
-//! collection of global (whole-program) information collected during code generation
-// TODO: encapsulate
-class ProgramInfo {
- public:
-  static std::map<std::string, std::string> func_map;
-  static std::map<std::string, std::string> symbol_map;
-  static std::map<std::string, std::string> string_map;
-  static std::map<double, std::string> sc_real_map;
-  static std::map<int, std::string> sc_logical_map;
-  static std::map<int, std::string> sc_integer_map;
-  static std::map<int, std::string> primsxp_map;
-  static std::list<std::string> direct_funcs;
-  static SubexpBuffer global_fundefs;
-  static SplitSubexpBuffer global_constants;
-  static SubexpBuffer global_labels;
 };
 
 static void arg_err();

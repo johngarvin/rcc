@@ -26,10 +26,10 @@ protected:
 public:
   R_SingletonIterator(SEXP _exp) : exp(_exp) { valid = true; }
 
-  SEXP current() const { return exp; }
-  bool isValid() const { return valid; }
-  void operator++() { valid = false; }
-  void reset() { valid = true; }
+  SEXP current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
 };
 
 //! Enumerate the elements of a list (in R, a chain of CONS cells).
@@ -47,15 +47,10 @@ public:
   }
   virtual ~R_ListIterator() { }
   
-  //  SEXP current() const { return CAR(curr); }
-  SEXP current() const { return curr; }
-  bool isValid() const { return (curr != R_NilValue); }
-  void operator++() {
-    // must be a data or language cons cell to be able to take the CDR
-    assert(TYPEOF(curr) == LISTSXP || TYPEOF(curr) == LANGSXP);
-    curr = CDR(curr);
-  }
-  void reset() { curr = exp; }
+  SEXP current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
 };
 
 //! preorder traversal of an R object through CARs and CDRs
@@ -73,10 +68,10 @@ public:
   }
   virtual ~R_PreorderIterator() { }
   
-  SEXP current() const { return *iter; }
-  bool isValid() const { return (iter != preorder.end()); }
-  void operator++() { ++iter; }
-  void reset() { iter = preorder.begin(); }
+  SEXP current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
 };
 
 #endif

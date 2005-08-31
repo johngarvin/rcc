@@ -32,22 +32,22 @@ static std::string i_to_s(const int i);
 
 MacroFactory * MacroFactory::_instance = 0;
 
-const std::string MacroFactory::directory = RCC_MACRO_PATH;
+const std::string MacroFactory::m_path = RCC_MACRO_PATH;
 
-const MacroFactory mf = *MacroFactory::Instance();
-const Macro mac_primsxp = mf.getMacro("primsxp");
-const Macro mac_ifelse = mf.getMacro("ifelse");
+const MacroFactory mf = *MacroFactory::instance();
+const Macro mac_primsxp = mf.get_macro("primsxp");
+const Macro mac_ifelse = mf.get_macro("ifelse");
 
-MacroFactory * MacroFactory::Instance() {
+MacroFactory * MacroFactory::instance() {
   if (_instance == 0) {
     _instance = new MacroFactory;
   }
   return _instance;
 }
 
-const Macro MacroFactory::getMacro(const std::string name) const {
+const Macro MacroFactory::get_macro(const std::string name) const {
   std::ostringstream ss;
-  const std::string filename = directory + "/" + name + ".macro";
+  const std::string filename = m_path + "/" + name + ".macro";
   std::ifstream mac_file(filename.c_str());
   if (mac_file.fail()) {
     std::cerr << "Error: Couldn't open macro file " + filename + "\n";
