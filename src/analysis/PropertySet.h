@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.2 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.3 2005/09/01 17:43:06 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -55,7 +55,7 @@ public:
   ~PropertySet();
 
   void insert(PropertyHndlT propertyName, SEXP s, 
-	      RAnnot::AnnotationBase *annot, bool replace = false);
+	      RAnnot::AnnotationBase *annot, bool ownsAnnotations);
 
   RAnnot::AnnotationBase *lookup(PropertyHndlT propertyName, SEXP s);
 

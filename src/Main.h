@@ -218,8 +218,10 @@ private:
 
 static void arg_err();
 static void set_funcs(int argc, char *argv[]);
-std::string make_fundef(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
-std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, SEXP args, SEXP code);
+std::string make_fundef(SubexpBuffer * this_buf, std::string func_name, 
+			SEXP fndef);
+std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, 
+			  SEXP fndef);
 std::string make_symbol(SEXP e);
 
 #endif

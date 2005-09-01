@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.2 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.3 2005/09/01 17:43:06 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -52,15 +52,13 @@ PropertySet::~PropertySet()
 
 
 void PropertySet::insert(PropertyHndlT propertyName, SEXP s, 
-			 AnnotationBase *annot, bool replace) 
+			 AnnotationBase *annot, bool ownsAnnotations) 
 {
   AnnotationSet *annotations = (*this)[propertyName];
   if (annotations == NULL) {
-    annotations = new AnnotationSet;
-  }
-
-  AnnotationBase *old = (*annotations)[(OA::irhandle_t) s];
-  if (old && replace == false) assert(0);
+    annotations = new AnnotationSet(ownsAnnotations);
+    (*this)[propertyName] = annotations; 
+  } 
 
   (*annotations)[(OA::irhandle_t) s] = annot;
 }

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.cc,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.cc,v 1.2 2005/09/01 17:43:06 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -33,16 +33,19 @@
 //****************************************************************************
 
 namespace RAnnot {
-
-AnnotationSet::AnnotationSet()
+  
+AnnotationSet::AnnotationSet(bool ownsAnnotations) :
+    mOwnsAnnotations(ownsAnnotations)
 {
 }
 
 
 AnnotationSet::~AnnotationSet()
 {
-  for (iterator it = this->begin(); it != this->end(); ++it) {
-    delete it->second;
+  if (mOwnsAnnotations) {
+    for (iterator it = this->begin(); it != this->end(); ++it) {
+      delete it->second;
+    }
   }
   this->clear();
 }

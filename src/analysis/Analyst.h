@@ -44,13 +44,13 @@ class RAnnot::Var;
 class R_Analyst {
 public:
   //! construct giving an SEXP representing the whole program
-  R_Analyst(SEXP _program) : m_program(_program) {
-    m_interface = new R_IRInterface();
-  }
+  R_Analyst(SEXP _program);
 
   //! methods to get information
 
+  // scope tree
   RAnnot::FuncInfo *get_scope_tree();
+
   const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
   RAnnot::FuncInfo *get_func_info(OA::ProcHandle ph);
   //RAnnot::Var & get_var_info(R_VarRef *var);
@@ -70,8 +70,7 @@ private:
   RAnnot::AnnotationSet m_func_info; // maps each scope (ProcHandle) to a (ptr to a) FuncInfo annotation
   RAnnot::AnnotationSet m_var_info;  // maps each VarRef (MemRefHandle) to Var annotation
   
-  void build_scope_tree();
-  void build_scope_tree_rec(SEXP e, RAnnot::FuncInfo *parent);
+  void build_scope_tree(SEXP e, RAnnot::FuncInfo *parent);
 
   void build_cfgs();
 

@@ -707,10 +707,12 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
 }
 
 //! Output a function definition.
-Expression SubexpBuffer::op_fundef(SEXP e, string rho,
+Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   string opt_R_name /* = "" */) {
 
-  FuncInfo *fi = getProperty(FuncInfo, e);
+  FuncInfo *fi = getProperty(FuncInfo, fndef);
+
+  SEXP e = CDR(fndef); // skip over "function" symbol
 
   bool direct = FALSE;
   if (!opt_R_name.empty() && is_direct(opt_R_name)) {
@@ -728,8 +730,7 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
 	ParseInfo::global_fundefs->append_defs( 
 	  make_fundef_c(this,
 			make_c_id(opt_R_name) + "_direct",
-			CAR(e),
-			CADR(e)));
+			fndef));
 	global_c_return = FALSE;
       }
       // in any case, continue to closure version
@@ -738,9 +739,8 @@ Expression SubexpBuffer::op_fundef(SEXP e, string rho,
   // closure version
   string func_name = ParseInfo::global_fundefs->new_var();
   ParseInfo::global_fundefs->append_defs(make_fundef(this,
-					 func_name,
-					 CAR(e),
-					 CADR(e)));
+						     func_name,
+						     fndef));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e), rho, TRUE);
@@ -895,28 +895,30 @@ bool isSimpleSubscript(SEXP e) {
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
   string out;
   if (PRIMVAL(op) == 1 || PRIMVAL(op) == 3) {    //    <-, =
-    if (Rf_isString(CADR(e))) {
-      SETCAR(CDR(e), Rf_install(CHAR(STRING_ELT(CADR(e), 0))));
+    SEXP lhs = CADR(e);
+    if (Rf_isString(lhs)) {
+      SETCAR(CDR(e), Rf_install(CHAR(STRING_ELT(lhs, 0))));
     }
-    if (Rf_isSymbol(CADR(e))) {
-      string name = make_symbol(CADR(e));
+    if (Rf_isSymbol(lhs)) {
+      string name = make_symbol(lhs);
+      SEXP rhs = CADDR(e);
       Expression body;
       // if body is a function definition, give op_fundef
       // the R name so that the f-function can be called directly later on
-      if (TYPEOF(CADDR(e)) == LANGSXP
-	  && TYPEOF(CAR(CADDR(e))) == SYMSXP
-	  && CAR(CADDR(e)) == Rf_install("function")) {
-	body = op_fundef(CDR(CADDR(e)), rho, CHAR(PRINTNAME(CADR(e))));
+      if (TYPEOF(rhs) == LANGSXP
+	  && TYPEOF(CAR(rhs)) == SYMSXP
+	  && CAR(rhs) == Rf_install("function")) {
+	body = op_fundef(rhs, rho, CHAR(PRINTNAME(lhs)));
       } else {
-	body = op_exp(CADDR(e), rho);
+	body = op_exp(rhs, rho);
       }
       append_defs("defineVar(" + name + ", " 
 	+ body.var + ", " + rho + ");\n");
       del(body);
       return Expression(name, TRUE, INVISIBLE, "");
-    } else if (isSimpleSubscript(CADR(e))) {
+    } else if (isSimpleSubscript(lhs )) {
       return op_subscriptset(e, rho);
-    } else if (Rf_isLanguage(CADR(e))) {
+    } else if (Rf_isLanguage(lhs)) {
       Expression func = op_exp(op, rho);
       Expression args = op_list_local(CDR(e), rho);
       out = appl4("do_set",
@@ -1868,9 +1870,11 @@ static void set_funcs(int argc, char *argv[]) {
 // instead of putting them in a list. Not used because it doesn't
 // handle "...", named arguments, default arguments, etc. We could use
 // this idea once we figure out compile-time argument matching.
-string make_fundef(string func_name, SEXP args, SEXP code) {
+string make_fundef(string func_name, SEXP fndef) {
+  SEXP args = CAR(fundef_args_c(fndef));
+  SEXP code = CAR(fundef_body_c(fndef));
 
-  FuncInfo *fi = getProperty(FuncInfo, e);
+  FuncInfo *fi = getProperty(FuncInfo, fndef);
 
   int i;
   string f, header;
@@ -1950,7 +1954,9 @@ string make_fundef(string func_name, SEXP args, SEXP code) {
 //!  first is a list containing all the R arguments. (This is to work
 //!  easily with "...", default arguments, etc.) The second is the
 //!  environment in which the function is to be executed.
-string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
+  SEXP args = CAR(fundef_args_c(fndef));
+  SEXP code = CAR(fundef_body_c(fndef));
 
   string f, header;
   SubexpBuffer out_subexps;
@@ -1962,7 +1968,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
-  FuncInfo *fi = getProperty(FuncInfo, code);
+  FuncInfo *fi = getProperty(FuncInfo, fndef);
 
   if (fi->getRequiresContext()) {
     f += indent("RCNTXT context;\n");
@@ -2017,7 +2023,11 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP co
 }
 
 // Like make_fundef_arglist but for directly-called functions.
-string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP args, SEXP code) {
+string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef) 
+{
+  SEXP args = CAR(fundef_args_c(fndef));
+  SEXP code = CAR(fundef_body_c(fndef));
+
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;

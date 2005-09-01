@@ -11,18 +11,25 @@
 using namespace RAnnot;
 using namespace RProp;
 
-FuncInfo *R_Analyst::get_scope_tree() {
-  if (m_scope_tree == NULL) {
-    m_scope_tree = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
-    build_scope_tree_rec(m_program, m_scope_tree);
-  }
+R_Analyst::R_Analyst(SEXP _program) : m_program(_program)
+{
+  m_interface = new R_IRInterface();
+
+  // construct scope tree
+  m_scope_tree = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
+  build_scope_tree(m_program, m_scope_tree);
+}
+
+
+FuncInfo *R_Analyst::get_scope_tree() 
+{
   return m_scope_tree;
 }
 
 //! Recursively traverse e to build the scope tree. Each new function
 //! definition found is added to the tree t. The iterator curr points to
 //! the current function definition.
-void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
+void R_Analyst::build_scope_tree(SEXP e, FuncInfo *parent) {
   switch(TYPEOF(e)) {
   case NILSXP:
   case REALSXP:
@@ -32,8 +39,8 @@ void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
     return;
     break;
   case LISTSXP:
-    build_scope_tree_rec(CAR(e), parent);
-    build_scope_tree_rec(CDR(e), parent);
+    build_scope_tree(CAR(e), parent);
+    build_scope_tree(CDR(e), parent);
     break;
   case LANGSXP:
     if (is_simple_assign(e)) {            // a variable bound to a function
@@ -41,20 +48,20 @@ void R_Analyst::build_scope_tree_rec(SEXP e, FuncInfo *parent) {
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {
 	FuncInfo *newfun = new FuncInfo(parent, var, rhs);
-     	putProperty(FuncInfo, rhs, newfun);
+     	putProperty(FuncInfo, rhs, newfun, false);
 
 	// now skip to body of function to prevent a later pass from
 	// finding the function definition; we don't want it to be
 	// flagged as a duplicate "anonymous" function.
-	build_scope_tree_rec(CAR(fundef_body_c(rhs)),  newfun);
+	build_scope_tree(CAR(fundef_body_c(rhs)),  newfun);
       }
     } else if (is_fundef(e)) {  // anonymous function
       FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
-      putProperty(FuncInfo, e, newfun);
-      build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
+      putProperty(FuncInfo, e, newfun, false);
+      build_scope_tree(CAR(fundef_body_c(e)), newfun);
     } else {                   // ordinary function call
-      build_scope_tree_rec(CAR(e), parent);
-      build_scope_tree_rec(CDR(e), parent);
+      build_scope_tree(CAR(e), parent);
+      build_scope_tree(CDR(e), parent);
     }
     break;
   default:

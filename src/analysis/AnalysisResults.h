@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.1 2005/08/31 23:36:18 johnmc Exp $ */
+/* $Id: AnalysisResults.h,v 1.2 2005/09/01 17:43:06 johnmc Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -26,6 +26,6 @@
 extern RProp::PropertySet analysisResults;
 
 #define getProperty(name, sexp) dynamic_cast<name *>(analysisResults.lookup(name::name ## Property, sexp))
-#define putProperty(name, sexp, prop) analysisResults.insert(name::name ## Property, sexp, prop)
+#define putProperty(name, sexp, prop, own) analysisResults.insert(name::name ## Property, sexp, prop, own)
 
 #endif

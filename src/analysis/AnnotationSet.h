@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.2 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.3 2005/09/01 17:43:06 johnmc Exp $
 
 #ifndef ANNOTATION_SET_HPP
 #define ANNOTATION_SET_HPP
@@ -57,7 +57,7 @@ public:
   // -------------------------------------------------------
   // constructor/destructor
   // -------------------------------------------------------
-  AnnotationSet();
+  AnnotationSet(bool ownsAnnotations = true); 
   ~AnnotationSet();
 
   // -------------------------------------------------------
@@ -80,7 +80,7 @@ private:
   AnnotationSet& operator=(const AnnotationSet& x) { return *this; }
 
 private:
-  // owns all AnnotationBases within map
+  bool mOwnsAnnotations; // does set own all AnnotationBases within map?
 };
 
 
