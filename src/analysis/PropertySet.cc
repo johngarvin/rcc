@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.3 2005/09/01 17:43:06 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.4 2005/09/01 19:46:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -33,6 +33,8 @@ using namespace RAnnot;
 
 //*************************** Forward Declarations ***************************
 
+class OA::IRHandle;
+
 //****************************************************************************
 
 namespace RProp {
@@ -51,7 +53,7 @@ PropertySet::~PropertySet()
 }
 
 
-void PropertySet::insert(PropertyHndlT propertyName, SEXP s, 
+void PropertySet::insert(PropertyHndlT propertyName, OA::IRHandle h,
 			 AnnotationBase *annot, bool ownsAnnotations) 
 {
   AnnotationSet *annotations = (*this)[propertyName];
@@ -60,15 +62,15 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
     (*this)[propertyName] = annotations; 
   } 
 
-  (*annotations)[(OA::irhandle_t) s] = annot;
+  (*annotations)[h] = annot;
 }
 
 
-AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)
+AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, OA::IRHandle h)
 {
   AnnotationSet *annotations = (*this)[propertyName];
   if (annotations == NULL) return NULL;
-  return (*annotations)[(OA::irhandle_t) s];
+  return (*annotations)[h];
 }
 
 std::ostream&

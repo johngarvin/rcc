@@ -22,6 +22,7 @@ SEXP subscript_lhs_c(const SEXP e);
 SEXP subscript_rhs_c(const SEXP e);
 bool is_const(const SEXP e);
 bool is_var(const SEXP e);
+bool is_cons(const SEXP e);
 
 bool is_if(const SEXP e);
 SEXP if_cond_c(const SEXP e);

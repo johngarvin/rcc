@@ -25,16 +25,17 @@
 
 #include <include/R/R_Internal.h>
 
-#include <OpenAnalysis/CFG/Interface.hpp>
-#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/IRInterface.h>
 #include <analysis/UseDefSolver.h>
+#include <analysis/HandleInterface.h>
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
 #include <Output.h>
 #include <ParseInfo.h>
+#include <CScope.h>
 #include <Main.h>
 
 using namespace std;
@@ -47,7 +48,6 @@ static bool output_default_args = true;
 static bool global_c_return = false;
 static bool analysis_debug = false;
 
-static bool global_ok = true;
 static unsigned int global_temps = 0;
 static Expression bogus_exp = Expression("BOGUS", FALSE, INVISIBLE, "");
 static Expression nil_exp = Expression("R_NilValue", FALSE, INVISIBLE, "");
@@ -303,7 +303,6 @@ std::string SubexpBuffer::appl6(std::string func,
 }
 
 Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
-  string sym, var;
   Expression out, formals, body, env;
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -316,29 +315,18 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
   case INTSXP:
   case REALSXP:
   case CPLXSXP:
-#if 1
-    {
-      Output op = CodeGen::op_vector(e);
-      append_decls(op.get_decls());
-      append_defs(op.get_code());
-      ParseInfo::global_constants->append_decls(op.get_g_decls());
-      ParseInfo::global_constants->append_defs(op.get_g_code());
-      return Expression(op.get_handle(), op.get_dependence() == DEPENDENT, op.get_visibility(), op.get_del_text());
-    }
-#endif
-#if 0
-    return op_vector(e);
-#endif
+      return output_to_expression(CodeGen::op_vector(e));
+      //    return op_vector(e);
     break;
   case VECSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unimplemented vector>>", TRUE, INVISIBLE, "");
     break;
   case SYMSXP:
     if (e == R_MissingArg) {
       return Expression("R_MissingArg", FALSE, INVISIBLE, "");
     } else {
-      sym = make_symbol(e);
+      string sym = make_symbol(e);
       string v = appl2_unp("findVar", sym, rho);
       if (primFuncArg) v = appl2("eval", v, rho);
       out = Expression(v, TRUE, VISIBLE, primFuncArg ? unp(v) : "");
@@ -346,7 +334,8 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
     }
     break;
   case LISTSXP:
-    return op_list(e, rho, FALSE);
+    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
+    return op_list(e, rho, false, false);
     break;
   case CLOSXP:
     formals = op_symlist(FORMALS(e), rho);
@@ -371,11 +360,11 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
     return out;
     break;
   case ENVSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unexpected environment>>", TRUE, INVISIBLE, "");
     break;
   case PROMSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
     break;
   case LANGSXP:
@@ -393,7 +382,7 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
   case EXPRSXP:
   case EXTPTRSXP:
   case WEAKREFSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unimplemented type " + i_to_s(TYPEOF(e)) + ">>",
 		      TRUE, INVISIBLE, "");
     break;
@@ -435,7 +424,8 @@ Expression SubexpBuffer::op_primsxp(SEXP e, string rho) {
 }
 
 Expression SubexpBuffer::op_symlist(SEXP e, string rho) {
-  return op_list(e, rho, TRUE);
+  //  return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, true));
+  return op_list(e, rho, true);
 }
 
 Expression SubexpBuffer::op_promise(SEXP e) {
@@ -456,7 +446,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     if (is_direct(r_sym)) {
       //direct function call
       string func = make_c_id(r_sym) + "_direct";
-      Expression args = op_list(CDR(e), rho, FALSE); // not local; used for env
+      //      Expression args = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, FALSE)); // not local; used for env
+      Expression args = op_list(CDR(e), rho, false);
       string call = appl1(func, args.var);
       del(args);
       return Expression(call, TRUE, VISIBLE, unp(call));
@@ -696,7 +687,8 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
       }
       exp = CDR(exp);
     }
-    value = op_list(e, rho, FALSE);
+    //    value = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false));
+    value = op_list(e, rho, false);
     string retval = appl1_unp("PairToVectorList", value.var);
     append_defs("UNPROTECT_PTR(newenv);\n");
     del(value);
@@ -710,7 +702,7 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   string opt_R_name /* = "" */) {
 
-  FuncInfo *fi = getProperty(FuncInfo, fndef);
+  FuncInfo *fi = getProperty(FuncInfo, HandleInterface::make_proc_h(fndef));
 
   SEXP e = CDR(fndef); // skip over "function" symbol
 
@@ -828,7 +820,8 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
   } else {
     // default case for specials: call the (call, op, args, rho) fn
     Expression op1 = op_exp(op, rho);
-    Expression args1 = op_list(CDR(e), rho, TRUE, TRUE);
+    //    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE, TRUE));
+    Expression args1 = op_list(CDR(e), rho, true, true);
     string call_str = appl2("lcons", op1.var, args1.var);
     Expression call = Expression(call_str, FALSE, VISIBLE, unp(call_str));
     out = appl4(get_name(PRIMOFFSET(op)),
@@ -930,13 +923,14 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
       del(args);
       return Expression(out, TRUE, INVISIBLE, unp(out));
     } else {
-      global_ok = 0;
+      ParseInfo::flag_problem();
       return Expression("<<assignment with unrecognized LHS>>",
 			TRUE, INVISIBLE, "");
     }
   } else if (PRIMVAL(op) == 2) {  //     <<-
     Expression op1 = op_exp(op, rho);
-    Expression args1 = op_list(CDR(e), rho, TRUE);
+    //    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE));
+    Expression args1 = op_list(CDR(e), rho, true);
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue",
 		op1.var,
@@ -946,7 +940,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
     del(args1);
     return Expression(out, TRUE, INVISIBLE, unp(out));
   } else {
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<Assignment of a type not yet implemented>>",
 		      TRUE, INVISIBLE, "");
   }
@@ -1006,7 +1000,8 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
       arglist = appl2("promiseArgs", call.var + "-1", rho);
     }
   } else {
-    Expression args1 = op_list(args, rho, TRUE);
+    //    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), args, rho, TRUE));
+    Expression args1 = op_list(args, rho, true);
     string call_str = appl2("lcons", op1.var, args1.var);
     call = Expression(call_str, FALSE, VISIBLE, unp(call_str));
     arglist = appl2("promiseArgs", args1.var, rho);
@@ -1100,14 +1095,15 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     return op_vector(e);
     break;
   case VECSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unimplemented vector>>", TRUE, INVISIBLE, "");
     break;
   case SYMSXP:
     return Expression(make_symbol(e), FALSE, VISIBLE, "");
     break;
   case LISTSXP:
-    return op_list(e, rho, TRUE);
+    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
+    return op_list(e, rho, true);
     break;
   case CLOSXP:
     formals = op_symlist(FORMALS(e), rho);
@@ -1125,15 +1121,16 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     }
     break;
   case ENVSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unexpected environment>>", TRUE, INVISIBLE, "");
     break;
   case PROMSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
     break;
   case LANGSXP:
-    return op_list(e, rho, TRUE);
+    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
+    return op_list(e, rho, true);
     break;
   case CHARSXP:
     v = appl1_unp("mkChar", quote(string(CHAR(e))));
@@ -1146,7 +1143,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   case EXPRSXP:
   case EXTPTRSXP:
   case WEAKREFSXP:
-    global_ok = 0;
+    ParseInfo::flag_problem();
     return Expression("<<unimplemented type " + i_to_s(TYPEOF(e)) + ">>",
 		      TRUE, INVISIBLE, "");
     break;
@@ -1172,8 +1169,10 @@ Expression SubexpBuffer::op_list_local(SEXP e, string rho,
   }
   if (!global_self_allocate) {
     if (opt_l_car.empty()) {
+      //      return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, primFuncArgList));
       return op_list(e, rho, literal, primFuncArgList);
     } else {
+      //      Expression cdr = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, primFuncArgList));
       Expression cdr = op_list(e, rho, literal, primFuncArgList);
       string out = appl2("lcons", opt_l_car, cdr.var);
       del(cdr);
@@ -1298,7 +1297,6 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
     SubexpBuffer tmp_buf = new_sb("tmp_ls_" + i_to_s(global_temps++) + "_");
     string cdr = "R_NilValue";
     for(i=len-1; i>=0; i--) {
-      string new_cdr;
       my_cons = (langs[i] ? "lcons" : "cons");
       if (tags[i].var.empty()) {
 	cdr = tmp_buf.appl2_unp(my_cons, exps[i].var, cdr);
@@ -1487,7 +1485,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	return Expression(pr->second, FALSE, VISIBLE, "");
       }
     } else {
-      global_ok = 0;
+      ParseInfo::flag_problem();
       return Expression("<<unimplemented logical vector>>",
 			FALSE, INVISIBLE, "");
     }
@@ -1505,7 +1503,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	return Expression(pr->second, FALSE, VISIBLE, "");
       }
     } else {
-      global_ok = 0;
+      ParseInfo::flag_problem();
       return Expression("<<unimplemented integer vector>>",
 			FALSE, INVISIBLE, "");
     }
@@ -1523,7 +1521,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	return Expression(pr->second, FALSE, VISIBLE, "");
       }
     } else {
-      global_ok = 0;
+      ParseInfo::flag_problem();
       return Expression("<<unimplemented real vector>>",
 			FALSE, INVISIBLE, "");
     }
@@ -1535,7 +1533,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 					  c_to_s(value));
       return Expression(var, FALSE, VISIBLE, "");
     } else {
-      global_ok = 0;
+      ParseInfo::flag_problem();
       return Expression("<<unimplemented complex vector>>",
 			FALSE, INVISIBLE, "");
     }
@@ -1726,7 +1724,7 @@ int main(int argc, char *argv[]) {
 
   R_Analyst an(program);
   if (analysis_debug) {
-    FuncInfo *scope_tree = an.get_scope_tree();
+    FuncInfo *scope_tree = an.get_scope_tree_root();
     FuncInfoIterator fii(scope_tree);
     for(FuncInfo *fi; fi = fii.Current(); fii++) {
       cout << "New procedure:" << endl;
@@ -1784,7 +1782,7 @@ int main(int argc, char *argv[]) {
 		  + "); /* c_ */\n");
   exprs += "}\n\n";
   
-  if (!global_ok) {
+  if (ParseInfo::get_problem_flag()) {
     out_filename += ".bad";
     cerr << "Error: one or more problems compiling R code.\n"
 	 << "Outputting best attempt to " 
@@ -1845,10 +1843,10 @@ int main(int argc, char *argv[]) {
   if (!out_file) {
     err("Couldn't write to file " + out_filename);
   }
-  if (global_ok) {
-    return 0;
-  } else {
+  if (ParseInfo::get_problem_flag()) {
     return 1;
+  } else {
+    return 0;
   }
 }
 
@@ -1968,7 +1966,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
-  FuncInfo *fi = getProperty(FuncInfo, fndef);
+  FuncInfo *fi = getProperty(FuncInfo, HandleInterface::make_proc_h(fndef));
 
   if (fi->getRequiresContext()) {
     f += indent("RCNTXT context;\n");
@@ -2085,3 +2083,16 @@ unsigned int SubexpBuffer::n = 0;
 //OA::OA_ptr<R_Analyst> ProgramInfo::analyst;
 //map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > ProgramInfo::m_cfg_map;
 //map<OA::ProcHandle, RAnnot::AnnotationSet> ProgramInfo::m_annot_map;
+
+//! Convert an Output into an Expression. Will go away as soon as
+//! everything uses Output instead of Expression.
+const Expression SubexpBuffer::output_to_expression(const Output op) {
+  append_decls(op.get_decls());
+  append_defs(op.get_code());
+  ParseInfo::global_constants->append_decls(op.get_g_decls());
+  ParseInfo::global_constants->append_defs(op.get_g_code());
+  return Expression(op.get_handle(),
+		    (op.get_dependence() == DEPENDENT),
+		    op.get_visibility(),
+		    op.get_del_text());
+}

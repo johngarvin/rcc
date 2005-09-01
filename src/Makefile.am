@@ -9,7 +9,8 @@ rcc_bin_SOURCES =                \
   Macro.cc Macro.h               \
   GetName.cc GetName.h           \
   Output.cc Output.h             \
-  ParseInfo.cc ParseInfo.h
+  ParseInfo.cc ParseInfo.h       \
+  CScope.cc CScope.h
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v 1.2 2005/09/01 19:46:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,6 +29,8 @@
 
 //*************************** Forward Declarations ***************************
 
+class IRHandle;
+
 //****************************************************************************
 
 namespace RProp {
@@ -49,7 +51,7 @@ public:
   static PropertyHndlT Prop3;
 
   // function type for annotation-computation functions
-  typedef RAnnot::AnnotationSet* (*AnnotationComputationFn_t)(SEXP);
+  typedef RAnnot::AnnotationSet* (*AnnotationComputationFn_t)(IRHandle);
 
   // FIXME: need some way of registering property names and
   // computation routines.

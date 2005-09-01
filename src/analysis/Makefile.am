@@ -23,20 +23,21 @@ MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a
 
 lib_LTLIBRARIES = librcca.la
 
-librcca_la_SOURCES =                       \
-  IRInterface.cc IRInterface.h             \
-  Analyst.cc Analyst.h                     \
-  UseDefSolver.cc UseDefSolver.h	   \
-  ScopeTree.h                 \
-  Utils.cc Utils.h                         \
-  AnalysisResults.cc  AnalysisResults.h  \
-  Annotation.cc  Annotation.h  \
-  AnnotationBase.cc  AnnotationBase.h \
+librcca_la_SOURCES =                      \
+  IRInterface.cc IRInterface.h            \
+  Analyst.cc Analyst.h                    \
+  UseDefSolver.cc UseDefSolver.h	  \
+  ScopeTree.h                             \
+  Utils.cc Utils.h                        \
+  AnalysisResults.cc  AnalysisResults.h   \
+  Annotation.cc  Annotation.h             \
+  AnnotationBase.cc  AnnotationBase.h     \
   AnnotationSet.cc   AnnotationSet.h      \
-  PropertySet.cc         PropertySet.h \
-  SimpleIterators.cc SimpleIterators.h \
-  VarRef.cc VarRef.h \
-  VarRefSet.cc VarRefSet.h
+  PropertySet.cc         PropertySet.h    \
+  SimpleIterators.cc SimpleIterators.h    \
+  VarRef.cc VarRef.h                      \
+  VarRefSet.cc VarRefSet.h                \
+  HandleInterface.cc HandleInterface.h
 
 
 librcca_la_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)

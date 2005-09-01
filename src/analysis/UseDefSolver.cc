@@ -1,3 +1,5 @@
+#include <analysis/HandleInterface.h>
+
 #include <analysis/UseDefSolver.h>
 
 using namespace OA;
@@ -56,8 +58,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
       var->setType(RAnnot::Var::Var_USE);
       // FIXME vi->setMayMustType(???);
       OA_ptr<R_VarRef> location; location = use_iter->current()->getLoc();
-      an->insert(std::make_pair(MemRefHandle((irhandle_t)location->get_sexp()), var));
-      //      an->insert(std::make_pair(MemRefHandle((irhandle_t)location), var));
+      an->insert(std::make_pair(HandleInterface::make_mem_ref_h(location->get_sexp()), var));
     }
   }
   return an;

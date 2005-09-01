@@ -20,9 +20,6 @@
 // local
 class R_ExpUDLocInfo;
 
-// ostream...why doesn't forward declaration work?
-//class std::ostream;
-
 // from OA
 class OA::ProcHandle;
 
@@ -43,13 +40,13 @@ class RAnnot::Var;
 
 class R_Analyst {
 public:
-  //! construct giving an SEXP representing the whole program
+  //! construct providing an SEXP representing the whole program
   R_Analyst(SEXP _program);
 
   //! methods to get information
 
   // scope tree
-  RAnnot::FuncInfo *get_scope_tree();
+  RAnnot::FuncInfo *get_scope_tree_root();
 
   const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
   RAnnot::FuncInfo *get_func_info(OA::ProcHandle ph);
@@ -64,17 +61,15 @@ private:
   SEXP m_program;
   OA::OA_ptr<R_IRInterface> m_interface;
 
-  RAnnot::FuncInfo *m_scope_tree;
+  RAnnot::FuncInfo *m_scope_tree_root;
 
   // Annotation sets
-  RAnnot::AnnotationSet m_func_info; // maps each scope (ProcHandle) to a (ptr to a) FuncInfo annotation
-  RAnnot::AnnotationSet m_var_info;  // maps each VarRef (MemRefHandle) to Var annotation
+  //  RAnnot::AnnotationSet m_func_info; // maps each scope (ProcHandle) to a (ptr to a) FuncInfo annotation
+  //  RAnnot::AnnotationSet m_var_info;  // maps each VarRef (MemRefHandle) to Var annotation
   
   void build_scope_tree(SEXP e, RAnnot::FuncInfo *parent);
 
   void build_cfgs();
-
-  static R_Analyst * _instance;
 };
 
 //! Contains basic use and def information about the given
@@ -110,6 +105,3 @@ private:
 };
 
 #endif
-
-
-

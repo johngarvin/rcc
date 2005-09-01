@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.3 2005/09/01 17:43:06 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.4 2005/09/01 19:46:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -31,6 +31,8 @@
 
 //*************************** Forward Declarations ***************************
 
+class OA::IRHandle;
+
 //****************************************************************************
 
 namespace RProp {
@@ -54,10 +56,10 @@ public:
   PropertySet();
   ~PropertySet();
 
-  void insert(PropertyHndlT propertyName, SEXP s, 
+  void insert(PropertyHndlT propertyName, OA::IRHandle h,
 	      RAnnot::AnnotationBase *annot, bool ownsAnnotations);
 
-  RAnnot::AnnotationBase *lookup(PropertyHndlT propertyName, SEXP s);
+  RAnnot::AnnotationBase *lookup(PropertyHndlT propertyName, OA::IRHandle h);
 
   // -------------------------------------------------------
   // cloning (proscribe by hiding copy constructor and operator=)

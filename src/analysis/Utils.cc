@@ -89,6 +89,10 @@ bool is_var(const SEXP e) {
   return (TYPEOF(e) == SYMSXP);
 }
 
+bool is_cons(const SEXP e) {
+  return (TYPEOF(e) == LISTSXP || TYPEOF(e) == LANGSXP);
+}
+
 //--------------------------------------------------------------------
 // control flow statements
 //--------------------------------------------------------------------

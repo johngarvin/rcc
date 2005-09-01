@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.3 2005/09/01 17:43:06 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.4 2005/09/01 19:46:55 garvin Exp $
 
 #ifndef ANNOTATION_SET_HPP
 #define ANNOTATION_SET_HPP
@@ -45,10 +45,7 @@ namespace RAnnot {
 //****************************************************************************
 
 // ---------------------------------------------------------------------------
-// AnnotationSet: A multi-mapping of SEXPs to Annotations.  The
-// multi-map allows multiple Annotations to be associated with the
-// same SEXP.  For example a SEXP variable defintion might be annotated
-// with a RAnnot::Var and a RAnnot::VarInfo.
+// AnnotationSet: A mapping of IRHandles to Annotations.
 // ---------------------------------------------------------------------------
 class AnnotationSet
   : public std::map<OA::IRHandle, RAnnot::AnnotationBase*>

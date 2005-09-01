@@ -32,3 +32,13 @@ std::list<std::string> ParseInfo::direct_funcs;
 SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
+
+bool ParseInfo::problem_flag = false;
+
+void ParseInfo::flag_problem() {
+  problem_flag = true;
+}
+
+bool ParseInfo::get_problem_flag() {
+  return problem_flag;
+}

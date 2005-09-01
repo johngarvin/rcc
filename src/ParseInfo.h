@@ -49,6 +49,11 @@ public:
   static SubexpBuffer * global_fundefs;
   static SplitSubexpBuffer * global_constants;
   static SubexpBuffer * global_labels;
+  static void flag_problem();
+  static bool get_problem_flag();
+
+private:
+  static bool problem_flag;
 };
 
 #endif

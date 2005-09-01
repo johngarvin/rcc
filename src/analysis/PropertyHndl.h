@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertyHndl.h,v 1.1 2005/08/31 23:34:22 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertyHndl.h,v 1.2 2005/09/01 19:46:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -19,7 +19,7 @@
 //***************************************************************************
 
 
-#ifndef PropertyHndl.h
+#ifndef PropertyHndl_h
 #define PropertyHndl_h
 
 

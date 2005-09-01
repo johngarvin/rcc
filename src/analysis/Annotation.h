@@ -2,7 +2,7 @@
 #define ANNOTATION_ANNOTATION_H
 
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.4 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.5 2005/09/01 19:46:55 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -465,7 +465,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual FuncInfo* clone() { return 0; } // don't support this since it is linked! 
+  virtual AnnotationBase* clone() { return 0; } // don't support this since it is linked! 
 
   // -------------------------------------------------------
   // member data manipulation
