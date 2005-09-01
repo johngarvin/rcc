@@ -702,7 +702,7 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   string opt_R_name /* = "" */) {
 
-  FuncInfo *fi = getProperty(FuncInfo, HandleInterface::make_proc_h(fndef));
+  FuncInfo *fi = getProperty(FuncInfo, fndef);
 
   SEXP e = CDR(fndef); // skip over "function" symbol
 
@@ -1966,7 +1966,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
-  FuncInfo *fi = getProperty(FuncInfo, HandleInterface::make_proc_h(fndef));
+  FuncInfo *fi = getProperty(FuncInfo, fndef);
 
   if (fi->getRequiresContext()) {
     f += indent("RCNTXT context;\n");

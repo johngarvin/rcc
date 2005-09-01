@@ -11,11 +11,12 @@
 using namespace RAnnot;
 using namespace RProp;
 
-//! construct providing an SEXP representing the whole program
+//! construct an R_Analyst by providing an SEXP representing the whole program
 R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   m_interface = new R_IRInterface();
   m_scope_tree_root = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
   build_scope_tree(m_program, m_scope_tree_root);
+  build_cfgs();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -43,16 +44,16 @@ void R_Analyst::build_scope_tree(SEXP e, FuncInfo *parent) {
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {
 	FuncInfo *newfun = new FuncInfo(parent, var, rhs);
-     	putProperty(FuncInfo, HandleInterface::make_proc_h(rhs), newfun, false);
+     	putProperty(FuncInfo, rhs, newfun, false);
 
 	// now skip to body of function to prevent a later pass from
 	// finding the function definition; we don't want it to be
 	// flagged as a duplicate "anonymous" function.
-	build_scope_tree(CAR(fundef_body_c(rhs)),  newfun);
+	build_scope_tree(CAR(fundef_body_c(rhs)), newfun);
       }
     } else if (is_fundef(e)) {  // anonymous function
       FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
-      putProperty(FuncInfo, HandleInterface::make_proc_h(e), newfun, false);
+      putProperty(FuncInfo, e, newfun, false);
       build_scope_tree(CAR(fundef_body_c(e)), newfun);
     } else {                   // ordinary function call
       build_scope_tree(CAR(e), parent);
@@ -65,39 +66,44 @@ void R_Analyst::build_scope_tree(SEXP e, FuncInfo *parent) {
 }
 
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
-#if 0
-  OA::ProcHandle ph = HandleInterface::make_proc_h(proc);
-  //  if (m_cfgs == NULL) {
-  //    build cfgs
-  //  }
-  AnnotationSet::iterator cfg_p; cfg_p = m_cfgs.find(ph);
-  if (cfg_p == m_cfgs.end()) { // not found
-    // ignore nonexistent CFG
-  } else {
-    cfg_p->second->dump(os);
+  if (proc != R_NilValue) {
+    FuncInfo *fi = getProperty(FuncInfo, proc);
+    OA::OA_ptr<OA::CFG::Interface> cfg;
+    cfg = fi->getCFG();
+    cfg->dump(os, m_interface);
   }
-#endif
+}
+
+void R_Analyst::dump_all_cfgs(std::ostream &os) {
+  FuncInfoIterator fii(m_scope_tree_root);
+  for( ; fii.IsValid(); ++fii) {
+    FuncInfo *finfo = fii.Current();
+    OA::OA_ptr<OA::CFG::Interface> cfg;
+    cfg = finfo->getCFG();
+    if (!cfg.ptrEqual(NULL)) {
+      cfg->dump(os, m_interface);
+    }
+  }
 }
 
 //! Populate m_cfgs with the CFG for each procedure
 void R_Analyst::build_cfgs() {
-  FuncInfo *fi = get_scope_tree_root();
+  FuncInfo *finfo = get_scope_tree_root();
   OA::CFG::ManagerStandard cfg_man(m_interface, true); // build statement-level CFGs
 
   OA::OA_ptr<RAnnot::AnnotationSet> aset;
 
   // preorder traversal of scope tree
-  FuncInfoIterator scope(fi);
-  for( ; scope.IsValid(); ++scope) {
-    SEXP fundef = scope.Current()->get_defn();
-    OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
-    OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
-    get_func_info(ph)->setCFG(cfg_ptr);
+  FuncInfoIterator fii(finfo);
+  for( ; fii.IsValid(); ++fii) {
+    FuncInfo *finfo = fii.Current();
+    SEXP fundef = finfo->get_defn();
+    if (fundef != R_NilValue) {
+      OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
+      OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
+      finfo->setCFG(cfg_ptr);
+    }
   }
-}
-
-RAnnot::FuncInfo *R_Analyst::get_func_info(OA::ProcHandle ph) {
-  return getProperty(FuncInfo, ph);
 }
 
 #if 0

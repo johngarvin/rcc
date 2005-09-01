@@ -40,7 +40,7 @@ class RAnnot::Var;
 
 class R_Analyst {
 public:
-  //! construct providing an SEXP representing the whole program
+  //! construct an R_Analyst by providing an SEXP representing the whole program
   R_Analyst(SEXP _program);
 
   //! methods to get information
@@ -49,8 +49,6 @@ public:
   RAnnot::FuncInfo *get_scope_tree_root();
 
   const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
-  RAnnot::FuncInfo *get_func_info(OA::ProcHandle ph);
-  //RAnnot::Var & get_var_info(R_VarRef *var);
 
   //! methods to spit out debugging information
   void dump_scope_tree(std::ostream &);
