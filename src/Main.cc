@@ -25,12 +25,9 @@
 
 #include <include/R/R_Internal.h>
 
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
-
 #include <analysis/AnalysisResults.h>
 #include <analysis/IRInterface.h>
 #include <analysis/UseDefSolver.h>
-#include <analysis/HandleInterface.h>
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
 #include <Output.h>
@@ -1730,8 +1727,6 @@ int main(int argc, char *argv[]) {
       cout << "New procedure:" << endl;
       fi->dump(cout);
       an.dump_cfg(cout, fi->get_defn());
-      // get use/def annotation
-      // dump use/def annotation
     }
   }
 
@@ -2079,10 +2074,6 @@ string make_symbol(SEXP e) {
 
 // initialize statics in SubexpBuffer
 unsigned int SubexpBuffer::n = 0;
-
-//OA::OA_ptr<R_Analyst> ProgramInfo::analyst;
-//map<OA::ProcHandle, OA::OA_ptr<OA::CFG::CFGStandard> > ProgramInfo::m_cfg_map;
-//map<OA::ProcHandle, RAnnot::AnnotationSet> ProgramInfo::m_annot_map;
 
 //! Convert an Output into an Expression. Will go away as soon as
 //! everything uses Output instead of Expression.

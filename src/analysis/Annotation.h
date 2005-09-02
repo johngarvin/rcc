@@ -2,7 +2,7 @@
 #define ANNOTATION_ANNOTATION_H
 
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.5 2005/09/01 19:46:55 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.6 2005/09/02 03:51:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -216,6 +216,8 @@ private:
 class Var
   : public TermInfo
 {
+public:
+  static PropertyHndlT VarProperty;
 public:
   enum VarT {
     Var_USE,

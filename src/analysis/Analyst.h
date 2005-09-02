@@ -20,9 +20,6 @@
 // local
 class R_ExpUDLocInfo;
 
-// from OA
-class OA::ProcHandle;
-
 // from Annotation.h
 class RAnnot::FuncInfo;
 class RAnnot::Var;
@@ -44,6 +41,7 @@ public:
   R_Analyst(SEXP _program);
 
   //! methods to get information
+  OA::OA_ptr<R_IRInterface> get_interface() { return m_interface; }
 
   // scope tree
   RAnnot::FuncInfo *get_scope_tree_root();
@@ -54,6 +52,7 @@ public:
   void dump_scope_tree(std::ostream &);
   void dump_cfg(std::ostream &, SEXP proc);
   void dump_all_cfgs(std::ostream &);
+
 
 private:
   SEXP m_program;
@@ -66,8 +65,8 @@ private:
   //  RAnnot::AnnotationSet m_var_info;  // maps each VarRef (MemRefHandle) to Var annotation
   
   void build_scope_tree(SEXP e, RAnnot::FuncInfo *parent);
-
   void build_cfgs();
+  void build_use_def_info();
 };
 
 //! Contains basic use and def information about the given

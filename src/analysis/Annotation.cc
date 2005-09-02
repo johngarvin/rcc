@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.3 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.4 2005/09/02 03:51:56 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -112,6 +112,8 @@ TermInfo::dump(std::ostream& os) const
 //****************************************************************************
 // Var
 //****************************************************************************
+
+PropertyHndlT Var::VarProperty = "Var";
 
 Var::Var()
 {
@@ -244,10 +246,12 @@ std::ostream&
 FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
+  dumpVar(os, mNumArgs);
   dumpVar(os, mHasVarArgs);
   dumpVar(os, mCName);
   dumpVar(os, mRequiresContext);
   dumpObj(os, mEnv);
+  //dumpObj(os, mCFG);
   dumpSEXP(os, mFirstName);
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);

@@ -1,4 +1,14 @@
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
+#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+
+// FIXME: delete the following include when R_ExpUDLocInfo disappears
+#include <analysis/Analyst.h>
+
 #include <analysis/HandleInterface.h>
+#include <analysis/AnnotationSet.h>
+#include <analysis/IRInterface.h>
 
 #include <analysis/UseDefSolver.h>
 
@@ -22,15 +32,20 @@ static VarType var_meet(VarType x, VarType y) {
   }
 }
 
+//--------------------------------------------------------------------
+// UseDefSolver methods
+//--------------------------------------------------------------------
+
 R_UseDefSolver::R_UseDefSolver(OA_ptr<R_IRInterface> _rir)
   : DataFlow::CFGDFProblem( DataFlow::Forward ), rir(_rir)
 {
 }
 
-//! Perform data flow analysis. Returns an AnnotationSet that maps
-//! each variable reference to a Var annotation with use and def
-//! information.
-OA_ptr<RAnnot::AnnotationSet> R_UseDefSolver::
+//! Perform data flow analysis. Creates and returns a pointer to an
+//! AnnotationSet that maps each variable reference to a Var
+//! annotation with use and def information. The caller is responsible
+//! for releasing the memory when finished.
+RAnnot::AnnotationSet* R_UseDefSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_cfg = cfg;
   m_proc = proc;
@@ -45,16 +60,19 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeInSetMap;
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeOutSetMap;
 
-  OA_ptr<RAnnot::AnnotationSet> an; an = new RAnnot::AnnotationSet();
+  RAnnot::AnnotationSet* an = new RAnnot::AnnotationSet();
 
-  // iterate through mNodeInSetMap and mNodeOutSetMap
+  // iterate through each node's mNodeOutSetMap
   std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator map_iter;
   for(map_iter = mNodeOutSetMap.begin(); map_iter != mNodeOutSetMap.end(); ++map_iter) {
-    // convert ptr to DataFlowSet to ptr to derived class R_UseSet
+
+    // map contains ptrs to DataFlowSet; convert to ptr to derived class R_UseSet
     OA_ptr<R_UseSet> use_set = map_iter->second.convert<R_UseSet>();
+
+    // iterate through map
     OA_ptr<R_UseSetIterator> use_iter = use_set->get_iterator();
     for( ; use_iter->isValid(); ++*use_iter) {
-      RAnnot::Var *var; var = new RAnnot::Var();
+      RAnnot::Var *var = new RAnnot::Var();
       var->setType(RAnnot::Var::Var_USE);
       // FIXME vi->setMayMustType(???);
       OA_ptr<R_VarRef> location; location = use_iter->current()->getLoc();
@@ -193,8 +211,8 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
 //--------------------------------------------------------------------
 
 //! not doing a deep copy
-OA::OA_ptr<R_Use> R_Use::clone() { 
-  OA::OA_ptr<R_Use> retval;
+OA_ptr<R_Use> R_Use::clone() { 
+  OA_ptr<R_Use> retval;
   retval = new R_Use(*this);
   return retval;
 }
@@ -270,7 +288,7 @@ bool R_UseSetIterator::isValid() {
 }
 
 //! return copy of current node in iterator
-OA::OA_ptr<R_Use> R_UseSetIterator::current() {
+OA_ptr<R_Use> R_UseSetIterator::current() {
   assert(isValid());
   return (*mIter);
 }
@@ -292,30 +310,30 @@ R_UseSet& R_UseSet::operator= (const R_UseSet& other) {
   return *this;
 }
 
-OA::OA_ptr<OA::DataFlow::DataFlowSet> R_UseSet::clone() {
-  OA::OA_ptr<R_UseSet> retval;
+OA_ptr<DataFlow::DataFlowSet> R_UseSet::clone() {
+  OA_ptr<R_UseSet> retval;
   retval = new R_UseSet(); 
-  std::set<OA::OA_ptr<R_Use> >::iterator defIter;
+  std::set<OA_ptr<R_Use> >::iterator defIter;
   for (defIter=mSet->begin(); defIter!=mSet->end(); defIter++) {
-    OA::OA_ptr<R_Use> def = *defIter;
+    OA_ptr<R_Use> def = *defIter;
     retval->insert(def->clone());
   }
   return retval;
 }
   
-void R_UseSet::insert(OA::OA_ptr<R_Use> h) {
+void R_UseSet::insert(OA_ptr<R_Use> h) {
   mSet->insert(h); 
 }
   
-void R_UseSet::remove(OA::OA_ptr<R_Use> h) {
+void R_UseSet::remove(OA_ptr<R_Use> h) {
   remove_and_tell(h); 
 }
 
-int R_UseSet::insert_and_tell(OA::OA_ptr<R_Use> h) {
+int R_UseSet::insert_and_tell(OA_ptr<R_Use> h) {
   return (int)((mSet->insert(h)).second); 
 }
 
-int R_UseSet::remove_and_tell(OA::OA_ptr<R_Use> h) {
+int R_UseSet::remove_and_tell(OA_ptr<R_Use> h) {
   return (mSet->erase(h)); 
 }
 
@@ -422,7 +440,7 @@ std::string R_UseSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   return oss.str();
 }
 
-void R_UseSet::dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR) {
+void R_UseSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
   os << toString(pIR) << std::endl;
 }
 

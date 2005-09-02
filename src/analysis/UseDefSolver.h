@@ -2,16 +2,16 @@
 #define USE_DEF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/CFG/Interface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <analysis/AnnotationSet.h>
-
-#include <analysis/IRInterface.h>
-#include <analysis/Analyst.h>
+class OA::CFG::Interface;
+class RAnnot::AnnotationSet;
 
 class R_UseSet;
+class R_VarRef;
+class R_VarRefSet;
+class R_IRInterface;
 
 enum VarType {TOP, LOCAL, FREE, BOTTOM};
 
@@ -22,8 +22,8 @@ class R_UseDefSolver : private OA::DataFlow::CFGDFProblem {
 public:
   R_UseDefSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~R_UseDefSolver() {}
-  OA::OA_ptr<RAnnot::AnnotationSet> perform_analysis(OA::ProcHandle proc,
-			OA::OA_ptr<OA::CFG::Interface> cfg);
+  RAnnot::AnnotationSet* perform_analysis(OA::ProcHandle proc,
+					  OA::OA_ptr<OA::CFG::Interface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
   //------------------------------------------------------------------
@@ -58,8 +58,9 @@ private:
 };
 
 
-//! Associates an R_VarRef with a VarType. Modeled after
-//! ConstDef in ReachConstsStandard.hpp.
+//! Associates an R_VarRef with a VarType. This is the unit that
+//! R_UseSet (which implements DataFlowSet) contains.
+//! Modeled after ConstDef in ReachConstsStandard.hpp.
 class R_Use {
 public:
   // constructors

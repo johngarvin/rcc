@@ -5,6 +5,7 @@
 #include <analysis/SimpleIterators.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/UseDefSolver.h>
 
 #include "Analyst.h"
 
@@ -17,6 +18,7 @@ R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   m_scope_tree_root = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
   build_scope_tree(m_program, m_scope_tree_root);
   build_cfgs();
+  //  build_use_def_info();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -106,101 +108,15 @@ void R_Analyst::build_cfgs() {
   }
 }
 
-#if 0
-
-//--------------------------------------------------------------------
-// R_ExpUDInfo methods -- R_ExpUDInfo is obsolete
-//--------------------------------------------------------------------
-
-//! build the sets of uses and defs, non-lvalue (right-hand side of
-//! assignment, or non-assignment expression) Uses and defs must be
-//! mutually exclusive for different statements--that is, in a loop or
-//! if statement, we count only the variables used/defined in the
-//! conditional expression, not those in the body or the true or false
-//! clauses.
-
-void R_ExpUDInfo::build_ud_rhs(const SEXP e) {
-  switch (TYPEOF(e)) {
-  case NILSXP:
-  case REALSXP:
-  case STRSXP:
-  case LGLSXP:
-    // ignore
-    break;
-  case SYMSXP:
-    non_app_uses->insert(e);
-    break;
-  case LISTSXP:
-    build_ud_rhs(CAR(e));
-    build_ud_rhs(CDR(e));
-    break;
-  case LANGSXP:
-    if (is_local_assign(e)) {
-      build_ud_lhs(CADR(e), LOCAL);
-      build_ud_rhs(CADDR(e));
-    } else if (is_free_assign(e)) {
-      build_ud_lhs(CADR(e), FREE);
-      build_ud_rhs(CADDR(e));
-    } else if (is_fundef(e)) {
-      // ignore
-    } else if (is_struct_field(e)) {
-      build_ud_rhs(CADR(e));
-    } else if (is_subscript(e)) {
-      build_ud_rhs(CADR(e));
-      build_ud_rhs(CADDR(e));
-    } else {                         // ordinary function application
-      if (TYPEOF(CAR(e)) == SYMSXP) {
-	app_uses->insert(CAR(e));
-      } else {
-	build_ud_rhs(CAR(e));
-      }
-      build_ud_rhs(CDR(e));
-    }
-    break;
-  default:
-    assert(0);
-    break;
+void R_Analyst::build_use_def_info() {
+  FuncInfoIterator fii(m_scope_tree_root);
+  for(FuncInfo *fi; fii.IsValid(); fii++) {
+    fi = fii.Current();
+    R_UseDefSolver uds(m_interface);
+    AnnotationSet *anset = uds.perform_analysis(HandleInterface::make_proc_h(fi->get_defn()), fi->getCFG());
+    analysisResults[Var::VarProperty] = anset;
   }
 }
-
-//! Build the sets of uses and defs for an lvalue. The predicate
-//! is_local is LOCAL if we're in a local ("<-" or "=") assignment or
-//! FREE if we're in a free ("<<-") assignment.
-//! Uses and defs must be mutually exclusive for different
-//! statements--that is, in a compound statement only the variables
-//! directly used or modified count, not those found in the loop body.
-void R_ExpUDInfo::build_ud_lhs(const SEXP e, local_pred is_local) {
-  switch(TYPEOF(e)) {
-  case SYMSXP:
-    if (is_local == LOCAL) {
-      local_defs->insert(e);
-    } else if (is_local == FREE) {
-      free_defs->insert(e);
-    }
-    break;
-  case LANGSXP:
-    if (is_subscript(e)) {
-      build_ud_lhs(CADR(e), is_local);
-      build_ud_rhs(CADDR(e));
-    } else if (is_struct_field(e)) {
-      build_ud_lhs(CADR(e), is_local);
-    } else if (is_fundef(e)) {
-      // ignore
-    } else {
-      // Application as lvalue. For example: dim(x) <- foo
-      //
-      // FIXME: We should really be checking if the function is valid;
-      // only some functions applied to arguments make a valid lvalue.
-      build_ud_lhs(CADR(e), is_local);
-    }
-    break;
-  default:
-    assert(0);
-    break;
-  }
-}
-
-#endif
 
 //--------------------------------------------------------------------
 // R_ExpUDLocInfo methods
@@ -301,50 +217,3 @@ void R_ExpUDLocInfo::build_ud_lhs(const SEXP cell, local_pred is_local) {
     assert(0);
   }
 }
-
-#if 0
-
-//--------------------------------------------------------------------
-// VarSet methods -- VarSet is obsolete
-//--------------------------------------------------------------------
-
-//! Insert the variable into the set
-void VarSet::insert(const SEXP var) {
-  assert (TYPEOF(var) == SYMSXP);
-  vars->insert(var);
-}
-
-//! Insert each member of set2 into our set
-void VarSet::set_union(const VarSet & set2) {
-  OA::OA_ptr<VarSetIterator> it; it = set2.get_iterator();
-  for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
-  }
-}
-
-//! Insert each member of set2 into our set
-void VarSet::set_union(OA::OA_ptr<VarSet> set2) {
-  OA::OA_ptr<VarSetIterator> it; it = set2->get_iterator();
-  for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
-  }
-}
-
-#if 0
-//! Insert each member of set2 into our set
-void VarSet::set_union(OA::OA_ptr<std::set<R_VarRef> > set2) {
-  std::set<R_VarRef>::iterator it;
-  for (it = set2->begin(); it != set2->end(); ++it) {
-    vars->insert(it->get_sexp());
-  }
-}
-#endif
-
-void VarSet::dump() {
-  OA::OA_ptr<VarSetIterator> it; it = get_iterator();
-  for ( ; it->isValid(); ++*it) {
-    std::cout << CHAR(PRINTNAME(it->current())) << std::endl;
-  }
-}
-
-#endif
