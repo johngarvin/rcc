@@ -32,6 +32,7 @@
 #include <CodeGen.h>
 #include <Output.h>
 #include <ParseInfo.h>
+#include <LoopContext.h>
 #include <CScope.h>
 #include <Main.h>
 
@@ -581,7 +582,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   decls += "int n;\n";
   decls += "SEXP ans, v;\n";
   decls += "PROTECT_INDEX vpi, api;\n";
-  decls += "RCNTXT cntxt;\n";
+  LoopContext thisLoop;
   if (!has_i) {
     decls += "int i;\n";
     has_i = TRUE;
@@ -597,13 +598,6 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   defs += "}\n";
   defs += "ans = R_NilValue;\n";
   defs += "PROTECT_WITH_INDEX(ans, &api);\n";
-  defs += "begincontext(&cntxt, CTXT_LOOP, R_NilValue, " + rho
-    + ", R_NilValue, R_NilValue, R_NilValue);\n";
-  defs += "switch (SETJMP(cntxt.cjmpbuf)) {\n";
-  string lab = ParseInfo::global_labels->new_var();
-  defs += indent("case CTXT_BREAK: goto for_break_" + lab + ";\n");
-  defs += indent("case CTXT_NEXT: goto for_next_" + lab + ";\n");
-  defs += "}\n";
   defs += "for (i=0; i < n; i++) {\n";
   string in_loop;
   in_loop += "switch(TYPEOF(" + val1.var + ")) {\n";
@@ -647,12 +641,8 @@ Expression SubexpBuffer::op_for(SEXP e, string rho) {
   Expression ans = op_exp(body, rho);
   append_defs("REPROTECT(ans = " + ans.var + ", api);\n");
   del(ans);
-  defs = "for_next_" + lab + ":\n";
-  defs += ";\n";
-  defs += "}\n";
-  defs += "for_break_" + lab + ":\n";
-  defs += "endcontext(&cntxt);\n";
-  append_defs(defs);
+  append_defs("}\n");
+  append_defs(thisLoop.breakLabel() + ":;\n");
   del(val1);
   append_defs("UNPROTECT_PTR(v);\n");
   return Expression(ans.var, TRUE, INVISIBLE, unp(ans.var));
@@ -662,8 +652,26 @@ Expression SubexpBuffer::op_while(SEXP e, string rho) {
   return bogus_exp;
 }
 
-Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
+
+Expression SubexpBuffer::op_break(SEXP e, string rho) {
+  LoopContext *loop = LoopContext::Top(); 
+  if (Rf_install("next") == e)
+    append_defs("continue;\n");
+  else
+    append_defs(loop->doBreak() + ";\n");
+  return Expression("R_NilValue", TRUE, INVISIBLE, "");
+}
+
+Expression SubexpBuffer::op_return(SEXP e, string rho) {
+  FuncInfo *fi = 
+    lexicalContext.IsEmpty() ? NULL : lexicalContext.Top();
+
+  if (fi && fi->getRequiresContext()) {
+    append_defs("endcontext(&context);\n");
+  }
+
   Expression value;
+  string v;
   switch(Rf_length(e)) {
   case 0:
     append_defs("UNPROTECT_PTR(newenv);\n");
@@ -671,9 +679,12 @@ Expression SubexpBuffer::op_c_return(SEXP e, string rho) {
     break;
   case 1:
     value = op_exp(CAR(e), rho);
+    append_defs("PROTECT(" + value.var + ");\n");
+    v = appl2_unp("eval", value.var, rho);
+    append_defs("UNPROTECT_PTR(" + value.var + ");\n");
     append_defs("UNPROTECT_PTR(newenv);\n");
     del(value);
-    append_defs("return " + value.var + ";\n");
+    append_defs("return " + v + ";\n");
     break;
   default:
     SEXP exp = e;
@@ -701,6 +712,8 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 
   FuncInfo *fi = getProperty(FuncInfo, fndef);
 
+  lexicalContext.Push(fi);
+
   SEXP e = CDR(fndef); // skip over "function" symbol
 
   bool direct = FALSE;
@@ -709,6 +722,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     // make function to be called directly
     if (ParseInfo::func_map.find(opt_R_name) != ParseInfo::func_map.end()) { // defined already
       string closure_name = ParseInfo::func_map.find(opt_R_name)->second;
+      lexicalContext.Pop();
       return Expression(closure_name, FALSE, INVISIBLE, "");
     } else { // not yet defined
       // direct version
@@ -753,6 +767,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 #endif
     ParseInfo::global_constants->del(formals);
     if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, r_form));
+    lexicalContext.Pop();
     return Expression(r_form, FALSE, INVISIBLE, "");
   } else {
     Expression r_args = op_literal(CAR(e), rho);
@@ -778,6 +793,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     defs += unp(out);
     append_defs(defs);
 #endif
+    lexicalContext.Pop();
     return Expression(r_form, FALSE, CHECK_VISIBLE, unp(r_form));
   }
 }
@@ -812,8 +828,10 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     // } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
     //   return op_while(CDR(e), rho);
     //
-  } else if (PRIMFUN(op) == (SEXP (*)())do_return && global_c_return) {
-    return op_c_return(CDR(e), rho);
+  } else if (PRIMFUN(op) == (SEXP (*)())do_break) {
+    return op_break(CAR(e), rho);
+  } else if (PRIMFUN(op) == (SEXP (*)())do_return) {
+    return op_return(CDR(e), rho);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
     Expression op1 = op_exp(op, rho);
@@ -1867,7 +1885,7 @@ string make_fundef(string func_name, SEXP fndef) {
   SEXP args = CAR(fundef_args_c(fndef));
   SEXP code = CAR(fundef_body_c(fndef));
 
-  FuncInfo *fi = getProperty(FuncInfo, fndef);
+  FuncInfo *fi = lexicalContext->Top();
 
   int i;
   string f, header;
@@ -1961,7 +1979,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
-  FuncInfo *fi = getProperty(FuncInfo, fndef);
+  FuncInfo *fi = lexicalContext.Top();
 
   if (fi->getRequiresContext()) {
     f += indent("RCNTXT context;\n");

@@ -5,6 +5,7 @@ rcc_bin_SOURCES =                \
   Main.cc Main.h                 \
   CodeGen.cc CodeGen.h           \
   CodeGenUtils.cc CodeGenUtils.h \
+  LoopContext.cc LoopContext.h   \
   Visibility.cc Visibility.h     \
   Macro.cc Macro.h               \
   GetName.cc GetName.h           \

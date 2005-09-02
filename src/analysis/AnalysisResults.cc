@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.cc,v 1.1 2005/08/31 23:36:18 johnmc Exp $ */
+/* $Id: AnalysisResults.cc,v 1.2 2005/09/02 14:01:01 johnmc Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -21,3 +21,5 @@
 #include <analysis/AnalysisResults.h>
 
 RProp::PropertySet analysisResults;
+
+StackTmpl<RAnnot::FuncInfo*> lexicalContext;

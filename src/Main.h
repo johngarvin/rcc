@@ -166,7 +166,8 @@ public:
   Expression op_if(SEXP e, std::string rho);
   Expression op_for(SEXP e, std::string rho);
   Expression op_while(SEXP e, std::string rho);
-  Expression op_c_return(SEXP e, std::string rho);
+  Expression op_return(SEXP e, std::string rho);
+  Expression op_break(SEXP e, std::string rho);
   Expression op_fundef(SEXP e, std::string rho, std::string opt_R_name = "");
   Expression op_special(SEXP e, SEXP op, std::string rho);
   Expression op_builtin(SEXP e, SEXP op, std::string rho);

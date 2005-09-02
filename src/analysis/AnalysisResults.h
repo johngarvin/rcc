@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.2 2005/09/01 17:43:06 johnmc Exp $ */
+/* $Id: AnalysisResults.h,v 1.3 2005/09/02 14:01:02 johnmc Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -22,10 +22,30 @@
 #define AnalysisResults_h
 
 #include <analysis/PropertySet.h>
+#include <analysis/Annotation.h>
 
+#include <support/stacks/StackTmpl.h>
+
+
+//**************************************************************************/
+// macros 
+//**************************************************************************/
+
+//--------------------------------------------------------------------------
+// property access
+//--------------------------------------------------------------------------
+#define getProperty(name, sexp) \
+  dynamic_cast<name *>(analysisResults.lookup(name::name ## Property, sexp))
+
+#define putProperty(name, sexp, prop, own) \
+  analysisResults.insert(name::name ## Property, sexp, prop, own)
+
+
+
+//**************************************************************************/
+// extern declarations for global variables
+//**************************************************************************/
 extern RProp::PropertySet analysisResults;
-
-#define getProperty(name, sexp) dynamic_cast<name *>(analysisResults.lookup(name::name ## Property, sexp))
-#define putProperty(name, sexp, prop, own) analysisResults.insert(name::name ## Property, sexp, prop, own)
+extern StackTmpl<RAnnot::FuncInfo*> lexicalContext;
 
 #endif
