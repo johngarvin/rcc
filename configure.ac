@@ -70,7 +70,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 #AC_FUNC_MALLOC
 #AC_FUNC_REALLOC
-AC_FUNC_ALLOCA
+#AC_FUNC_ALLOCA
 AC_FUNC_ERROR_AT_LINE
 AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
 
@@ -131,7 +131,7 @@ AC_CONFIG_FILES([Makefile
 		 src/macros/Makefile
 		 src/analysis/Makefile
 		 src/support/Makefile
-         src/matmul/Makefile
+		 src/matmul/Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile

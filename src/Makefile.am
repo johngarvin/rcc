@@ -1,5 +1,15 @@
-SUBDIRS = macros matmul support analysis 
+SUBDIRS = macros matmul support analysis
 bin_PROGRAMS = rcc.bin
+
+VPATH =                                 \
+  @top_srcdir@/src                      \
+  @top_srcdir@/src/codegen              \
+  @top_srcdir@/src/codegen/SubexpBuffer 
+
+#  @top_srcdir@/src/matmul               
+#  @top_srcdir@/src/support              
+#  @top_srcdir@/src/analysis             
+
 
 rcc_bin_SOURCES =                \
   Main.cc Main.h                 \
@@ -11,7 +21,36 @@ rcc_bin_SOURCES =                \
   GetName.cc GetName.h           \
   Output.cc Output.h             \
   ParseInfo.cc ParseInfo.h       \
-  CScope.cc CScope.h
+  CScope.cc CScope.h             \
+  \
+  SplitSubexpBuffer.cc SplitSubexpBuffer.h  \
+  SubexpBuffer.cc SubexpBuffer.h  \
+  SubexpBufferUtils.cc \
+  Expression.cc Expression.h \
+  op_arglist.cc  \
+  op_begin.cc  \
+  op_break.cc  \
+  op_builtin.cc  \
+  op_clos_app.cc  \
+  op_exp.cc  \
+  op_for.cc  \
+  op_fundef.cc  \
+  op_if.cc  \
+  op_lang.cc  \
+  op_list.cc  \
+  op_list_local.cc  \
+  op_literal.cc  \
+  op_primsxp.cc  \
+  op_promise.cc  \
+  op_return.cc   \
+  op_set.cc  \
+  op_special.cc  \
+  op_string.cc  \
+  op_subscriptset.cc  \
+  op_symlist.cc  \
+  op_vector.cc  \
+  op_while.cc
+
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 
@@ -28,8 +67,8 @@ OA_INCLUDES = \
   -I@OA_PREFIX@/include
 
 MY_COMMON_INCLUDES =         \
-  -I$(top_srcdir)/src        \
-  -I$(top_srcdir)/lib        
+  -I@top_srcdir@/src        \
+  -I@top_srcdir@/lib
 
 MY_COMMON_MACROS =                          \
   -DRCC_MACRO_PATH=\"@RCC_MACRO_PATH@\"     \
@@ -40,6 +79,8 @@ MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a
 
 ALL_INCLUDES = $(R_INCLUDES) $(OA_INCLUDES) $(MY_COMMON_INCLUDES)
 
-rcc_bin_CFLAGS  = $(BASE_CFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
-rcc_bin_CXXFLAGS= $(BASE_CXXFLAGS) $(ALL_INCLUDES) $(MY_COMMON_MACROS)
+INCLUDES = $(ALL_INCLUDES)
+
+AM_CXXFLAGS = $(MY_COMMON_MACROS)
+
 rcc_bin_LDADD = -Lanalysis -lrcca -Lsupport -lsupport -L@R_LIB_PATH@ -lR $(MY_OA_LIBS)

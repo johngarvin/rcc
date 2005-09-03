@@ -51,6 +51,7 @@ public:
   static SubexpBuffer * global_labels;
   static void flag_problem();
   static bool get_problem_flag();
+  static bool is_direct(std::string func);
 
 private:
   static bool problem_flag;

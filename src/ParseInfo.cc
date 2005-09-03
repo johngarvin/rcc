@@ -42,3 +42,14 @@ void ParseInfo::flag_problem() {
 bool ParseInfo::get_problem_flag() {
   return problem_flag;
 }
+
+// Returns true if the given string represents a function specified
+// for direct calling.
+bool ParseInfo::is_direct(std::string func) {
+  std::list<std::string>::iterator i;
+  for(i=ParseInfo::direct_funcs.begin(); i!=ParseInfo::direct_funcs.end(); i++) {
+    if (*i == func) return true;
+  }
+  return false;
+}
+

@@ -18,6 +18,8 @@ libsupport_la_SOURCES = \
 
 MYINCLUDES = -I@R_SOURCES@/src/include -I$(top_srcdir)/src
 
-libsupport_la_CXXFLAGS  = -static $(BASE_CFLAGS) $(MYINCLUDES)
+INCLUDES = $(MYINCLUDES)
+
+AM_CXXFLAGS = -static
 
 libsupport_la_LIBADD = -L@R_LIB_PATH@ -lR

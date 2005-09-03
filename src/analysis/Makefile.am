@@ -39,6 +39,7 @@ librcca_la_SOURCES =                      \
   VarRefSet.cc VarRefSet.h                \
   HandleInterface.cc HandleInterface.h
 
+INCLUDES = $(MY_INCLUDES)
 
-librcca_la_CXXFLAGS = -DOA_IRHANDLETYPE_UL $(MY_INCLUDES)
+AM_CXXFLAGS = -DOA_IRHANDLETYPE_UL 
 librcca_la_LDFLAGS = $(MY_OA_LIBS)
