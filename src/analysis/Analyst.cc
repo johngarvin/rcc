@@ -6,6 +6,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/UseDefSolver.h>
+#include <analysis/ScopeTreeBuilder.h>
 
 #include "Analyst.h"
 
@@ -15,56 +16,13 @@ using namespace RProp;
 //! construct an R_Analyst by providing an SEXP representing the whole program
 R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   m_interface = new R_IRInterface();
-  m_scope_tree_root = new FuncInfo((FuncInfo*) NULL, R_NilValue, R_NilValue);
-  build_scope_tree(m_program, m_scope_tree_root);
+  m_scope_tree_root = ScopeTreeBuilder::build_scope_tree_with_given_root(_program);
   build_cfgs();
   //  build_use_def_info();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
   return m_scope_tree_root;
-}
-
-//! Recursively traverse e to build the scope tree. 'parent' is a
-//! pointer to the parent lexical scope.
-void R_Analyst::build_scope_tree(SEXP e, FuncInfo *parent) {
-  switch(TYPEOF(e)) {
-  case NILSXP:
-  case REALSXP:
-  case STRSXP:
-  case LGLSXP:
-  case SYMSXP:
-    return;
-    break;
-  case LISTSXP:
-    build_scope_tree(CAR(e), parent);
-    build_scope_tree(CDR(e), parent);
-    break;
-  case LANGSXP:
-    if (is_simple_assign(e)) {            // a variable bound to a function
-      SEXP var = CAR(assign_lhs_c(e));
-      SEXP rhs = CAR(assign_rhs_c(e));
-      if (is_fundef(rhs)) {
-	FuncInfo *newfun = new FuncInfo(parent, var, rhs);
-     	putProperty(FuncInfo, rhs, newfun, false);
-
-	// now skip to body of function to prevent a later pass from
-	// finding the function definition; we don't want it to be
-	// flagged as a duplicate "anonymous" function.
-	build_scope_tree(CAR(fundef_body_c(rhs)), newfun);
-      }
-    } else if (is_fundef(e)) {  // anonymous function
-      FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
-      putProperty(FuncInfo, e, newfun, false);
-      build_scope_tree(CAR(fundef_body_c(e)), newfun);
-    } else {                   // ordinary function call
-      build_scope_tree(CAR(e), parent);
-      build_scope_tree(CDR(e), parent);
-    }
-    break;
-  default:
-    assert(0);
-  }
 }
 
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
@@ -82,9 +40,7 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
     FuncInfo *finfo = fii.Current();
     OA::OA_ptr<OA::CFG::Interface> cfg;
     cfg = finfo->getCFG();
-    if (!cfg.ptrEqual(NULL)) {
-      cfg->dump(os, m_interface);
-    }
+    cfg->dump(os, m_interface);
   }
 }
 
@@ -100,11 +56,9 @@ void R_Analyst::build_cfgs() {
   for( ; fii.IsValid(); ++fii) {
     FuncInfo *finfo = fii.Current();
     SEXP fundef = finfo->get_defn();
-    if (fundef != R_NilValue) {
-      OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
-      OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
-      finfo->setCFG(cfg_ptr);
-    }
+    OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
+    OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
+    finfo->setCFG(cfg_ptr);
   }
 }
 

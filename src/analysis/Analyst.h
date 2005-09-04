@@ -12,7 +12,6 @@
 
 #include <analysis/IRInterface.h>
 #include <analysis/AnnotationSet.h>
-#include <analysis/ScopeTree.h>
 #include <analysis/VarRefSet.h>     // FIXME: delete when ExpUDInfo disappears
 
 // forward declarations
@@ -32,8 +31,7 @@ class RAnnot::Var;
 //! R_Analyst
 //! 
 //! Manager for annotations. Given requests for information, perform
-//! the analysis or return data already stored.  Uses Singleton
-//! pattern: we want only one analyst for our program.
+//! the analysis or return data already stored.
 
 class R_Analyst {
 public:
@@ -60,11 +58,6 @@ private:
 
   RAnnot::FuncInfo *m_scope_tree_root;
 
-  // Annotation sets
-  //  RAnnot::AnnotationSet m_func_info; // maps each scope (ProcHandle) to a (ptr to a) FuncInfo annotation
-  //  RAnnot::AnnotationSet m_var_info;  // maps each VarRef (MemRefHandle) to Var annotation
-  
-  void build_scope_tree(SEXP e, RAnnot::FuncInfo *parent);
   void build_cfgs();
   void build_use_def_info();
 };

@@ -32,7 +32,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     del(args);
     return Expression(out, TRUE, INVISIBLE, unp(out));
   } else if (PRIMFUN(op) == (SEXP (*)())do_function) {
-    return op_fundef(CDR(e), rho);
+    return op_fundef(e, rho);
   } else if (PRIMFUN(op) == (SEXP (*)())do_begin) {
     return op_begin(CDR(e), rho);
   } else if (PRIMFUN(op) == (SEXP (*)())do_if) {

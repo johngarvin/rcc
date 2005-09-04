@@ -27,7 +27,7 @@ librcca_la_SOURCES =                      \
   IRInterface.cc IRInterface.h            \
   Analyst.cc Analyst.h                    \
   UseDefSolver.cc UseDefSolver.h	  \
-  ScopeTree.h                             \
+  ScopeTreeBuilder.cc ScopeTreeBuilder.h  \
   Utils.cc Utils.h                        \
   AnalysisResults.cc  AnalysisResults.h   \
   Annotation.cc  Annotation.h             \
