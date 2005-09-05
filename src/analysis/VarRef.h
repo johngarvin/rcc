@@ -3,7 +3,7 @@
 #define VAR_REF_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>  // find out why forward ref won't work
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <include/R/R_RInternals.h>
 

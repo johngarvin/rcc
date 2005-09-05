@@ -1,6 +1,6 @@
 #include <string>
 
-#include <SubexpBuffer.h>
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include <include/R/R_Defn.h>
 
