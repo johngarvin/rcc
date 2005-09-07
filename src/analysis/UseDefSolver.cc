@@ -99,8 +99,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
     // iterate through map
     OA_ptr<R_UseSetIterator> use_iter = use_set->get_iterator();
     for( ; use_iter->isValid(); ++*use_iter) {
-      RAnnot::Var *var = new RAnnot::Var();
-      var->setType(RAnnot::Var::Var_USE);
+      RAnnot::UseVar *var = new RAnnot::UseVar();
       // FIXME vi->setMayMustType(???);
       OA_ptr<R_VarRef> location; location = use_iter->current()->get_loc();
       an->insert(std::make_pair(HandleInterface::make_mem_ref_h(location->get_sexp()), var));

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.5 2005/09/07 05:50:07 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.6 2005/09/07 16:42:53 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -152,11 +152,18 @@ UseVar::~UseVar()
 {
 }
 
+SEXP UseVar::getName() const
+{
+  return CAR(mSEXP);
+}
+
 std::ostream&
 UseVar::dump(std::ostream& os) const
 {
   beginObjDump(os,UseVar);
-  dumpSEXP(os,mSEXP);
+  //dumpSEXP(os,mSEXP);
+  SEXP name = getName();
+  dumpSEXP(os,name);
   dumpVar(os,mType);
   dumpVar(os,mmType);
   dumpVar(os,mLocalityType);
@@ -175,11 +182,25 @@ DefVar::DefVar()
 DefVar::~DefVar()
   {}
 
+SEXP DefVar::getName() const
+{
+  if (mSourceType == DefVar_ASSIGN) {
+    return CAR(mSEXP);
+  } else if (mSourceType == DefVar_FORMAL) {
+    return TAG(mSEXP);
+  } else {
+    assert(0);
+    return R_NilValue;
+  }
+}
+
 std::ostream&
 DefVar::dump(std::ostream& os) const
 {
   beginObjDump(os,DefVar);
-  dumpSEXP(os,mSEXP);
+  //dumpSEXP(os,mSEXP);
+  SEXP name = getName();
+  dumpSEXP(os,name);
   dumpVar(os,mType);
   dumpVar(os,mmType);
   dumpVar(os,mLocalityType);
@@ -305,7 +326,7 @@ FuncInfo::dump(std::ostream& os) const
   dumpVar(os, mCName);
   dumpVar(os, mRequiresContext);
   dumpObj(os, mEnv);
-  //dumpObj(os, mCFG);
+  //dumpObj(os, mCFG);      // can't call CFG::dump; it requires the IRInterface
   dumpSEXP(os, mFirstName);
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);

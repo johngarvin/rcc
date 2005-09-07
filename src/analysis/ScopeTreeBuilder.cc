@@ -11,7 +11,7 @@ FuncInfo * ScopeTreeBuilder::build_scope_tree_with_given_root(SEXP r_root) {
   SEXP name = CAR(assign_lhs_c(r_root));
   SEXP definition = CAR(assign_rhs_c(r_root));
   assert(is_fundef(definition));
-  FuncInfo *root = new FuncInfo(0, name, definition); // null parent
+  FuncInfo *root = new FuncInfo(0, name, definition); // root node has null parent
   putProperty(FuncInfo, definition, root, false);
 
   // Skip to the body of the function. Otherwise, the definition we

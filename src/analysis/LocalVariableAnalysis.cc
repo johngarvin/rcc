@@ -78,7 +78,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
     if (is_var(CAR(e))) {
       UseVar * var_annot = new UseVar();
-      var_annot->setMention(cell);
+      var_annot->setMention(e);
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
       var_annot->setLocalityType(Locality_TOP);

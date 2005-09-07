@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.7 2005/09/07 05:50:07 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.8 2005/09/07 16:42:53 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -303,10 +303,12 @@ public:
   void setMention(SEXP x)
     { mSEXP = x; }
 
+  virtual SEXP getName() const = 0;
+
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual Var* clone() { return new Var(*this); }
+  //virtual Var* clone() { return new Var(*this); }
 
   // -------------------------------------------------------
   // code generation
@@ -361,6 +363,8 @@ public:
   void setPositionType(PositionT x)
     { mPositionType = x; }
 
+  virtual SEXP getName() const;
+
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
@@ -397,6 +401,8 @@ public:
   void setSourceType(SourceT x)
     { mSourceType = x; }
 
+  virtual SEXP getName() const;
+
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
@@ -425,7 +431,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual FuncVar* clone() { return new FuncVar(*this); }
+  //virtual FuncVar* clone() { return new FuncVar(*this); }
 
   // -------------------------------------------------------
   // code generation
@@ -500,10 +506,10 @@ public:
   // -------------------------------------------------------
 
   // definition
-  SEXP getDef() const
-    { return mDef; }
-  void setDef(SEXP x)
-    { mDef = x; }
+  SEXP getDefn() const
+    { return mDefn; }
+  void setDefn(SEXP x)
+    { mDefn = x; }
   
   // is-binding-known
   bool getIsBindingKnown() const
@@ -560,7 +566,7 @@ public:
 
 private:
   // data_type mType
-  SEXP mDef;
+  SEXP mDefn;
   bool mIsBindingKnown;
   Environment* mEnv;
   MySet_t mUses;
