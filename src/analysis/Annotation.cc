@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.4 2005/09/02 03:51:56 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.5 2005/09/07 05:50:07 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -28,9 +28,9 @@
 
 #include <support/DumpMacros.h>
 #include <analysis/Utils.h>
+#include <analysis/AnalysisResults.h>
 
 #include "Annotation.h"
-#include "AnalysisResults.h"
 
 //*************************** Forward Declarations ***************************
 
@@ -69,6 +69,8 @@ Environment::dump(std::ostream& os) const
 // ExpressionInfo
 //****************************************************************************
 
+PropertyHndlT ExpressionInfo::ExpressionInfoProperty = "ExpressionInfo";
+
 ExpressionInfo::ExpressionInfo()
 {
 }
@@ -83,6 +85,11 @@ std::ostream&
 ExpressionInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, ExpressionInfo);
+  dumpSEXP(os, mDefn);
+  MySet_t::iterator var_iter;
+  for(var_iter = mVars.begin(); var_iter != mVars.end(); ++var_iter) {
+    (*var_iter)->dump(os);
+  }
   endObjDump(os, ExpressionInfo);
 }
 
@@ -133,6 +140,53 @@ Var::dump(std::ostream& os) const
   endObjDump(os, Var);
 }
 
+//****************************************************************************
+// UseVar
+//****************************************************************************
+
+UseVar::UseVar()
+{
+}
+
+UseVar::~UseVar()
+{
+}
+
+std::ostream&
+UseVar::dump(std::ostream& os) const
+{
+  beginObjDump(os,UseVar);
+  dumpSEXP(os,mSEXP);
+  dumpVar(os,mType);
+  dumpVar(os,mmType);
+  dumpVar(os,mLocalityType);
+  //dumpPtr(os,mReachingDef);
+  dumpVar(os,mPositionType);
+  endObjDump(os,UseVar);
+}
+
+//****************************************************************************
+// DefVar
+//****************************************************************************
+
+DefVar::DefVar()
+  {}
+
+DefVar::~DefVar()
+  {}
+
+std::ostream&
+DefVar::dump(std::ostream& os) const
+{
+  beginObjDump(os,DefVar);
+  dumpSEXP(os,mSEXP);
+  dumpVar(os,mType);
+  dumpVar(os,mmType);
+  dumpVar(os,mLocalityType);
+  // dumpPtr(os,mReachingDef);
+  dumpVar(os,mSourceType);
+  endObjDump(os,DefVar);
+}
 
 //****************************************************************************
 // FuncVar
@@ -237,7 +291,7 @@ bool FuncInfo::getRequiresContext()
 
 
 
-SEXP FuncInfo::get_args() 
+SEXP FuncInfo::getArgs() 
 { 
   return CAR(fundef_args_c(mDefn)); 
 }
@@ -257,7 +311,6 @@ FuncInfo::dump(std::ostream& os) const
   dumpPtr(os, mLexicalParent);
   endObjDump(os, FuncInfo);
 }
-
 
 //****************************************************************************
 // Phi

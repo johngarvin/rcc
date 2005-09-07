@@ -35,11 +35,14 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/AnalysisResults.h>
+#include <analysis/Annotation.h>
+#include <analysis/LocalVariableAnalysis.h>
+
 #include <analysis/IRInterface.h>
-#include <analysis/Analyst.h>     // FIXME: delete when ExpUDInfo goes away
 
 using namespace OA;
-
+using namespace RAnnot;
 
 //--------------------------------------------------------------------
 // Callsite iterator
@@ -328,51 +331,57 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 // Obtain uses and defs
 //--------------------------------------------------------
 
-#if 0
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  R_ExpUDInfo ud((SEXP)h.hval());
-  OA_ptr<VarSet> defs; defs = new VarSet();
-  defs->set_union(ud.get_local_defs());
-  defs->set_union(ud.get_free_defs());
-  OA_ptr<SSA::IRUseDefIterator> retval;
-  retval = new R_IRUseDefIterator(defs->get_iterator());
-  return retval;
-}
+  SEXP stmt = (SEXP)h.hval();
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
+  if (stmt_info == 0) {
+    LocalVariableAnalysis lva(stmt);
+    lva.perform_analysis();
+  }
 
-OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  R_ExpUDInfo ud((SEXP)h.hval());
-  OA_ptr<VarSet> uses; uses = new VarSet();
-  uses->set_union(ud.get_app_uses());
-  uses->set_union(ud.get_non_app_uses());
-  OA_ptr<SSA::IRUseDefIterator> retval; 
-  retval = new R_IRUseDefIterator(uses->get_iterator());
-  return retval;
-}
-#endif
-
-OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  R_ExpUDLocInfo ud((SEXP)h.hval());
+  // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs;
-  defs->set_union(ud.get_local_defs());
-  defs->set_union(ud.get_free_defs());
+  ExpressionInfo::iterator var_iter;
+  for(var_iter = stmt_info->begin(); var_iter != stmt_info->end(); ++var_iter) {
+    if (dynamic_cast<DefVar *>(*var_iter)) {
+      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
+      defs->insert_ref(bvr);
+    }
+  }
   OA_ptr<SSA::IRUseDefIterator> retval;
   retval = new R_IRUseDefIterator(defs->get_iterator());
-  return retval;  
+  return retval;
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  R_ExpUDLocInfo ud((SEXP)h.hval());
-  OA_ptr<R_VarRefSet> uses;
-  uses->set_union(ud.get_app_uses());
-  uses->set_union(ud.get_non_app_uses());
+  SEXP stmt = (SEXP)h.hval();
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
+  if (stmt_info == 0) {
+    LocalVariableAnalysis lva(stmt);
+    lva.perform_analysis();
+  }  
+
+  // For each variable, insert only if it's a def
+  OA_ptr<R_VarRefSet> defs;
+  ExpressionInfo::iterator var_iter;
+  for(var_iter = stmt_info->begin(); var_iter != stmt_info->end(); ++var_iter) {
+    if (dynamic_cast<DefVar *>(*var_iter)) {
+      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
+      defs->insert_ref(bvr);
+    }
+  }
   OA_ptr<SSA::IRUseDefIterator> retval;
-  retval = new R_IRUseDefIterator(uses->get_iterator());
-  return retval;  
+  retval = new R_IRUseDefIterator(defs->get_iterator());
+  return retval;
 }
 
 void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
   SEXP cell = (SEXP)h.hval();
   Rf_PrintValue(CAR(cell));
+  ExpressionInfo * annot = getProperty(ExpressionInfo, cell);
+  if (annot) {
+    annot->dump(os);
+  }
 }
 
 void R_IRInterface::dump(OA::MemRefHandle h, ostream &stream) {}

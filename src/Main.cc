@@ -160,16 +160,19 @@ int main(int argc, char *argv[]) {
 
   // FIXME: load standard assertions here (before parsing)
 
+  // parse
   SEXP program = parse_R_as_function(in_file);
 
+  // perform analysis
   R_Analyst an(program);
+
   if (analysis_debug) {
     FuncInfo *scope_tree = an.get_scope_tree_root();
     FuncInfoIterator fii(scope_tree);
     for(FuncInfo *fi; fi = fii.Current(); fii++) {
       cout << "New procedure:" << endl;
       fi->dump(cout);
-      an.dump_cfg(cout, fi->get_defn());
+      an.dump_cfg(cout, fi->getDefn());
     }
   }
 

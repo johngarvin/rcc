@@ -17,6 +17,8 @@ SEXP fundef_args_c(const SEXP e);
 SEXP fundef_body_c(const SEXP e);
 
 bool is_struct_field(const SEXP e);
+SEXP struct_field_lhs_c(const SEXP e);
+SEXP struct_field_rhs_c(const SEXP e);
 bool is_subscript(const SEXP e);
 SEXP subscript_lhs_c(const SEXP e);
 SEXP subscript_rhs_c(const SEXP e);

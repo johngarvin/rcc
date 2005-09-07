@@ -37,7 +37,8 @@ librcca_la_SOURCES =                      \
   SimpleIterators.cc SimpleIterators.h    \
   VarRef.cc VarRef.h                      \
   VarRefSet.cc VarRefSet.h                \
-  HandleInterface.cc HandleInterface.h
+  HandleInterface.cc HandleInterface.h    \
+  LocalVariableAnalysis.cc LocalVariableAnalysis.h
 
 INCLUDES = $(MY_INCLUDES)
 

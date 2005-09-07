@@ -1,8 +1,9 @@
+// -*-Mode: C++;-*-
+
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.6 2005/09/02 03:51:56 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.7 2005/09/07 05:50:07 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -38,6 +39,7 @@
 //*************************** User Include Files ****************************
 
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
+#include <analysis/LocalityType.h>
 
 #include "PropertyHndl.h"
 #include "AnnotationBase.h"
@@ -49,6 +51,7 @@
 namespace RAnnot {
 
 class VarInfo;
+class Var;
 
 // N.B.: In order to make memory management sane, all Annotations
 // should live within and owned by an AnnotationSet.  This allows
@@ -169,8 +172,38 @@ class ExpressionInfo
   : public AnnotationBase
 {
 public:
+  static PropertyHndlT ExpressionInfoProperty;
+public:
   ExpressionInfo();
   virtual ~ExpressionInfo();
+
+  typedef Var *                   value_type, key_type;
+
+  typedef std::set<Var *>         MySet_t;
+  typedef MySet_t::iterator       iterator;
+  typedef MySet_t::const_iterator const_iterator;
+
+  // -------------------------------------------------------
+  // set operations
+  // -------------------------------------------------------
+  std::pair<iterator, bool> insert_var(const value_type& x)
+    { return mVars.insert(x); }
+
+  // iterators:
+  iterator begin() 
+    { return mVars.begin(); }
+  const_iterator begin() const 
+    { return mVars.begin(); }
+  iterator end() 
+    { return mVars.end(); }
+  const_iterator end() const 
+    { return mVars.end(); }
+
+  // definition of the expression
+  SEXP getDefn() const
+    { return mDefn; }
+  void setDefn(SEXP x)
+    { mDefn = x; }
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
@@ -182,7 +215,10 @@ public:
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
+
 private:
+  SEXP mDefn;
+  MySet_t mVars;  // contents of set not owned
 };
 
 
@@ -249,12 +285,24 @@ public:
   void setMayMustType(MayMustT x)
     { mmType = x; }
 
+  // locality type
+  LocalityType getLocalityType() const
+    { return mLocalityType; }
+  void setLocalityType(LocalityType x)
+    { mLocalityType = x; }
+
   // reaching-definition
   VarInfo* getReachingDef() const
     { return mReachingDef; }
   void setReachingDef(VarInfo* x)
     { mReachingDef = x; }
   
+  // Mention
+  SEXP getMention() const
+    { return mSEXP; }
+  void setMention(SEXP x)
+    { mSEXP = x; }
+
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
@@ -283,10 +331,84 @@ public:
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
-private:
+protected:
+  SEXP mSEXP;
   VarT mType;
   MayMustT mmType;
+  LocalityType mLocalityType;
   VarInfo* mReachingDef; // (not owned)
+};
+
+// ---------------------------------------------------------------------------
+// UseVar: A variable reference that is a use
+// ---------------------------------------------------------------------------
+class UseVar
+  : public Var
+{
+public:
+  enum PositionT {
+    UseVar_FUNCTION,
+    UseVar_ARGUMENT
+  };
+
+public:
+  UseVar();
+  virtual ~UseVar();
+
+  // function or argument position
+  PositionT getPositionType() const
+    { return mPositionType; }
+  void setPositionType(PositionT x)
+    { mPositionType = x; }
+
+  // -------------------------------------------------------
+  // cloning: return a shallow copy... 
+  // -------------------------------------------------------
+  virtual UseVar* clone() { return new UseVar(*this); }
+
+  // -------------------------------------------------------
+  // debugging
+  // -------------------------------------------------------
+  virtual std::ostream& dump(std::ostream& os) const;
+
+private:
+  PositionT mPositionType;
+};
+
+// ---------------------------------------------------------------------------
+// DefVar: A variable reference that is a def
+// ---------------------------------------------------------------------------
+class DefVar
+  : public Var
+{
+public:
+  enum SourceT {
+    DefVar_ASSIGN,  // defined by an assignment statement
+    DefVar_FORMAL,  // defined as a formal variable by a function
+    DefVar_PHI      // defined by a phi function
+  };
+public:
+  DefVar();
+  virtual ~DefVar();
+
+  // source of definition: assignment statement, formal argument, or phi function
+  SourceT getSourceType()
+    { return mSourceType; }
+  void setSourceType(SourceT x)
+    { mSourceType = x; }
+
+  // -------------------------------------------------------
+  // cloning: return a shallow copy... 
+  // -------------------------------------------------------
+  virtual DefVar* clone() { return new DefVar(*this); }
+
+  // -------------------------------------------------------
+  // debugging
+  // -------------------------------------------------------
+  virtual std::ostream& dump(std::ostream& os) const;
+
+private:
+  SourceT mSourceType;
 };
 
 
@@ -478,10 +600,10 @@ public:
      { return mNumArgs; }
   void setNumArgs(unsigned int x) 
      { mNumArgs = x; }
-  SEXP get_args(); 
+  SEXP getArgs(); 
 
   // definition
-  SEXP get_defn() 
+  SEXP getDefn() 
      { return mDefn; }
 
   // has-variable-arguments
@@ -513,6 +635,7 @@ public:
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
+  void dumpStmtsInCFG(std::ostream& os) const;
 
 private:
   unsigned int mNumArgs;   // number of known arguments

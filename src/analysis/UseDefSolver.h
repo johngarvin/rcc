@@ -5,6 +5,9 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <analysis/LocalityType.h>
+// TODO: change to forward declaration when UseSet, etc. move to separate file
+
 class OA::CFG::Interface;
 class RAnnot::AnnotationSet;
 
@@ -12,8 +15,6 @@ class R_UseSet;
 class R_VarRef;
 class R_VarRefSet;
 class R_IRInterface;
-
-enum VarType {TOP, LOCAL, FREE, BOTTOM};
 
 //! Implements the OpenAnalysis CFG data flow problem interface to
 //! determine whether variable references refer to local or free
@@ -58,23 +59,19 @@ private:
 };
 
 
-//! Associates an R_VarRef with a VarType. This is the unit that
+//! Associates an R_VarRef with a LocalityType. This is the unit that
 //! R_UseSet (which implements DataFlowSet) contains.
 //! Modeled after ConstDef in ReachConstsStandard.hpp.
 class R_Use {
 public:
   // constructors
-  R_Use(OA::OA_ptr<R_VarRef> _loc, VarType _type)
-    : loc(_loc), type(_type) {}
-  R_Use(OA::OA_ptr<R_VarRef> _loc) : loc(_loc), type(TOP) {}
-  R_Use(R_Use& other) : loc(other.loc),
-			type(other.type) {}
-  R_Use() {}
-  ~R_Use() {}
+  R_Use(OA::OA_ptr<R_VarRef> _loc, LocalityType _type);
+  R_Use(RAnnot::Var *);
+  R_Use(const R_Use& other);
 
   // access
-  OA::OA_ptr<R_VarRef> getLoc() const { return loc; }
-  VarType getVarType() const { return type; }
+  OA::OA_ptr<R_VarRef> get_loc() const { return m_loc; }
+  LocalityType get_locality_type() const { return m_type; }
 
   // relationships
   R_Use& operator= (const R_Use& other);
@@ -95,8 +92,8 @@ public:
   std::string R_Use::toString();
 
 private:
-  OA::OA_ptr<R_VarRef> loc;
-  VarType type;
+  OA::OA_ptr<R_VarRef> m_loc;
+  LocalityType m_type;
 };
 
 //! Iterator over R_Use's in an R_UseSet
@@ -116,7 +113,7 @@ private:
   std::set<OA::OA_ptr<R_Use> >::iterator mIter;
 };
 
-//! Set of R_Use objects. Inherits from DataFlowSet to be usable in
+//! Set of R_Use objects. Inherits from DataFlowSet for use in
 //! CFGDFProblem.
 // Removed "virtual": need clone() to be able to return an R_UseSet.
 //class R_UseSet : public virtual OA::DataFlow::DataFlowSet {
@@ -145,7 +142,7 @@ public:
   //! must use this instead of insert because std::set::insert will just see
   //! that the element with the same locptr is already in the set and then not
   //! insert the new element
-  void replace(OA::OA_ptr<R_VarRef> loc, VarType varType);
+  void replace(OA::OA_ptr<R_VarRef> loc, LocalityType locality_type);
   void replace(OA::OA_ptr<R_Use> ru);
 
   // relationship
@@ -165,7 +162,7 @@ public:
   //! NULL is returned if no R_Use in this set matches loc
   OA::OA_ptr<R_Use> find(OA::OA_ptr<R_VarRef> locPtr) const;
 
-  void insert_varset(OA::OA_ptr<R_VarRefSet> vars, VarType type);
+  void insert_varset(OA::OA_ptr<R_VarRefSet> vars, LocalityType type);
 
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);

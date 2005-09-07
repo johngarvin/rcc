@@ -59,6 +59,16 @@ bool is_struct_field(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("$"));
 }
 
+SEXP struct_field_lhs_c(const SEXP e) {
+  assert(is_struct_field(e));
+  return CDR(e);
+}
+
+SEXP struct_field_rhs_c(const SEXP e) {
+  assert(is_struct_field(e));
+  return CDDR(e);
+}
+
 bool is_subscript(const SEXP e) {
   assert(TYPEOF(e) == LANGSXP);
   return (TYPEOF(e) == LANGSXP 
