@@ -19,18 +19,18 @@ using namespace std;
 //!  string.
 Expression SubexpBuffer::op_list_local(SEXP e, string rho,
 				       bool literal /* = TRUE */, 
-				       bool primFuncArgList /* = FALSE */,
+				       bool fullyEvaluatedResult /* = FALSE */,
 				       string opt_l_car /* = "" */) {
   if (TYPEOF(e) != LISTSXP && TYPEOF(e) != LANGSXP && TYPEOF(e) != NILSXP) {
     err("non-list found in op_list_local\n");
   }
   
   if (opt_l_car.empty()) {
-    //      return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, primFuncArgList));
-    return op_list(e, rho, literal, primFuncArgList);
+    //      return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
+    return op_list(e, rho, literal, fullyEvaluatedResult);
   } else {
-    //      Expression cdr = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, primFuncArgList));
-    Expression cdr = op_list(e, rho, literal, primFuncArgList);
+    //      Expression cdr = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
+    Expression cdr = op_list(e, rho, literal, fullyEvaluatedResult);
     string out = appl2("lcons", opt_l_car, cdr.var);
     del(cdr);
     return Expression(out, cdr.is_dep, VISIBLE, unp(out));
@@ -58,7 +58,7 @@ Expression SubexpBuffer::op_list_local(SEXP e, string rho,
     if (literal) {
       car_exp = op_literal(CAR(e), rho);
     } else {
-      car_exp = op_exp(CAR(e), rho, primFuncArgList);
+      car_exp = op_exp(CAR(e), rho, fullyEvaluatedResult);
     }
     list_dep = list_dep || car_exp.is_dep;
     set_list += "CAR(" + list + " - " + i_to_s(i) + ") = " + car_exp.var + ";\n";

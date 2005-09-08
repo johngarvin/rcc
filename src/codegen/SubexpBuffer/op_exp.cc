@@ -14,7 +14,7 @@
 
 using namespace std;
 
-Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
+Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
   Expression out, formals, body, env;
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -40,8 +40,8 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool primFuncArg) {
     } else {
       string sym = make_symbol(e);
       string v = appl2_unp("findVar", sym, rho);
-      if (primFuncArg) v = appl2("eval", v, rho);
-      out = Expression(v, TRUE, VISIBLE, primFuncArg ? unp(v) : "");
+      if (fullyEvaluatedResult) v = appl2("eval", v, rho);
+      out = Expression(v, TRUE, VISIBLE, fullyEvaluatedResult ? unp(v) : "");
       return out;
     }
     break;

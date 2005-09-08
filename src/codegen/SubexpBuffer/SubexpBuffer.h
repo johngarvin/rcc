@@ -72,7 +72,7 @@ public:
 				  std::string arg5,
 				  std::string arg6);
 
-  Expression op_exp(SEXP e, std::string rho, bool primFuncArg = false);
+  Expression op_exp(SEXP e, std::string rho, bool fullyEvaluatedResult = false);
   Expression op_primsxp(SEXP e, std::string rho);
   Expression op_symlist(SEXP e, std::string rho);
   Expression op_lang(SEXP e, std::string rho);
@@ -93,8 +93,8 @@ public:
   // Expression op_arglist_local(SEXP e, std::string rho);
   Expression op_literal(SEXP e, std::string rho);
   Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 
-			   bool primFuncArgList = FALSE, std::string opt_l_car = "");
-  Expression op_list(SEXP e, std::string rho, bool literal, bool primFuncArgList = FALSE);
+			   bool fullyEvaluatedResult = FALSE, std::string opt_l_car = "");
+  Expression op_list(SEXP e, std::string rho, bool literal, bool fullyEvaluatedResult = FALSE);
   Expression op_list_help(SEXP e, std::string rho, 
 			  SubexpBuffer & consts, 
 			  std::string & out_const, bool literal);
