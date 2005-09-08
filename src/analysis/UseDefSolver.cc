@@ -68,11 +68,9 @@ R_UseDefSolver::R_UseDefSolver(OA_ptr<R_IRInterface> _rir)
 {
 }
 
-//! Perform data flow analysis. Creates and returns a pointer to an
-//! AnnotationSet that maps each variable reference to a Var
-//! annotation with use and def information. The caller is responsible
-//! for releasing the memory when finished.
-RAnnot::AnnotationSet* R_UseDefSolver::
+//! Perform the data flow analysis. Sets each variable reference's Var
+//! annotation with its locality information.
+void R_UseDefSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_cfg = cfg;
   m_proc = proc;
@@ -87,25 +85,32 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeInSetMap;
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeOutSetMap;
 
-  RAnnot::AnnotationSet* an = new RAnnot::AnnotationSet();
-
-  // iterate through each node's mNodeOutSetMap
-  std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator map_iter;
-  for(map_iter = mNodeOutSetMap.begin(); map_iter != mNodeOutSetMap.end(); ++map_iter) {
+  // iterate through each node's mNodeInSetMap
+  std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator mi;
+  for(mi = mNodeInSetMap.begin(); mi != mNodeInSetMap.end(); ++mi) {
 
     // map contains ptrs to DataFlowSet; convert to ptr to derived class R_UseSet
-    OA_ptr<R_UseSet> use_set = map_iter->second.convert<R_UseSet>();
+    OA_ptr<R_UseSet> use_set = mi->second.convert<R_UseSet>();
 
     // iterate through map
-    OA_ptr<R_UseSetIterator> use_iter = use_set->get_iterator();
-    for( ; use_iter->isValid(); ++*use_iter) {
-      RAnnot::UseVar *var = new RAnnot::UseVar();
-      // FIXME vi->setMayMustType(???);
-      OA_ptr<R_VarRef> location; location = use_iter->current()->get_loc();
-      an->insert(std::make_pair(HandleInterface::make_mem_ref_h(location->get_sexp()), var));
+    OA_ptr<R_UseSetIterator> ui = use_set->get_iterator();
+    for( ; ui->isValid(); ++*ui) {
+      // get the annotation for this var ref
+      OA_ptr<R_VarRef> location; location = ui->current()->get_loc();
+      RAnnot::Var * annot = getProperty(Var, location->get_sexp());
+      assert(annot != 0);
+      // DF problem only analyzes uses and may-defs. Locality flags of
+      // must-defs are already determined statically, so don't reset
+      // them!
+      if (annot->getMayMustType() == Var::Var_MAY
+	  || dynamic_cast<RAnnot::UseVar *>(annot) != 0)
+      {
+	//	assert(annot->getLocalityType() == Locality_TOP);
+	// reset its locality to the new value
+	annot->setLocalityType(ui->current()->get_locality_type());
+      }
     }
   }
-  return an;
 }
 
 void R_UseDefSolver::dump_node_maps() {
@@ -116,13 +121,14 @@ void R_UseDefSolver::dump_node_maps() {
 void R_UseDefSolver::dump_node_maps(ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<R_UseSet> in_set, out_set;
-  OA_ptr<CFG::Interface::NodesIterator> node_it = m_cfg->getNodesIterator();
-  for ( ; node_it->isValid(); ++*node_it) {
-    df_in_set = mNodeInSetMap[node_it->current()];
-    df_out_set = mNodeOutSetMap[node_it->current()];
+  OA_ptr<CFG::Interface::NodesIterator> ni = m_cfg->getNodesIterator();
+  for ( ; ni->isValid(); ++*ni) {
+    OA_ptr<CFG::Interface::Node> n = ni->current();
+    df_in_set = mNodeInSetMap[n];
+    df_out_set = mNodeOutSetMap[n];
     in_set = df_in_set.convert<R_UseSet>();
     out_set = df_out_set.convert<R_UseSet>();
-    os << "CFG NODE #" << node_it->current()->getId() << ":\n";
+    os << "CFG NODE #" << n->getId() << ":\n";
     os << "IN SET:\n";
     in_set->dump(os, rir);
     os << "OUT SET:\n";
@@ -136,32 +142,35 @@ void R_UseDefSolver::dump_node_maps(ostream &os) {
 
 //! Create a set of all variables set to TOP
 OA_ptr<DataFlow::DataFlowSet> R_UseDefSolver::initializeTop() {
-  if (all_top.ptrEqual(NULL)) {
+  if (m_all_top.ptrEqual(NULL)) {
     initialize_sets();
   }
-  return all_top->clone();
+  return m_all_top->clone();
 }
 
 //! Create a set of all variable set to BOTTOM
 OA_ptr<DataFlow::DataFlowSet> R_UseDefSolver::initializeBottom() {
-  if (all_bottom.ptrEqual(NULL)) {
+  if (m_all_bottom.ptrEqual(NULL)) {
     initialize_sets();
   }
-  return all_bottom->clone();
+  return m_all_bottom->clone();
 }
 
 void R_UseDefSolver::initialize_sets() {
-  all_top = new R_UseSet;
-  all_bottom = new R_UseSet;
-  entry_values = new R_UseSet;
-  OA_ptr<CFG::Interface::NodesIterator> node_it;
-  node_it = m_cfg->getNodesIterator();
-  OA_ptr<CFG::Interface::NodeStatementsIterator> stmt_it;
-  for ( ; node_it->isValid(); ++*node_it) {
-    // add vars found in each statement
-    stmt_it = node_it->current()->getNodeStatementsIterator();
-    for( ; stmt_it->isValid(); ++*stmt_it) {
-      SEXP stmt_r = (SEXP)stmt_it->current().hval();
+  m_all_top = new R_UseSet;
+  m_all_bottom = new R_UseSet;
+  m_entry_values = new R_UseSet;
+
+  // each CFG node
+  OA_ptr<CFG::Interface::NodesIterator> ni;
+  ni = m_cfg->getNodesIterator();
+  for ( ; ni->isValid(); ++*ni) {
+
+    // each statement
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
+    si = ni->current()->getNodeStatementsIterator();
+    for( ; si->isValid(); ++*si) {
+      SEXP stmt_r = (SEXP)si->current().hval();
 
       if (debug) {
 	Rf_PrintValue(stmt_r);
@@ -171,43 +180,48 @@ void R_UseDefSolver::initialize_sets() {
       if (stmt_annot == 0) {
 	LocalVariableAnalysis lva(stmt_r);
 	lva.perform_analysis();
+	stmt_annot = getProperty(ExpressionInfo, stmt_r);
       }
 
-      Var::iterator var_iter;
-      for(var_iter = stmt_annot->begin(); var_iter != stmt_annot->end(); ++var_iter) {
-	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*var_iter)->getMention());
+      // for this statement's annotation, iterate through its set of var mentions
+      Var::iterator vi;
+      for(vi = stmt_annot->begin(); vi != stmt_annot->end(); ++vi) {
+	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*vi)->getMention());
 
 	// all_top and all_bottom: all variables set to TOP/BOTTOM,
 	// must be initialized for OA data flow analysis
 	OA_ptr<R_Use> top; top = new R_Use(ref, Locality_TOP);
-	all_top->insert(top);
+	m_all_top->insert(top);
 	OA_ptr<R_Use> bottom; bottom = new R_Use(ref, Locality_BOTTOM);
-	all_bottom->insert(bottom);
+	m_all_bottom->insert(bottom);
 
 	// entry_values: initial in set for entry node.  Formal
 	// arguments are LOCAL; all other variables are FREE.  We add
 	// all variables as FREE here, then reset the formals as LOCAL
 	// after the per-node and per-statement stuff.
 	OA_ptr<R_Use> free; free = new R_Use(ref, Locality_FREE);
-	entry_values->insert(free);
+	m_entry_values->insert(free);
       }
     } // statements
   } // CFG nodes
   
   // set all formals LOCAL instead of FREE on entry
   SEXP arglist = CAR(fundef_args_c((SEXP)m_proc.hval()));
-  entry_values->insert_varset(R_VarRefSet::refs_from_arglist(arglist), Locality_LOCAL);
+  OA_ptr<R_VarRefSet> vs = R_VarRefSet::refs_from_arglist(arglist);
+  m_all_top->insert_varset(vs, Locality_TOP);
+  m_all_bottom->insert_varset(vs, Locality_BOTTOM);
+  m_entry_values->insert_varset(vs, Locality_LOCAL);
 }
 
 //! Creates in and out R_UseSets and stores them in mNodeInSetMap and
 //! mNodeOutSetMap.
 void R_UseDefSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
-    mNodeInSetMap[n] = entry_values->clone();
+    mNodeInSetMap[n] = m_entry_values->clone();
   } else {
-    mNodeInSetMap[n] = all_top->clone();
+    mNodeInSetMap[n] = m_all_top->clone();
   }
-  mNodeOutSetMap[n] = all_top->clone();
+  mNodeOutSetMap[n] = m_all_top->clone();
 }
 
 //! Meet function merges info from predecessors. CFGDFProblem says: OK
@@ -233,9 +247,10 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   for(var_iter = annot->begin(); var_iter != annot->end(); ++var_iter) {
     if ((*var_iter)->getLocalityType() == Locality_LOCAL) {
       OA_ptr<R_Use> use; use = new R_Use(*var_iter);
-      in->insert(use);
+      in->replace(use);
     }
   }
+  return in.convert<DataFlow::DataFlowSet>();
 }
 
 //--------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.6 2005/09/07 16:42:53 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.7 2005/09/08 06:30:47 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -85,7 +85,8 @@ std::ostream&
 ExpressionInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, ExpressionInfo);
-  dumpSEXP(os, mDefn);
+  SEXP definition = CAR(mDefn);
+  dumpSEXP(os, definition);
   MySet_t::iterator var_iter;
   for(var_iter = mVars.begin(); var_iter != mVars.end(); ++var_iter) {
     (*var_iter)->dump(os);
@@ -284,7 +285,11 @@ VarInfo::dump(std::ostream& os) const
 PropertyHndlT FuncInfo::FuncInfoProperty = "FuncInfo";
 
 FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
-  mRequiresContext(true), mFirstName(name), mDefn(defn), NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
+  mLexicalParent(lexParent),
+  mFirstName(name),
+  mDefn(defn),
+  mRequiresContext(true),
+  NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
   mEnv = new Environment();
 }

@@ -23,8 +23,7 @@ class R_UseDefSolver : private OA::DataFlow::CFGDFProblem {
 public:
   R_UseDefSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~R_UseDefSolver() {}
-  RAnnot::AnnotationSet* perform_analysis(OA::ProcHandle proc,
-					  OA::OA_ptr<OA::CFG::Interface> cfg);
+  void perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
   //------------------------------------------------------------------
@@ -51,9 +50,9 @@ private:
 
   void initialize_sets();
 
-  OA::OA_ptr<R_UseSet> all_top;
-  OA::OA_ptr<R_UseSet> all_bottom;
-  OA::OA_ptr<R_UseSet> entry_values;
+  OA::OA_ptr<R_UseSet> m_all_top;
+  OA::OA_ptr<R_UseSet> m_all_bottom;
+  OA::OA_ptr<R_UseSet> m_entry_values;
   OA::OA_ptr<OA::CFG::Interface> m_cfg;
   OA::ProcHandle m_proc;
 };

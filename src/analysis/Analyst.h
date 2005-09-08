@@ -12,21 +12,12 @@
 
 #include <analysis/IRInterface.h>
 #include <analysis/AnnotationSet.h>
-#include <analysis/VarRefSet.h>     // FIXME: delete when ExpUDInfo disappears
 
 // forward declarations
-
-// local
-class R_ExpUDLocInfo;
 
 // from Annotation.h
 class RAnnot::FuncInfo;
 class RAnnot::Var;
-
-// from VarRef.h
-//class R_VarRef;
-//class R_VarRefSet;
-//class R_VarRefSetIterator;
 
 //! R_Analyst
 //! 
@@ -44,8 +35,6 @@ public:
   // scope tree
   RAnnot::FuncInfo *get_scope_tree_root();
 
-  const R_ExpUDLocInfo & get_local_info(SEXP statement) const;
-
   //! methods to spit out debugging information
   void dump_scope_tree(std::ostream &);
 
@@ -61,6 +50,7 @@ private:
   void build_cfgs();
   void build_use_def_info();
   void build_local_variable_info();
+  void build_local_function_info();
 };
 
 #endif

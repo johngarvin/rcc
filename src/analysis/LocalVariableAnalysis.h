@@ -19,7 +19,6 @@
 class LocalVariableAnalysis {
  public:
   LocalVariableAnalysis(const SEXP _stmt);
-  ~LocalVariableAnalysis();
 
   void perform_analysis();
 private:

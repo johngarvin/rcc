@@ -13,9 +13,6 @@ LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
   m_stmt_annot->setDefn(m_stmt);
 }
 
-LocalVariableAnalysis::~LocalVariableAnalysis()
-  {}
-
 //! Traverse the given SEXP and set variable annotations with local
 //! syntactic information.
 void LocalVariableAnalysis::perform_analysis() {

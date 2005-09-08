@@ -8,6 +8,7 @@
 #include <analysis/UseDefSolver.h>
 #include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
+#include <analysis/LocalFunctionAnalysis.h>
 
 #include "Analyst.h"
 
@@ -20,7 +21,8 @@ R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   m_scope_tree_root = ScopeTreeBuilder::build_scope_tree_with_given_root(_program);
   build_cfgs();
   build_local_variable_info();
-  //  build_use_def_info();
+  build_local_function_info();
+  build_use_def_info();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -89,12 +91,20 @@ void R_Analyst::build_local_variable_info() {
   }
 }
 
+void R_Analyst::build_local_function_info() {
+  FuncInfoIterator fii(m_scope_tree_root);
+  for(FuncInfo *fi; fii.IsValid(); fii++) {
+    fi = fii.Current();
+    LocalFunctionAnalysis::perform_analysis(fi->getDefn());
+  }
+}
+
 void R_Analyst::build_use_def_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     R_UseDefSolver uds(m_interface);
-    AnnotationSet *anset = uds.perform_analysis(HandleInterface::make_proc_h(fi->getDefn()), fi->getCFG());
-    analysisResults[Var::VarProperty] = anset;
+    OA::ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
+    uds.perform_analysis(ph, fi->getCFG());
   }
 }
