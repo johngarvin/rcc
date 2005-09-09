@@ -94,6 +94,10 @@ string emit_in_braces(string code) {
   return "{\n" + indent(code) + "}\n";
 }
 
+string emit_unprotect(string code) {
+  return emit_call1("UNPROTECT_PTR", code);
+}
+
 string emit_decl(string var) {
   return "SEXP " + var + eos;
 }

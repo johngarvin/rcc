@@ -4,7 +4,9 @@ BINDIR=`dirname $0`
 export LD_LIBRARY_PATH=@R_LIB_PATH@:@RCC_LIB_PATH@:${LD_LIBRARY_PATH}
 export CMD="$BINDIR/rcc.bin"
 if test ! "${DEBUG}xxx" == "xxx"; then
-	gdb ${CMD};
+        TMPFILE=`mktemp /tmp/rcc.XXXXXX`
+        echo "set args $*" > ${TMPFILE}
+	gdb ${CMD} -x ${TMPFILE};
 else
 	exec $BINDIR/rcc.bin $*;
 fi;

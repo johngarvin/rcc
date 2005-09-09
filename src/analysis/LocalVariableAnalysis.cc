@@ -118,7 +118,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, Var::MayMustT may_must
     if (may_must_type == Var::Var_MUST) {
       if (lhs_type == IN_LOCAL_ASSIGN) {
 	var_annot->setLocalityType(Locality_LOCAL);
-      } else {                                           // in local assignment
+      } else {
 	var_annot->setLocalityType(Locality_FREE);
       }
     } else {                                             // may-def

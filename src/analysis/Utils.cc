@@ -70,7 +70,6 @@ SEXP struct_field_rhs_c(const SEXP e) {
 }
 
 bool is_subscript(const SEXP e) {
-  assert(TYPEOF(e) == LANGSXP);
   return (TYPEOF(e) == LANGSXP 
 	  && (CAR(e) == Rf_install("[")
 	      || CAR(e) == Rf_install("[[")));
@@ -101,6 +100,10 @@ bool is_var(const SEXP e) {
 
 bool is_cons(const SEXP e) {
   return (TYPEOF(e) == LISTSXP || TYPEOF(e) == LANGSXP);
+}
+
+bool is_string(const SEXP e) {
+  return (TYPEOF(e) == STRSXP);
 }
 
 //--------------------------------------------------------------------

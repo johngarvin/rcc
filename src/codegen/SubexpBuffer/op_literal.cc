@@ -10,6 +10,7 @@
 #include <support/StringUtils.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
+#include <CodeGen.h>
 
 using namespace std;
 
@@ -37,7 +38,8 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     return Expression(make_symbol(e), FALSE, VISIBLE, "");
     break;
   case LISTSXP:
-    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
+  case LANGSXP:
+    //return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
     return op_list(e, rho, true);
     break;
   case CLOSXP:
@@ -62,10 +64,6 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   case PROMSXP:
     ParseInfo::flag_problem();
     return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
-    break;
-  case LANGSXP:
-    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
-    return op_list(e, rho, true);
     break;
   case CHARSXP:
     v = appl1_unp("mkChar", quote(string(CHAR(e))));

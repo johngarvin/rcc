@@ -7,7 +7,7 @@
 class CScope {
 public:
   explicit CScope(std::string _prefix);
-  const std::string new_label();
+  const std::string new_label() const;
 private:
   const std::string m_prefix;
   static unsigned int m_id;

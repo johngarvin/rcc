@@ -8,6 +8,7 @@
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
 #include <Visibility.h>
+#include <CodeGen.h>
 
 using namespace std;
 
@@ -20,7 +21,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just call it R_NilValue.
 
-  //    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), args, rho, TRUE));
+  //Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), args, rho, TRUE));
   Expression args1 = op_list(args, rho, true);
   string call_str = appl2("lcons", op1.var, args1.var);
   call = Expression(call_str, FALSE, VISIBLE, unp(call_str));

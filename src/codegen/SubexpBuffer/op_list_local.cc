@@ -8,6 +8,7 @@
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
 #include <Visibility.h>
+#include <CodeGen.h>
 
 using namespace std;
 
@@ -26,10 +27,10 @@ Expression SubexpBuffer::op_list_local(SEXP e, string rho,
   }
   
   if (opt_l_car.empty()) {
-    //      return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
+    //return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
     return op_list(e, rho, literal, fullyEvaluatedResult);
   } else {
-    //      Expression cdr = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
+    //Expression cdr = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, literal, fullyEvaluatedResult));
     Expression cdr = op_list(e, rho, literal, fullyEvaluatedResult);
     string out = appl2("lcons", opt_l_car, cdr.var);
     del(cdr);

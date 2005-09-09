@@ -46,6 +46,8 @@ std::string emit_call3(std::string fname, const std::string arg1,
 //------------------------------------------------------------------------------
 // std::string emit_call_stmt(const std::string fname, ...);
 
+std::string emit_unprotect(std::string code);
+
 std::string emit_in_braces(std::string code);
 
 std::string emit_decl(std::string var);

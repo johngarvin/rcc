@@ -46,7 +46,7 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
     }
     break;
   case LISTSXP:
-    //    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
+    //return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
     return op_list(e, rho, false, false);
     break;
   case CLOSXP:

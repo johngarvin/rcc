@@ -8,6 +8,10 @@ MOSTLYCLEANFILES = $(subst .r,,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES)) com
 
 check_SCRIPTS = runtests
 
+run-compiled: run-compiled.in
+
+run-interpreted: run-interpreted.in
+
 interpreted:
 	./run-interpreted $(MYTESTFILES) | tee interpreted.log
 

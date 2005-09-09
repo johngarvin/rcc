@@ -5,11 +5,16 @@
 
 #include <include/R/R_Defn.h>
 
-#include <Main.h>
 #include <support/StringUtils.h>
+#include <analysis/Utils.h>
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
+#include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
+
+#include <Macro.h>
 #include <CodeGenUtils.h>
 #include <ParseInfo.h>
 #include <CScope.h>
+#include <LoopContext.h>
 
 using namespace std;
 
@@ -46,13 +51,132 @@ Output CodeGen::op_primsxp(SEXP e, string rho) {
 			   string(PRIMNAME(e))};
     string primsxp_def = mac_primsxp.call(4, args);
     ParseInfo::primsxp_map.insert(pair<int,string>(value, var));
-    return Output::global(GDecls(emit_decl(var)),
+    return Output::global(GDecls(emit_static_decl(var)),
 			  GCode(primsxp_def),
 			  Handle(var),
 			  INVISIBLE);
   }
   
 }
+
+Output CodeGen::op_lang(SEXP e, string rho) {
+  err("CodeGen::op_lang not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_promise(SEXP e) {
+  err("CodeGen::op_promise not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_begin(SEXP e, string rho) {
+  err("CodeGen::op_begin not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_if(SEXP e, string rho) {
+  err("CodeGen::op_if not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_for(SEXP e, string rho) {
+  err("CodeGen::op_for not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_while(SEXP e, string rho) {
+  err("CodeGen::op_while not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_return(SEXP e, string rho) {
+  err("CodeGen::op_return not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_break(SEXP e, string rho) {
+  LoopContext *loop = LoopContext::Top(); 
+  string code;
+  if (Rf_install("next") == e)
+    code = "continue;\n";
+  else
+    code = loop->doBreak() + ";\n";
+  return Output::dependent(Decls(""),
+			   Code(code),
+			   Handle("R_NilValue"),
+			   DelText(""),
+			   INVISIBLE);
+}
+
+Output CodeGen::op_fundef(SEXP e, string rho, string opt_R_name /* = "" */) {
+  err("CodeGen::op_fundef not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_special(SEXP e, SEXP op, string rho) {
+  err("CodeGen::op_special not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
+  err("CodeGen::op_builtin not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_set(SEXP e, SEXP op, string rho) {
+  err("CodeGen::op_set not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_subscriptset(SEXP e, string rho) {
+  err("CodeGen::op_subscriptset not yet implemented\n");
+  return Output::bogus;
+}
+
+Output CodeGen::op_clos_app(Output op1, SEXP args, string rho) {
+  err("CodeGen::op_clos_app not yet implemented\n");
+  return Output::bogus;
+}
+
+#if 0
+Output CodeGen::op_arglist(SEXP e, string rho) {
+  int len = Rf_length(e);
+  if (len == 0) return Output::nil;
+  SEXP *args = new SEXP[len];
+
+  SEXP arg = e;
+  for(int i=0; i<len; i++) {
+    args[i] = arg;
+    arg = CDR(arg);
+  }
+
+  CScope tmp_scope("tmp_arglist");
+
+  // Construct the list iterating backwards through the list
+  // Don't unprotect R_NilValue, just the conses
+  string tmp = tmp_scope.new_label();
+  string tmp_decls = emit_decl(tmp);
+  string tmp_code = emit_prot_assign(tmp, emit_call2("cons", make_symbol(TAG(args[len-1])), "R_NilValue"));
+  if (len > 1) {
+    for(int i=len-2; i>=0; i--) {
+      string tmp1 = tmp_scope.new_label();
+      tmp_decls += emit_decl(tmp1);
+      tmp_code += emit_prot_assign(tmp1, emit_call2("cons", make_symbol(TAG(args[i])), tmp));
+      tmp_code += emit_unprotect(tmp);
+      tmp = tmp1;
+    }
+  }
+
+  delete [] args;
+  string out = m_scope.new_label();
+  string final_code = emit_in_braces(tmp_decls + tmp_code + emit_assign(out, tmp));
+  return Output::dependent(Decls(emit_decl(out)),
+			   Code(final_code),
+			   Handle(out),
+			   DelText(emit_unprotect(out)),
+			   INVISIBLE);
+}
+#endif
 
 Output CodeGen::op_literal(CScope scope, SEXP e, string rho) {
 #if 0
@@ -117,12 +241,12 @@ Output CodeGen::op_list(CScope scope,
 
     Output car = (literal ? op_literal(scope, CAR(e), rho) : op_exp(CAR(e), rho, promFuncArgList));
     string code;
-    string var = scope.new_label();
+    string var = m_scope.new_label();
     if (TAG(e) == R_NilValue) {
       // No tag; regular cons or lcons
       code = emit_prot_assign(var, emit_call2(my_cons, car.get_handle(), "R_NilValue"));
       if (car.get_dependence() == CONST) {
-	return Output::global(GDecls(car.get_g_decls() + emit_decl(var)),
+	return Output::global(GDecls(car.get_g_decls() + emit_static_decl(var)),
 			      GCode(car.get_g_code() + code),
 			      Handle(var),
 			      VISIBLE);
@@ -138,12 +262,12 @@ Output CodeGen::op_list(CScope scope,
       Output tag = op_literal(scope, TAG(e), rho);
       code = emit_prot_assign(var, emit_call3("tagged_cons", car.get_handle(), tag.get_handle(), "R_NilValue"));
       if (car.get_dependence() == CONST && tag.get_dependence() == CONST) {
-	return Output::global(GDecls(car.get_g_decls() + tag.get_g_decls()),
+	return Output::global(GDecls(car.get_g_decls() + tag.get_g_decls() + emit_static_decl(var)),
 			      GCode(car.get_g_code() + tag.get_g_code() + code),
 			      Handle(var),
 			      VISIBLE);
       } else {
-	return Output::dependent(Decls(car.get_decls() + tag.get_decls()),
+	return Output::dependent(Decls(car.get_decls() + tag.get_decls() + emit_decl(var)),
 				 Code(car.get_code() + tag.get_code()),
 				 Handle(var),
 				 DelText(car.get_del_text() + tag.get_del_text()),
@@ -153,20 +277,21 @@ Output CodeGen::op_list(CScope scope,
   } else {    // length >= 2
     int types[len];
     bool langs[len];
+    bool tagged[len];
     Output *cars = new Output[len];
     Output *tags = new Output[len];
-    bool list_uses_tags = false;
     
     // collect Output from CAR and TAG of each item in the list
     SEXP tmp_e = e;
     for(i=0; i<len; i++) {
-      assert(TYPEOF(tmp_e) == LANGSXP || TYPEOF(tmp_e) == LISTSXP);
+      assert(is_cons(tmp_e));
       langs[i] = (TYPEOF(tmp_e) == LANGSXP);  // whether LANGSXP or LISTSXP
       cars[i] = (literal ? op_literal(scope, CAR(tmp_e), rho) : op_exp(CAR(tmp_e), rho, promFuncArgList));
       if (TAG(tmp_e) == R_NilValue) {
+	tagged[i] = false;
 	tags[i] = Output::nil;
       } else {
-	list_uses_tags = true;
+	tagged[i] = true;
 	tags[i] = op_literal(scope, TAG(tmp_e), rho);
       }
       tmp_e = CDR(tmp_e);
@@ -201,7 +326,7 @@ Output CodeGen::op_list(CScope scope,
     for(i=len-1; i>=0; i--) {
       new_handle = temp_list_elements.new_label();
       string call;
-      if (list_uses_tags) {
+      if (tagged[i]) {
 	call = emit_call3("tagged_cons", cars[i].get_handle(), tags[i].get_handle(), old_handle);
       } else {
 	call = emit_call2((langs[i] ? "lcons" : "cons"), cars[i].get_handle(), old_handle);
@@ -316,3 +441,4 @@ Output CodeGen::op_vector(SEXP vec) {
   }
 }
 
+const CScope CodeGen::m_scope("vv");
