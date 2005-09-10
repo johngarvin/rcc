@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.7 2005/09/08 06:30:47 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.8 2005/09/10 21:28:33 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -147,6 +147,7 @@ Var::dump(std::ostream& os) const
 
 UseVar::UseVar()
 {
+  mUseDefType = Var_USE;
 }
 
 UseVar::~UseVar()
@@ -165,9 +166,9 @@ UseVar::dump(std::ostream& os) const
   //dumpSEXP(os,mSEXP);
   SEXP name = getName();
   dumpSEXP(os,name);
-  dumpVar(os,mType);
-  dumpVar(os,mmType);
-  dumpVar(os,mLocalityType);
+  dumpVar(os,mUseDefType);
+  dumpVar(os,mMayMustType);
+  dumpVar(os,mScopeType);
   //dumpPtr(os,mReachingDef);
   dumpVar(os,mPositionType);
   endObjDump(os,UseVar);
@@ -178,10 +179,13 @@ UseVar::dump(std::ostream& os) const
 //****************************************************************************
 
 DefVar::DefVar()
-  {}
+{
+  mUseDefType = Var_DEF;
+}
 
 DefVar::~DefVar()
-  {}
+{
+}
 
 SEXP DefVar::getName() const
 {
@@ -202,9 +206,9 @@ DefVar::dump(std::ostream& os) const
   //dumpSEXP(os,mSEXP);
   SEXP name = getName();
   dumpSEXP(os,name);
-  dumpVar(os,mType);
-  dumpVar(os,mmType);
-  dumpVar(os,mLocalityType);
+  dumpVar(os,mUseDefType);
+  dumpVar(os,mMayMustType);
+  dumpVar(os,mScopeType);
   // dumpPtr(os,mReachingDef);
   dumpVar(os,mSourceType);
   endObjDump(os,DefVar);
@@ -315,11 +319,14 @@ bool FuncInfo::getRequiresContext()
 #endif
 }
 
-
-
 SEXP FuncInfo::getArgs() 
 { 
   return CAR(fundef_args_c(mDefn)); 
+}
+
+void FuncInfo::insertMention(Var * v)
+{
+  mMentions.insert(v);
 }
 
 std::ostream&
@@ -335,6 +342,11 @@ FuncInfo::dump(std::ostream& os) const
   dumpSEXP(os, mFirstName);
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);
+  os << "Begin mentions:" << std::endl;
+  for(mentions_iterator i = mMentions.begin(); i != mMentions.end(); ++i) {
+    (*i)->dump(os);
+  }
+  os << "End mentions" << std::endl;
   endObjDump(os, FuncInfo);
 }
 

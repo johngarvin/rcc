@@ -178,6 +178,6 @@ protected:
   friend class R_UseSetIterator;  
 };
 
-OA::OA_ptr<R_UseSet> meet_use_set(OA::OA_ptr<R_UseSet> set1, OA::OA_ptr<R_UseSet>);
+//OA::OA_ptr<R_UseSet> meet_use_set(OA::OA_ptr<R_UseSet> set1, OA::OA_ptr<R_UseSet>);
 
 #endif  // R_UseDefSolver_h

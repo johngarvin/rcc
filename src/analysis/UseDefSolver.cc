@@ -15,12 +15,23 @@
 using namespace OA;
 using namespace RAnnot;
 
+
+// forward declarations
+
+static LocalityType var_meet(LocalityType x, LocalityType y);
+static OA_ptr<R_UseSet> meet_use_set(OA_ptr<R_UseSet> set1, OA_ptr<R_UseSet> set2);
 static R_VarRef * make_var_ref_from_annotation(Var * annot);
+static LocalityType to_locality(Var::ScopeT st);
+static Var::ScopeT to_scope_type(LocalityType lt);
+
+// static variable for debugging
 
 static const bool debug = false;
 
-//! meet for a single lattice element
-static LocalityType var_meet(LocalityType x, LocalityType y);
+
+//--------------------------------------------------------------------
+// Meet functions
+//--------------------------------------------------------------------
 
 //! meet function for a single lattice element
 static LocalityType var_meet(LocalityType x, LocalityType y) {
@@ -35,13 +46,9 @@ static LocalityType var_meet(LocalityType x, LocalityType y) {
   }
 }
 
-//--------------------------------------------------------------------
-// Meet function
-//--------------------------------------------------------------------
-
 //! Meet function for two R_UseSets, using the single-variable meet
 //! operation when a use appears in both sets
-OA_ptr<R_UseSet> meet_use_set(OA_ptr<R_UseSet> set1, OA_ptr<R_UseSet> set2) {
+static OA_ptr<R_UseSet> meet_use_set(OA_ptr<R_UseSet> set1, OA_ptr<R_UseSet> set2) {
   OA_ptr<R_UseSet> retval;
   retval = set1->clone().convert<R_UseSet>();
   OA_ptr<R_UseSetIterator> it2 = set2->get_iterator();
@@ -85,32 +92,44 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeInSetMap;
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeOutSetMap;
 
-  // iterate through each node's mNodeInSetMap
+  // each node
   std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator mi;
   for(mi = mNodeInSetMap.begin(); mi != mNodeInSetMap.end(); ++mi) {
 
     // map contains ptrs to DataFlowSet; convert to ptr to derived class R_UseSet
-    OA_ptr<R_UseSet> use_set = mi->second.convert<R_UseSet>();
+    OA_ptr<R_UseSet> in_set = mi->second.convert<R_UseSet>();
 
-    // iterate through map
-    OA_ptr<R_UseSetIterator> ui = use_set->get_iterator();
-    for( ; ui->isValid(); ++*ui) {
-      // get the annotation for this var ref
-      OA_ptr<R_VarRef> location; location = ui->current()->get_loc();
-      RAnnot::Var * annot = getProperty(Var, location->get_sexp());
-      assert(annot != 0);
-      // DF problem only analyzes uses and may-defs. Locality flags of
-      // must-defs are already determined statically, so don't reset
-      // them!
-      if (annot->getMayMustType() == Var::Var_MAY
-	  || dynamic_cast<RAnnot::UseVar *>(annot) != 0)
-      {
-	//	assert(annot->getLocalityType() == Locality_TOP);
-	// reset its locality to the new value
-	annot->setLocalityType(ui->current()->get_locality_type());
-      }
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
+    si = mi->first->getNodeStatementsIterator();
+    // statement-level CFG; there should be no more than one statement
+    if (si->isValid()) {
+
+      // each mention in the statement
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, (SEXP)si->current().hval());
+      ExpressionInfo::iterator mi;
+      for(mi = stmt_annot->begin(); mi != stmt_annot->end(); ++mi) {
+	Var * annot = *mi;
+	// look up the mention's name in in_set to get lattice type
+	OA_ptr<R_VarRef> ref; ref = make_var_ref_from_annotation(annot);
+	OA_ptr<R_Use> elem = in_set->find(ref);
+	if (elem.ptrEqual(NULL)) {
+	  err("Name of a mention not found in mNodeInSetMap");
+	}
+	LocalityType locality = elem->get_locality_type();
+      
+	// DF problem only analyzes uses and may-defs. Locality flags of
+	// must-defs are already determined statically, so don't reset
+	// them!
+	if (annot->getMayMustType() == Var::Var_MAY
+	    || annot->getUseDefType() == Var::Var_USE)
+	{
+	  annot->setScopeType(to_scope_type(locality));
+	}
+      } // end mention iteration
     }
-  }
+    // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
+    //  FIXME: add this assertion back
+  }  // end node iteration
 }
 
 void R_UseDefSolver::dump_node_maps() {
@@ -245,7 +264,9 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   ExpressionInfo * annot = getProperty(ExpressionInfo, stmt);
   ExpressionInfo::iterator var_iter;
   for(var_iter = annot->begin(); var_iter != annot->end(); ++var_iter) {
-    if ((*var_iter)->getLocalityType() == Locality_LOCAL) {
+    // if variable was found to be local during statement-level
+    // analysis, add it in
+    if ((*var_iter)->getScopeType() == Var::Var_LOCAL) {
       OA_ptr<R_Use> use; use = new R_Use(*var_iter);
       in->replace(use);
     }
@@ -262,7 +283,7 @@ R_Use::R_Use(OA_ptr<R_VarRef> _loc, LocalityType _type)
   {}
 
 R_Use::R_Use(RAnnot::Var * annot)
-  : m_type(annot->getLocalityType())
+  : m_type(to_locality(annot->getScopeType()))
 {
   OA_ptr<R_VarRef> ref; ref = make_var_ref_from_annotation(annot);
   m_loc = ref;
@@ -515,6 +536,9 @@ OA_ptr<R_UseSetIterator> R_UseSet::get_iterator() const {
   return it;
 }
 
+//! Creates and returns an R_VarRef element from the information
+//! contained in a Var annotation. The caller is responsible for
+//! managing the memory created. (Sticking it in an OA_ptr will do.)
 static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   DefVar * def_annot;
   if (dynamic_cast<UseVar *>(annot)) {
@@ -536,4 +560,47 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   } else {
     err(0 && "make_var_ref_from_annotation: unknown annotation type");
   }
+}
+
+//! static methods to transfer between our lattice-based LocalityType
+//! (TOP, LOCAL, FREE, BOTTOM) and the more full-featured ScopeT of the
+//! Var annotation
+static LocalityType to_locality(Var::ScopeT st) {
+  LocalityType t;
+  switch(st) {
+  case Var::Var_TOP:
+    t = Locality_TOP;
+    break;
+  case Var::Var_LOCAL:
+    t = Locality_LOCAL;
+    break;
+  case Var::Var_FREE:
+    t = Locality_FREE;
+    break;
+  case Var::Var_INDEFINITE:
+    t = Locality_BOTTOM;
+    break;
+  default:
+    err("Non-lattice scope type in Var annotation\n");
+  }
+  return t;
+}
+
+static Var::ScopeT to_scope_type(LocalityType lt) {
+  Var::ScopeT t;
+  switch(lt) {
+  case Locality_TOP:
+    t = Var::Var_TOP;
+    break;
+  case Locality_LOCAL:
+    t = Var::Var_LOCAL;
+    break;
+  case Locality_FREE:
+    t = Var::Var_FREE;
+    break;
+  case Locality_BOTTOM:
+    t = Var::Var_INDEFINITE;
+    break;
+  }
+  return t; 
 }

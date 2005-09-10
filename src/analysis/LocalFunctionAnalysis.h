@@ -10,7 +10,12 @@
 //! definition. Adds annotations to the global AnalysisResults.
 class LocalFunctionAnalysis {
 public:
-  static void perform_analysis(const SEXP fundef);
+  LocalFunctionAnalysis(const SEXP fundef);
+  void perform_analysis();
+private:
+  void analyze_args();
+  void collect_mentions();
+  const SEXP m_fundef;
 };
 
 #endif

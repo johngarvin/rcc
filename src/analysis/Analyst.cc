@@ -5,10 +5,12 @@
 #include <analysis/SimpleIterators.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
+
 #include <analysis/UseDefSolver.h>
 #include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
+#include <analysis/BindingAnalysis.h>
 
 #include "Analyst.h"
 
@@ -23,6 +25,7 @@ R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   build_local_variable_info();
   build_local_function_info();
   build_use_def_info();
+  build_bindings();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -95,7 +98,8 @@ void R_Analyst::build_local_function_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    LocalFunctionAnalysis::perform_analysis(fi->getDefn());
+    LocalFunctionAnalysis lfa(fi->getDefn());
+    lfa.perform_analysis();
   }
 }
 
@@ -107,4 +111,9 @@ void R_Analyst::build_use_def_info() {
     OA::ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
     uds.perform_analysis(ph, fi->getCFG());
   }
+}
+
+void R_Analyst::build_bindings() {
+  BindingAnalysis ba(m_scope_tree_root);
+  ba.perform_analysis();
 }

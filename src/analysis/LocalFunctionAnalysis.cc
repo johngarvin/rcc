@@ -1,16 +1,29 @@
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <OpenAnalysis/CFG/Interface.hpp>
+
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Annotation.h>
 #include "LocalFunctionAnalysis.h"
 
+using namespace OA;
 using namespace RAnnot;
 
-//! Get local information about a function. Adds a variable annotation
-//! for each argument and updates the function annotation with
-//! local information about its arguments.
-void LocalFunctionAnalysis::perform_analysis(const SEXP fundef) {
+LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
+  : m_fundef(fundef)
+{
   assert(is_fundef(fundef));
-  SEXP args = CAR(fundef_args_c(fundef));
+}
+
+//! Discovers local information about the given function
+//! definition. Adds annotations to the global AnalysisResults.
+void LocalFunctionAnalysis::perform_analysis() {
+  analyze_args();
+  collect_mentions();
+}
+
+void LocalFunctionAnalysis::analyze_args() {
+  SEXP args = CAR(fundef_args_c(m_fundef));
   const SEXP ddd = Rf_install("...");
   bool has_var_args = false;
   int n_args = 0;
@@ -20,14 +33,36 @@ void LocalFunctionAnalysis::perform_analysis(const SEXP fundef) {
     annot->setMention(e);
     annot->setSourceType(DefVar::DefVar_FORMAL);
     annot->setMayMustType(Var::Var_MUST);
-    annot->setLocalityType(Locality_LOCAL);
+    annot->setScopeType(Var::Var_LOCAL);
     putProperty(Var, e, annot, true);
     if (TAG(e) == ddd) {
       has_var_args = true;
     }
   }
-  FuncInfo * f_annot = getProperty(FuncInfo, fundef);
+  FuncInfo * f_annot = getProperty(FuncInfo, m_fundef);
   assert(f_annot != 0);
   f_annot->setNumArgs(n_args);
   f_annot->setHasVarArgs(has_var_args);
+}
+
+//! Find each mention (use or def) in the function
+void LocalFunctionAnalysis::collect_mentions() {
+  FuncInfo * f_annot = getProperty(FuncInfo, m_fundef);
+  OA_ptr<CFG::Interface> cfg; cfg = f_annot->getCFG();
+
+  // each node
+  OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
+  for( ; ni->isValid(); ++*ni) {
+    // for each statement
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
+    si = ni->current()->getNodeStatementsIterator();
+    for( ; si->isValid(); ++*si) {      
+      // for each mention
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, (SEXP)si->current().hval());
+      ExpressionInfo::iterator mi;
+      for(mi = stmt_annot->begin(); mi != stmt_annot->end(); ++mi) {
+	f_annot->insertMention(*mi);
+      }
+    }
+  }
 }

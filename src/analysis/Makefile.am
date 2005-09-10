@@ -21,7 +21,8 @@ librcca_la_SOURCES =                      \
   VarRefSet.cc VarRefSet.h                \
   HandleInterface.cc HandleInterface.h    \
   LocalVariableAnalysis.cc LocalVariableAnalysis.h \
-  LocalFunctionAnalysis.cc LocalFunctionAnalysis.h
+  LocalFunctionAnalysis.cc LocalFunctionAnalysis.h \
+  BindingAnalysis.cc BindingAnalysis.h
 
 INCLUDES = $(MY_INCLUDES)
 

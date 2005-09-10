@@ -36,7 +36,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     var_annot->setMention(cell);
     var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
     var_annot->setMayMustType(Var::Var_MUST);
-    var_annot->setLocalityType(Locality_TOP);
+    var_annot->setScopeType(Var::Var_TOP);
     putProperty(Var, cell, var_annot, true);
     m_stmt_annot->insert_var(var_annot);
   } else if (is_local_assign(e)) {
@@ -78,7 +78,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
       var_annot->setMention(e);
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
-      var_annot->setLocalityType(Locality_TOP);
+      var_annot->setScopeType(Var::Var_TOP);
       putProperty(Var, e, var_annot, true);
       m_stmt_annot->insert_var(var_annot);
     } else {
@@ -117,12 +117,12 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, Var::MayMustT may_must
     // flow to figure out the scope of x.
     if (may_must_type == Var::Var_MUST) {
       if (lhs_type == IN_LOCAL_ASSIGN) {
-	var_annot->setLocalityType(Locality_LOCAL);
+	var_annot->setScopeType(Var::Var_LOCAL);
       } else {
-	var_annot->setLocalityType(Locality_FREE);
+	var_annot->setScopeType(Var::Var_FREE);
       }
     } else {                                             // may-def
-      var_annot->setLocalityType(Locality_TOP);
+      var_annot->setScopeType(Var::Var_TOP);
     }
     putProperty(Var, cell, var_annot, true);
     m_stmt_annot->insert_var(var_annot);

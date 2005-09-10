@@ -51,6 +51,7 @@ private:
   void build_use_def_info();
   void build_local_variable_info();
   void build_local_function_info();
+  void build_bindings();
 };
 
 #endif

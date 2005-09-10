@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.8 2005/09/07 16:42:53 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.9 2005/09/10 21:28:33 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -50,8 +50,11 @@
 
 namespace RAnnot {
 
+// forward declarations
+
 class VarInfo;
 class Var;
+class FuncInfo;
 
 // N.B.: In order to make memory management sane, all Annotations
 // should live within and owned by an AnnotationSet.  This allows
@@ -255,7 +258,7 @@ class Var
 public:
   static PropertyHndlT VarProperty;
 public:
-  enum VarT {
+  enum UseDefT {
     Var_USE,
     Var_DEF
   };
@@ -263,6 +266,15 @@ public:
   enum MayMustT {
     Var_MAY,
     Var_MUST 
+  };
+
+  enum ScopeT {
+    Var_TOP,
+    Var_LOCAL,
+    Var_GLOBAL,
+    Var_FREE_ONE_SCOPE,
+    Var_FREE,
+    Var_INDEFINITE
   };
 
 public:
@@ -273,23 +285,21 @@ public:
   // member data manipulation
   // -------------------------------------------------------
   
-  // type
-  VarT getType() const 
-    { return mType; }
-  void setType(VarT x)
-    { mType = x; }
+  // use/def type
+  UseDefT getUseDefType() const
+    { return mUseDefType; }
 
   // may/must type
   MayMustT getMayMustType() const 
-    { return mmType; }
+    { return mMayMustType; }
   void setMayMustType(MayMustT x)
-    { mmType = x; }
+    { mMayMustType = x; }
 
-  // locality type
-  LocalityType getLocalityType() const
-    { return mLocalityType; }
-  void setLocalityType(LocalityType x)
-    { mLocalityType = x; }
+  // scope type
+  ScopeT getScopeType() const
+    { return mScopeType; }
+  void setScopeType(ScopeT x)
+    { mScopeType = x; }
 
   // reaching-definition
   VarInfo* getReachingDef() const
@@ -335,10 +345,11 @@ public:
 
 protected:
   SEXP mSEXP;
-  VarT mType;
-  MayMustT mmType;
-  LocalityType mLocalityType;
+  UseDefT mUseDefType;
+  MayMustT mMayMustType;
+  ScopeT mScopeType;
   VarInfo* mReachingDef; // (not owned)
+  FuncInfo* mDefiningScope;  // (not owned)
 };
 
 // ---------------------------------------------------------------------------
@@ -588,6 +599,14 @@ class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>,
 {
 public:
   static PropertyHndlT FuncInfoProperty;
+
+public:
+  typedef Var*                                              mentions_key_type;
+
+  typedef std::set<mentions_key_type>                       MySet_t;
+  typedef MySet_t::iterator                                 mentions_iterator;
+  typedef MySet_t::const_iterator                           const_mentions_iterator;
+
 public:
   FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
@@ -628,6 +647,18 @@ public:
   void setRequiresContext(bool requiresContext); 
   bool getRequiresContext(); 
 
+  // mention set
+  void insertMention(Var * v);
+
+  // mention iterators
+  mentions_iterator beginMentions()
+    { return mMentions.begin(); }
+  const_mentions_iterator beginMentions() const
+    { return mMentions.begin(); }
+  mentions_iterator endMentions()
+    { return mMentions.end(); }
+  const_mentions_iterator endMentions() const
+    { return mMentions.end(); }
 
   // environment
 
@@ -651,6 +682,8 @@ private:
   Environment* mEnv;       // (not owned)
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
+
+  MySet_t mMentions;    // uses and defs inside function (including nested functions)
 
   SEXP mDefn;            // function definition
   SEXP mFirstName;       // name of function at original definition 
