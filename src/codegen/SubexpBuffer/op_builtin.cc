@@ -39,7 +39,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho) {
     }
     
   } else {  // common case: call the do_ function
-    Expression args1 = op_list_local(args, rho, FALSE, TRUE);
+    Expression args1 = op_list(args, rho, FALSE, TRUE);
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue ",
 		op1.var,

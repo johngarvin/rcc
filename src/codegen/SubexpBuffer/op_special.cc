@@ -7,6 +7,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <CodeGen.h>
 #include <GetName.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
@@ -21,7 +22,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
     SEXP fun = CAR(CADR(e));
     Expression args;
     if (TYPEOF(INTERNAL(fun)) == BUILTINSXP) {
-      args = op_list_local(CDR(CADR(e)), rho, FALSE, TRUE);
+      args = op_list(CDR(CADR(e)), rho, FALSE, TRUE);
     } else {
       args = op_exp(CDR(CADR(e)), rho);
     }
@@ -50,8 +51,8 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho) {
   } else {
     // default case for specials: call the (call, op, args, rho) fn
     Expression op1 = op_exp(op, rho);
-    //    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE, TRUE));
-    Expression args1 = op_list(CDR(e), rho, true, true);
+    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE, TRUE));
+    //Expression args1 = op_list(CDR(e), rho, true, true);
     string call_str = appl2("lcons", op1.var, args1.var);
     Expression call = Expression(call_str, FALSE, VISIBLE, unp(call_str));
     out = appl4(get_name(PRIMOFFSET(op)),

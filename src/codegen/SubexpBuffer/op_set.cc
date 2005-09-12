@@ -6,6 +6,8 @@
 #include <support/StringUtils.h>
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
+
+#include <CodeGen.h>
 #include <GetName.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
@@ -43,7 +45,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
       return op_subscriptset(e, rho);
     } else if (Rf_isLanguage(lhs)) {
       Expression func = op_exp(op, rho);
-      Expression args = op_list_local(CDR(e), rho);
+      Expression args = op_list(CDR(e), rho, true);
       out = appl4("do_set",
 		  "R_NilValue",
 		  func.var,
@@ -59,8 +61,8 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho) {
     }
   } else if (PRIMVAL(op) == 2) {  //     <<-
     Expression op1 = op_exp(op, rho);
-    //Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE));
-    Expression args1 = op_list(CDR(e), rho, true);
+    Expression args1 = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), CDR(e), rho, TRUE));
+    //Expression args1 = op_list(CDR(e), rho, true);
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue",
 		op1.var,

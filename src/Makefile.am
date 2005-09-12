@@ -27,7 +27,6 @@ rcc_bin_SOURCES =                \
   SubexpBuffer.cc SubexpBuffer.h  \
   SubexpBufferUtils.cc \
   Expression.cc Expression.h \
-  op_arglist.cc  \
   op_begin.cc  \
   op_break.cc  \
   op_builtin.cc  \
@@ -38,7 +37,6 @@ rcc_bin_SOURCES =                \
   op_if.cc  \
   op_lang.cc  \
   op_list.cc  \
-  op_list_local.cc  \
   op_literal.cc  \
   op_primsxp.cc  \
   op_promise.cc  \

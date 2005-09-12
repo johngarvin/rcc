@@ -46,11 +46,11 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
     }
     break;
   case LISTSXP:
-    //return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
-    return op_list(e, rho, false, false);
+    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
+    //    return op_list(e, rho, false, false);
     break;
   case CLOSXP:
-    formals = op_symlist(FORMALS(e), rho);
+    formals = op_list(FORMALS(e), rho, true);
     body = op_literal(BODY(e), rho);
     if (rho == "R_GlobalEnv" && !formals.is_dep && !body.is_dep) {
       string v = ParseInfo::global_constants->appl3("mkCLOSXP",

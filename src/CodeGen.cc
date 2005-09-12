@@ -198,13 +198,15 @@ Output CodeGen::op_literal(CScope scope, SEXP e, string rho) {
   case SYMSXP:
     return Output::visible_const(Handle(make_symbol(e)));
     break;
-  case LISTSXP: case LANGSXP:
+  case LISTSXP:
+  case LANGSXP:
     return op_list(scope, e, rho, true);
     break;
   case CHARSXP:
     return Output::visible_const(Handle(emit_call1("mkChar", quote(string(CHAR(e))))));
     break;
-  case SPECIALSXP: case BUILTINSXP:
+  case SPECIALSXP:
+  case BUILTINSXP:
     return op_primsxp(e, rho);
     break;
   default:
@@ -274,7 +276,7 @@ Output CodeGen::op_list(CScope scope,
 				 VISIBLE);
       }
     }
-  } else {    // length >= 2
+  } else {    // two or more elements
     int types[len];
     bool langs[len];
     bool tagged[len];
@@ -297,9 +299,6 @@ Output CodeGen::op_list(CScope scope,
       tmp_e = CDR(tmp_e);
     }
 
-    // temporary scope for intermediate list elements
-    CScope temp_list_elements("tmp_ls");
-
     // list is constant only if everything in it is constant
     DependenceType list_dependence = CONST;
     for(i=0; i<len; i++) {
@@ -309,29 +308,15 @@ Output CodeGen::op_list(CScope scope,
       }
     }
 
-    // collect code for outside objects
+    // collect code for list elements
     string decls = "";
     string code = "";
     string g_decls = "";
     string g_code = "";
     string del_text = "";
 
-    // collect code for list construction inside curly braces
-    string buf_decls = "";
-    string buf_code = "";
-
-    // iterate backwards to build list
-    string new_handle;
-    string old_handle = "R_NilValue";
-    for(i=len-1; i>=0; i--) {
-      new_handle = temp_list_elements.new_label();
-      string call;
-      if (tagged[i]) {
-	call = emit_call3("tagged_cons", cars[i].get_handle(), tags[i].get_handle(), old_handle);
-      } else {
-	call = emit_call2((langs[i] ? "lcons" : "cons"), cars[i].get_handle(), old_handle);
-      }
-      string assign = emit_assign(new_handle, call);
+    // collect list elements
+    for(i=0; i<len; i++) {
       if (list_dependence == DEPENDENT) {
 	decls    += cars[i].get_decls()    + tags[i].get_decls();
 	code     += cars[i].get_code()     + tags[i].get_code();
@@ -343,6 +328,27 @@ Output CodeGen::op_list(CScope scope,
 	g_decls += cars[i].get_g_decls() + tags[i].get_g_decls();
 	g_code  += cars[i].get_g_code()  + tags[i].get_g_code();
       }
+    }
+
+    // temporary scope for intermediate list elements
+    CScope temp_list_elements("tmp_ls");
+
+    // collect code for list construction inside curly braces
+    string buf_decls = "";
+    string buf_code = "";
+
+    // iterate backwards to build list from element handles
+    string new_handle;
+    string old_handle = "R_NilValue";
+    for(i=len-1; i>=0; i--) {
+      new_handle = temp_list_elements.new_label();
+      string call;
+      if (tagged[i]) {
+	call = emit_call3("tagged_cons", cars[i].get_handle(), tags[i].get_handle(), old_handle);
+      } else {
+	call = emit_call2((langs[i] ? "lcons" : "cons"), cars[i].get_handle(), old_handle);
+      }
+      string assign = emit_assign(new_handle, call);
       buf_decls += emit_decl(new_handle);
       buf_code += assign;
       old_handle = new_handle;
@@ -366,7 +372,7 @@ Output CodeGen::op_list(CScope scope,
     } else {                               // list is constant
       string outside_handle = scope.new_label();
       string out_assign = emit_prot_assign(outside_handle, new_handle);
-      return Output::global(GDecls(g_decls + emit_decl(outside_handle)),
+      return Output::global(GDecls(g_decls + emit_static_decl(outside_handle)),
 			    GCode(g_code
 				  + emit_in_braces(buf_decls + buf_code + out_assign)),
 			    Handle(outside_handle),

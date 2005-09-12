@@ -39,11 +39,11 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case LISTSXP:
   case LANGSXP:
-    //return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
-    return op_list(e, rho, true);
+    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
+    //return op_list(e, rho, true);
     break;
   case CLOSXP:
-    formals = op_symlist(FORMALS(e), rho);
+    formals = op_list(FORMALS(e), rho, true);
     body = op_literal(BODY(e), rho);
     v = appl3("mkCLOSXP  ",
 	      formals.var,

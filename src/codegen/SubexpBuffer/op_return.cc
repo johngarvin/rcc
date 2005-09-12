@@ -52,8 +52,8 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
       }
       exp = CDR(exp);
     }
-    //value = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false));
-    value = op_list(e, rho, true);
+    value = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false));
+    //value = op_list(e, rho, true);
     v = appl1_unp("PairToVectorList", value.var);
     append_defs("UNPROTECT_PTR(newenv);\n");
     del(value);

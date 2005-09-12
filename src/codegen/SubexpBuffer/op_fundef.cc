@@ -59,7 +59,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 						     fndef));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
-    Expression r_args = ParseInfo::global_constants->op_list(CAR(e), rho, TRUE);
+    Expression r_args = ParseInfo::global_constants->op_list(CAR(e), rho, true);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
 #if 0
     string r_form = ParseInfo::global_constants->appl3("mkCLOSXP", r_args.var, r_code.var, rho);
@@ -135,7 +135,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent("RCNTXT context;\n");
   }
 
-  Expression formals = env_subexps.op_symlist(args, "env");
+  Expression formals = env_subexps.op_list(args, "env", true);
   string actuals = "args";
   env_subexps.output_ip();
   env_subexps.finalize();
@@ -198,7 +198,7 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef)
   f += header + " {\n";
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
-  Expression formals = env_subexps.op_symlist(args, "R_GlobalEnv");
+  Expression formals = env_subexps.op_list(args, "R_GlobalEnv", true);
   f += env_subexps.output();
   f += indent("PROTECT(newenv =\n");
   f += indent(indent("Rf_NewEnvironment(\n"
@@ -262,7 +262,7 @@ string make_fundef(string func_name, SEXP fndef) {
     f += indent("RCNTXT context;\n");
   }
 
-  string formals = env_subexps.op_symlist(args, "env").var;
+  string formals = env_subexps.op_list(args, "env", true).var;
   string actuals = "R_NilValue";
   for (i=len-1; i>=0; i--) {
     actuals = env_subexps.appl2("cons",
