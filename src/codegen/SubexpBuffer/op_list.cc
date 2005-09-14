@@ -15,7 +15,7 @@
 using namespace std;
 
 Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal, 
-				 bool primFuncArgList /* = FALSE */ ) {
+				 bool fullyEvaluatedResult /* = FALSE */ ) {
   int i, len;
   len = Rf_length(e);
   string my_cons;
@@ -33,7 +33,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
       err("Internal error: bad call to op_list\n");
       return Expression::bogus_exp;  // never reached
     }
-    Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(CAR(e), rho, primFuncArgList));
+    Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(CAR(e), rho, fullyEvaluatedResult));
     string out;
     if (car.is_dep) {
       if (TAG(e) == R_NilValue) {
@@ -78,7 +78,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
 	return Expression::bogus_exp;  // never reached
       }
       exps[i] = (literal? op_literal(CAR(tmp_e), rho) : op_exp(CAR(tmp_e), rho, 
-							       primFuncArgList));
+							       fullyEvaluatedResult));
       tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", FALSE, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
       if (exps[i].is_dep) list_dep = TRUE;
       tmp_e = CDR(tmp_e);

@@ -16,6 +16,7 @@ librcca_la_SOURCES =                      \
   AnnotationBase.cc  AnnotationBase.h     \
   AnnotationSet.cc   AnnotationSet.h      \
   PropertySet.cc         PropertySet.h    \
+  RequiresContext.cc RequiresContext.h    \
   SimpleIterators.cc SimpleIterators.h    \
   VarRef.cc VarRef.h                      \
   VarRefSet.cc VarRefSet.h                \
@@ -26,5 +27,6 @@ librcca_la_SOURCES =                      \
 
 INCLUDES = $(MY_INCLUDES)
 
+MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a
 AM_CXXFLAGS = -DOA_IRHANDLETYPE_UL 
 librcca_la_LDFLAGS = $(MY_OA_LIBS)

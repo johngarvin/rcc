@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.8 2005/09/10 21:28:33 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.9 2005/09/14 02:35:48 johnmc Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,6 +29,7 @@
 #include <support/DumpMacros.h>
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/RequiresContext.h>
 
 #include "Annotation.h"
 
@@ -292,10 +293,10 @@ FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mLexicalParent(lexParent),
   mFirstName(name),
   mDefn(defn),
-  mRequiresContext(true),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
   mEnv = new Environment();
+  mRequiresContext = functionRequiresContext(defn);
 }
 
 

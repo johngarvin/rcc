@@ -25,8 +25,11 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     if (ParseInfo::is_direct(r_sym)) {
       //direct function call
       string func = make_c_id(r_sym) + "_direct";
+#if 0
       Expression args = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), r_args, rho, FALSE)); // not local; used for env
-      //Expression args = op_list(r_args, rho, false);
+#else
+      Expression args = op_list(r_args, rho, false);
+#endif
       string call = appl1(func, args.var);
       del(args);
       return Expression(call, TRUE, VISIBLE, unp(call));
