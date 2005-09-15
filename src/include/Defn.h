@@ -703,6 +703,11 @@ SEXP R_GetVarLocSymbol(R_varloc_t);
 Rboolean R_GetVarLocMISSING(R_varloc_t);
 void R_SetVarLocValue(R_varloc_t, SEXP);
 
+/* findVar and findFun returning cells for RCC */
+R_varloc_t findNonSystemVarLoc(SEXP symbol, SEXP rho);
+R_varloc_t findNonSystemFunLocUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundOK);
+R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho);
+
 /* deparse option bits */
 
 #define KEEPINTEGER 		1

@@ -140,6 +140,12 @@
     SET_SYMVALUE(__sym__, __val__); \
 } while (0)
 
+
+/* forward declaration */
+
+static R_varloc_t R_GetBindingVarLoc(SEXP binding, SEXP symbol);
+
+
 static void setActiveValue(SEXP fun, SEXP val)
 {
     SEXP s_quote = install("quote");
@@ -238,7 +244,38 @@ static void R_HashSet(int hashcode, SEXP symbol, SEXP table, SEXP value,
     return;
 }
 
+/*--------------------------------------------------------------------
 
+  R_HashSetReturnLoc
+
+  Like R_HashSet but also returns the location of the binding.
+
+*/
+
+static R_varloc_t R_HashSetReturnLoc(int hashcode, SEXP symbol, SEXP table, SEXP value,
+				     Rboolean frame_locked)
+{
+    SEXP chain;
+
+    /* Grab the chain from the hashtable */
+    chain = VECTOR_ELT(table, hashcode);
+
+    /* Add the value into the chain */
+    for (; !isNull(chain); chain = CDR(chain)) {
+	if (TAG(chain) == symbol) {
+	    SET_BINDING_VALUE(chain, value);
+	    return R_GetBindingVarLoc(chain, symbol);
+	}
+    }
+    if (frame_locked)
+	error(_("cannot add bindings to a locked environment"));
+    if (isNull(chain)) {
+	SET_HASHPRI(table, HASHPRI(table) + 1);
+    }
+    SET_VECTOR_ELT(table, hashcode, CONS(value, VECTOR_ELT(table, hashcode)));
+    SET_TAG(VECTOR_ELT(table, hashcode), symbol);
+    return R_GetBindingVarLoc(VECTOR_ELT(table, hashcode), symbol);
+}
 
 /*----------------------------------------------------------------------
 
@@ -527,7 +564,9 @@ static SEXP R_HashFrame(SEXP rho)
 
 */
 
-#define USE_GLOBAL_CACHE
+// #define USE_GLOBAL_CACHE
+// caching turned off for RCC
+
 #ifdef USE_GLOBAL_CACHE
 /* Global variable caching.  A cache is maintained in a hash table,
    R_GlobalCache.  The entry values are either R_UnboundValue (a
@@ -811,10 +850,15 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
   to change other files.
 */
 
+static R_varloc_t R_GetBindingVarLoc(SEXP binding, SEXP symbol)
+{
+  return binding == R_NilValue ? NULL : (R_varloc_t) binding;
+}
+
 R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 {
     SEXP binding = findVarLocInFrame(rho, symbol, NULL);
-    return binding == R_NilValue ? NULL : (R_varloc_t) binding;
+    return R_GetBindingVarLoc(binding, symbol);
 }
 
 SEXP R_GetVarLocValue(R_varloc_t vl)
@@ -903,7 +947,6 @@ SEXP findVarInFrame(SEXP rho, SEXP symbol)
     return findVarInFrame3(rho, symbol, TRUE);
 }
 
-
 /*----------------------------------------------------------------------
 
   findVar
@@ -969,6 +1012,32 @@ SEXP findVar(SEXP symbol, SEXP rho)
 }
 
 
+/*--------------------------------------------------------------------
+
+  findNonSystemVarLoc
+
+  Look up a symbol in the environment. Like findVar but returns the
+  location instead of the value. Note that this doesn't work for
+  system functions and variables, which use the value slot of the
+  symbol.
+
+*/
+
+R_varloc_t findNonSystemVarLoc(SEXP symbol, SEXP rho)
+{
+    R_varloc_t vl;
+#ifdef USE_GLOBAL_CACHE
+#error "findVarLoc with global caching not implemented"
+#else
+    while (rho != R_NilValue) {
+	vl = R_findVarLocInFrame(rho, symbol);
+	if (vl != NULL)
+	    return (vl);
+	rho = ENCLOS(rho);
+    }
+    error(_("Couldn't find variable \"%s\""), CHAR(PRINTNAME(symbol)));
+#endif  
+}
 
 /*----------------------------------------------------------------------
 
@@ -1238,6 +1307,52 @@ SEXP findFun(SEXP symbol, SEXP rho)
 }
 
 
+/*--------------------------------------------------------------------
+
+  findNonSystemFunLocUnboundOK
+
+  Like findFunUnboundOK, only returns the location of a function
+  binding instead of just the value. Does not work with system
+  functions, which use the value tag of the symbol.
+
+*/
+
+R_varloc_t findNonSystemFunLocUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundOK)
+{
+    R_varloc_t loc;
+    SEXP vl;
+    while (rho != R_NilValue) {
+#ifdef USE_GLOBAL_CACHE
+#error "findFunLoc with global caching not implemented"
+#else
+	loc = R_findVarLocInFrame(rho, symbol);
+#endif
+	vl = R_GetVarLocValue(loc);
+	if (vl != R_UnboundValue) {
+	    if (TYPEOF(vl) == PROMSXP) {
+		PROTECT(vl);
+		vl = eval(vl, rho);
+		R_SetVarLocValue(loc, vl);
+		UNPROTECT(1);
+	    }
+	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == RCC_CLOSXP || 
+		TYPEOF(vl) == BUILTINSXP || TYPEOF(vl) == SPECIALSXP)
+		return (loc);
+	    if (vl == R_MissingArg)
+		error(_("argument \"%s\" is missing, with no default"),
+		      CHAR(PRINTNAME(symbol)));
+	}
+	rho = ENCLOS(rho);
+    }
+    if (unboundOK) {
+	return NULL;
+    }
+    else {
+	error(_("couldn't find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    }
+    
+}
+
 /*----------------------------------------------------------------------
 
   defineVar
@@ -1303,6 +1418,69 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     }
 }
 
+/*--------------------------------------------------------------------
+
+  defineVarReturnLoc
+
+  Bind a symbol to a value in the given environment. Like defineVar
+  but also returns the location of the binding. Doesn't work for
+  system variables and functions that use the value slot of a symbol.
+
+*/
+
+R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho)
+{
+    int hashcode;
+    SEXP frame, c;
+    R_varloc_t loc;
+    R_DirtyImage = 1;
+    if (rho != R_BaseNamespace && rho != R_NilValue) {
+#ifdef USE_GLOBAL_CACHE
+	if (IS_GLOBAL_FRAME(rho))
+	    R_FlushGlobalCache(symbol);
+#endif
+
+	if(IS_USER_DATABASE(rho)) {
+	  error(_("defineVarReturnLoc called with user database"));
+	}
+
+	if (HASHTAB(rho) == R_NilValue) {
+	    frame = FRAME(rho);
+	    while (frame != R_NilValue) {
+		if (TAG(frame) == symbol) {
+		    SET_BINDING_VALUE(frame, value);
+		    SET_MISSING(frame, 0);	/* Over-ride */
+		    return R_GetBindingVarLoc(frame, symbol);
+		}
+		frame = CDR(frame);
+	    }
+	    if (FRAME_IS_LOCKED(rho))
+		error(_("cannot add bindings to a locked environment"));
+	    SET_FRAME(rho, CONS(value, FRAME(rho)));
+	    SET_TAG(FRAME(rho), symbol);
+	    return R_GetBindingVarLoc(FRAME(rho), symbol);
+	}
+	else {
+	    c = PRINTNAME(symbol);
+	    if( !HASHASH(c) ) {
+		SET_HASHVALUE(c, R_Newhashpjw(CHAR(c)));
+		SET_HASHASH(c, 1);
+	    }
+	    hashcode = HASHVALUE(c) % HASHSIZE(HASHTAB(rho));
+	    loc = R_HashSetReturnLoc(hashcode, symbol, HASHTAB(rho), value,
+				     FRAME_IS_LOCKED(rho));
+	    if (R_HashSizeCheck(HASHTAB(rho)))
+		SET_HASHTAB(rho, R_HashResize(HASHTAB(rho)));
+	    return loc;
+	}
+    }
+    else {
+#ifdef USE_GLOBAL_CACHE
+	R_FlushGlobalCache(symbol);
+#endif
+	SET_SYMBOL_BINDING_VALUE(symbol, value);
+    }
+}
 
 /*----------------------------------------------------------------------
 

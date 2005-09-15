@@ -955,6 +955,7 @@ int R_system(char *);
 #define CreateTag		Rf_CreateTag
 #define CustomPrintValue	Rf_CustomPrintValue
 #define defineVar		Rf_defineVar
+#define defineVarReturnLoc      Rf_defineVarReturnLoc
 #define dimgets			Rf_dimgets
 #define dimnamesgets		Rf_dimnamesgets
 #define DropDims                Rf_DropDims
@@ -969,7 +970,9 @@ int R_system(char *);
 #define evalListKeepMissing	Rf_evalListKeepMissing
 #define findFun			Rf_findFun
 #define findFunUnboundOK	Rf_findFunUnboundOK
+#define findNonSystemFunLocUnboundOK Rf_findNonSystemFunLocUnboundOK
 #define findVar			Rf_findVar
+#define findNonSystemVarLoc     Rf_findNonSystemVarLoc
 #define findVarInFrame		Rf_findVarInFrame
 #define findVarInFrame3		Rf_findVarInFrame3
 #define GetArrayDimnames	Rf_GetArrayDimnames
