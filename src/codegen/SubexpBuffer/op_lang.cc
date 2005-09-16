@@ -26,7 +26,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
       //direct function call
       string func = make_c_id(r_sym) + "_direct";
 #if 0
-      Expression args = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), r_args, rho, FALSE)); // not local; used for env
+      Expression args = output_to_expression(CodeGen::op_list(r_args, rho, FALSE));
 #else
       Expression args = op_list(r_args, rho, false);
 #endif
@@ -55,14 +55,13 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
 			      rho);
 	  return op_clos_app(Expression(func, FALSE, INVISIBLE, unp(func)), 
 			     r_args, rho);
-#endif
-#if 0
+#else
 	  // generate the SEXP representing the closure
 	  Expression op1;
 	  if (CAR(BODY(op)) == Rf_install(".Internal")) {
-	    op1 = op_exp(op, "R_GlobalEnv");
+	    op1 = output_to_expression(CodeGen::op_closure(op, "R_GlobalEnv"));
 	  } else {
-	    op1 = op_exp(op, rho);
+	    op1 = output_to_expression(CodeGen::op_closure(op, rho));
 	  }
 	  Expression out_exp = op_clos_app(op1, r_args, rho);
 	  return out_exp;
@@ -79,7 +78,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho) {
     }
   } else {  // function is not a symbol
     Expression op1;
-    op1 = op_exp(CAR(e), rho);
+    op1 = op_exp(e, rho);  // evaluate LHS
     Expression out_exp = op_clos_app(op1, CDR(e), rho);
     return out_exp;
     // eval.c: 395

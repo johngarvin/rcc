@@ -39,7 +39,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case LISTSXP:
   case LANGSXP:
-    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, TRUE));
+    return output_to_expression(CodeGen::op_list(e, rho, TRUE));
     //return op_list(e, rho, true);
     break;
   case CLOSXP:

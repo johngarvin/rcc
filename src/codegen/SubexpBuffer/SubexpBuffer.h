@@ -72,7 +72,7 @@ public:
 				  std::string arg5,
 				  std::string arg6);
 
-  Expression op_exp(SEXP e, std::string rho, bool fullyEvaluatedResult = false);
+  Expression op_exp(SEXP cell, std::string rho, bool fullyEvaluatedResult = false);
   Expression op_primsxp(SEXP e, std::string rho);
   Expression op_symlist(SEXP e, std::string rho);
   Expression op_lang(SEXP e, std::string rho);
@@ -90,7 +90,6 @@ public:
   Expression op_subscriptset(SEXP e, std::string rho);
   Expression op_clos_app(Expression op1, SEXP args, std::string rho);
   Expression op_arglist(SEXP e, std::string rho);
-  // Expression op_arglist_local(SEXP e, std::string rho);
   Expression op_literal(SEXP e, std::string rho);
   Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 
 			   bool fullyEvaluatedResult = FALSE, std::string opt_l_car = "");

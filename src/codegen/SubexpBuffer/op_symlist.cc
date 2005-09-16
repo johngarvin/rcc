@@ -15,6 +15,6 @@
 using namespace std;
 
 Expression SubexpBuffer::op_symlist(SEXP e, string rho) {
-  return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, true));
+  return output_to_expression(CodeGen::op_list(e, rho, true));
   //return op_list(e, rho, true);
 }

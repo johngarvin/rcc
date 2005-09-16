@@ -117,7 +117,6 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 //!  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   SEXP args = CAR(fundef_args_c(fndef));
-  SEXP code = CAR(fundef_body_c(fndef));
 
   string f, header;
   SubexpBuffer out_subexps;
@@ -158,7 +157,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   }
 
-  Expression outblock = out_subexps.op_exp(code, "newenv");
+  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef), "newenv");
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output() +
 			    Visibility::emit_set(outblock.is_visible))));
@@ -187,7 +186,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef) 
 {
   SEXP args = CAR(fundef_args_c(fndef));
-  SEXP code = CAR(fundef_body_c(fndef));
 
   string f, header;
   SubexpBuffer out_subexps;
@@ -205,7 +203,7 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef)
 		     + indent(formals.var) + ",\n"
 		     + indent("args") + ",\n"
 		     + indent("R_GlobalEnv") + "));\n"));
-  Expression outblock = out_subexps.op_exp(code, "newenv");
+  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef), "newenv");
   f += indent("{\n");
   f += indent(indent(out_subexps.output()));
   f += indent(indent("PROTECT(out = " + outblock.var + ");\n" + 

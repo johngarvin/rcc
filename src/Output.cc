@@ -9,25 +9,25 @@ Output::Output(Decls _d,
 	       DelText _del,
 	       DependenceType _dt,
 	       VisibilityType _v)
-    : decls(_d.get()),
-      code(_c.get()),
-      g_decls(_gd.get()),
-      g_code(_gc.get()), 
-      handle(_h.get()),
-      del_text(_del.get()),
-      dependence(_dt),
-      visibility(_v)
+    : m_decls(_d.get()),
+      m_code(_c.get()),
+      m_g_decls(_gd.get()),
+      m_g_code(_gc.get()), 
+      m_handle(_h.get()),
+      m_del_text(_del.get()),
+      m_dependence(_dt),
+      m_visibility(_v)
   {}
 
 Output::Output()
-  : decls(""),
-    code(""),
-    g_decls(""),
-    g_code(""),
-    handle(""),
-    del_text(""),
-    dependence(CONST),
-    visibility(INVISIBLE)
+  : m_decls(""),
+    m_code(""),
+    m_g_decls(""),
+    m_g_code(""),
+    m_handle(""),
+    m_del_text(""),
+    m_dependence(CONST),
+    m_visibility(INVISIBLE)
   {}
 
 const Output & Output::bogus = Output(Decls(""), Code(""),

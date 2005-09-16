@@ -33,7 +33,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
       err("Internal error: bad call to op_list\n");
       return Expression::bogus_exp;  // never reached
     }
-    Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(CAR(e), rho, fullyEvaluatedResult));
+    Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(e, rho, fullyEvaluatedResult));
     string out;
     if (car.is_dep) {
       if (TAG(e) == R_NilValue) {
@@ -77,7 +77,7 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
 	err("Internal error: bad call to op_list\n");
 	return Expression::bogus_exp;  // never reached
       }
-      exps[i] = (literal? op_literal(CAR(tmp_e), rho) : op_exp(CAR(tmp_e), rho, 
+      exps[i] = (literal? op_literal(CAR(tmp_e), rho) : op_exp(tmp_e, rho, 
 							       fullyEvaluatedResult));
       tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", FALSE, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
       if (exps[i].is_dep) list_dep = TRUE;

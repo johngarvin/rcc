@@ -4,7 +4,11 @@
 #include <include/R/R_Internal.h>
 #include <analysis/Utils.h>
 
+#if 0
 using namespace _GLIBCXX_STD;
+#else
+using namespace std;
+#endif
 
 #define PRIM(x) (CCODE) x
 static CCODE unsafePrimitives[] = {

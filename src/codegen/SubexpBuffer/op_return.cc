@@ -28,7 +28,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
     break;
   case 1:
     // pass true as third argument to yield fully evaluated result
-    value = op_exp(CAR(e), rho, true);
+    value = op_exp(e, rho, true);
 #if 0
     if (value.is_dep) {
       append_defs("PROTECT(" + value.var + ");\n");
@@ -52,7 +52,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
       }
       exp = CDR(exp);
     }
-    value = output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false));
+    value = output_to_expression(CodeGen::op_list(e, rho, false));
     //value = op_list(e, rho, true);
     v = appl1_unp("PairToVectorList", value.var);
     append_defs("UNPROTECT_PTR(newenv);\n");

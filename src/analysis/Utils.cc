@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include <analysis/Utils.h>
 
 //--------------------------------------------------------------------
@@ -69,6 +71,11 @@ SEXP struct_field_rhs_c(const SEXP e) {
   return CDDR(e);
 }
 
+bool is_simple_subscript(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP &&
+	  CAR(e) == Rf_install("["));
+}
+
 bool is_subscript(const SEXP e) {
   return (TYPEOF(e) == LANGSXP 
 	  && (CAR(e) == Rf_install("[")
@@ -96,6 +103,11 @@ bool is_const(const SEXP e) {
 
 bool is_var(const SEXP e) {
   return (TYPEOF(e) == SYMSXP);
+}
+
+std::string var_name(const SEXP e) {
+  assert(is_var(e));
+  return CHAR(PRINTNAME(e));
 }
 
 bool is_cons(const SEXP e) {

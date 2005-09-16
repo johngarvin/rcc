@@ -20,7 +20,7 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho) {
   while (exp != R_NilValue) {
     SubexpBuffer temp = new_sb("tmp_be");
     //    temp.encl_fn = this;
-    e = temp.op_exp(CAR(exp), rho);
+    e = temp.op_exp(exp, rho);
 
     string code;
     code += temp.output();

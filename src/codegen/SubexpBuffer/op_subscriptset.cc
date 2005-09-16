@@ -6,6 +6,7 @@
 
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Utils.h>
 #include <support/StringUtils.h>
 
 #include <Visibility.h>
@@ -19,16 +20,20 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho) {
   //   CADR(CADR(e)) = array
   //   CADDR(CADR(e)) = subscript
   // CADDR(e) = RHS
-  SEXP array = CADR(CADR(e));
-  SEXP sub = CADDR(CADR(e));
-  SEXP rhs = CADDR(e);
-  Expression a_sym = op_literal(array, rho);
-  Expression a = op_exp(array, rho);
-  Expression s = op_exp(sub, rho);
-  Expression r = op_exp(rhs, rho);
+  SEXP lhs = CAR(assign_lhs_c(e));
+  SEXP array_c = subscript_lhs_c(lhs);
+  SEXP sub_c = subscript_rhs_c(lhs);
+  SEXP rhs_c = assign_rhs_c(e);
+  Expression a_sym = op_literal(CAR(array_c), rho);
+  Expression a = op_exp(array_c, rho);
+  Expression s = op_exp(sub_c, rho);
+  Expression r = op_exp(rhs_c, rho);
   string assign = appl3("rcc_subassign", a.var, s.var, r.var);
   string defs = "defineVar(" + a_sym.var + ", " + assign + ", " + rho + ");\n";
-  del(a_sym); del(s); del(r); defs += unp(assign);
+  del(a_sym);
+  del(s);
+  del(r);
+  defs += unp(assign);
   append_defs(defs);
   a.is_visible = INVISIBLE;
   return a;

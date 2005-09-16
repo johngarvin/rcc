@@ -11,7 +11,9 @@
 
 class CodeGen {
 public:
-  static Output op_exp(SEXP e, std::string rho, bool primFuncArg);
+  static Output op_exp(SEXP e, std::string rho, bool fullyEvaluatedResult);
+  static Output op_var(SEXP cell, std::string rho, bool fullyEvaluatedResult);
+  static Output op_closure(SEXP e, std::string rho);
   static Output op_primsxp(SEXP e, std::string rho);
   static Output op_lang(SEXP e, std::string rho);
   static Output op_promise(SEXP e);
@@ -26,10 +28,9 @@ public:
   static Output op_builtin(SEXP e, SEXP op, std::string rho);
   static Output op_set(SEXP e, SEXP op, std::string rho);
   static Output op_subscriptset(SEXP e, std::string rho);
-  static Output op_clos_app(Output op1, SEXP args, std::string rho);
-  static Output op_literal(CScope scope, SEXP e, std::string rho);
-  static Output op_list(CScope scope,
-			SEXP e,
+  static Output op_clos_app(std::string clos_h, SEXP args, std::string rho);
+  static Output op_literal(SEXP e, std::string rho);
+  static Output op_list(SEXP e,
 			std::string rho,
 			bool literal,
 			bool promFuncArgList = false);

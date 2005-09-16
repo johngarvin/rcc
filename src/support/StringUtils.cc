@@ -59,13 +59,16 @@ std::string indent(std::string str) {
   std::string::iterator it;
 
   // Indent after every newline (unless there's one at the end)
-  for(it = str.begin(); it != str.end(); it++) {
-    if (*it == '\n' && it != str.end() - 1) {
+  for(it = str.begin(); it != str.end() - 1; ++it) {
+    if (*it == '\n') {
       newstr += '\n' + IND_STR;
     } else {
       newstr += *it;
     }
   }
+  // last character == str.end() - 1
+  newstr += *it;
+    
   return newstr;
 }
 

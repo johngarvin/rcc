@@ -38,6 +38,10 @@ std::string emit_call2(std::string fname, const std::string arg1,
 std::string emit_call3(std::string fname, const std::string arg1,
 		       const std::string arg2, const std::string arg3);
 
+std::string emit_call4(std::string fname, const std::string arg1,
+		       const std::string arg2, const std::string arg3,
+		       const std::string arg4);
+
 //------------------------------------------------------------------------------
 // emit call statement: fname(arg1, arg2, ...);
 //    note: arguments are specified as varargs list

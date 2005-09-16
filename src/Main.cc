@@ -193,10 +193,42 @@ int main(int argc, char *argv[]) {
     exprs += indent("SEXP e" + i_to_s(i) + ";\n");
   }
 
-  // output expressions
+#if 0
+  // output expressions (Output version)
+  string g_decls, g_code, code;
+  for(i=0; i<n_exprs; i++) {
+    Output exp = op_exp(expressions, "R_GlobalEnv");
+    
+    string this_exp = exp.decls() +
+                      Visibility::emit_set_if_visible(exp.visibility()) +
+                      exp.code();
+    if (exp.visibility() != INVISIBLE) {
+      string evar = "e" + i_to_s(i);
+      string printexpn = emit_assign(evar, exp.handle());
+      string check;
+      if (exp.visibility() == CHECK_VISIBLE) {
+	check = Visibility::emit_check_expn();
+      }
+      printexpn +=
+	emit_logical_if_stmt(check,
+			     emit_call2("PrintValueEnv",
+					evar,
+					"R_GlobalEnv"));
+      this_exp += printexpn;
+    }
+    this_exp += exp.del_text();
+    code += emit_in_braces(this_exp);
+    expressions = CDR(expressions);
+  }
+  exprs = g_decls + g_code + code;
+  exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
+#endif
+#if 1
+  // output expressions (Expression version)
   for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
-    Expression exp = subexps.op_exp(CAR(expressions), "R_GlobalEnv");
+    Expression exp = subexps.op_exp(expressions, "R_GlobalEnv");
+    
     exprs += indent("{\n");
     exprs += indent(indent(Visibility::emit_set_if_visible(exp.is_visible)));
     exprs += indent(indent("{\n"));
@@ -222,6 +254,8 @@ int main(int argc, char *argv[]) {
   exprs += indent("UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot())
 		  + "); /* c_ */\n");
   exprs += "}\n\n";
+#endif
+
   
   if (ParseInfo::get_problem_flag()) {
     out_filename += ".bad";
@@ -330,12 +364,12 @@ unsigned int SubexpBuffer::global_temps = 0;
 //! Convert an Output into an Expression. Will go away as soon as
 //! everything uses Output instead of Expression.
 const Expression SubexpBuffer::output_to_expression(const Output op) {
-  append_decls(op.get_decls());
-  append_defs(op.get_code());
-  ParseInfo::global_constants->append_decls(op.get_g_decls());
-  ParseInfo::global_constants->append_defs(op.get_g_code());
-  return Expression(op.get_handle(),
-		    (op.get_dependence() == DEPENDENT),
-		    op.get_visibility(),
-		    op.get_del_text());
+  append_decls(op.decls());
+  append_defs(op.code());
+  ParseInfo::global_constants->append_decls(op.g_decls());
+  ParseInfo::global_constants->append_defs(op.g_code());
+  return Expression(op.handle(),
+		    (op.dependence() == DEPENDENT),
+		    op.visibility(),
+		    op.del_text());
 }

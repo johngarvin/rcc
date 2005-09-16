@@ -78,6 +78,11 @@ string emit_call3(string fname, const string arg1, const string arg2, const stri
   return emit_call_internal(fname, &arg1, &arg2, &arg3, NULL);
 } 
 
+string emit_call4(string fname, const string arg1, const string arg2, const string arg3, const string arg4)
+{
+  return emit_call_internal(fname, &arg1, &arg2, &arg3, &arg4, NULL);
+} 
+
 
 #if 0
 string emit_call_stmt(const string fname, ...)
@@ -95,7 +100,7 @@ string emit_in_braces(string code) {
 }
 
 string emit_unprotect(string code) {
-  return emit_call1("UNPROTECT_PTR", code);
+  return emit_call1("UNPROTECT_PTR", code) + eos;
 }
 
 string emit_decl(string var) {

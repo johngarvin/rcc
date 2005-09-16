@@ -7,6 +7,7 @@
 
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Utils.h>
 #include <support/StringUtils.h>
 #include <CodeGen.h>
 #include <ParseInfo.h>
@@ -14,7 +15,17 @@
 
 using namespace std;
 
-Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
+// op_exp
+//
+// outputs a representation of the CAR of the given SEXP. Note that
+// op_exp takes as the argument the CONS cell containing the
+// expression instead of the expression itself; this allows op_var to
+// use annotations. (Otherwise, we wouldn't be able to distinguish
+// different mentions of the same variable.)
+
+Expression SubexpBuffer::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
+  assert(is_cons(cell));
+  SEXP e = CAR(cell);
   Expression out, formals, body, env;
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -35,6 +46,7 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
     return Expression("<<unimplemented vector>>", TRUE, INVISIBLE, "");
     break;
   case SYMSXP:
+#if 0
     if (e == R_MissingArg) {
       return Expression("R_MissingArg", FALSE, INVISIBLE, "");
     } else {
@@ -44,12 +56,16 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
       out = Expression(v, TRUE, VISIBLE, fullyEvaluatedResult ? unp(v) : "");
       return out;
     }
+#else
+    return output_to_expression(CodeGen::op_var(cell, rho, fullyEvaluatedResult));
+#endif
     break;
   case LISTSXP:
-    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
+    return output_to_expression(CodeGen::op_list(e, rho, false, false));
     //    return op_list(e, rho, false, false);
     break;
   case CLOSXP:
+#if 0
     formals = op_list(FORMALS(e), rho, true);
     body = op_literal(BODY(e), rho);
     if (rho == "R_GlobalEnv" && !formals.is_dep && !body.is_dep) {
@@ -70,6 +86,9 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
       out = Expression(v, TRUE, INVISIBLE, unp(v));
     }
     return out;
+#else
+    return output_to_expression(CodeGen::op_closure(e, rho));
+#endif
     break;
   case ENVSXP:
     ParseInfo::flag_problem();
@@ -91,6 +110,7 @@ Expression SubexpBuffer::op_exp(SEXP e, string rho, bool fullyEvaluatedResult) {
   case SPECIALSXP:
   case BUILTINSXP:
     return ParseInfo::global_constants->op_primsxp(e, rho);
+    break;
   case EXPRSXP:
   case EXTPTRSXP:
   case WEAKREFSXP:

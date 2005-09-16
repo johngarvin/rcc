@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <assert.h>
+#include <string>
 
 #include <include/R/R_RInternals.h>
 
@@ -19,11 +19,13 @@ SEXP fundef_body_c(const SEXP e);
 bool is_struct_field(const SEXP e);
 SEXP struct_field_lhs_c(const SEXP e);
 SEXP struct_field_rhs_c(const SEXP e);
+bool is_simple_subscript(const SEXP e);
 bool is_subscript(const SEXP e);
 SEXP subscript_lhs_c(const SEXP e);
 SEXP subscript_rhs_c(const SEXP e);
 bool is_const(const SEXP e);
 bool is_var(const SEXP e);
+std::string var_name(const SEXP e);
 bool is_cons(const SEXP e);
 bool is_string(const SEXP e);
 
