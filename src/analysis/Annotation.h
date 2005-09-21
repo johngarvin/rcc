@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.9 2005/09/10 21:28:33 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.10 2005/09/21 17:07:53 jin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -640,7 +640,7 @@ public:
   // c-linkage-name
   const std::string& getCName() const
     { return mCName; }
-  void getCName(std::string& x)
+  void setCName(std::string& x)
     { mCName = x; }
 
   // context
