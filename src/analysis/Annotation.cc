@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.9 2005/09/14 02:35:48 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.10 2005/09/27 21:53:13 jin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -325,6 +325,26 @@ SEXP FuncInfo::getArgs()
   return CAR(fundef_args_c(mDefn)); 
 }
 
+int FuncInfo::findArgPosition(SEXP name)
+{
+  SEXP args = getArgs();
+  int pos = 1;
+  SEXP e;
+  for (e = args; e != R_NilValue && e != name; e = CDR(e), pos++);
+  assert (e != R_NilValue);
+  return pos;
+}
+
+bool FuncInfo::isArgValue(int position)
+{
+  SEXP args = getArgs();
+  int pos = 1;
+  SEXP e;
+  for (e = args; e != R_NilValue && pos != position; pos++, e = CDR(e));
+  assert(e != R_NilValue); 
+  return true;
+}
+
 void FuncInfo::insertMention(Var * v)
 {
   mMentions.insert(v);
@@ -398,25 +418,27 @@ ArgInfo::dump(std::ostream& os) const
 
 
 //****************************************************************************
-// FormalArg
+// FormalArgInfo
 //****************************************************************************
 
-FormalArg::FormalArg()
+PropertyHndlT FormalArgInfo::FormalArgInfoProperty = "FormalArgInfo";
+
+FormalArgInfo::FormalArgInfo()
 {
 }
 
 
-FormalArg::~FormalArg()
+FormalArgInfo::~FormalArgInfo()
 {
 }
 
 
 std::ostream&
-FormalArg::dump(std::ostream& os) const
+FormalArgInfo::dump(std::ostream& os) const
 {
-  beginObjDump(os, FormalArg);
+  beginObjDump(os, FormalArgInfo);
   // FIXME: add implementation
-  endObjDump(os, FormalArg);
+  endObjDump(os, FormalArgInfo);
 }
 
 

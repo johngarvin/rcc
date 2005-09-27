@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.10 2005/09/21 17:07:53 jin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.11 2005/09/27 21:53:13 jin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -626,6 +626,8 @@ public:
   void setNumArgs(unsigned int x) 
      { mNumArgs = x; }
   SEXP getArgs(); 
+  int findArgPosition(SEXP x);
+  bool isArgValue(int position);
 
   // definition
   SEXP getDefn() 
@@ -820,19 +822,19 @@ private:
 
 
 // ---------------------------------------------------------------------------
-// ActualArg
+// ActualArgInfo
 // ---------------------------------------------------------------------------
-class ActualArg
+class ActualArgInfo
   : public ArgInfo
 {
 public:
-  ActualArg();
-  virtual ~ActualArg();
+  ActualArgInfo();
+  virtual ~ActualArgInfo();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual ActualArg* clone() { return new ActualArg(*this); }
+  virtual ActualArgInfo* clone() { return new ActualArgInfo(*this); }
 
   // -------------------------------------------------------
   // debugging
@@ -840,32 +842,36 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  // value/promise
+  bool isvalue;  // value/promise
 };
 
 
 // ---------------------------------------------------------------------------
-// FormalArg
+// FormalArgInfo
 // ---------------------------------------------------------------------------
-class FormalArg
+class FormalArgInfo
   : public ArgInfo
 {
 public:
-  FormalArg();
-  virtual ~FormalArg();
+  static PropertyHndlT FormalArgInfoProperty;
+public:
+  FormalArgInfo();
+  virtual ~FormalArgInfo();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual FormalArg* clone() { return new FormalArg(*this); }
+  virtual FormalArgInfo* clone() { return new FormalArgInfo(*this); }
 
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
+  
+  bool isValue() { return isvalue; }
 
 private:
-  // strict
+  bool isvalue; // value/promise
 };
 
 //****************************************************************************

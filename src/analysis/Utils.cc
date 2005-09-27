@@ -259,3 +259,25 @@ SEXP curly_body(const SEXP e) {
   return CDR(e);
 }
 
+//--------------------------------------------------------------------
+// rcc_assert statements
+//--------------------------------------------------------------------
+
+bool is_rcc_assertion(const SEXP e) {
+  return is_rcc_assert(e) || is_rcc_assert_sym(e) || is_rcc_assert_exp(e);
+}
+
+bool is_rcc_assert(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP 
+	  && CAR(e) == Rf_install("rcc_assert"));
+}
+
+bool is_rcc_assert_sym(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP 
+	  && CAR(e) == Rf_install("rcc_assert_symbol"));
+}
+
+bool is_rcc_assert_exp(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP 
+	  && CAR(e) == Rf_install("rcc_assert_expression"));
+}

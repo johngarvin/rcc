@@ -57,4 +57,9 @@ SEXP paren_body_c(const SEXP e);
 bool is_curly_list(const SEXP e);
 SEXP curly_body(const SEXP e);
 
+bool is_rcc_assertion(const SEXP e);
+bool is_rcc_assert(const SEXP e);
+bool is_rcc_assert_sym(const SEXP e);
+bool is_rcc_assert_exp(const SEXP e);
+
 #endif

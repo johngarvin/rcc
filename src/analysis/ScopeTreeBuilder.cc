@@ -1,5 +1,6 @@
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Assertion.h>
 
 #include "ScopeTreeBuilder.h"
 
@@ -55,6 +56,12 @@ void ScopeTreeBuilder::build_scope_tree(SEXP e, FuncInfo *parent) {
       FuncInfo *newfun = new FuncInfo(parent, R_NilValue, e);
       putProperty(FuncInfo, e, newfun, false);
       build_scope_tree(CAR(fundef_body_c(e)), newfun);
+    } else if (is_rcc_assertion(e)) { // rcc_assert call
+      process_assert(e);
+      if (is_rcc_assert_exp(e)) {
+	SEXP body = CDR(e);
+	build_scope_tree(CAR(body), parent);
+      }
     } else {                   // ordinary function call
       build_scope_tree(CAR(e), parent);
       build_scope_tree(CDR(e), parent);
