@@ -57,11 +57,18 @@ void ScopeTreeBuilder::build_scope_tree(SEXP e, FuncInfo *parent) {
       putProperty(FuncInfo, e, newfun, false);
       build_scope_tree(CAR(fundef_body_c(e)), newfun);
     } else if (is_rcc_assertion(e)) { // rcc_assert call
-      process_assert(e);
+      FuncInfo *fi;
       if (is_rcc_assert_exp(e)) {
-	SEXP body = CDR(e);
-	build_scope_tree(CAR(body), parent);
+	SEXP body = CADR(e);
+	build_scope_tree(body, parent);
+	if (is_simple_assign(body)) {
+	  SEXP rhs = CAR(assign_rhs_c(body));
+	  if (is_fundef(rhs)) fi = getProperty(FuncInfo, rhs);
+	}
+      } else if (is_rcc_assert(e)) {
+	fi = parent;
       }
+      process_assert(e, fi);
     } else {                   // ordinary function call
       build_scope_tree(CAR(e), parent);
       build_scope_tree(CDR(e), parent);
