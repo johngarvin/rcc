@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.10 2005/09/27 21:53:13 jin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.11 2005/09/29 17:17:15 jin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -297,6 +297,11 @@ FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
 {
   mEnv = new Environment();
   mRequiresContext = functionRequiresContext(defn);
+  SEXP args = getArgs();
+  for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
+    FormalArgInfo* fargInfo = new FormalArgInfo();
+    putProperty(FormalArgInfo, e, fargInfo, false);
+  }
 }
 
 
@@ -325,24 +330,44 @@ SEXP FuncInfo::getArgs()
   return CAR(fundef_args_c(mDefn)); 
 }
 
-int FuncInfo::findArgPosition(SEXP name)
+int FuncInfo::findArgPosition(char* name)
 {
   SEXP args = getArgs();
   int pos = 1;
   SEXP e;
-  for (e = args; e != R_NilValue && e != name; e = CDR(e), pos++);
+  for (e = args; e != R_NilValue; e = CDR(e), pos++) {
+    char* argName = CHAR(PRINTNAME(INTERNAL(e)));
+    if (!strcmp(argName, name)) break;
+  }
   assert (e != R_NilValue);
   return pos;
 }
 
-bool FuncInfo::isArgValue(int position)
+SEXP FuncInfo::getArg(int position)
 {
   SEXP args = getArgs();
-  int pos = 1;
+  int p = 1;
   SEXP e;
-  for (e = args; e != R_NilValue && pos != position; pos++, e = CDR(e));
-  assert(e != R_NilValue); 
-  return true;
+  for (e = args; e != R_NilValue && p != position; e = CDR(e), p++);
+  assert (e != R_NilValue);
+  return e;
+}
+
+bool FuncInfo::isArgValue(SEXP arg)
+{
+  FormalArgInfo* fargInfo = getProperty(FormalArgInfo, arg);
+  bool isvalue = fargInfo->isValue();
+  return isvalue;
+}
+
+bool FuncInfo::areAllValue()
+{
+  bool allvalue = true;
+  SEXP args = getArgs();
+  for (SEXP e = args; e != R_NilValue && allvalue; e = CDR(e)) {
+    if (!isArgValue(e)) allvalue = false;
+  }
+  return allvalue;
 }
 
 void FuncInfo::insertMention(Var * v)
@@ -423,8 +448,9 @@ ArgInfo::dump(std::ostream& os) const
 
 PropertyHndlT FormalArgInfo::FormalArgInfoProperty = "FormalArgInfo";
 
-FormalArgInfo::FormalArgInfo()
+FormalArgInfo::FormalArgInfo() 
 {
+  isvalue = false;
 }
 
 

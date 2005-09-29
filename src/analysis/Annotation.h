@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.11 2005/09/27 21:53:13 jin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.12 2005/09/29 17:17:15 jin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -626,8 +626,10 @@ public:
   void setNumArgs(unsigned int x) 
      { mNumArgs = x; }
   SEXP getArgs(); 
-  int findArgPosition(SEXP x);
-  bool isArgValue(int position);
+  bool areAllValue();
+  bool isArgValue(SEXP arg);
+  SEXP getArg(int position);
+  int findArgPosition(char* name);
 
   // definition
   SEXP getDefn() 
@@ -869,6 +871,7 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
   
   bool isValue() { return isvalue; }
+  void setIsValue(bool _isvalue) { isvalue = _isvalue; }
 
 private:
   bool isvalue; // value/promise
