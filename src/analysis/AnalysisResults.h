@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.3 2005/09/02 14:01:02 johnmc Exp $ */
+/* $Id: AnalysisResults.h,v 1.4 2005/09/29 20:46:16 fzhao Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -26,6 +26,8 @@
 
 #include <support/stacks/StackTmpl.h>
 
+typedef std::map<char *,RAnnot::FuncInfo*> func_attribute_map;
+extern func_attribute_map  func_unique_defintion;
 
 //**************************************************************************/
 // macros 

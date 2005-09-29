@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.cc,v 1.2 2005/09/02 14:01:01 johnmc Exp $ */
+/* $Id: AnalysisResults.cc,v 1.3 2005/09/29 20:46:16 fzhao Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -23,3 +23,6 @@
 RProp::PropertySet analysisResults;
 
 StackTmpl<RAnnot::FuncInfo*> lexicalContext;
+
+func_attribute_map  func_unique_defintion;
+
