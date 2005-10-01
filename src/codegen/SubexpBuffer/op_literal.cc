@@ -43,7 +43,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     //return op_list(e, rho, true);
     break;
   case CLOSXP:
-    formals = op_list(FORMALS(e), rho, true);
+    formals = op_list(FORMALS(e), rho, true, Protected);
     body = op_literal(BODY(e), rho);
     v = appl3("mkCLOSXP  ",
 	      formals.var,
@@ -66,7 +66,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
     break;
   case CHARSXP:
-    v = appl1_unp("mkChar", quote(string(CHAR(e))));
+    v = appl1("mkChar", quote(string(CHAR(e))), Unprotected);
     return Expression(v, TRUE, VISIBLE, "");
     break;
   case SPECIALSXP:

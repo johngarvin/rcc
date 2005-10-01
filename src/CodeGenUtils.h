@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include <include/Protection.h>
 #include <support/StringUtils.h>
 
 //------------------------------------------------------------------------------
@@ -21,7 +22,9 @@ std::string emit_logical_if_stmt(const std::string expn,
 //------------------------------------------------------------------------------
 // emit assignment: lhs = rhs;
 //------------------------------------------------------------------------------
-std::string emit_assign(const std::string lhs, const std::string rhs); 
+std::string emit_assign(const std::string lhs, const std::string rhs, 
+			Protection resultProtected = Unprotected); 
+
 std::string emit_prot_assign(const std::string lhs, const std::string rhs);
 
 //------------------------------------------------------------------------------
@@ -52,7 +55,7 @@ std::string emit_call4(std::string fname, const std::string arg1,
 
 std::string emit_unprotect(std::string code);
 
-std::string emit_in_braces(std::string code);
+std::string emit_in_braces(std::string code, bool balanced = true);
 
 std::string emit_decl(std::string var);
 std::string emit_static_decl(std::string var);

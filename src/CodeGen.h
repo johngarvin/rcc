@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include <include/Protection.h>
 #include <include/R/R_RInternals.h>
 
 #include <Output.h>
@@ -12,7 +13,9 @@
 class CodeGen {
 public:
   static Output op_exp(SEXP e, std::string rho, bool fullyEvaluatedResult);
-  static Output op_var(SEXP cell, std::string rho, bool fullyEvaluatedResult);
+  static Output op_var(SEXP cell, std::string rho, 
+		       Protection resultProtected, 
+		       bool fullyEvaluatedResult);
   static Output op_closure(SEXP e, std::string rho);
   static Output op_primsxp(SEXP e, std::string rho);
   static Output op_lang(SEXP e, std::string rho);

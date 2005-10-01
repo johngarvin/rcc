@@ -1,5 +1,6 @@
 #include <string>
 
+#include <CheckProtect.h>
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
@@ -59,7 +60,8 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 						     fndef));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
-    Expression r_args = ParseInfo::global_constants->op_list(CAR(e), rho, true);
+    Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
+  rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
 #if 0
     string r_form = ParseInfo::global_constants->appl3("mkCLOSXP", r_args.var, r_code.var, rho);
@@ -125,6 +127,9 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   header += "SEXP args, SEXP env)";
   ParseInfo::global_fundefs->decls += header + ";\n";
   f += header + " {\n";
+#ifdef CHECK_PROTECT
+  f += indent("int topval = R_PPStackTop;\n");
+#endif
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
@@ -134,7 +139,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent("RCNTXT context;\n");
   }
 
-  Expression formals = env_subexps.op_list(args, "env", true);
+  Expression formals = env_subexps.op_list(args, "env", true, Protected);
   string actuals = "args";
   env_subexps.output_ip();
   env_subexps.finalize();
@@ -157,12 +162,16 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   }
 
-  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef), "newenv");
+#if 0
+  Expression outblock = out_subexps.op_exp(code, "newenv", Unprotected);
+#endif
+  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
+					   "newenv", Unprotected, true, 
+					   ResultNeeded);
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output() +
 			    Visibility::emit_set(outblock.is_visible))));
-  f += indent(indent(indent("PROTECT(out = " + outblock.var + ");\n")));
-  f += indent(indent(indent(outblock.del_text)));
+  f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
   if (fi->getRequiresContext()) {
@@ -174,9 +183,11 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent(unp("env"));
   f += indent(unp("args"));
 #endif
-  f += indent(unp("newenv"));
   f += indent(formals.del_text);
-  f += indent(unp("out"));
+  f += indent("UNPROTECT(1); /* newenv */\n");
+#ifdef CHECK_PROTECT
+  f += indent("assert(topval == R_PPStackTop);\n");
+#endif
   f += indent("return out;\n");
   f += "}\n";
   return f;
@@ -194,25 +205,27 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef)
   header += "SEXP args)";
   ParseInfo::global_fundefs->decls += header + ";\n";
   f += header + " {\n";
+#ifdef CHECK_PROTECT
+  f += indent("int topval = R_PPStackTop;\n");
+#endif
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
-  Expression formals = env_subexps.op_list(args, "R_GlobalEnv", true);
+  Expression formals = env_subexps.op_list(args, "R_GlobalEnv", true, Protected);
   f += env_subexps.output();
   f += indent("PROTECT(newenv =\n");
   f += indent(indent("Rf_NewEnvironment(\n"
 		     + indent(formals.var) + ",\n"
 		     + indent("args") + ",\n"
 		     + indent("R_GlobalEnv") + "));\n"));
-  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef), "newenv");
+  Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
+					   "newenv", Unprotected);
   f += indent("{\n");
   f += indent(indent(out_subexps.output()));
-  f += indent(indent("PROTECT(out = " + outblock.var + ");\n" + 
-		     Visibility::emit_set(outblock.is_visible)));
-  f += indent(indent(outblock.del_text));
+  f += Visibility::emit_set(outblock.is_visible);
+  f += indent(indent("out = " + outblock.var + ";\n"));
   f += indent("}\n");
-  f += indent(unp("newenv"));
   f += indent(formals.del_text);
-  f += indent(unp("out"));
+  f += indent("UNPROTECT(1);\n");
   f += indent("return out;\n");
   f += "}\n";
   return f;
@@ -260,7 +273,8 @@ string make_fundef(string func_name, SEXP fndef) {
     f += indent("RCNTXT context;\n");
   }
 
-  string formals = env_subexps.op_list(args, "env", true).var;
+  // <FIX ME: Doesn't this need an UNPROTECT  -- johnmc >
+  string formals = env_subexps.op_list(args, "env", true, Protected).var;
   string actuals = "R_NilValue";
   for (i=len-1; i>=0; i--) {
     actuals = env_subexps.appl2("cons",
@@ -286,7 +300,6 @@ string make_fundef(string func_name, SEXP fndef) {
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output())));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
-  out_subexps.del(outblock); // ?????
   f += indent(indent("}\n"));
 
   if (fi->getRequiresContext()) {

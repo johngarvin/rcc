@@ -1,5 +1,6 @@
 #include <string>
 
+#include <CheckProtect.h>
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include <include/R/R_RInternals.h>
@@ -23,16 +24,15 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   string v;
   switch(Rf_length(e)) {
   case 0:
-    append_defs("UNPROTECT_PTR(newenv);\n");
     v = "R_NilValue";
     break;
   case 1:
     // pass true as third argument to yield fully evaluated result
-    value = op_exp(e, rho, true);
+    value = op_exp(e, rho, Unprotected, true);
 #if 0
     if (value.is_dep) {
       append_defs("PROTECT(" + value.var + ");\n");
-      v = appl2_unp("eval", value.var, rho);
+      v = appl2("eval", value.var, rho, Unprotected);
       append_defs("UNPROTECT_PTR(" + value.var + ");\n");
     } else {
       v = value.var;
@@ -40,23 +40,23 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
 #else
     v = value.var;
 #endif
-    append_defs("UNPROTECT_PTR(newenv);\n");
     del(value);
     break;
   default:
     SEXP exp = e;
     // set names for multiple return
     while(exp != R_NilValue) {
-      if (TYPEOF(CAR(exp)) == SYMSXP) {
+      SEXP tag = TAG(exp);
+      if (tag == R_NilValue && TYPEOF(CAR(exp)) == SYMSXP) {
 	SET_TAG(exp, CAR(exp));
       }
       exp = CDR(exp);
     }
-    value = output_to_expression(CodeGen::op_list(e, rho, false));
+    value = output_to_expression(CodeGen::op_list(e, rho, false, true));
     //value = op_list(e, rho, true);
-    v = appl1_unp("PairToVectorList", value.var);
-    append_defs("UNPROTECT_PTR(newenv);\n");
+    v = appl1("PairToVectorList", value.var, Unprotected);
     del(value);
+    break;
     break;
   }
 
@@ -65,6 +65,14 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   if (fi && fi->getRequiresContext())  
     append_defs("endcontext(&context);\n"); 
+
+  //---------------------------
+  // unprotect newenv
+  //---------------------------
+  append_defs("UNPROTECT(1); /* newenv */\n");
+#ifdef CHECK_PROTECT
+  append_defs("assert(topval == R_PPStackTop);\n");
+#endif
 
   //---------------------------
   // return v

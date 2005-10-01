@@ -19,10 +19,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-///
+//
+
 
 #include <iostream>
 
+#include <CheckProtect.h>
 #include <include/R/R_Internal.h>
 
 #include <analysis/AnalysisResults.h>
@@ -246,7 +248,12 @@ int main(int argc, char *argv[]) {
 
       exprs += indent(indent(indent(printexpn)));
     }
+#if 0
     exprs += indent(indent(indent(exp.del_text)));
+#else
+    if (!exp.del_text.empty())
+      exprs += indent(indent(indent("UNPROTECT(1);\n")));
+#endif
     exprs += indent(indent("}\n"));
     exprs += indent("}\n");
     expressions = CDR(expressions);
@@ -273,6 +280,9 @@ int main(int argc, char *argv[]) {
   // output to file
   out_file << rcc_path_prefix << "rcc_generated_header.h\"\n";
   out_file << "\n";
+#ifdef CHECK_PROTECT
+  out_file << "#include <assert.h>\n";
+#endif
 
   ParseInfo::global_fundefs->output_ip();
   ParseInfo::global_fundefs->finalize();
@@ -348,7 +358,8 @@ string make_symbol(SEXP e) {
     if (pr == ParseInfo::symbol_map.end()) {  // not found
       string var = ParseInfo::global_constants->new_sexp_unp_name(name);
       string qname = quote(name);
-      ParseInfo::global_constants->appl(var, FALSE, "Rf_install", 1, &qname);
+      ParseInfo::global_constants->appl(var, Unprotected,
+					"Rf_install", 1, &qname);
       ParseInfo::symbol_map.insert(pair<string,string>(name, var));
       return var;
     } else {

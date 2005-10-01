@@ -134,7 +134,9 @@ Output CodeGen::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
   }
 }
 
-Output CodeGen::op_var(SEXP cell, string rho, bool fullyEvaluatedResult) {
+Output CodeGen::op_var(SEXP cell, string rho, 
+		       Protection resultProtected, 
+		       bool fullyEvaluatedResult) {
   SEXP e = CAR(cell);
   if (e == R_MissingArg) {
     return Output::invisible_const(Handle("R_MissingArg"));
@@ -143,12 +145,14 @@ Output CodeGen::op_var(SEXP cell, string rho, bool fullyEvaluatedResult) {
     string v = m_scope.new_label();
     string code = emit_assign(v, emit_call2("findVar", sym, rho));
     string decls = emit_decl(v);
-    string del_text = "";
+    string del_text;
     if (fullyEvaluatedResult) {
       string v1 = m_scope.new_label();
-      code += emit_prot_assign(v1, emit_call2("eval", v, rho));
+      code += emit_assign(v1, emit_call2("eval", v, rho), resultProtected);
       decls += emit_decl(v1);
-      del_text += emit_unprotect(v1);
+      if (resultProtected == Protected) {
+	del_text += emit_unprotect(v1);
+      }
       v = v1;
     }
     return Output::dependent(Decls(decls),
@@ -294,7 +298,8 @@ Output CodeGen::op_begin(SEXP e, string rho) {
   // Each one is in its own { }'s.
   while (CDR(e) != R_NilValue) {
     Output exp = op_exp(e, rho, false);
-    code += emit_in_braces(exp.decls() + exp.code() + exp.del_text());
+    code += emit_in_braces(exp.decls() + exp.code() + exp.del_text(),
+			   false /* unbalanced */);
     g_decls += exp.g_decls();
     g_code += exp.g_code();
     e = CDR(e);
@@ -304,7 +309,8 @@ Output CodeGen::op_begin(SEXP e, string rho) {
   code += emit_in_braces(exp.decls() +
 			 exp.code() +
 			 emit_prot_assign(var, exp.handle()) +
-			 exp.del_text());
+			 exp.del_text(),
+			 false /* unbalanced */);
   return Output(Decls(emit_decl(var)),
 		Code(code),
 		GDecls(g_decls),
@@ -325,11 +331,13 @@ Output CodeGen::op_if(SEXP e, string rho) {
 		     t.decls() +
 		     t.code() +
 		     emit_prot_assign(out, t.handle()) +
-		     Visibility::emit_set(t.visibility())) +
+		     Visibility::emit_set(t.visibility()),
+		     false /* unbalanced */) +
       " else " +
       emit_in_braces(cond.del_text() +
 		     Visibility::emit_set(INVISIBLE) +
-		     emit_prot_assign(out, "R_NilValue"));
+		     emit_prot_assign(out, "R_NilValue"),
+		     false /* unbalanced */);
     return Output(Decls(cond.decls()),
 		  Code(cond.code()),
 		  GDecls(cond.g_decls() + t.g_decls()),
@@ -710,17 +718,18 @@ Output CodeGen::op_list(SEXP e,
     string buf_code = "";
 
     // iterate backwards to build list from element handles
-    string handle = "R_NilValue";
+    string rhs = "R_NilValue";
+    string lhs = temp_list_elements.new_label();
+    buf_decls += emit_decl(lhs);
     for(i=len-1; i>=0; i--) {
       string call;
       if (tagged[i]) {
-	call = emit_call3("tagged_cons", cars[i].handle(), tags[i].handle(), handle);
+	call = emit_call3("tagged_cons", cars[i].handle(), tags[i].handle(), rhs);
       } else {
-	call = emit_call2((langs[i] ? "lcons" : "cons"), cars[i].handle(), handle);
+	call = emit_call2((langs[i] ? "lcons" : "cons"), cars[i].handle(), rhs);
       }
-      handle = temp_list_elements.new_label();
-      buf_decls += emit_decl(handle);
-      buf_code += emit_assign(handle, call);
+      buf_code += emit_assign(lhs, call);
+      rhs = lhs;
     }
 
     delete [] cars;
@@ -731,9 +740,9 @@ Output CodeGen::op_list(SEXP e,
     // connect list in buffer to other code
     if (list_dependence == DEPENDENT) {
       outside_handle = m_scope.new_label();
-      out_assign = emit_prot_assign(outside_handle, handle);
+      out_assign = emit_prot_assign(outside_handle, lhs);
       string braces_exp = buf_decls + buf_code + out_assign;
-      braces_exp = emit_in_braces(braces_exp);
+      braces_exp = emit_in_braces(braces_exp, false /* unbalanced */);
       return Output(Decls(decls + emit_decl(outside_handle)),
 		    Code(code + braces_exp),
 		    GDecls(g_decls),
@@ -743,10 +752,12 @@ Output CodeGen::op_list(SEXP e,
 		    DEPENDENT, VISIBLE);
     } else {                               // list is constant
       outside_handle = m_scope.new_label();
-      out_assign = emit_prot_assign(outside_handle, handle);
+      out_assign = emit_prot_assign(outside_handle, lhs);
       return Output::global(GDecls(g_decls + emit_static_decl(outside_handle)),
 			    GCode(g_code
-				  + emit_in_braces(buf_decls + buf_code + out_assign)),
+				  + emit_in_braces(buf_decls + buf_code + 
+						   out_assign, 
+						   false /* unbalanced */)),
 			    Handle(outside_handle),
 			    VISIBLE);
     }

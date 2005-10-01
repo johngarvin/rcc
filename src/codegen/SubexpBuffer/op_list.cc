@@ -14,8 +14,108 @@
 
 using namespace std;
 
-Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal, 
-				 bool fullyEvaluatedResult /* = FALSE */ ) {
+//*****************************************************************************
+// forward declarations 
+//*****************************************************************************
+
+static string getConsFunction(SEXP lst);
+
+
+
+//*****************************************************************************
+// interface operations 
+//*****************************************************************************
+
+
+Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal, 
+				 Protection protection,
+				 bool fullyEvaluatedResult /* = FALSE */ ) 
+{
+  if (lst == R_NilValue) { 
+
+    //------------------------------------------------------------------
+    // base case: empty list
+    //------------------------------------------------------------------
+    return Expression::nil_exp;
+
+  } else {
+
+    SEXP head = CAR(lst);
+    SEXP rest = CDR(lst);
+
+    //------------------------------------------------------------------
+    // future optimization: if head is constant, we can avoid a protect 
+    // for the rest of the list and head has no tag
+    //
+    // 14 September 2005 - John Mellor-Crummey
+    //------------------------------------------------------------------
+    Expression restExp = op_list(rest, rho, literal, 
+				 Protected,
+				 fullyEvaluatedResult);
+
+    //------------------------------------------------------------------
+    // must protect result of evaluating head if we need to produce a 
+    // tag before consing the current node onto the list
+    //------------------------------------------------------------------
+    SEXP lstTag = TAG(lst);
+    bool taggedResult = (lstTag != R_NilValue);
+
+    Expression tag = Expression::nil_exp;
+
+    if (taggedResult) {
+      tag = ParseInfo::global_constants->op_literal(lstTag, rho);
+    }
+
+    Expression headExp = (literal ? 
+		      op_literal(head, rho) :
+		      op_exp(lst, rho, Unprotected, fullyEvaluatedResult));
+
+    //------------------------------------------------------------------
+    // result is non-constant if either head or rest are non-constant 
+    //------------------------------------------------------------------
+    bool resultNonConstant = (headExp.is_dep || restExp.is_dep);
+
+    //------------------------------------------------------------------
+    // if result is constant, assemble it in the constant pool
+    //------------------------------------------------------------------
+    SubexpBuffer *subexp = (resultNonConstant ? 
+			    this :
+			    ParseInfo::global_constants);
+
+    Protection consProt = Unprotected;
+    if (protection == Protected && !resultNonConstant) {
+      consProt = Protected;
+    }
+    string out;
+    int unprotcnt = 0;
+    if (taggedResult) {
+      out = subexp->appl3("tagged_cons", headExp.var, tag.var, restExp.var, 
+			  consProt);
+      if (!tag.del_text.empty()) unprotcnt++;
+    } else {
+      string consFn = getConsFunction(lst);
+      out = subexp->appl2(consFn, headExp.var, restExp.var, consProt);
+    } 
+    if (!headExp.del_text.empty()) unprotcnt++;
+    if (!restExp.del_text.empty()) unprotcnt++;
+    if (unprotcnt > 0)
+      append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
+
+    string deleteText;
+    if (protection == Protected && resultNonConstant) {
+      if (unprotcnt > 0)
+	append_defs("SAFE_PROTECT(" + out + ");\n");
+      else
+	append_defs("PROTECT(" + out + ");\n");
+      deleteText = unp(out);
+    }
+    
+    return Expression(out, resultNonConstant, VISIBLE, deleteText);
+  } 
+}
+
+#if 0
+{
   int i, len;
   len = Rf_length(e);
   string my_cons;
@@ -33,7 +133,13 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
       err("Internal error: bad call to op_list\n");
       return Expression::bogus_exp;  // never reached
     }
+<<<<<<< op_list.cc
+    Expression car = (literal ? op_literal(CAR(e), rho) :
+		      op_exp(CAR(e), rho, Protected, 
+			     fullyEvaluatedResult));
+=======
     Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(e, rho, fullyEvaluatedResult));
+>>>>>>> 1.3
     string out;
     if (car.is_dep) {
       if (TAG(e) == R_NilValue) {
@@ -75,10 +181,16 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
 	break;
       default:
 	err("Internal error: bad call to op_list\n");
-	return Expression::bogus_exp;  // never reached
+	return Expression::bogus_exp;   never reached
       }
+<<<<<<< op_list.cc
+      exps[i] = (literal? op_literal(CAR(tmp_e), rho) : 
+		 op_exp(CAR(tmp_e), rho, Protected, fullyEvaluatedResult));
+
+=======
       exps[i] = (literal? op_literal(CAR(tmp_e), rho) : op_exp(tmp_e, rho, 
 							       fullyEvaluatedResult));
+>>>>>>> 1.3
       tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", FALSE, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
       if (exps[i].is_dep) list_dep = TRUE;
       tmp_e = CDR(tmp_e);
@@ -88,9 +200,10 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
     for(i=len-1; i>=0; i--) {
       my_cons = (langs[i] ? "lcons" : "cons");
       if (tags[i].var.empty()) {
-	cdr = tmp_buf.appl2_unp(my_cons, exps[i].var, cdr);
+	cdr = tmp_buf.appl2(my_cons, exps[i].var, cdr, Unprotected);
       } else {
-	cdr = tmp_buf.appl3_unp("tagged_cons", exps[i].var, tags[i].var, cdr);
+	cdr = tmp_buf.appl3("tagged_cons", exps[i].var, tags[i].var, cdr, 
+			    Unprotected);
       }
       unp_cars += exps[i].del_text;
     }
@@ -116,3 +229,28 @@ Expression SubexpBuffer::op_list(SEXP e, string rho, bool literal,
     }
   }
 }
+#endif
+
+
+
+//*****************************************************************************
+// private operations
+//*****************************************************************************
+
+static string getConsFunction(SEXP lst) 
+{
+  string consFn;
+  switch (TYPEOF(lst)) {
+  case LISTSXP:
+    consFn = "cons";
+    break;
+  case LANGSXP:
+    consFn = "lcons";
+    break;
+  default:
+    // internal error
+    assert(0);
+  }
+  return consFn;
+}
+

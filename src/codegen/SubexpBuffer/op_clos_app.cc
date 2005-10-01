@@ -13,7 +13,9 @@
 using namespace std;
 
 //! Output an application of a closure to actual arguments.
-Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
+Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
+				     string rho,
+				     Protection resultProtection) {
   // see eval.c:438-9
   Expression call;
   string arglist;
@@ -32,10 +34,28 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args, string rho) {
 		     op1.var,
 		     arglist,
 		     rho,
-		     "R_NilValue");
+		     "R_NilValue", Unprotected);
+#if 0
   del(call);
   del(op1);
   if (call.var != "R_NilValue") append_defs(unp(arglist));
-  return Expression(out, TRUE, CHECK_VISIBLE, unp(out));
+#else
+  int unprotcnt = 0;
+  if (!call.del_text.empty()) unprotcnt++;
+  if (!op1.del_text.empty()) unprotcnt++;
+  if (call.var != "R_NilValue") unprotcnt++;
+  if (unprotcnt > 0)
+    append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
+#endif
+  string cleanup;
+  if (resultProtection == Protected) {
+    if (unprotcnt > 0)
+      append_defs("SAFE_PROTECT(" + out + ");\n");
+    else {
+      append_defs("PROTECT(" + out + ");\n");
+    }
+    cleanup = unp(out);
+  }
+  return Expression(out, TRUE, CHECK_VISIBLE, cleanup);
 }
 

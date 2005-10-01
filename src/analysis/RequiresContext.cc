@@ -85,7 +85,8 @@ bool PrimitiveRequiresContext::getPrimitiveRequiresContext(CCODE prim)
 bool functionRequiresContext(SEXP fundef)
 {
   SEXP code = CAR(fundef_body_c(fundef));
-  return expressionRequiresContext(code);
+  bool result = expressionRequiresContext(code);
+  return result;
 }
 
 static bool listRequiresContext(SEXP e)

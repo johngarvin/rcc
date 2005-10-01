@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <support/StringUtils.h>
 #include <CodeGenUtils.h>
+#include <CheckProtect.h>
 
 
 using namespace std;
@@ -46,16 +47,18 @@ string emit_logical_if_stmt(const string expn, const string stmt)
   return ifstmt;
 }
 
-string emit_assign(string lhs, string rhs) 
+string emit_assign(string lhs, string rhs, Protection resultProtected) 
 {
-  string assign = lhs + " = " + rhs + eos;
+  string assign = lhs + " = " + rhs;
+  if (resultProtected == Protected) 
+    assign = emit_call1("PROTECT", assign) + eos;
+  else assign += eos;
   return assign; 
 }
 
 string emit_prot_assign(string lhs, string rhs)
 {
-  const string assign = lhs + " = " + rhs;
-  return emit_call1("PROTECT", assign) + eos;
+  return emit_assign(lhs, rhs, Protected); 
 }
 
 string emit_call0(const string fname)
@@ -95,8 +98,26 @@ string emit_call_stmt(const string fname, ...)
 }
 #endif
 
-string emit_in_braces(string code) {
-  return "{\n" + indent(code) + "}\n";
+#ifdef CHECK_PROTECT
+  static int protcnt = 0; 
+#endif
+
+string emit_in_braces(string code, bool balanced) {
+  string result;
+  result = "{\n";
+#ifdef CHECK_PROTECT
+  if (balanced) {
+    result += "int prot" + i_to_s(protcnt) + " = R_PPStackTop" + eos; 
+  }
+#endif
+  result += indent(code);
+#ifdef CHECK_PROTECT
+  if (balanced) {
+    result += "assert(prot" + i_to_s(protcnt++) + " == R_PPStackTop)"+ eos; 
+  }
+#endif
+  result += "}\n";
+  return result;
 }
 
 string emit_unprotect(string code) {

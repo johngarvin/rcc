@@ -15,6 +15,12 @@
 
 using namespace std;
 
+#if 0
+<<<<<<< op_exp.cc
+Expression SubexpBuffer::op_exp(SEXP e, string rho, Protection
+				resultProtection, bool fullyEvaluatedResult, 
+				ResultStatus resultStatus) {
+=======
 // op_exp
 //
 // outputs a representation of the CAR of the given SEXP. Note that
@@ -23,9 +29,28 @@ using namespace std;
 // use annotations. (Otherwise, we wouldn't be able to distinguish
 // different mentions of the same variable.)
 
-Expression SubexpBuffer::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
+Expression SubexpBuffer::op_exp(SEXP cell, string rho, 
+				bool fullyEvaluatedResult) {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
+>>>>>>> 1.5
+#endif
+
+// op_exp
+//
+// outputs a representation of the CAR of the given SEXP. Note that
+// op_exp takes as the argument the CONS cell containing the
+// expression instead of the expression itself; this allows op_var to
+// use annotations. (Otherwise, we wouldn't be able to distinguish
+// different mentions of the same variable.)
+
+Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
+				resultProtection, bool fullyEvaluatedResult, 
+				ResultStatus resultStatus) {
+
+  assert(is_cons(cell));
+  SEXP e = CAR(cell);
+
   Expression out, formals, body, env;
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -51,20 +76,38 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult
       return Expression("R_MissingArg", FALSE, INVISIBLE, "");
     } else {
       string sym = make_symbol(e);
-      string v = appl2_unp("findVar", sym, rho);
-      if (fullyEvaluatedResult) v = appl2("eval", v, rho);
-      out = Expression(v, TRUE, VISIBLE, fullyEvaluatedResult ? unp(v) : "");
+      string v = appl2("findVar", sym, rho, Unprotected);
+      string cleanup;
+      if (fullyEvaluatedResult) {
+	v = appl2("eval", v, rho, resultProtection);
+	if (resultProtection == Protected) cleanup = unp(v);
+      }
+      out = Expression(v, TRUE, VISIBLE, cleanup);
       return out;
     }
 #else
-    return output_to_expression(CodeGen::op_var(cell, rho, fullyEvaluatedResult));
+    return output_to_expression(CodeGen::op_var(cell, rho,
+						resultProtection, 
+						fullyEvaluatedResult));
 #endif
     break;
   case LISTSXP:
+#if 0
+<<<<<<< op_exp.cc
+    return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
+#if 0
+    return op_list(e, rho, false, resultPprotection, false);
+#endif
+=======
     return output_to_expression(CodeGen::op_list(e, rho, false, false));
     //    return op_list(e, rho, false, false);
+>>>>>>> 1.5
+#endif
+    return output_to_expression(CodeGen::op_list(e, rho, false, false));
     break;
   case CLOSXP:
+    // johnmc - commented out in merge
+    // formals = op_list(FORMALS(e), rho, true, Protected);
 #if 0
     formals = op_list(FORMALS(e), rho, true);
     body = op_literal(BODY(e), rho);
@@ -99,12 +142,12 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult
     return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
     break;
   case LANGSXP:
-    out = op_lang(e, rho);
+    out = op_lang(e, rho, resultProtection, resultStatus);
     return out;
     break;
   case CHARSXP:
-    return Expression(appl1_unp("mkChar",
-				quote(string(CHAR(e)))),
+    return Expression(appl1("mkChar",
+				quote(string(CHAR(e))), Unprotected),
 		      FALSE, VISIBLE, "");
     break;
   case SPECIALSXP:
