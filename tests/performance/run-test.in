@@ -1,15 +1,15 @@
 #!/bin/csh 
 # @configure_input@
 setenv PATH @RCC_BIN_PATH@:${PATH}
-foreach f ( *.r ) 
+foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the R interpreter ..."
-	R --slave < $f
+	R --slave < $f >  `basename $f .r`.interpreted
 	R CMD Rprof Rprof.out | grep "^Total run time"
     echo "  compiling $f with rcc ..."
 	rcc $f
     echo "  compiling " `basename $f .r`.c "with rcc-cc ..."
 	rcc-cc -o `basename $f .r` -g `basename $f .r`.c
     echo "  running " `basename $f .r` "with rcc-run ..." 
-	time rcc-run `basename $f .r`
+	time rcc-run `basename $f .r` >  `basename $f .r`.compiled
 end

@@ -6,6 +6,9 @@ EXTRA_DIST = run-test.in $(MYTESTFILES)
 
 check_SCRIPTS = run-test
 
+check:
+	run-test $(MYTESTFILES)
+
 MOSTLYCLEANFILES = $(subst .r,,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES))
 
 .r.c: ../../src/rcc

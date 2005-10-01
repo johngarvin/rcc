@@ -5,5 +5,5 @@ fib <- function(n) {
   else return (fib(n-1) + fib(n-2))
 }
 
-fib(30)
+fib(32)
 Rprof(NULL)
