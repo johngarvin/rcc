@@ -5,7 +5,6 @@
 #include <IOStuff.h>
 #include <Parse.h>
 #include "arithmetic.h"
-/* #include "get_name.h" */
 #include "replacements.h"
 
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);

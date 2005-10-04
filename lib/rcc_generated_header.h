@@ -3,4 +3,5 @@
 #include "R/Internal.h"
 #include "R/R_ext/RConverters.h"
 #include "R/main/arithmetic.h"
+#include "rcc_prot.h"
 #include "rcc_lib.h"
