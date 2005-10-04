@@ -624,6 +624,7 @@ void Rf_PrintValue(SEXP);
 void Rf_PrintValueEnv(SEXP, SEXP);
 void Rf_PrintValueRec(SEXP, SEXP);
 SEXP Rf_protect(SEXP);
+void Rf_protect_error();
 SEXP Rf_rownamesgets(SEXP,SEXP);
 SEXP Rf_ScalarLogical(int);
 SEXP Rf_ScalarInteger(int);
@@ -955,7 +956,6 @@ int R_system(char *);
 #define CreateTag		Rf_CreateTag
 #define CustomPrintValue	Rf_CustomPrintValue
 #define defineVar		Rf_defineVar
-#define defineVarReturnLoc      Rf_defineVarReturnLoc
 #define dimgets			Rf_dimgets
 #define dimnamesgets		Rf_dimnamesgets
 #define DropDims                Rf_DropDims
@@ -970,9 +970,7 @@ int R_system(char *);
 #define evalListKeepMissing	Rf_evalListKeepMissing
 #define findFun			Rf_findFun
 #define findFunUnboundOK	Rf_findFunUnboundOK
-#define findNonSystemFunLocUnboundOK Rf_findNonSystemFunLocUnboundOK
 #define findVar			Rf_findVar
-#define findNonSystemVarLoc     Rf_findNonSystemVarLoc
 #define findVarInFrame		Rf_findVarInFrame
 #define findVarInFrame3		Rf_findVarInFrame3
 #define GetArrayDimnames	Rf_GetArrayDimnames
@@ -1065,6 +1063,7 @@ int R_system(char *);
 #define PrintValueEnv		Rf_PrintValueEnv
 #define PrintValueRec		Rf_PrintValueRec
 #define protect			Rf_protect
+#define protect_error		Rf_protect_error
 #define RealFromComplex		Rf_RealFromComplex
 #define RealFromInteger		Rf_RealFromInteger
 #define RealFromLogical		Rf_RealFromLogical
