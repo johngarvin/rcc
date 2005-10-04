@@ -2111,25 +2111,33 @@ static void reset_pp_stack(void *data)
     R_size_t *poldpps = data;
     R_PPStackSize =  *poldpps;
 }
+
+
+void protect_error() 
+{
+  RCNTXT cntxt;
+  R_size_t oldpps = R_PPStackSize;
+
+  begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_NilValue, R_NilValue,
+	       R_NilValue, R_NilValue);
+  cntxt.cend = &reset_pp_stack;
+  cntxt.cenddata = &oldpps;
+
+  if (R_PPStackSize < R_RealPPStackSize)
+    R_PPStackSize = R_RealPPStackSize;
+  errorcall(R_NilValue, _("protect(): protection stack overflow"));
+
+  endcontext(&cntxt); /* not reached */
+}
+
+
 SEXP protect(SEXP s)
 {
-    if (R_PPStackTop >= R_PPStackSize) {
-	RCNTXT cntxt;
-	R_size_t oldpps = R_PPStackSize;
-
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_NilValue, R_NilValue,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &reset_pp_stack;
-	cntxt.cenddata = &oldpps;
-
-	if (R_PPStackSize < R_RealPPStackSize)
-	    R_PPStackSize = R_RealPPStackSize;
-	errorcall(R_NilValue, _("protect(): protection stack overflow"));
-
-	endcontext(&cntxt); /* not reached */
-    }
-    R_PPStack[R_PPStackTop++] = s;
-    return s;
+  if (R_PPStackTop >= R_PPStackSize) { 
+    protect_error();
+  }
+  R_PPStack[R_PPStackTop++] = s;
+  return s;
 }
 
 
