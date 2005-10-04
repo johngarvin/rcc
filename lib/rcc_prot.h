@@ -1,5 +1,3 @@
-#include "R/Defn.h"
-
 #if 1
 #undef PROTECT
 #define PROTECT(s) rcc_protect(s)
