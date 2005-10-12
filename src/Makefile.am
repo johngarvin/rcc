@@ -34,7 +34,6 @@ rcc_bin_SOURCES =				\
   op_closure.cc					\
   op_exp.cc					\
   op_for.cc					\
-  op_fun_use.cc					\
   op_fundef.cc					\
   op_if.cc					\
   op_lang.cc					\
