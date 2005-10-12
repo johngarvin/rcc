@@ -1,4 +1,4 @@
-SUBDIRS = macros matmul support analysis type-inference
+SUBDIRS = macros matmul support analysis
 bin_PROGRAMS = rcc.bin
 
 VPATH =                                 \

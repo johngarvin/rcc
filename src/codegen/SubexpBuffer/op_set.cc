@@ -53,10 +53,8 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     if (!body.del_text.empty())
       append_defs("UNPROTECT(1);\n");
     return out;
-#if 0
   } else if (is_simple_subscript(lhs)) {
     return op_subscriptset(e, rho, resultProtection);
-#endif
   } else if (Rf_isLanguage(lhs)) {
 #ifdef USE_OUTPUT_CODEGEN
     Expression func = output_to_expression(CodeGen::op_primsxp(op, rho));
