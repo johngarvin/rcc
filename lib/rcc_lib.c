@@ -55,6 +55,7 @@ Rboolean my_asLogicalNoNA(SEXP s) {
 }
 
 /* Modified from do_subassign_dflt in subassign.c */
+/* Assumes just one subscript argument */
 SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   int oldtype = 0;
 
@@ -87,6 +88,7 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   case STRSXP:
   case EXPRSXP:
   case VECSXP:
+  case RAWSXP:
     x = VectorAssign(R_NilValue, x, sub, y);
     break;
   default:

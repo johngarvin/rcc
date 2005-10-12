@@ -16,7 +16,8 @@ using namespace std;
 //! Output a sequence of statements
 Expression SubexpBuffer::op_begin(SEXP exp, string rho,
 				  Protection resultProtection,
-				  ResultStatus resultStatus) {
+				  ResultStatus resultStatus)
+{
   Expression e;
   string var;
   string cleanup;
@@ -27,6 +28,7 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho,
     ResultStatus rs = (next == R_NilValue) ? resultStatus : NoResultNeeded;
 
     e = temp.op_exp(exp, rho, Unprotected, false, rs);
+    //    assert(e.del_text.empty());  // given Unprotected; should have no unprotect code
     string code = temp.output();
 
     if (next == R_NilValue) {

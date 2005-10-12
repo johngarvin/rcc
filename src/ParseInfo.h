@@ -23,7 +23,7 @@
 
 #include <map>
 #include <string>
-#include <list>
+#include <set>
 
 // forward declarations
 class SubexpBuffer;
@@ -35,23 +35,42 @@ class SplitSubexpBuffer;
 class ParseInfo {
 public:
 
-  // constructor
-  ParseInfo() {}
-
-  static std::map<std::string, std::string> func_map;
-  static std::map<std::string, std::string> symbol_map;
-  static std::map<std::string, std::string> string_map;
-  static std::map<double, std::string> sc_real_map;
-  static std::map<int, std::string> sc_logical_map;
-  static std::map<int, std::string> sc_integer_map;
-  static std::map<int, std::string> primsxp_map;
-  static std::list<std::string> direct_funcs;
   static SubexpBuffer * global_fundefs;
   static SplitSubexpBuffer * global_constants;
   static SubexpBuffer * global_labels;
+
   static void flag_problem();
   static bool get_problem_flag();
   static bool is_direct(std::string func);
+
+  // map constants to the code representing them
+
+  static std::map<std::string, std::string> func_map;
+  static std::map<std::string, std::string> symbol_map;
+
+  // constant strings
+  static std::map<std::string, std::string> string_map;
+
+  // floating-point
+  static std::map<double, std::string> sc_real_map;
+
+  // Boolean
+  static std::map<int, std::string> sc_logical_map;
+
+  // integers
+  static std::map<int, std::string> sc_integer_map;
+
+  // primitive functions (PRIMSXP)
+  static std::map<int, std::string> primsxp_map;
+
+  // locations of user global variables
+  static std::map<std::string, std::string> loc_map;
+
+  // bindings of global library functions/variables
+  static std::map<std::string, std::string> binding_map;
+
+  // functions called directly
+  static std::set<std::string> direct_funcs;
 
 private:
   static bool problem_flag;

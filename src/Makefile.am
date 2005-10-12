@@ -1,4 +1,4 @@
-SUBDIRS = macros matmul support analysis
+SUBDIRS = macros matmul support analysis type-inference
 bin_PROGRAMS = rcc.bin
 
 VPATH =                                 \
@@ -11,42 +11,45 @@ VPATH =                                 \
 #  @top_srcdir@/src/analysis             
 
 
-rcc_bin_SOURCES =                \
-  Main.cc Main.h                 \
-  CodeGen.cc CodeGen.h           \
-  CodeGenUtils.cc CodeGenUtils.h \
-  LoopContext.cc LoopContext.h   \
-  Visibility.cc Visibility.h     \
-  Macro.cc Macro.h               \
-  GetName.cc GetName.h           \
-  Output.cc Output.h             \
-  ParseInfo.cc ParseInfo.h       \
-  CScope.cc CScope.h             \
-  \
-  SplitSubexpBuffer.cc SplitSubexpBuffer.h  \
-  SubexpBuffer.cc SubexpBuffer.h  \
-  SubexpBufferUtils.cc \
-  Expression.cc Expression.h \
-  op_begin.cc  \
-  op_break.cc  \
-  op_builtin.cc  \
-  op_clos_app.cc  \
-  op_exp.cc  \
-  op_for.cc  \
-  op_fundef.cc  \
-  op_if.cc  \
-  op_lang.cc  \
-  op_list.cc  \
-  op_literal.cc  \
-  op_primsxp.cc  \
-  op_promise.cc  \
-  op_return.cc   \
-  op_set.cc  \
-  op_special.cc  \
-  op_string.cc  \
-  op_subscriptset.cc  \
-  op_symlist.cc  \
-  op_vector.cc  \
+rcc_bin_SOURCES =				\
+  Main.cc Main.h				\
+  CodeGen.cc CodeGen.h				\
+  CodeGenUtils.cc CodeGenUtils.h		\
+  LoopContext.cc LoopContext.h			\
+  Visibility.cc Visibility.h			\
+  Macro.cc Macro.h				\
+  GetName.cc GetName.h				\
+  Output.cc Output.h				\
+  ParseInfo.cc ParseInfo.h			\
+  CScope.cc CScope.h				\
+						\
+  SplitSubexpBuffer.cc SplitSubexpBuffer.h	\
+  SubexpBuffer.cc SubexpBuffer.h		\
+  SubexpBufferUtils.cc				\
+  Expression.cc Expression.h			\
+  op_begin.cc					\
+  op_break.cc					\
+  op_builtin.cc					\
+  op_clos_app.cc				\
+  op_closure.cc					\
+  op_exp.cc					\
+  op_for.cc					\
+  op_fun_use.cc					\
+  op_fundef.cc					\
+  op_if.cc					\
+  op_lang.cc					\
+  op_list.cc					\
+  op_literal.cc					\
+  op_primsxp.cc					\
+  op_promise.cc					\
+  op_return.cc					\
+  op_set.cc					\
+  op_special.cc					\
+  op_string.cc					\
+  op_subscriptset.cc				\
+  op_var_use.cc					\
+  op_var_def.cc					\
+  op_vector.cc					\
   op_while.cc
 
 

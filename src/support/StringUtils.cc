@@ -21,9 +21,38 @@
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
 
+#include <iostream>
+#include <sstream>
+#include <map>
+
+#include <ParseInfo.h>
+#include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
+
 #include <support/StringUtils.h>
 
-std::string make_type(int t) {
+using namespace std;
+
+string make_symbol(SEXP e) {
+  if (e == R_MissingArg) {
+    return "R_MissingArg";
+  } else if (e == R_UnboundValue) {
+    return "R_UnboundValue";
+  } else {
+    string name = string(CHAR(PRINTNAME(e)));
+    map<string,string>::iterator pr = ParseInfo::symbol_map.find(name);
+    if (pr == ParseInfo::symbol_map.end()) {  // not found
+      string var = ParseInfo::global_constants->new_sexp_unp_name(name);
+      string qname = quote(name);
+      ParseInfo::global_constants->appl(var, Unprotected, "Rf_install", 1, &qname);
+      ParseInfo::symbol_map.insert(pair<string,string>(name, var));
+      return var;
+    } else {
+      return pr->second;
+    }
+  }
+}
+
+string make_type(int t) {
   switch(t) {
   case NILSXP:     return  "0 /* NILSXP */";
   case SYMSXP:     return  "1 /* SYMSXP */";
@@ -52,11 +81,11 @@ std::string make_type(int t) {
   }
 }
 
-std::string indent(std::string str) {
-  const std::string IND_STR = "  ";
+string indent(string str) {
+  const string IND_STR = "  ";
   if (str.empty()) return "";
-  std::string newstr = IND_STR;   // Add indentation to beginning
-  std::string::iterator it;
+  string newstr = IND_STR;   // Add indentation to beginning
+  string::iterator it;
 
   // Indent after every newline (unless there's one at the end)
   for(it = str.begin(); it != str.end() - 1; ++it) {
@@ -75,36 +104,36 @@ std::string indent(std::string str) {
 // Rrrrrgh. C++: the language that makes the hard things hard and the
 // easy things hard.
 //
-std::string i_to_s(const int i) {
+string i_to_s(const int i) {
   if (i == (int)0x80000000) {
     return "0x80000000";      // Doesn't parse as a decimal constant
   } else {
-    std::ostringstream ss;
+    ostringstream ss;
     ss << i;
     return ss.str();
   }
 }
 
-std::string d_to_s(double d) {
+string d_to_s(double d) {
   if (d == HUGE_VAL) {
     return "HUGE_VAL";         // special R value
   } else {
-    std::ostringstream ss;
+    ostringstream ss;
     ss << d;
     return ss.str();
   }
 }
 
-std::string c_to_s(Rcomplex c) {
+string c_to_s(Rcomplex c) {
   return "mk_complex(" + d_to_s(c.r) + "," + d_to_s(c.i) + ")";
 }
 
 // Escape "'s, \'s and \n's to turn a string into its representation
 // in C code.
 //
-std::string escape(std::string str) {
+string escape(string str) {
   unsigned int i;
-  std::string out = "";
+  string out = "";
   for(i=0; i<str.size(); i++) {
     if (str[i] == '\n') {
       out += "\\n";
@@ -119,13 +148,13 @@ std::string escape(std::string str) {
   return out;
 }
 
-// Make a std::string suitable for use as a C identifier. Used for both R
+// Make a string suitable for use as a C identifier. Used for both R
 // identifiers and arbitrary strings for syntactic sugar in
 // variable names. It's important that no two R identifiers can map to
 // the same C name, but for arbitrary strings it doesn't matter.
 //
-std::string make_c_id(std::string str) {
-  std::string out;
+string make_c_id(string str) {
+  string out;
   unsigned int i;
   if (!isalpha(str[0])) {
     out += 'a';
@@ -141,33 +170,33 @@ std::string make_c_id(std::string str) {
 }
 
 // Simple function to add quotation marks around a string
-std::string quote(std::string str) {
+string quote(string str) {
   return "\"" + str + "\"";
 }
 
-std::string unp(std::string str) {
+string unp(string str) {
   return "UNPROTECT_PTR(" + str + ");\n";
 }
 
-std::string strip_suffix(std::string name) {
-  std::string::size_type pos = name.rfind(".", name.size());
-  if (pos == std::string::npos) {
+string strip_suffix(string name) {
+  string::size_type pos = name.rfind(".", name.size());
+  if (pos == string::npos) {
     return name;
   } else {
     return name.erase(pos, name.size() - pos);
   }
 }
 
-int filename_pos(std::string str) {
-  std::string::size_type pos = str.rfind("/", str.size());
-  if (pos == std::string::npos) {
+int filename_pos(string str) {
+  string::size_type pos = str.rfind("/", str.size());
+  if (pos == string::npos) {
     return 0;
   } else {
     return pos + 1;
   }
 }
 
-void err(std::string message) {
-  std::cerr << "Error: " << message;
+void err(string message) {
+  cerr << "Error: " << message;
   exit(1);
 }

@@ -1,3 +1,5 @@
+// -*- Mode: C++ -*-
+
 #ifndef SUBEXP_BUFFER_H
 #define SUBEXP_BUFFER_H
 
@@ -85,19 +87,17 @@ public:
 				  std::string arg6, 
 				  Protection resultProtection = Protected);
 
-#if 0
-  johnmc 
-  Expression op_exp(SEXP e, std::string rho, 
-		    Protection resultProtection = Protected, 
-		    bool fullyEvaluatedResult = false,
-		    ResultStatus resultStatus = ResultNeeded); 
-  garvin
-  Expression op_exp(SEXP cell, std::string rho, bool fullyEvaluatedResult = false);
-#endif
   Expression op_exp(SEXP cell, std::string rho, 
 		    Protection resultProtection = Protected, 
 		    bool fullyEvaluatedResult = false,
-		    ResultStatus resultStatus = ResultNeeded); 
+		    ResultStatus resultStatus = ResultNeeded);
+  Expression op_var_use(SEXP e, std::string rho,
+			Protection resultProtection = Protected,
+			bool fullyEvaluatedResult = false);
+  Expression op_fun_use(SEXP e, std::string rho,
+			Protection resultProtection = Protected,
+			bool fullyEvaluatedResult = false);
+  Expression op_var_def(SEXP cell, std::string rhs, std::string rho);
   Expression op_primsxp(SEXP e, std::string rho);
   Expression op_symlist(SEXP e, std::string rho);
   Expression op_lang(SEXP e, std::string rho, Protection resultProtection,
@@ -113,7 +113,8 @@ public:
   Expression op_while(SEXP e, std::string rho);
   Expression op_return(SEXP e, std::string rho);
   Expression op_break(SEXP e, std::string rho);
-  Expression op_fundef(SEXP e, std::string rho, std::string opt_R_name = "");
+  Expression op_fundef(SEXP e, std::string rho, Protection resultProtection,
+		       std::string opt_R_name = "");
   Expression op_special(SEXP e, SEXP op, std::string rho, 
 			Protection resultProtection,
 			ResultStatus resultStatus = ResultNeeded); 
@@ -125,7 +126,7 @@ public:
 			     Protection resultProtection);
   Expression op_clos_app(Expression op1, SEXP args, std::string rho,
 			 Protection resultProtection);
-  Expression op_arglist(SEXP e, std::string rho);
+  Expression op_closure(SEXP e, std::string rho, Protection resultProtection);
   Expression op_literal(SEXP e, std::string rho);
   Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 
 			   bool fullyEvaluatedResult = FALSE, std::string opt_l_car = "");

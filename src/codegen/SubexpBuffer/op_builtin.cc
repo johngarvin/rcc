@@ -8,6 +8,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <CodeGen.h>
 #include <GetName.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
@@ -30,7 +31,11 @@ bool is_constant_expr(SEXP s) {
 Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho, 
 				    Protection resultProtection) {
   string out;
+#ifdef USE_OUTPUT_CODEGEN
+  Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
+#else
   Expression op1 = ParseInfo::global_constants->op_primsxp(op, rho);
+#endif
   SEXP args = CDR(e);
   // special case for arithmetic operations
   if (PRIMFUN(op) == (SEXP (*)())do_arith) {
@@ -114,7 +119,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       // 14 September 2005 - John Mellor-Crummey
       //----------------------------------------------------------
       Protection xprot = Protected;
-      if (is_constant_expr(CADR(args))) {
+      if (is_constant_expr(CAR(args))) {
 	xprot = Unprotected;
       }
       Expression x = op_exp(args, rho, xprot, TRUE);
@@ -141,16 +146,11 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     }
     
   } else {  // common case: call the do_ function
-
-#if 0
-<<<<<<< op_builtin.cc
-    Expression args1 = op_list(args, rho, FALSE, Protected, TRUE);
-=======
-    Expression args1 = op_list(args, rho, false, true);
->>>>>>> 1.4
-#endif
-
+#if USE_OUTPUT_CODEGEN
+    Expression args1 = output_to_expression(CodeGen::op_list(args, rho, false, true));
+#else
     Expression args1 = op_list(args, rho, false, Protected, true);
+#endif
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue ",
 		op1.var,

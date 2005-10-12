@@ -28,7 +28,11 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   case INTSXP:
   case REALSXP:
   case CPLXSXP:
+#ifdef USE_OUTPUT_CODEGEN
+    return output_to_expression(CodeGen::op_vector(e));
+#else
     return op_vector(e);
+#endif
     break;
   case VECSXP:
     ParseInfo::flag_problem();
@@ -39,23 +43,18 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case LISTSXP:
   case LANGSXP:
-    return output_to_expression(CodeGen::op_list(e, rho, TRUE));
-    //return op_list(e, rho, true);
+#ifdef USE_OUTPUT_CODEGEN
+    return output_to_expression(CodeGen::op_list(e, rho, true));
+#else
+    return op_list(e, rho, true, Protected);
+#endif
     break;
   case CLOSXP:
-    formals = op_list(FORMALS(e), rho, true, Protected);
-    body = op_literal(BODY(e), rho);
-    v = appl3("mkCLOSXP  ",
-	      formals.var,
-	      body.var,
-	      rho);
-    del(formals);
-    del(body);
-    if (rho == "R_GlobalEnv") {
-      return Expression(v, FALSE, INVISIBLE, "");
-    } else {
-      return Expression(v, TRUE, INVISIBLE, unp(v));
-    }
+#ifdef USE_OUTPUT_CODEGEN
+    return output_to_expression(CodeGen::op_closure(e, rho));
+#else
+    return op_closure(e, rho, Protected);
+#endif
     break;
   case ENVSXP:
     ParseInfo::flag_problem();
@@ -71,7 +70,11 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case SPECIALSXP:
   case BUILTINSXP:
+#ifdef USE_OUTPUT_CODEGEN
+    return output_to_expression(CodeGen::op_primsxp(e, rho));
+#else
     return ParseInfo::global_constants->op_primsxp(e, rho);
+#endif
     break;
   case EXPRSXP:
   case EXTPTRSXP:

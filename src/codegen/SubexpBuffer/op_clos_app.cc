@@ -16,37 +16,36 @@ using namespace std;
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 				     string rho,
 				     Protection resultProtection) {
-  // see eval.c:438-9
-  Expression call;
+  int unprotcnt = 0;
   string arglist;
 
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just call it R_NilValue.
 
-  Expression args1 = output_to_expression(CodeGen::op_list(args, rho, TRUE));
-  //  Expression args1 = op_list(args, rho, true);
+#ifdef USE_OUTPUT_CODEGEN
+  Expression args1 = output_to_expression(CodeGen::op_list(args, rho, true));
+#else
+  Expression args1 = op_list(args, rho, true, Protected);
+#endif
   string call_str = appl2("lcons", op1.var, args1.var);
-  call = Expression(call_str, FALSE, VISIBLE, unp(call_str));
-  arglist = appl2("promiseArgs", args1.var, rho);
-  del(args1);
+  unprotcnt++;  // call_str
+  string del_args = "";
+  if (args1.var == "R_NilValue") {
+    arglist = "R_NilValue";
+  } else {
+    arglist = appl2("promiseArgs", args1.var, rho);
+    unprotcnt++;
+  }
   string out = appl5("applyClosure ",
-		     call.var,
+		     call_str,
 		     op1.var,
 		     arglist,
 		     rho,
 		     "R_NilValue", Unprotected);
-#if 0
-  del(call);
-  del(op1);
-  if (call.var != "R_NilValue") append_defs(unp(arglist));
-#else
-  int unprotcnt = 0;
-  if (!call.del_text.empty()) unprotcnt++;
   if (!op1.del_text.empty()) unprotcnt++;
-  if (call.var != "R_NilValue") unprotcnt++;
+  if (!args1.del_text.empty()) unprotcnt++;
   if (unprotcnt > 0)
     append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
-#endif
   string cleanup;
   if (resultProtection == Protected) {
     if (unprotcnt > 0)

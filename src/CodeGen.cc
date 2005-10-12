@@ -16,6 +16,10 @@
 #include <ParseInfo.h>
 #include <LoopContext.h>
 
+#include <analysis/Annotation.h>
+#include <analysis/AnalysisResults.h>
+using namespace RAnnot;
+
 using namespace std;
 
 // op_exp
@@ -26,7 +30,9 @@ using namespace std;
 // use annotations. (Otherwise, we wouldn't be able to distinguish
 // different mentions of the same variable.)
 
-Output CodeGen::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
+Output CodeGen::op_exp(SEXP cell, string rho,
+		       bool fullyEvaluatedResult /* = false */)
+{
   SEXP e = CAR(cell);
   switch(TYPEOF(e)) {
   case NILSXP:
@@ -46,33 +52,14 @@ Output CodeGen::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
     return Output::bogus;
     break;
   case SYMSXP:
-    if (e == R_MissingArg) {
-      return Output::invisible_const(Handle("R_MissingArg"));
-    } else {
-      string handle, decls, code, del_text;
-      string sym = make_symbol(e);
-      string fv = m_scope.new_label();
-      handle = fv;
-      decls += emit_decl(fv);
-      code += emit_assign(fv, emit_call2("findVar", sym, rho));
-      if (fullyEvaluatedResult) {
-	string ev = m_scope.new_label();
-	decls += emit_decl(ev);
-	code += emit_prot_assign(ev, emit_call2("eval", fv, rho));
-	handle = ev;
-	del_text += emit_unprotect(ev);
-      }
-      return Output::dependent(Decls(decls),
-			       Code(code),
-			       Handle(handle),
-			       DelText(del_text),
-			       VISIBLE);
-    }
+    return op_var_use(cell, rho, Protected, fullyEvaluatedResult);
     break;
   case LISTSXP:
     return op_list(e, rho, false, false);
     break;
   case CLOSXP:
+    return op_closure(e, rho);
+#if 0
     {
       Output formals = op_list(FORMALS(e), rho, true);
       Output body = op_literal(BODY(e), rho);
@@ -105,6 +92,7 @@ Output CodeGen::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
 				 INVISIBLE);
       }
     }
+#endif
     break;
   case ENVSXP:
     ParseInfo::flag_problem();
@@ -134,32 +122,63 @@ Output CodeGen::op_exp(SEXP cell, string rho, bool fullyEvaluatedResult) {
   }
 }
 
-Output CodeGen::op_var(SEXP cell, string rho, 
-		       Protection resultProtected, 
-		       bool fullyEvaluatedResult) {
+Output CodeGen::op_var_use(SEXP cell, string rho, 
+			   Protection resultProtected, 
+			   bool fullyEvaluatedResult)
+{
   SEXP e = CAR(cell);
+  string name = CHAR(PRINTNAME(e));
   if (e == R_MissingArg) {
     return Output::invisible_const(Handle("R_MissingArg"));
   } else {
-    string sym = make_symbol(e);
-    string v = m_scope.new_label();
-    string code = emit_assign(v, emit_call2("findVar", sym, rho));
-    string decls = emit_decl(v);
-    string del_text;
-    if (fullyEvaluatedResult) {
-      string v1 = m_scope.new_label();
-      code += emit_assign(v1, emit_call2("eval", v, rho), resultProtected);
-      decls += emit_decl(v1);
-      if (resultProtected == Protected) {
-	del_text += emit_unprotect(v1);
+    Var * annot = getProperty(Var, cell);
+    if (annot->getScopeType() == Var::Var_GLOBAL) {
+      map<string, string>::iterator loc;
+      loc = ParseInfo::loc_map.find(name);
+      string h, call, g_decls, g_code;
+      h = m_scope.new_label();
+      if (loc == ParseInfo::loc_map.end()) {
+	// not found; emit global code to grab location
+	string loc_h = m_scope.new_label();
+	g_decls = "static R_varloc_t " + loc_h + ";\n";
+	g_code = emit_assign(loc_h, emit_call3("defineVarReturnLoc",
+					       make_symbol(e),
+					       "R_NilValue",
+					       "R_GlobalEnv"));
+	ParseInfo::loc_map.insert(pair<string,string>(name, loc_h));
+	call = emit_assign(h, emit_call1("R_GetVarLocValue", loc_h));
+      } else {
+	call = emit_assign(h, emit_call1("R_GetVarLocValue", loc->second));
       }
-      v = v1;
+      return Output(Decls(emit_decl(h)),
+		    Code(call),
+		    GDecls(g_decls),
+		    GCode(g_code),
+		    Handle(h),
+		    DelText(""),
+		    DEPENDENT,
+		    VISIBLE);
+    } else {
+      string sym = make_symbol(e);
+      string v = m_scope.new_label();
+      string code = emit_assign(v, emit_call2("findVar", sym, rho));
+      string decls = emit_decl(v);
+      string del_text = "";
+      if (fullyEvaluatedResult) {
+	string v1 = m_scope.new_label();
+	code += emit_prot_assign(v1, emit_call2("eval", v, rho));
+	decls += emit_decl(v1);
+	if (resultProtected == Protected) {
+	  del_text += emit_unprotect(v1);
+	}
+	v = v1;
+      }
+      return Output::dependent(Decls(decls),
+			       Code(code),
+			       Handle(v),
+			       DelText(del_text),
+			       VISIBLE);
     }
-    return Output::dependent(Decls(decls),
-			     Code(code),
-			     Handle(v),
-			     DelText(del_text),
-			     VISIBLE);
   }
 }
 

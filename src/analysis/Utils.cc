@@ -6,6 +6,20 @@
 // assignments
 //--------------------------------------------------------------------
 
+bool is_assign_prim(const SEXP e) {
+  return (TYPEOF(e) == SPECIALSXP && PRIMFUN(e) == (SEXP (*)())do_set);
+}
+
+bool is_local_assign_prim(const SEXP e) {
+  assert(is_assign_prim(e));
+  return (PRIMVAL(e) == 1 || PRIMVAL(e) == 3);
+}
+
+bool is_free_assign_prim(const SEXP e) {
+  assert(is_assign_prim(e));
+  return (PRIMVAL(e) == 2);
+}
+
 bool is_local_assign(const SEXP e) {
   return (TYPEOF(e) == LANGSXP
 	  && (CAR(e) == Rf_install("<-")
@@ -71,9 +85,11 @@ SEXP struct_field_rhs_c(const SEXP e) {
   return CDDR(e);
 }
 
+// single-bracket subscript with one argument
 bool is_simple_subscript(const SEXP e) {
   return (TYPEOF(e) == LANGSXP &&
-	  CAR(e) == Rf_install("["));
+	  CAR(e) == Rf_install("[") &&
+	  Rf_length(e) == 2);
 }
 
 bool is_subscript(const SEXP e) {

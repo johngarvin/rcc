@@ -27,8 +27,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     if (ParseInfo::is_direct(r_sym)) {
       //direct function call
       string func = make_c_id(r_sym) + "_direct";
-#if 0
-      Expression args = output_to_expression(CodeGen::op_list(r_args, rho, FALSE));
+#ifdef USE_OUTPUT_CODEGEN
+      Expression args = output_to_expression(CodeGen::op_list(r_args, rho, false));
 #else
       Expression args = op_list(r_args, rho, false, Protected);
 #endif
@@ -50,40 +50,20 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       }
       return Expression(call, TRUE, VISIBLE, cleanup);
     } else { // not direct; call via closure
+      // is it an R library function? Look up in global environment
       op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);
       if (op == R_UnboundValue) {    // user-defined function
-	string func = appl2("findFun",
-			    make_symbol(lhs),
-			    rho, Unprotected);
-	string emptycleanup; 
-	return op_clos_app(Expression(func, FALSE, INVISIBLE, emptycleanup),
-			   r_args, rho, resultProtection);
-
+	Expression func = op_fun_use(e, rho);   // op_fun_use(e, rho, Unprotected)
+	return op_clos_app(func, r_args, rho, resultProtection);
       } else {  // Built-in function, special function, or closure
 	if (TYPEOF(op) == SPECIALSXP) {
 	  return op_special(e, op, rho, resultProtection, resultStatus);
 	} else if (TYPEOF(op) == BUILTINSXP) {
 	  return op_builtin(e, op, rho, resultProtection);
 	} else if (TYPEOF(op) == CLOSXP) {
-#if 1
 	  // generate code to look up the function
-	  string func = appl2("findFun",
-			      make_symbol(lhs),
-			      rho, Unprotected);
-	  string emptycleanup; 
-	  return op_clos_app(Expression(func, FALSE, INVISIBLE, emptycleanup), 
-			     r_args, rho, resultProtection);
-#else
-	  // generate the SEXP representing the closure
-	  Expression op1;
-	  if (CAR(BODY(op)) == Rf_install(".Internal")) {
-	    op1 = output_to_expression(CodeGen::op_closure(op, "R_GlobalEnv"));
-	  } else {
-	    op1 = output_to_expression(CodeGen::op_closure(op, rho));
-	  }
-	  Expression out_exp = op_clos_app(op1, r_args, rho, resultProtection);
-	  return out_exp;
-#endif
+	  Expression func = op_fun_use(e, rho);  // op_fun_use(e, rho, Unprotected)
+	  return op_clos_app(func, r_args, rho, resultProtection);
 	} else if (TYPEOF(op) == PROMSXP) {
 	  // ***************** TEST ME! ******************
 	  err("Hey! I don't think we should see a promise in LANGSXP!\n");

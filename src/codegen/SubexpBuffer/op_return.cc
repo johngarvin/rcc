@@ -52,11 +52,13 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
       }
       exp = CDR(exp);
     }
+#ifdef USE_OUTPUT_CODEGEN
     value = output_to_expression(CodeGen::op_list(e, rho, false, true));
-    //value = op_list(e, rho, true);
+#else
+    value = op_list(e, rho, false, Protected, true);
+#endif
     v = appl1("PairToVectorList", value.var, Unprotected);
     del(value);
-    break;
     break;
   }
 

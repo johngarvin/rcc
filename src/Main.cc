@@ -50,7 +50,7 @@ static bool analysis_debug = false;
 int main(int argc, char *argv[]) {
   int i;
   char *fullname_c;
-  string fullname, libname, out_filename, path, exprs;
+  string fullname, libname, out_filename, path, exec_decls, exec_code;
   bool in_file_exists, out_file_exists = FALSE;
   FILE *in_file;
   int n_exprs;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
       analysis_debug = true;
       break;
     case 'f':
-      ParseInfo::direct_funcs.push_back(string(optarg));
+      ParseInfo::direct_funcs.insert(string(optarg));
       break;
     case 'l':
       global_self_allocate = true;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
   ParseInfo::global_fundefs = new SubexpBuffer(libname + "_f", TRUE);
 
   ParseInfo::global_constants->decls += "static void exec();\n";
-  exprs += "\nstatic void exec() {\n";
+  ParseInfo::global_constants->decls += "static void finish();\n";
 
   // FIXME: load standard assertions here (before parsing)
 
@@ -181,31 +181,28 @@ int main(int argc, char *argv[]) {
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment
   // and just look at the list of expressions.
-  SEXP expressions = curly_body(CAR(fundef_body_c(CAR(assign_rhs_c(program)))));
+  SEXP r_expressions = curly_body(CAR(fundef_body_c(CAR(assign_rhs_c(program)))));
 
   // count expressions so we can number them
-  SEXP e = expressions;
+  SEXP e = r_expressions;
   n_exprs = 0;
   while (e != R_NilValue) {
     n_exprs++;
     e = CDR(e);
   }
 
-  for(i=0; i<n_exprs; i++) {
-    exprs += indent("SEXP e" + i_to_s(i) + ";\n");
-  }
-
 #if 0
-  // output expressions (Output version)
+  // output top-level expressions (Output version)
   string g_decls, g_code, code;
   for(i=0; i<n_exprs; i++) {
-    Output exp = op_exp(expressions, "R_GlobalEnv");
+    string evar = "e" + i_to_s(i);
+    decls += "SEXP " + evar + ";\n";
+    Output exp = CodeGen::op_exp(r_expressions, "R_GlobalEnv");
     
     string this_exp = exp.decls() +
                       Visibility::emit_set_if_visible(exp.visibility()) +
                       exp.code();
     if (exp.visibility() != INVISIBLE) {
-      string evar = "e" + i_to_s(i);
       string printexpn = emit_assign(evar, exp.handle());
       string check;
       if (exp.visibility() == CHECK_VISIBLE) {
@@ -220,49 +217,46 @@ int main(int argc, char *argv[]) {
     }
     this_exp += exp.del_text();
     code += emit_in_braces(this_exp);
-    expressions = CDR(expressions);
+    r_expressions = CDR(r_expressions);
   }
   exprs = g_decls + g_code + code;
   exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
 #endif
 #if 1
-  // output expressions (Expression version)
+  // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
-    Expression exp = subexps.op_exp(expressions, "R_GlobalEnv");
-    
-    exprs += indent("{\n");
-    exprs += indent(indent(Visibility::emit_set_if_visible(exp.is_visible)));
-    exprs += indent(indent("{\n"));
-    exprs += indent(indent(indent(subexps.output())));
+    Expression exp = subexps.op_exp(r_expressions, "R_GlobalEnv");
+    string this_exp;
+    this_exp += subexps.output_decls();
+    this_exp += Visibility::emit_set_if_visible(exp.is_visible);
+    this_exp += subexps.output_defs();
     if (exp.is_visible != INVISIBLE) {
       string evar = "e" + i_to_s(i);
-      string printexpn = evar  + " = " + exp.var + ";\n";
-      string check;
-      if (exp.is_visible == CHECK_VISIBLE) 
-	check = Visibility::emit_check_expn();
-      printexpn +=  
-	emit_logical_if_stmt(check,
-			     emit_call2("PrintValueEnv", 
-					evar , "R_GlobalEnv"));
-
-      exprs += indent(indent(indent(printexpn)));
+      exec_decls += "SEXP " + evar + ";\n";
+      string pval = emit_call2("PrintValueEnv", evar, "R_GlobalEnv") + ";\n";
+      string printexpn = emit_assign(evar, exp.var);
+      if (exp.is_visible == VISIBLE) {
+	printexpn += pval;
+      } else if (exp.is_visible == CHECK_VISIBLE) {
+	string check = Visibility::emit_check_expn();
+	printexpn += emit_logical_if_stmt(check, pval);
+      }
+      this_exp += printexpn;
     }
 #if 0
-    exprs += indent(indent(indent(exp.del_text)));
+    this_exp += exp.del_text;
 #else
     if (!exp.del_text.empty())
-      exprs += indent(indent(indent("UNPROTECT(1);\n")));
+      this_exp += "UNPROTECT(1);\n";
 #endif
-    exprs += indent(indent("}\n"));
-    exprs += indent("}\n");
-    expressions = CDR(expressions);
+    exec_code += indent(emit_in_braces(this_exp));
+    r_expressions = CDR(r_expressions);
   }
-  exprs += indent("UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot())
-		  + "); /* c_ */\n");
-  exprs += "}\n\n";
 #endif
 
+  string finish_code = "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) +
+    "); /* c_ */\n";
   
   if (ParseInfo::get_problem_flag()) {
     out_filename += ".bad";
@@ -293,21 +287,23 @@ int main(int argc, char *argv[]) {
   out_file << ParseInfo::global_fundefs->output_decls();
   out_file << ParseInfo::global_constants->output_decls();
 
+  // The name R_init_<libname> is a signal to the R dynamic loader
+  // telling it to execute the function immediately upon loading.
   string file_initializer_name = string("R_init_") + libname;
 
   string header;
   header += "\nvoid " + file_initializer_name + "() {\n";
-  // The name R_init_<libname> is a signal to the R dynamic loader
-  // telling it to execute the function immediately upon loading.
   for(i=0; i<ParseInfo::global_constants->get_n_inits(); i++) {
     header += indent(ParseInfo::global_constants->get_init_str() + i_to_s(i) + "();\n");
   }
   header += indent("exec();\n");
+  header += indent("finish();\n");
   header += "}\n";
   out_file << header;
 
   out_file << ParseInfo::global_constants->output_defs();
-  out_file << exprs;
+  out_file << "static void exec() " + emit_in_braces(exec_decls + exec_code) + "\n\n";
+  out_file << "static void finish() " + emit_in_braces(finish_code, false) + "\n\n";
   out_file << ParseInfo::global_fundefs->output_defs();
   if (output_main_program) {
      string arginit = "int myargc;\n";
@@ -343,28 +339,7 @@ static void arg_err() {
 static void set_funcs(int argc, char *argv[]) {
   int i;
   for(i=0; i<argc; i++) {
-    ParseInfo::direct_funcs.push_back(string(*argv++));
-  }
-}
-
-string make_symbol(SEXP e) {
-  if (e == R_MissingArg) {
-    return "R_MissingArg";
-  } else if (e == R_UnboundValue) {
-    return "R_UnboundValue";
-  } else {
-    string name = string(CHAR(PRINTNAME(e)));
-    map<string,string>::iterator pr = ParseInfo::symbol_map.find(name);
-    if (pr == ParseInfo::symbol_map.end()) {  // not found
-      string var = ParseInfo::global_constants->new_sexp_unp_name(name);
-      string qname = quote(name);
-      ParseInfo::global_constants->appl(var, Unprotected,
-					"Rf_install", 1, &qname);
-      ParseInfo::symbol_map.insert(pair<string,string>(name, var));
-      return var;
-    } else {
-      return pr->second;
-    }
+    ParseInfo::direct_funcs.insert(string(*argv++));
   }
 }
 

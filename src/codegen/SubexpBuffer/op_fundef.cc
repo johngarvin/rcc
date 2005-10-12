@@ -24,8 +24,9 @@ std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name,
 
 //! Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
-				   string opt_R_name /* = "" */) {
-
+				   Protection resultProtection,
+				   string opt_R_name /* = "" */)
+{
   FuncInfo *fi = getProperty(FuncInfo, fndef);
 
   lexicalContext.Push(fi);
@@ -61,7 +62,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
-  rho, true, Protected);
+							     rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
 #if 0
     string r_form = ParseInfo::global_constants->appl3("mkCLOSXP", r_args.var, r_code.var, rho);
@@ -84,10 +85,10 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, r_form));
     lexicalContext.Pop();
     return Expression(r_form, FALSE, INVISIBLE, "");
-  } else {
+  } else {   // not the global environment
     Expression r_args = op_literal(CAR(e), rho);
     Expression r_code = op_literal(CADR(e), rho);
-    string r_form = appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho);
+    string r_form = appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho, resultProtection);
     del(r_args);
     del(r_code);
 #if 0
@@ -109,7 +110,8 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     append_defs(defs);
 #endif
     lexicalContext.Pop();
-    return Expression(r_form, FALSE, CHECK_VISIBLE, unp(r_form));
+    string cleanup = (resultProtection == Protected ? unp(r_form) : "");
+    return Expression(r_form, true, CHECK_VISIBLE, cleanup);
   }
 }
 

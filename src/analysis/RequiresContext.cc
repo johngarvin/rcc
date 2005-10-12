@@ -121,8 +121,12 @@ static bool expressionRequiresContext(SEXP e)
   case PROMSXP:
     return expressionRequiresContext(PREXPR(e));
   case LANGSXP:
-    return expressionRequiresContext(Rf_findFunUnboundOK(CAR(e), 
-							 R_GlobalEnv, TRUE));
+    if (TYPEOF(CAR(e)) == SYMSXP) {
+      return expressionRequiresContext(Rf_findFunUnboundOK(CAR(e), 
+							   R_GlobalEnv, TRUE));
+    } else {
+      return expressionRequiresContext(CAR(e));
+    }
   case SPECIALSXP:
   case BUILTINSXP:
     return primRequiresContext.getPrimitiveRequiresContext(PRIMFUN(e)); 

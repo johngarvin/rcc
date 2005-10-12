@@ -29,7 +29,7 @@ static string getConsFunction(SEXP lst);
 
 Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal, 
 				 Protection protection,
-				 bool fullyEvaluatedResult /* = FALSE */ ) 
+				 bool fullyEvaluatedResult /* = false */ ) 
 {
   if (lst == R_NilValue) { 
 
@@ -119,10 +119,9 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
   int i, len;
   len = Rf_length(e);
   string my_cons;
+  if (e == R_NilValue) return Expression::nil_exp;
   if (len == 1) {
     switch (TYPEOF(e)) {
-    case NILSXP:
-      return Expression::nil_exp;
     case LISTSXP:
       my_cons = "cons";
       break;
@@ -133,13 +132,9 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
       err("Internal error: bad call to op_list\n");
       return Expression::bogus_exp;  // never reached
     }
-<<<<<<< op_list.cc
     Expression car = (literal ? op_literal(CAR(e), rho) :
-		      op_exp(CAR(e), rho, Protected, 
+		      op_exp(e, rho, Protected, 
 			     fullyEvaluatedResult));
-=======
-    Expression car = (literal ? op_literal(CAR(e), rho) : op_exp(e, rho, fullyEvaluatedResult));
->>>>>>> 1.3
     string out;
     if (car.is_dep) {
       if (TAG(e) == R_NilValue) {
@@ -183,14 +178,8 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
 	err("Internal error: bad call to op_list\n");
 	return Expression::bogus_exp;   never reached
       }
-<<<<<<< op_list.cc
       exps[i] = (literal? op_literal(CAR(tmp_e), rho) : 
-		 op_exp(CAR(tmp_e), rho, Protected, fullyEvaluatedResult));
-
-=======
-      exps[i] = (literal? op_literal(CAR(tmp_e), rho) : op_exp(tmp_e, rho, 
-							       fullyEvaluatedResult));
->>>>>>> 1.3
+		 op_exp(tmp_e, rho, Protected, fullyEvaluatedResult));
       tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", FALSE, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
       if (exps[i].is_dep) list_dep = TRUE;
       tmp_e = CDR(tmp_e);

@@ -107,13 +107,13 @@ string emit_in_braces(string code, bool balanced) {
   result = "{\n";
 #ifdef CHECK_PROTECT
   if (balanced) {
-    result += "int prot" + i_to_s(protcnt) + " = R_PPStackTop" + eos; 
+    result += indent("int prot" + i_to_s(protcnt) + " = R_PPStackTop" + eos);
   }
 #endif
   result += indent(code);
 #ifdef CHECK_PROTECT
   if (balanced) {
-    result += "assert(prot" + i_to_s(protcnt++) + " == R_PPStackTop)"+ eos; 
+    result += indent("assert(prot" + i_to_s(protcnt++) + " == R_PPStackTop)"+ eos);
   }
 #endif
   result += "}\n";

@@ -3,8 +3,11 @@
 
 #include <string>
 
-#include <include/R/R_RInternals.h>
+#include <include/R/R_Defn.h>
 
+bool is_assign_prim(const SEXP e);
+bool is_local_assign_prim(const SEXP e);
+bool is_free_assign_prim(const SEXP e);
 bool is_local_assign(const SEXP e);
 bool is_free_assign(const SEXP e);
 bool is_assign(const SEXP e);

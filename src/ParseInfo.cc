@@ -28,7 +28,9 @@ std::map<double, std::string> ParseInfo::sc_real_map;
 std::map<int, std::string> ParseInfo::sc_logical_map;
 std::map<int, std::string> ParseInfo::sc_integer_map;
 std::map<int, std::string> ParseInfo::primsxp_map;
-std::list<std::string> ParseInfo::direct_funcs;
+std::map<std::string, std::string> ParseInfo::loc_map;
+std::map<std::string, std::string> ParseInfo::binding_map;
+std::set<std::string> ParseInfo::direct_funcs;
 SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
@@ -46,10 +48,5 @@ bool ParseInfo::get_problem_flag() {
 // Returns true if the given string represents a function specified
 // for direct calling.
 bool ParseInfo::is_direct(std::string func) {
-  std::list<std::string>::iterator i;
-  for(i=ParseInfo::direct_funcs.begin(); i!=ParseInfo::direct_funcs.end(); i++) {
-    if (*i == func) return true;
-  }
-  return false;
+  return (direct_funcs.find(func) != direct_funcs.end());
 }
-

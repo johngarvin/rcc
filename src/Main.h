@@ -28,7 +28,6 @@
 #define __USE_STD_IOSTREAM
 
 #include <fstream>
-#include <list>
 #include <string>
 
 extern "C" {

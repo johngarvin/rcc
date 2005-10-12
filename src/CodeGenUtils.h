@@ -1,3 +1,5 @@
+// -*- Mode: C++ -*-
+
 #ifndef CODE_GEN_UTILS_H
 #define CODE_GEN_UTILS_H
 
