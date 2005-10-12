@@ -970,6 +970,8 @@ int R_system(char *);
 #define evalListKeepMissing	Rf_evalListKeepMissing
 #define findFun			Rf_findFun
 #define findFunUnboundOK	Rf_findFunUnboundOK
+#define findNonSystemFunLocUnboundOK Rf_findNonSystemFunLocUnboundOK
+#define findNonSystemFunLoc     Rf_findNonSystemFunLoc
 #define findVar			Rf_findVar
 #define findVarInFrame		Rf_findVarInFrame
 #define findVarInFrame3		Rf_findVarInFrame3

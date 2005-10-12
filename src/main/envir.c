@@ -1327,12 +1327,11 @@ R_varloc_t findNonSystemFunLocUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundO
 #else
 	loc = R_findVarLocInFrame(rho, symbol);
 #endif
-	vl = R_GetVarLocValue(loc);
-	if (vl != R_UnboundValue) {
+	if (loc != NULL) {
+	  vl = R_GetVarLocValue(loc);
 	    if (TYPEOF(vl) == PROMSXP) {
 		PROTECT(vl);
 		vl = eval(vl, rho);
-		R_SetVarLocValue(loc, vl);
 		UNPROTECT(1);
 	    }
 	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == RCC_CLOSXP || 
@@ -1351,6 +1350,11 @@ R_varloc_t findNonSystemFunLocUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundO
 	error(_("couldn't find function \"%s\""), CHAR(PRINTNAME(symbol)));
     }
     
+}
+
+R_varloc_t findNonSystemFunLoc(SEXP symbol, SEXP rho)
+{
+  return findNonSystemFunLocUnboundOK(symbol, rho, FALSE);
 }
 
 /*----------------------------------------------------------------------
