@@ -6,7 +6,8 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
 
-#include <analysis/UseDefSolver.h>
+#include <analysis/LocalityDFSolver.h>
+#include <analysis/LocalityDFSet.h>
 #include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
@@ -107,7 +108,7 @@ void R_Analyst::build_use_def_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    R_UseDefSolver uds(m_interface);
+    Locality::LocalityDFSolver uds(m_interface);
     OA::ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
     uds.perform_analysis(ph, fi->getCFG());
   }

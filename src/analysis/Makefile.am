@@ -5,26 +5,34 @@ MY_INCLUDES =               \
 
 lib_LTLIBRARIES = librcca.la
 
-librcca_la_SOURCES =                      \
-  IRInterface.cc IRInterface.h            \
-  Analyst.cc Analyst.h                    \
-  UseDefSolver.cc UseDefSolver.h	  \
-  ScopeTreeBuilder.cc ScopeTreeBuilder.h  \
-  Utils.cc Utils.h                        \
-  AnalysisResults.cc  AnalysisResults.h   \
-  Annotation.cc  Annotation.h             \
-  AnnotationBase.cc  AnnotationBase.h     \
-  AnnotationSet.cc   AnnotationSet.h      \
-  PropertySet.cc         PropertySet.h    \
-  RequiresContext.cc RequiresContext.h    \
-  SimpleIterators.cc SimpleIterators.h    \
-  VarRef.cc VarRef.h                      \
-  VarRefSet.cc VarRefSet.h                \
-  HandleInterface.cc HandleInterface.h    \
-  LocalVariableAnalysis.cc LocalVariableAnalysis.h \
-  LocalFunctionAnalysis.cc LocalFunctionAnalysis.h \
-  BindingAnalysis.cc BindingAnalysis.h    \
-  Assertion.cc Assertion.h
+librcca_la_SOURCES =					\
+  IRInterface.cc IRInterface.h				\
+  Analyst.cc Analyst.h					\
+  ScopeTreeBuilder.cc ScopeTreeBuilder.h		\
+  Utils.cc Utils.h					\
+  AnalysisResults.cc  AnalysisResults.h			\
+  Annotation.cc  Annotation.h				\
+  AnnotationBase.cc  AnnotationBase.h			\
+  AnnotationSet.cc   AnnotationSet.h			\
+  PropertySet.cc         PropertySet.h			\
+  RequiresContext.cc RequiresContext.h			\
+  SimpleIterators.cc SimpleIterators.h			\
+  VarRef.cc VarRef.h					\
+  VarRefSet.cc VarRefSet.h				\
+  HandleInterface.cc HandleInterface.h			\
+  LocalVariableAnalysis.cc LocalVariableAnalysis.h	\
+  LocalFunctionAnalysis.cc LocalFunctionAnalysis.h	\
+  BindingAnalysis.cc BindingAnalysis.h			\
+  Assertion.cc Assertion.h				\
+  LocalityDFSolver.cc LocalityDFSolver.h		\
+  LocalityDFSet.cc LocalityDFSet.h			\
+  LocalityDFSetElement.cc LocalityDFSetElement.h	\
+  LocalityDFSetIterator.cc LocalityDFSetIterator.h
+  
+  
+#  UseDefSolver.cc UseDefSolver.h			
+
+
 
 INCLUDES = $(MY_INCLUDES)
 

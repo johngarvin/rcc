@@ -28,8 +28,6 @@
 #include <include/R/R_Internal.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/IRInterface.h>
-#include <analysis/UseDefSolver.h>
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
 #include <Output.h>
