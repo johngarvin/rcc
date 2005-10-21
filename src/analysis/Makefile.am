@@ -29,13 +29,8 @@ librcca_la_SOURCES =					\
   LocalityDFSetElement.cc LocalityDFSetElement.h	\
   LocalityDFSetIterator.cc LocalityDFSetIterator.h
   
-  
-#  UseDefSolver.cc UseDefSolver.h			
-
-
-
 INCLUDES = $(MY_INCLUDES)
 
 MY_OA_LIBS = @OA_PREFIX@/lib/libOAul.a
-AM_CXXFLAGS = -DOA_IRHANDLETYPE_UL 
+AM_CXXFLAGS = @HOST_CXXFLAGS@ -DOA_IRHANDLETYPE_UL 
 librcca_la_LDFLAGS = $(MY_OA_LIBS)

@@ -20,6 +20,6 @@ MYINCLUDES = -I@R_SOURCES@/src/include -I$(top_srcdir)/src
 
 INCLUDES = $(MYINCLUDES)
 
-AM_CXXFLAGS = -static
+AM_CXXFLAGS = @HOST_CXXFLAGS@ -static
 
 libsupport_la_LIBADD = -L@R_LIB_PATH@ -lR

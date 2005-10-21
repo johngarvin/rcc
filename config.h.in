@@ -75,6 +75,9 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* Standard C headers */
+#undef NO_STD_CHEADERS
+
 /* Name of package */
 #undef PACKAGE
 
@@ -108,14 +111,11 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define according to your operating system type. */
-#undef Unix
-
 /* Version number of package */
 #undef VERSION
 
-/* Define according to your operating system type. */
-#undef Win32
+/* define necessary for sstream header on alpha */
+#undef __USE_STD_IOSTREAM
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

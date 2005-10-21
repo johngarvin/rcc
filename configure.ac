@@ -1,3 +1,5 @@
+include(config/hpc-cxxutils.m4)
+
 AC_INIT(rcc, 1.1.7, garvin@rice.edu)
 AC_PREFIX_DEFAULT([/usr/local])
 AC_CONFIG_AUX_DIR([config])
@@ -56,11 +58,17 @@ AC_PROG_LIBTOOL
 
 AM_INIT_AUTOMAKE
 
+# Use C++ compiler for all checks
+AC_LANG(C++)
+
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h sys/file.h])
+
+HPC_CHECK_CXX_STDC_HEADERS
+HPC_CHECK_CXX_SSTREAM
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -110,19 +118,87 @@ R_PLATFORM="${host}"
 AC_SUBST(R_PLATFORM)
 AC_SUBST(RCC_INCLUDE_PATH)
 
-case "${host_os}" in
-  cygwin*|mingw*|windows*|winnt)
-    AC_DEFINE(Win32, 1,
-              [Define according to your operating system type.])
-    R_OSTYPE="windows"
+#----------------------------------------------------------------------------
+# Host-dependent configuration
+# $host: $host_cpu-$host_vendor-$host_os
+#----------------------------------------------------------------------------
+
+HPC_DEF_CXXCMP
+
+#-------------------------------------------------
+# Host-specific settings
+#-------------------------------------------------
+
+HOST_CXXFLAGS=""
+HOST_AR=""
+HOST_LIBADD=""
+
+
+# Options
+if test "$OPT_ENABLE_DEVELOP" = "yes" ; then
+  my_opt_cxxflags="-g -O0"
+else
+  # On some compilers, -g implies -O0.  Make sure -O2 takes precedence!
+  my_opt_cxxflags="-g -O2"
+fi
+
+
+case ${host} in
+  alpha*-*-linux* | alpha*-*-osf*)
+    if HPCcxxcmp([cxx]) ; then
+      # Compaq compiler
+      HOST_CXXFLAGS="-std strict_ansi -rtti -pt -ptr ./OA_cxx_trepository"
+      HOST_AR="${openanalysis_top}/config/hpcar 'ar cru'"
+      HOST_LIBADD="'./OA_cxx_trepository/*.o'"
+      if test "$OPT_ENABLE_DEVELOP" = "yes" ; then
+        my_opt_cxxflags="-gall"
+      else 
+        my_opt_cxxflags="-g3 -O2"
+      fi
+    fi
     ;;
+
+  i386*-*-linux* | i686*-*-linux* | x86_64*-*-linux* | ia64*-*-linux*)
+    if HPCcxxcmp([icpc ecpc icc ecc]) ; then
+      # Intel compiler
+      :
+    fi
+    ;;
+
+  mips*-*-irix*)
+    if HPCcxxcmp([CC]) ; then
+      # SGI MIPSpro
+      HOST_CXXFLAGS="-LANG:std"
+      HOST_AR="$CXX $CXXFLAGS $HOST_CXXFLAGS -ar -o"
+    fi
+    ;;
+
+  sparc*-*-solaris*)
+    if HPCcxxcmp([CC]) ; then
+      # Sun Forte/ONE
+      HOST_AR="$CXX $CXXFLAGS -xar -o"
+      if test "$OPT_ENABLE_DEVELOP" = "yes" ; then
+        my_opt_cxxflags="-g"
+      else 
+        my_opt_cxxflags="-O"
+      fi
+    fi
+    ;;
+
   *)
-    AC_DEFINE(Unix, 1,
-              [Define according to your operating system type.])
-    R_OSTYPE="unix"
-   ;;
+    ;;
 esac
-AC_SUBST(R_OSTYPE)
+
+# Grab optimization flags
+HOST_CXXFLAGS="${HOST_CXXFLAGS} ${my_opt_cxxflags}"
+
+#-------------------------------------------------
+# Distribute these settings into makefiles
+#-------------------------------------------------
+AC_SUBST([HOST_CXXFLAGS])
+AC_SUBST([HOST_AR])
+AC_SUBST([HOST_LIBADD])
+AM_CONDITIONAL(IS_HOST_AR, test "${HOST_AR}" != "")
 
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
