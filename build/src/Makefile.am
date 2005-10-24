@@ -16,12 +16,12 @@ VPATH =						\
 
 rcc_bin_SOURCES =				\
   Main.cc Main.h				\
+  GetName.cc GetName.h				\
   CodeGen.cc CodeGen.h				\
   CodeGenUtils.cc CodeGenUtils.h		\
   LoopContext.cc LoopContext.h			\
   Visibility.cc Visibility.h			\
   Macro.cc Macro.h				\
-  GetName.cc GetName.h				\
   Output.cc Output.h				\
   ParseInfo.cc ParseInfo.h			\
   CScope.cc CScope.h				\
