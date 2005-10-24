@@ -114,9 +114,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* define necessary for sstream header on alpha */
-#undef __USE_STD_IOSTREAM
-
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 

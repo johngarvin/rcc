@@ -1,0 +1,8 @@
+if (my_asLogicalNoNA($1$)) {
+  $3$
+  PROTECT($2$ = $4$);
+} else {
+  $5$
+  PROTECT($2$ = $6$);
+}
+UNPROTECT_PTR($1$);

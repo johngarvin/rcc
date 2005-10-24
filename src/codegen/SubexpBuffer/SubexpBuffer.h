@@ -48,44 +48,44 @@ public:
 	    std::string func, 
 	    int argc, ...);
 
-  std::string SubexpBuffer::appl1(std::string func, 
-				  std::string arg,
-				  Protection resultProtection = Protected);
+  std::string appl1(std::string func, 
+		    std::string arg,
+		    Protection resultProtection = Protected);
 
-  std::string SubexpBuffer::appl2(std::string func, 
-				  std::string arg1, 
-				  std::string arg2, 
-				  Protection resultProtection = Protected);
+  std::string appl2(std::string func, 
+		    std::string arg1, 
+		    std::string arg2, 
+		    Protection resultProtection = Protected);
 
-  std::string SubexpBuffer::appl3(std::string func, 
-				  std::string arg1, 
-				  std::string arg2, 
-				  std::string arg3,
-				  Protection resultProtection = Protected);
+  std::string appl3(std::string func, 
+		    std::string arg1, 
+		    std::string arg2, 
+		    std::string arg3,
+		    Protection resultProtection = Protected);
 
-  std::string SubexpBuffer::appl4(std::string func,
-				  std::string arg1, 
-				  std::string arg2, 
-				  std::string arg3, 
-				  std::string arg4, 
-				  Protection resultProtection = Protected);
+  std::string appl4(std::string func,
+		    std::string arg1, 
+		    std::string arg2, 
+		    std::string arg3, 
+		    std::string arg4, 
+		    Protection resultProtection = Protected);
 
-  std::string SubexpBuffer::appl5(std::string func,
-				  std::string arg1, 
-				  std::string arg2, 
-				  std::string arg3, 
-				  std::string arg4,
-				  std::string arg5, 
-				  Protection resultProtection = Protected);
+  std::string appl5(std::string func,
+		    std::string arg1, 
+		    std::string arg2, 
+		    std::string arg3, 
+		    std::string arg4,
+		    std::string arg5, 
+		    Protection resultProtection = Protected);
 
-  std::string SubexpBuffer::appl6(std::string func,
-				  std::string arg1,
-				  std::string arg2,
-				  std::string arg3,
-				  std::string arg4,
-				  std::string arg5,
-				  std::string arg6, 
-				  Protection resultProtection = Protected);
+  std::string appl6(std::string func,
+		    std::string arg1,
+		    std::string arg2,
+		    std::string arg3,
+		    std::string arg4,
+		    std::string arg5,
+		    std::string arg6, 
+		    Protection resultProtection = Protected);
 
   Expression op_exp(SEXP cell, std::string rho, 
 		    Protection resultProtection = Protected, 

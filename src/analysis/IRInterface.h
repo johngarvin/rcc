@@ -259,7 +259,7 @@ private:
   const SEXP exp;
   R_PreorderIterator iter;
   std::list<SEXP> procs;
-  std::list<SEXP>::iterator proc_iter;
+  std::list<SEXP>::const_iterator proc_iter;
   void build_procs();
 };
 

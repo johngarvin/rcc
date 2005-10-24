@@ -40,8 +40,8 @@ public:
   bool operator< (const DFSetElement &other) const;
   bool sameLoc (const DFSetElement &other) const;
 
-  std::string DFSetElement::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir);
-  std::string DFSetElement::toString();
+  std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir);
+  std::string toString();
 
 private:
   OA::OA_ptr<R_VarRef> m_loc;

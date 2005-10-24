@@ -57,7 +57,7 @@ public:
 class R_PreorderIterator {
 private:
   std::list<SEXP> preorder;
-  std::list<SEXP>::iterator iter;
+  std::list<SEXP>::const_iterator iter;
   const SEXP exp;
   SEXP curr;
   void build_pre(SEXP e);

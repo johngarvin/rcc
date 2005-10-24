@@ -113,6 +113,7 @@ CFG::IRStmtType getSexpCfgType(SEXP e) {
   default:
     assert(0);
   }
+  return CFG::SIMPLE; // never reached
 }
 
 //! Given a statement handle, return its IRStmtType.

@@ -68,7 +68,6 @@ AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h sys/file.h])
 
 HPC_CHECK_CXX_STDC_HEADERS
-HPC_CHECK_CXX_SSTREAM
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -162,6 +161,9 @@ case ${host} in
     if HPCcxxcmp([icpc ecpc icc ecc]) ; then
       # Intel compiler
       :
+    elif HPCcxxcmp([g++]) ; then
+      CXXFLAGS=""
+      my_opt_cxxflags="-g -O2 -pedantic"
     fi
     ;;
 
@@ -203,11 +205,9 @@ AM_CONDITIONAL(IS_HOST_AR, test "${HOST_AR}" != "")
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
 		 lib/Makefile
-		 src/Makefile
-		 src/macros/Makefile
-		 src/analysis/Makefile
-		 src/support/Makefile
-		 src/matmul/Makefile
+		 build/Makefile
+		 build/src/Makefile
+		 macros/Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
@@ -219,6 +219,11 @@ AC_CONFIG_FILES([Makefile
 
 # config files currently unused
 #		 tests/hand-opt/Makefile tests/temp/Makefile
+#		 src/Makefile
+#		 src/macros/Makefile
+#		 src/analysis/Makefile
+#		 src/support/Makefile
+#		 src/matmul/Makefile
 
 AC_CONFIG_FILES([tests/regression/run-compiled],
                 [chmod +x tests/regression/run-compiled])

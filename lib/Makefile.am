@@ -41,5 +41,5 @@ librcc_la_SOURCES = \
 	rcc_lib.c \
 	replacements.c
 
-librcc_la_CFLAGS  = -static $(BASE_CFLAGS) -I$(R_SOURCES)/src/include -I$(R_SOURCES)/src/main -I.
+librcc_la_CFLAGS  = $(BASE_CFLAGS) -I$(R_SOURCES)/src/include -I$(R_SOURCES)/src/main -I.
 

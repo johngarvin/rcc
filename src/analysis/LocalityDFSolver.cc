@@ -301,11 +301,11 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
       break;
     default:
       err("make_var_ref_from_annotation: unrecognized DefVar::SourceT");
-      return 0;
     }
   } else {
     err("make_var_ref_from_annotation: unknown annotation type");
   }
+  return 0;
 }
 
 //! transfer between our lattice-based LocalityType (TOP, LOCAL,

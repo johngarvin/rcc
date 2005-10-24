@@ -28,8 +28,8 @@ private:
 class R_VarRefSet {
  public:
   R_VarRefSet() { vars = new std::set<OA::OA_ptr<R_VarRef> >; }
-  void insert_ref(const OA::OA_ptr<R_BodyVarRef> var);
-  void insert_arg(const OA::OA_ptr<R_ArgVarRef> var);
+  void insert_ref(OA::OA_ptr<R_BodyVarRef> var);
+  void insert_arg(OA::OA_ptr<R_ArgVarRef> var);
   void set_union(const R_VarRefSet & set2);
   void set_union(OA::OA_ptr<R_VarRefSet> set2);
   OA::OA_ptr<R_VarRefSetIterator> get_iterator() const;

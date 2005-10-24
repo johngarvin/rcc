@@ -7,7 +7,7 @@
 //--------------------------------------------------------------------
 
 bool is_assign_prim(const SEXP e) {
-  return (TYPEOF(e) == SPECIALSXP && PRIMFUN(e) == (SEXP (*)())do_set);
+  return (TYPEOF(e) == SPECIALSXP && PRIMFUN(e) == (CCODE)do_set);
 }
 
 bool is_local_assign_prim(const SEXP e) {
@@ -202,6 +202,7 @@ SEXP loop_body_c(const SEXP e) {
   } else {
     assert(0);
   }
+  return 0;
 }
 
 bool is_for(const SEXP e) {

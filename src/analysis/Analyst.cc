@@ -67,7 +67,7 @@ void R_Analyst::build_cfgs() {
     FuncInfo *finfo = fii.Current();
     SEXP fundef = finfo->getDefn();
     OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
-    OA::OA_ptr<OA::CFG::Interface> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
+    OA::OA_ptr<OA::CFG::CFGStandard> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
     finfo->setCFG(cfg_ptr);
   }
 }

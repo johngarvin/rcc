@@ -28,12 +28,16 @@ void R_VarRefSetIterator::reset() {
 // R_VarRefSet methods
 //--------------------------------------------------------------------
 
-void R_VarRefSet::insert_ref(const OA::OA_ptr<R_BodyVarRef> var) {
-  vars->insert(var);
+void R_VarRefSet::insert_ref(OA::OA_ptr<R_BodyVarRef> var) {
+  OA::OA_ptr<R_VarRef> upcast_var;
+  upcast_var = var.convert<R_VarRef>();
+  vars->insert(upcast_var);
 }
 
-void R_VarRefSet::insert_arg(const OA::OA_ptr<R_ArgVarRef> var) {
-  vars->insert(var);
+void R_VarRefSet::insert_arg(OA::OA_ptr<R_ArgVarRef> var) {
+  OA::OA_ptr<R_VarRef> upcast_var;
+  upcast_var = var.convert<R_VarRef>();
+  vars->insert(upcast_var);
 }
 
 void R_VarRefSet::set_union(const R_VarRefSet & set2) {
