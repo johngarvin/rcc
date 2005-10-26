@@ -38,6 +38,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Annotation.h>
 #include <analysis/LocalVariableAnalysis.h>
+#include <analysis/HandleInterface.h>
 
 #include <analysis/IRInterface.h>
 
@@ -71,7 +72,7 @@ void R_IRCallsiteIterator::build_callsites() {
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
   SEXP e = (SEXP)h.hval();
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator((irhandle_t)fundef_body_c(e));
+  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(fundef_body_c(e)));
   return ptr;
 }
 
@@ -139,12 +140,12 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
     // use the iterator that doesn't take a cell
     ptr = new R_RegionStmtListIterator(curly_body(e));
   } else if (is_paren_exp(e)) {
-    ptr = new R_RegionStmtIterator((irhandle_t)paren_body_c(e));
+    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(paren_body_c(e)));
   } else if (is_fundef(e)) {
-    ptr = new R_RegionStmtIterator((irhandle_t)fundef_body_c(e));
+    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(fundef_body_c(e)));
 #if 0
   } else if (is_loop(e)) {
-    ptr = new R_RegionStmtIterator((irhandle_t)loop_body_c(e));
+    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(loop_body_c(e)));
 #endif
   } else {
     err("getFirstInCompound: unrecognized statement type\n");
@@ -161,7 +162,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP body_c = loop_body_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator((irhandle_t)body_c);
+  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(body_c));
   return ptr;
 }
 
@@ -209,7 +210,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP truebody_c = if_truebody_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator((irhandle_t)truebody_c);
+  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(truebody_c));
   return ptr;
 }
 
@@ -220,7 +221,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP falsebody_c = if_falsebody_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator((irhandle_t)falsebody_c);
+  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(falsebody_c));
   return ptr;
 }
 
@@ -393,7 +394,7 @@ void R_IRInterface::currentProc(OA::ProcHandle p) {}
 //--------------------------------------------------------
 
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
-  return (irhandle_t)Rf_install("<procedure>");
+  return HandleInterface::make_sym_h(Rf_install("<procedure>"));
 }
 
 // FIXME: symbols in different scopes should be called
@@ -401,7 +402,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   SEXP e = (SEXP)h.hval();
   assert(TYPEOF(e) == SYMSXP);
-  return (irhandle_t)e;
+  return HandleInterface::make_sym_h(e);
 }
 
 std::string R_IRInterface::toString(OA::ProcHandle h) {
@@ -443,7 +444,7 @@ std::string R_IRInterface::toString(OA::ConstValHandle h) {
 //--------------------------------------------------------------------
 
 OA::ProcHandle R_IRProcIterator::current() const {
-  return (OA::irhandle_t)(*proc_iter);
+  return HandleInterface::make_proc_h(*proc_iter);
 }
 
 bool R_IRProcIterator::isValid() const { 
@@ -504,7 +505,7 @@ void R_IRProcIterator::build_procs() {
 //--------------------------------------------------------------------
 
 OA::StmtHandle R_RegionStmtIterator::current() const {
-  return (OA::irhandle_t)stmt_iter_ptr->current();
+  return HandleInterface::make_stmt_h(stmt_iter_ptr->current());
 }
 
 bool R_RegionStmtIterator::isValid() const { 
@@ -572,7 +573,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
 //--------------------------------------------------------------------
 
 OA::StmtHandle R_RegionStmtListIterator::current() const {
-  return (OA::irhandle_t)iter.current();
+  return HandleInterface::make_stmt_h(iter.current());
 }
 
 bool R_RegionStmtListIterator::isValid() const {
@@ -592,7 +593,7 @@ void R_RegionStmtListIterator::reset() {
 //--------------------------------------------------------------------
 
 OA::LeafHandle R_IRUseDefIterator::current() const {
-  return OA::LeafHandle((OA::irhandle_t)iter->current()->get_sexp());
+  return OA::LeafHandle(HandleInterface::make_leaf_h(iter->current()->get_sexp()));
 }
  
 bool R_IRUseDefIterator::isValid() {
