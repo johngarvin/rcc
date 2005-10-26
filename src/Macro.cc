@@ -19,16 +19,14 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
 
-#include <Macro.h>
-
-#define __USE_STD_IOSTREAM
-
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
-static std::string i_to_s(const int i);
+#include <support/StringUtils.h>
+
+#include "Macro.h"
 
 MacroFactory * MacroFactory::_instance = 0;
 
@@ -50,8 +48,7 @@ const Macro MacroFactory::get_macro(const std::string name) const {
   const std::string filename = m_path + "/" + name + ".macro";
   std::ifstream mac_file(filename.c_str());
   if (mac_file.fail()) {
-    std::cerr << "Error: Couldn't open macro file " + filename + "\n";
-    exit(1);
+    err("Couldn't open macro file " + filename + "\n");
   }
   ss << mac_file.rdbuf();
   mac_file.close();
@@ -66,21 +63,11 @@ const std::string Macro::call(const int nargs, const std::string args[]) const {
   std::string var;
   std::string::size_type pos;
   std::string result = body;
-  for (int i=1; i<=nargs; i++) {
-    var = "$" + i_to_s(i) + "$";
+  for (int i=0; i<nargs; i++) {
+    var = "$" + i_to_s(i+1) + "$";
     while((pos = result.find(var)) != std::string::npos) {
-      result.replace(pos, var.length(), args[i-1]);
+      result.replace(pos, var.length(), args[i]);
     }
   }
   return result;
-}
-
-static std::string i_to_s(const int i) {
-  if (i == (int)0x80000000) {
-    return "0x80000000"; // Doesn't work as a decimal constant
-  } else {
-    std::ostringstream ss;
-    ss << i;
-    return ss.str();
-  }
 }

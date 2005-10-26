@@ -1,12 +1,16 @@
-#!/bin/bash
-export R_HOME=@R_HOME@
-BINDIR=`dirname $0`
-export LD_LIBRARY_PATH=@R_LIB_PATH@:@RCC_LIB_PATH@:${LD_LIBRARY_PATH}
-export CMD="$BINDIR/rcc.bin"
-if test ! "${DEBUG}xxx" == "xxx"; then
-        TMPFILE=`mktemp /tmp/rcc.XXXXXX`
+#!/bin/csh
+setenv R_HOME @R_HOME@
+setenv BINDIR `dirname $0`
+if (${?LD_LIBRARY_PATH}) then
+    setenv LD_LIBRARY_PATH @R_LIB_PATH@:@RCC_LIB_PATH@:${LD_LIBRARY_PATH}
+else
+    setenv LD_LIBRARY_PATH @R_LIB_PATH@:@RCC_LIB_PATH@
+endif
+setenv CMD "$BINDIR/rcc.bin"
+if (${?DEBUG}) then
+        setenv TMPFILE `mktemp /tmp/rcc.XXXXXX`
         echo "set args $*" > ${TMPFILE}
 	gdb ${CMD} -x ${TMPFILE};
 else
 	exec $BINDIR/rcc.bin $*;
-fi;
+endif

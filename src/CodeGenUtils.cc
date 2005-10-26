@@ -47,7 +47,7 @@ string emit_logical_if_stmt(const string expn, const string stmt)
   return ifstmt;
 }
 
-string emit_assign(string lhs, string rhs, Protection resultProtected) 
+string emit_assign(const string lhs, const string rhs, Protection resultProtected) 
 {
   string assign = lhs + " = " + rhs;
   if (resultProtected == Protected) 
@@ -56,7 +56,7 @@ string emit_assign(string lhs, string rhs, Protection resultProtected)
   return assign; 
 }
 
-string emit_prot_assign(string lhs, string rhs)
+string emit_prot_assign(const string lhs, const string rhs)
 {
   return emit_assign(lhs, rhs, Protected); 
 }

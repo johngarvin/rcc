@@ -19,9 +19,9 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
 			Protection resultProtection,
 			ResultStatus resultStatus) {
   string out;
-  if (PRIMFUN(op) == (SEXP (*)())do_set) {
+  if (PRIMFUN(op) == (CCODE)do_set) {
     return op_set(e, op, rho, resultProtection);
-  } else if (PRIMFUN(op) == (SEXP (*)())do_internal) {
+  } else if (PRIMFUN(op) == (CCODE)do_internal) {
     // ".Internal" call
     SEXP internal_call = CADR(e);
     SEXP fun = CAR(internal_call);
@@ -45,25 +45,25 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     del(func);
     del(args);
     return Expression(out, TRUE, INVISIBLE, unp(out));
-  } else if (PRIMFUN(op) == (SEXP (*)())do_function) {
+  } else if (PRIMFUN(op) == (CCODE)do_function) {
     return op_fundef(e, rho, resultProtection);
-  } else if (PRIMFUN(op) == (SEXP (*)())do_begin) {
+  } else if (PRIMFUN(op) == (CCODE)do_begin) {
     return op_begin(CDR(e), rho, resultProtection, resultStatus);
-  } else if (PRIMFUN(op) == (SEXP (*)())do_if) {
+  } else if (PRIMFUN(op) == (CCODE)do_if) {
 #ifdef USE_OUTPUT_CODEGEN
     return output_to_expression(CodeGen::op_if(e, rho));
 #else
     return op_if(e, rho, resultStatus);
 #endif
-  } else if (PRIMFUN(op) == (SEXP (*)())do_for) {
+  } else if (PRIMFUN(op) == (CCODE)do_for) {
     return op_for(e, rho, resultStatus);
     //
-    // } else if (PRIMFUN(op) == (SEXP (*)())do_while) {
+    // } else if (PRIMFUN(op) == (CCODE)do_while) {
     //   return op_while(e, rho);
     //
-  } else if (PRIMFUN(op) == (SEXP (*)())do_break) {
+  } else if (PRIMFUN(op) == (CCODE)do_break) {
     return op_break(CAR(e), rho);
-  } else if (PRIMFUN(op) == (SEXP (*)())do_return) {
+  } else if (PRIMFUN(op) == (CCODE)do_return) {
     return op_return(CDR(e), rho);
   } else {
     // default case for specials: call the (call, op, args, rho) fn

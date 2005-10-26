@@ -461,7 +461,7 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
   Output op1 = op_primsxp(op, rho);
   SEXP args = CDR(e);
   // special case for arithmetic operations
-  if (PRIMFUN(op) == (SEXP (*)())do_arith) {
+  if (PRIMFUN(op) == (CCODE)do_arith) {
 
     // R_unary if there's one argument and it's a non-object
     if (Rf_length(args) == 1
@@ -527,6 +527,7 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
 		  DEPENDENT,
 		  op_vis);
   }
+  return Output::bogus;
 }
 
 Output CodeGen::op_set(SEXP e, SEXP op, string rho) {
@@ -676,9 +677,8 @@ Output CodeGen::op_list(SEXP e,
       }
     }
   } else {    // two or more elements
-    int types[len];
-    bool langs[len];
-    bool tagged[len];
+    bool * langs; langs = (bool *)malloc(len * sizeof(bool));
+    bool * tagged; tagged = (bool *)malloc(len * sizeof(bool));
     Output *cars = new Output[len];
     Output *tags = new Output[len];
     
@@ -751,6 +751,8 @@ Output CodeGen::op_list(SEXP e,
       rhs = lhs;
     }
 
+    free(langs);
+    free(tagged);
     delete [] cars;
     delete [] tags;
 

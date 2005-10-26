@@ -146,6 +146,7 @@ case ${host} in
   alpha*-*-linux* | alpha*-*-osf*)
     if HPCcxxcmp([cxx]) ; then
       # Compaq compiler
+      CXXFLAGS=""            # turn off default -g
       HOST_CXXFLAGS="-std strict_ansi -rtti -pt -ptr ./OA_cxx_trepository"
       HOST_AR="${openanalysis_top}/config/hpcar 'ar cru'"
       HOST_LIBADD="'./OA_cxx_trepository/*.o'"

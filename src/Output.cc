@@ -41,20 +41,20 @@ const Output & Output::nil = Output(Decls(""), Code(""),
 				    CONST, INVISIBLE);
 
 Output Output::global(GDecls _gd, GCode _gc, Handle _h, VisibilityType _v) {
-  return Output::Output(Decls(""), Code(""), _gd, _gc, _h, DelText(""), CONST, _v);
+  return Output(Decls(""), Code(""), _gd, _gc, _h, DelText(""), CONST, _v);
 }
 
 Output Output::dependent(Decls _d, Code _c, Handle _h, DelText _dt, VisibilityType _v) {
-  return Output::Output(_d, _c, GDecls(""), GCode(""), _h, _dt, DEPENDENT, _v);
+  return Output(_d, _c, GDecls(""), GCode(""), _h, _dt, DEPENDENT, _v);
 }
 
 Output Output::visible_const(Handle _h) {
-  return Output::Output(Decls(""), Code(""), GDecls(""), GCode(""),
-			_h, DelText(""), CONST, VISIBLE);
+  return Output(Decls(""), Code(""), GDecls(""), GCode(""),
+		_h, DelText(""), CONST, VISIBLE);
 }
 
 Output Output::invisible_const(Handle _h) {
-  return Output::Output(Decls(""), Code(""), GDecls(""), GCode(""),
-			_h, DelText(""), CONST, INVISIBLE);
+  return Output(Decls(""), Code(""), GDecls(""), GCode(""),
+		_h, DelText(""), CONST, INVISIBLE);
 }
 

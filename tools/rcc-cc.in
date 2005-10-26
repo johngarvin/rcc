@@ -1,2 +1,2 @@
-#!/bin/bash
+#!/bin/csh
 exec @CC@ -I@RCC_INCLUDE_PATH@/R $* -L@RCC_LIB_PATH@ -lrcc -L@R_LIB_PATH@ -lR

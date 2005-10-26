@@ -38,7 +38,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #endif
   SEXP args = CDR(e);
   // special case for arithmetic operations
-  if (PRIMFUN(op) == (SEXP (*)())do_arith) {
+  if (PRIMFUN(op) == (CCODE)do_arith) {
 
     // R_unary if there's one argument and it's a non-object
     if (args != R_NilValue

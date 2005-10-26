@@ -1,6 +1,7 @@
-#!/bin/bash
-export CMD="$*" 
-if test ! "${DEBUG}xxx" == "xxx"; then
-  export CMD="gdb ${CMD}"
-fi;
-LD_LIBRARY_PATH=@RCC_LIB_PATH@:@R_LIB_PATH@ R_HOME=@R_HOME@ PATH=.:$PATH exec ${CMD}
+#!/bin/csh
+setenv CMD "$*"
+if (${?DEBUG}) setenv CMD "gdb ${CMD}"
+setenv LD_LIBRARY_PATH @RCC_LIB_PATH@:@R_LIB_PATH@
+setenv R_HOME @R_HOME@
+setenv PATH .:$PATH
+exec ${CMD}
