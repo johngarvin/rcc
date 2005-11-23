@@ -1,3 +1,6 @@
+rcc.include <- Sys.getenv("RCC_R_INCLUDE_PATH")
+source(file.path(rcc.include, "well_behaved.r"))
+
 set.seed(17) # provide repeatable behavior for a regression test -- johnmc
 
 #######
@@ -39,7 +42,7 @@ geneInits <- list(mustar.rstar = cbind(c(0, -2, 2), c(0, 1, 1)),
                   M = 1,
                   am = 2,
                   bm = 0.5)
- 
+
 
 #Zscore <- c(rnorm(320, 0, 1), rnorm(40, -2, 1), rnorm(40, 2, 1))
 #zscore <- rnorm(400, 0, 1)

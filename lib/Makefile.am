@@ -7,7 +7,8 @@ include_rcc_HEADERS = \
 	rcc_generated_header.h
 
 include_HEADERS = \
-	rcc_assert.r
+	rcc_assert.r \
+        well_behaved.r
 
 include_rcc_Rdir = ${includedir}/rcc/R
 nodist_include_rcc_R_HEADERS = \

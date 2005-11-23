@@ -159,6 +159,7 @@ int main(int argc, char *argv[]) {
   ParseInfo::global_constants->decls += "static void finish();\n";
 
   // FIXME: load standard assertions here (before parsing)
+  // I don't think we have any not in the code...
 
   // parse
   SEXP program = parse_R_as_function(in_file);
@@ -189,17 +190,30 @@ int main(int argc, char *argv[]) {
     e = CDR(e);
   }
 
-#if 0
+  // If certain conditions are not met, we're forced to output trivial code.
+  bool trivial_comp = false;
+  if (ParseInfo::allow_oo()
+      || ParseInfo::allow_envir_manip()
+      || ParseInfo::allow_special_redef())
+  {
+    trivial_comp = true;
+  }
+
+#ifdef USE_OUTPUT_CODEGEN
   // output top-level expressions (Output version)
   string g_decls, g_code, code;
   for(i=0; i<n_exprs; i++) {
     string evar = "e" + i_to_s(i);
     decls += "SEXP " + evar + ";\n";
-    Output exp = CodeGen::op_exp(r_expressions, "R_GlobalEnv");
-    
-    string this_exp = exp.decls() +
-                      Visibility::emit_set_if_visible(exp.visibility()) +
-                      exp.code();
+    Output exp;
+    if (trivial_comp) {
+      exp = CodeGen::op_literal(CAR(r_expressions), "R_GlobalEnv");
+    } else {
+      exp = CodeGen::op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
+    }      
+    string this_exp = exp.decls()
+      + Visibility::emit_set_if_visible(exp.visibility())
+      + exp.code();
     if (exp.visibility() != INVISIBLE) {
       string printexpn = emit_assign(evar, exp.handle());
       string check;
@@ -219,12 +233,18 @@ int main(int argc, char *argv[]) {
   }
   exprs = g_decls + g_code + code;
   exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
-#endif
-#if 1
+#else
   // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
-    Expression exp = subexps.op_exp(r_expressions, "R_GlobalEnv");
+    Expression exp;
+    if (trivial_comp) {
+      Expression exp1 = subexps.op_literal(CAR(r_expressions), "R_GlobalEnv");      
+      exp = Expression(emit_call2("Rf_eval", exp1.var, "R_GlobalEnv"),
+		       DEPENDENT, CHECK_VISIBLE, exp1.del_text);
+    } else {
+      exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
+    }
     string this_exp;
     this_exp += subexps.output_decls();
     this_exp += Visibility::emit_set_if_visible(exp.is_visible);
@@ -242,12 +262,8 @@ int main(int argc, char *argv[]) {
       }
       this_exp += printexpn;
     }
-#if 0
-    this_exp += exp.del_text;
-#else
     if (!exp.del_text.empty())
       this_exp += "UNPROTECT(1);\n";
-#endif
     exec_code += indent(emit_in_braces(this_exp));
     r_expressions = CDR(r_expressions);
   }

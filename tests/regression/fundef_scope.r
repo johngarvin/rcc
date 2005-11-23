@@ -1,4 +1,6 @@
-Rprof("prof-output")
+rcc.include <- Sys.getenv("RCC_R_INCLUDE_PATH")
+source(file.path(rcc.include, "well_behaved.r"))
+
 for(i in 1:3) {
   if (i == 1) {
     foo <- function() print(i)
@@ -9,4 +11,3 @@ for(i in 1:3) {
     bar()
   }
 }
-Rprof(NULL)

@@ -35,18 +35,70 @@ SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
 
-bool ParseInfo::problem_flag = false;
+bool ParseInfo::m_problem_flag = false;
+
+bool ParseInfo::m_allow_oo            = true;
+bool ParseInfo::m_allow_envir_manip   = true;
+bool ParseInfo::m_allow_special_redef = true;
+bool ParseInfo::m_allow_builtin_redef = true;
+bool ParseInfo::m_allow_library_redef = true;
 
 void ParseInfo::flag_problem() {
-  problem_flag = true;
+  m_problem_flag = true;
 }
 
 bool ParseInfo::get_problem_flag() {
-  return problem_flag;
+  return m_problem_flag;
 }
 
 // Returns true if the given string represents a function specified
 // for direct calling.
 bool ParseInfo::is_direct(std::string func) {
   return (direct_funcs.find(func) != direct_funcs.end());
+}
+
+// whether we have to account for object-oriented programming
+void ParseInfo::set_allow_oo(bool x) {
+  m_allow_oo = x;
+}
+
+bool ParseInfo::allow_oo() {
+  return m_allow_oo;
+}
+
+// whether we have to account for explicit environment manipulation
+// [get(), assign(), attach(), etc.]
+void ParseInfo::set_allow_envir_manip(bool x) {
+  m_allow_envir_manip = x;
+}
+
+bool ParseInfo::allow_envir_manip() {
+  return m_allow_envir_manip;
+}
+
+// whether specials (control flow, etc.) might be redefined
+void ParseInfo::set_allow_special_redef(bool x) {
+  m_allow_special_redef = x;
+}
+
+bool ParseInfo::allow_special_redef() {
+  return m_allow_special_redef;
+}
+
+// whether builtin functions (arithmetic, etc.) might be redefined
+void ParseInfo::set_allow_builtin_redef(bool x) {
+  m_allow_builtin_redef = x;
+}
+
+bool ParseInfo::allow_builtin_redef() {
+  return m_allow_builtin_redef;
+}
+
+// whether library functions might be redefined
+void ParseInfo::set_allow_library_redef(bool x) {
+  m_allow_library_redef = x;
+}
+
+bool ParseInfo::allow_library_redef() {
+  return m_allow_library_redef;
 }

@@ -286,15 +286,20 @@ bool is_rcc_assertion(const SEXP e) {
 
 bool is_rcc_assert(const SEXP e) {
   return (TYPEOF(e) == LANGSXP 
-	  && CAR(e) == Rf_install("rcc_assert"));
+	  && CAR(e) == Rf_install(".rcc.assert"));
 }
 
 bool is_rcc_assert_sym(const SEXP e) {
   return (TYPEOF(e) == LANGSXP 
-	  && CAR(e) == Rf_install("rcc_assert_symbol"));
+	  && CAR(e) == Rf_install(".rcc.assert.sym"));
 }
 
 bool is_rcc_assert_exp(const SEXP e) {
   return (TYPEOF(e) == LANGSXP 
-	  && CAR(e) == Rf_install("rcc_assert_expression"));
+	  && CAR(e) == Rf_install(".rcc.assert.exp"));
+}
+
+bool is_value_assert(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP
+	  && (CAR(e) == Rf_install("value")));
 }

@@ -60,7 +60,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
 #endif
     break;
   case LISTSXP:
-#if USE_OUTPUT_CODEGEN
+#ifdef USE_OUTPUT_CODEGEN
     return output_to_expression(CodeGen::op_list(CScope(prefix + "_" + i_to_s(n)), e, rho, false, false));
 #else
     return op_list(e, rho, false, resultProtection, false);

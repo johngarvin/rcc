@@ -43,6 +43,21 @@ public:
   static bool get_problem_flag();
   static bool is_direct(std::string func);
 
+  static void set_allow_oo(bool x);
+  static bool allow_oo();
+
+  static void set_allow_envir_manip(bool x);
+  static bool allow_envir_manip();
+  
+  static void set_allow_special_redef(bool x);
+  static bool allow_special_redef();
+
+  static void set_allow_builtin_redef(bool x);
+  static bool allow_builtin_redef();
+
+  static void set_allow_library_redef(bool x);
+  static bool allow_library_redef();
+  
   // map constants to the code representing them
 
   static std::map<std::string, std::string> func_map;
@@ -73,7 +88,12 @@ public:
   static std::set<std::string> direct_funcs;
 
 private:
-  static bool problem_flag;
+  static bool m_problem_flag;
+  static bool m_allow_oo;
+  static bool m_allow_envir_manip;
+  static bool m_allow_special_redef;
+  static bool m_allow_builtin_redef;
+  static bool m_allow_library_redef;
 };
 
 #endif

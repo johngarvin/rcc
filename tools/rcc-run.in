@@ -4,4 +4,5 @@ if (${?DEBUG}) setenv CMD "gdb ${CMD}"
 setenv LD_LIBRARY_PATH @RCC_LIB_PATH@:@R_LIB_PATH@
 setenv R_HOME @R_HOME@
 setenv PATH .:$PATH
+setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 exec ${CMD}

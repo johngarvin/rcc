@@ -1,3 +1,5 @@
+# not well behaved: redefinition of library function
+
 outer <- function(a){
 x <- a 
 function() { 

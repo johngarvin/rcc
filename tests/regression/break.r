@@ -1,3 +1,6 @@
+rcc.include <- Sys.getenv("RCC_R_INCLUDE_PATH")
+source(file.path(rcc.include, "well_behaved.r"))
+
 foo <- 2
 for (k in 1:10){
 for (i in k:10) { 

@@ -67,7 +67,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     return op_return(CDR(e), rho);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
-#if USE_OUTPUT_CODEGEN
+#ifdef USE_OUTPUT_CODEGEN
     Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
     Expression args1 = output_to_expression(CodeGen::op_list(CDR(e), rho, true, true));
 #else
