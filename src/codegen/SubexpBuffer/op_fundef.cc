@@ -146,10 +146,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   env_subexps.output_ip();
   env_subexps.finalize();
   f += indent(env_subexps.output_decls());
-#if 0
-  f += indent("PROTECT(env = CADR(full_args));\n");
-  f += indent("PROTECT(args = CDDR(full_args));\n");
-#endif
   f += indent(env_subexps.output_defs());
   f += indent("PROTECT(newenv =\n");
   f += indent(indent("Rf_NewEnvironment(\n"
@@ -164,9 +160,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   }
 
-#if 0
-  Expression outblock = out_subexps.op_exp(code, "newenv", Unprotected);
-#endif
   Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
 					   "newenv", Unprotected, true, 
 					   ResultNeeded);
@@ -181,10 +174,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent("endcontext(&context);\n");
   }
 
-#if 0
-  f += indent(unp("env"));
-  f += indent(unp("args"));
-#endif
   f += indent(formals.del_text);
   f += indent("UNPROTECT(1); /* newenv */\n");
 #ifdef CHECK_PROTECT
@@ -195,7 +184,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   return f;
 }
 
-// Like make_fundef_arglist but for directly-called functions.
+// Like make_fundef but for directly-called functions.
 string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef) 
 {
   SEXP args = CAR(fundef_args_c(fndef));

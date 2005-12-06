@@ -15,9 +15,15 @@
 
 using namespace std;
 
+// e                 the expression to be translated. It is an application; its CAR is 'op'.
+// op                the operation. On entry we know its R type is SPECIALSXP.
+// rho               a string representing the environment
+// resultProtection  whether the generated expression is protected
+// resultStatus      whether the result is needed by later computation
 Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
 			Protection resultProtection,
-			ResultStatus resultStatus) {
+			ResultStatus resultStatus)
+{
   string out;
   if (PRIMFUN(op) == (CCODE)do_set) {
     return op_set(e, op, rho, resultProtection);

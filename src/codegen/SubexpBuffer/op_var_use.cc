@@ -64,7 +64,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   if (annot->getScopeType() == Var::Var_GLOBAL) {
     VarInfo * vi_annot = annot->getReachingDef();
     //    if (vi_annot != 0) {            // unique reaching definition exists
-    if (false) {                          // FIXME: annotation lying about unique binding
+    if (true) {                          // FIXME: annotation lying about unique binding
+      // why do we need to ask about the getReachingDef annotation?
+
+
       // look up the name in loc_map and binding_map. loc_map records a
       // "location" for each global name -- a pointer to an entry in an
       // environment, used for variables that may be redefined.
@@ -94,7 +97,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	  return op_internal(sb, e, env_val, name, lookup_function, rho);
 	}
       }
-      return Expression(h, false, VISIBLE, "");
+      return Expression(h, true, VISIBLE, "");
     } else {  // may be redefined
       return op_lookup(sb, lookup_function, make_symbol(e), rho,
 		       resultProtection, fullyEvaluatedResult);

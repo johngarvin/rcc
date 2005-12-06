@@ -53,7 +53,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       // is it an R library function? Look up in global environment
       op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);
       if (op == R_UnboundValue) {    // user-defined function
-	Expression func = op_fun_use(e, rho);   // op_fun_use(e, rho, Unprotected)
+	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, r_args, rho, resultProtection);
       } else {  // Built-in function, special function, or closure
 	if (TYPEOF(op) == SPECIALSXP) {
@@ -61,8 +61,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	} else if (TYPEOF(op) == BUILTINSXP) {
 	  return op_builtin(e, op, rho, resultProtection);
 	} else if (TYPEOF(op) == CLOSXP) {
-	  // generate code to look up the function
-	  Expression func = op_fun_use(e, rho);  // op_fun_use(e, rho, Unprotected)
+	  // generate code to get the closure, then apply it
+	  Expression func = op_fun_use(e, rho);
 	  return op_clos_app(func, r_args, rho, resultProtection);
 	} else if (TYPEOF(op) == PROMSXP) {
 	  // ***************** TEST ME! ******************

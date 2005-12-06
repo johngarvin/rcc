@@ -29,7 +29,8 @@ bool is_constant_expr(SEXP s) {
 }
 
 Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho, 
-				    Protection resultProtection) {
+				    Protection resultProtection)
+{
   string out;
 #ifdef USE_OUTPUT_CODEGEN
   Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
@@ -44,24 +45,6 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     if (args != R_NilValue
 	&& CDR(args) == R_NilValue
 	&& !Rf_isObject(CAR(args))) { // one argument, non-object
-#if 0
-<<<<<<< op_builtin.cc
-
-      //----------------------------------------------------------
-      // optimization note:
-      //   R_unary is safe to call with unprotected arguments
-      //   it may duplicate its argument, but duplicate protects its
-      //   before allocating memory argument
-      //
-      // 14 September 2005 - John Mellor-Crummey
-      //----------------------------------------------------------
-      Expression x = op_exp(CAR(args), rho, Unprotected, TRUE);
-      out = appl3("R_unary", "R_NilValue", op1.var, x.var, resultProtection);
-=======
-      Expression x = op_exp(args, rho, true);
-      out = appl3("R_unary", "R_NilValue", op1.var, x.var);
->>>>>>> 1.4
-#endif
 
       //----------------------------------------------------------
       // optimization note:
@@ -79,32 +62,6 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     } else if (CDDR(args) == R_NilValue && 
 	       !Rf_isObject(CAR(args))
 	       && !Rf_isObject(CADR(args))) {
-#if 0
-<<<<<<< op_builtin.cc
-	
-      //----------------------------------------------------------
-      // optimization note:
-      //   R_binary is safe to call with unprotected arguments. it
-      //   protects its arguments before allocating a result.
-      //  
-      //   note: unless evaluation of the second argument is known to 
-      //   not allocate memory, the result of evaluating the 
-      //   first argument must be protected. in the absence of this
-      //   knowledge, we protect it.
-      //
-      // 14 September 2005 - John Mellor-Crummey
-      //----------------------------------------------------------
-	      
-      Expression x = op_exp(CAR(args), rho, Protected, TRUE);
-      Expression y = op_exp(CADR(args), rho, Unprotected, TRUE);
-      out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var, 
-		  resultProtection);
-=======
-      Expression x = op_exp(args, rho, true);
-      Expression y = op_exp(CDR(args), rho, true);
-      out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var);
->>>>>>> 1.4
-#endif
 
       //----------------------------------------------------------
       // optimization note:
@@ -126,17 +83,11 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       Expression y = op_exp(CDR(args), rho, Unprotected, TRUE);
       out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var, 
 		  Unprotected);
-#if 0
-      del(x);
-      del(y);
-#else
       int unprotcnt = 0;
       if (!x.del_text.empty()) unprotcnt++;
       if (!y.del_text.empty()) unprotcnt++;
       if (unprotcnt > 0) 
 	append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
-	
-#endif
       if (resultProtection == Protected) {
 	if (unprotcnt > 0) 
 	  append_defs("SAFE_PROTECT(" + out + ");\n");
@@ -151,14 +102,13 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #else
     Expression args1 = op_list(args, rho, false, Protected, true);
 #endif
+    // FIXME:
+    // here: don't we need to check whether args1 is dependent? Also op1?
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue ",
 		op1.var,
 		args1.var,
 		rho, Unprotected);
-#if 0
-    del(args1);
-#else
     int unprotcnt = 0;
     if (!args1.del_text.empty()) unprotcnt++;
     if (unprotcnt > 0) 
@@ -169,7 +119,6 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       else
 	append_defs("PROTECT(" + out + ");\n");
     }
-#endif
   }
   string cleanup;
   if (resultProtection == Protected) cleanup = unp(out);

@@ -21,6 +21,9 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho,
   Expression e;
   string var;
   string cleanup;
+  if (exp == R_NilValue) {
+    return Expression::nil_exp;
+  }
   while (exp != R_NilValue) {
     SEXP next = CDR(exp);
     SubexpBuffer temp = new_sb("tmp_be");

@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   ParseInfo::global_constants->decls += "static void finish();\n";
 
   // FIXME: load standard assertions here (before parsing)
-  // I don't think we have any not in the code...
+  // I don't think we have any except those in the code...
 
   // parse
   SEXP program = parse_R_as_function(in_file);
