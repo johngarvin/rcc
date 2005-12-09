@@ -59,6 +59,8 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
     case PARSE_NULL:
       break;
     case PARSE_OK:
+
+      // special handling for source()
       if (is_simple_source_call(e)) {
 	SEXP interp_arg = Rf_eval(CADR(e), R_GlobalEnv);
 	if (TYPEOF(interp_arg) != STRSXP) {
@@ -150,8 +152,9 @@ SEXP parse_R_as_function(FILE *in_file) {
 //! Returns true if the given SEXP is a call to source with exactly
 //! one argument. The single argument must not be a named argument.
 static bool is_simple_source_call(SEXP e) {
-  return (TYPEOF(e) == LANGSXP
-	  && CAR(e) == Rf_install("source")
-	  && CDR(e) != R_NilValue
-	  && CDDR(e) == R_NilValue);
+  return (TYPEOF(e) == LANGSXP &&
+	  CAR(e) == Rf_install("source") &&
+	  CDR(e) != R_NilValue &&
+	  TAG(CDR(e)) == R_NilValue &&
+	  CDDR(e) == R_NilValue);
 }

@@ -1,3 +1,5 @@
+source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
+
 set.seed(17) # provide repeatable behavior for a test -- johnmc
 
 #######

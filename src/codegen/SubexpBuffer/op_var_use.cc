@@ -80,9 +80,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       if (loc != ParseInfo::loc_map.end()) {
 	// in location map
 	h = sb->appl1("R_GetVarLocValue", loc->second, Unprotected);
+	return Expression(h, true, VISIBLE, "");
       } else if (value != ParseInfo::binding_map.end()) {
 	// in binding map
-	h = value->second;
+	return Expression(value->second, false, VISIBLE, "");
       } else {
 	// Built-in or user-defined name? Look up in global environment
 	SEXP env_val;
@@ -97,7 +98,6 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	  return op_internal(sb, e, env_val, name, lookup_function, rho);
 	}
       }
-      return Expression(h, true, VISIBLE, "");
     } else {  // may be redefined
       return op_lookup(sb, lookup_function, make_symbol(e), rho,
 		       resultProtection, fullyEvaluatedResult);

@@ -1,3 +1,5 @@
+source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
+
 Rprof()
 fib <- function(n) {
   if (n == 0) return(1)

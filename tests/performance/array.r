@@ -1,3 +1,5 @@
+source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
+
 Rprof()
 f <- function() {
   foo <- array(1:1000000, dim=c(100,50,200))

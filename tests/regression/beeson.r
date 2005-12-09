@@ -108,6 +108,7 @@ create_fake_data <- function() {
   for (i in 1:5000) {
     forward <- runif(1,5,10)
     theta <- runif(1,-30*pi/180,30*pi/180)
+
     theta2 <- 0
     raw <<- append(raw,c(raw[1,index]+(forward*cos(theta+raw[3,index])),
                          raw[2,index]+(forward*sin(theta+raw[3,index])),
@@ -443,3 +444,4 @@ evaluate_params <- function(errors,params) {
   ret <- append(ret,weights)
 }
 
+find_action_model(1,10,20)
