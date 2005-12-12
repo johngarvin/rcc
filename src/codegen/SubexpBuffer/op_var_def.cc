@@ -41,7 +41,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     }
   } else {   // not global scope
     append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
-    return Expression(symbol, true, INVISIBLE, "");
+    return Expression(rhs, true, INVISIBLE, "");
   }
 }
 
@@ -57,5 +57,5 @@ static Expression op_caching_lookup(SubexpBuffer * sb, string name, string symbo
   string call = emit_call3("defineVarReturnLoc", symbol, rhs, rho);
   sb->append_defs(emit_assign(loc_h, call));
   ParseInfo::loc_map.insert(pair<string,string>(name, loc_h));
-  return Expression(symbol, true, INVISIBLE, "");
+  return Expression(rhs, true, INVISIBLE, "");
 }

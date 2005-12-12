@@ -30,8 +30,15 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho,
     //    temp.encl_fn = this;
     ResultStatus rs = (next == R_NilValue) ? resultStatus : NoResultNeeded;
 
-    e = temp.op_exp(exp, rho, Unprotected, false, rs);
-    //    assert(e.del_text.empty());  // given Unprotected; should have no unprotect code
+    // To be safe, if the expression is a symbol (which might be bound
+    // to a promise), evaluate at the end to force the promise.
+    // FIXME: This causes unnecessary calls to eval when the
+    // expression is not a promise, which we should eventually
+    // eliminate.
+    bool possible_promise = (TYPEOF(CAR(exp)) == SYMSXP);
+
+    e = temp.op_exp(exp, rho, Unprotected, true, rs);
+
     string code = temp.output();
 
     if (next == R_NilValue) {
