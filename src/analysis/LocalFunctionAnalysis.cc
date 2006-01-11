@@ -34,6 +34,7 @@ void LocalFunctionAnalysis::analyze_args() {
     annot->setSourceType(DefVar::DefVar_FORMAL);
     annot->setMayMustType(Var::Var_MUST);
     annot->setScopeType(Var::Var_LOCAL);
+    annot->setRhs(0);
     putProperty(Var, e, annot, true);
     if (TAG(e) == ddd) {
       has_var_args = true;

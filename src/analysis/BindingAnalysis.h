@@ -9,5 +9,6 @@ public:
 private:
   void find_free_mentions();
   void assign_scopes();
-  const RAnnot::FuncInfo * m_root;
+  void fill_in_symbol_tables();
+  RAnnot::FuncInfo * const m_root;
 };

@@ -40,10 +40,10 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     putProperty(Var, cell, var_annot, true);
     m_stmt_annot->insert_var(var_annot);
   } else if (is_local_assign(e)) {
-    build_ud_lhs(assign_lhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
+    build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(assign_rhs_c(e));
   } else if (is_free_assign(e)) {
-    build_ud_lhs(assign_lhs_c(e), Var::Var_MUST, IN_FREE_ASSIGN);
+    build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_FREE_ASSIGN);
     build_ud_rhs(assign_rhs_c(e));
   } else if (is_fundef(e)) {
     // ignore
@@ -56,7 +56,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     build_ud_rhs(if_cond_c(e));
   } else if (is_for(e)) {
     // defines the induction variable, uses the range
-    build_ud_lhs(for_iv_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
+    build_ud_lhs(for_iv_c(e), for_range_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(for_range_c(e));
   } else if (is_loop_header(e)) {
     // XXXXX
@@ -96,17 +96,22 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
 //! Traverse the SEXP contained in the given cons cell, assuming that
 //! it's an lvalue. Set variable annotations with local syntactic
 //! information.
-//! cell          = a cons cell whose CAR is the expression we're talking about
+//! cell          = a cons cell whose CAR is the lvalue we're talking about
+//! rhs           = a cons cell whose CAR is the right side of the assignment statement
 //! may_must_type = whether we are in a may-def or a must-def
 //! lhs_type      = whether we are in a local or free assignment
-void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, Var::MayMustT may_must_type, LhsType lhs_type) {
+void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
+					 Var::MayMustT may_must_type, LhsType lhs_type)
+{
   assert(is_cons(cell));
+  assert(is_cons(rhs));
   SEXP e = CAR(cell);
   if (is_var(e)) {
     DefVar * var_annot = new DefVar();
     var_annot->setMention(cell);
     var_annot->setMayMustType(may_must_type);
     var_annot->setSourceType(DefVar::DefVar_ASSIGN);
+    var_annot->setRhs(rhs);
     // Note this subtlety in the R language. For a must-def, syntactic
     // information (i.e., whether the arrow is single or double) tells
     // us whether we are dealing with a local or free
@@ -127,9 +132,9 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, Var::MayMustT may_must
     putProperty(Var, cell, var_annot, true);
     m_stmt_annot->insert_var(var_annot);
   } else if (is_struct_field(e)) {
-    build_ud_lhs(struct_field_lhs_c(e), Var::Var_MAY, lhs_type);
+    build_ud_lhs(struct_field_lhs_c(e), rhs, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {
-    build_ud_lhs(subscript_lhs_c(e), Var::Var_MAY, lhs_type);
+    build_ud_lhs(subscript_lhs_c(e), rhs, Var::Var_MAY, lhs_type);
     build_ud_rhs(subscript_rhs_c(e));
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. For example: dim(x) <- foo
@@ -138,7 +143,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, Var::MayMustT may_must
     // only some functions applied to arguments make a valid lvalue.
     assert(CDDR(e) == R_NilValue); // more than one argument is an error, right?
     build_ud_rhs(e);
-    build_ud_lhs(CDR(e), Var::Var_MAY, lhs_type);
+    build_ud_lhs(CDR(e), rhs, Var::Var_MAY, lhs_type);
   } else {
     assert(0);
   }

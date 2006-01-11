@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.12 2005/09/29 17:17:15 jin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.13 2006/01/11 19:56:51 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -63,14 +63,20 @@ class FuncInfo;
 
 
 //****************************************************************************
-// Annotations: Environments
+// Annotations: Symbol tables
 //****************************************************************************
 
 // ---------------------------------------------------------------------------
-// Environment: 
+// Name
 // ---------------------------------------------------------------------------
 
-class Environment 
+typedef SEXP Name;  // should be of type SYMSXP
+
+// ---------------------------------------------------------------------------
+// Symbol table
+// ---------------------------------------------------------------------------
+
+class SymbolTable 
   : public AnnotationBase
 {
 public:
@@ -80,10 +86,10 @@ public:
     Alloc_Stack  // separately managed stack of objects
   };
 
-  typedef VarInfo*                                          key_type;
-  typedef AllocT                                            mapped_type;
+  typedef Name                                              key_type;
+  typedef VarInfo*                                          mapped_type;
   
-  typedef std::map<VarInfo*, AllocT>                        MyMap_t;
+  typedef std::map<Name, VarInfo*>                          MyMap_t;
   typedef std::pair<const key_type, mapped_type>            value_type;
   typedef MyMap_t::key_compare                              key_compare;
   typedef MyMap_t::allocator_type                           allocator_type;
@@ -94,13 +100,13 @@ public:
   typedef MyMap_t::size_type                                size_type;
 
 public:
-  Environment();
-  virtual ~Environment();
+  SymbolTable();
+  virtual ~SymbolTable();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual Environment* clone() { return new Environment(*this); }
+  virtual SymbolTable* clone() { return new SymbolTable(*this); }
 
   // -------------------------------------------------------
   // iterator, find/insert, etc 
@@ -151,7 +157,7 @@ public:
   // -------------------------------------------------------
   // code generation
   // -------------------------------------------------------
-  // genCode1: generate code to initialize environment
+  // genCode1: generate code to initialize ST
   // genCode2...
 
   // -------------------------------------------------------
@@ -217,7 +223,6 @@ public:
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
-
 
 private:
   SEXP mDefn;
@@ -306,6 +311,11 @@ public:
     { return mReachingDef; }
   void setReachingDef(VarInfo* x)
     { mReachingDef = x; }
+
+  FuncInfo* getBoundScope() const
+    { return mBoundScope; }
+  void setBoundScope(FuncInfo* x)
+    { mBoundScope = x; }
   
   // Mention
   SEXP getMention() const
@@ -349,7 +359,8 @@ protected:
   MayMustT mMayMustType;
   ScopeT mScopeType;
   VarInfo* mReachingDef; // (not owned)
-  FuncInfo* mDefiningScope;  // (not owned)
+  FuncInfo* mBoundScope;  // (not owned)
+  
 };
 
 // ---------------------------------------------------------------------------
@@ -407,12 +418,17 @@ public:
   virtual ~DefVar();
 
   // source of definition: assignment statement, formal argument, or phi function
-  SourceT getSourceType()
+  SourceT getSourceType() const
     { return mSourceType; }
   void setSourceType(SourceT x)
     { mSourceType = x; }
 
   virtual SEXP getName() const;
+
+  SEXP getRhs() const
+    { return mRhs; }
+  void setRhs(SEXP x)
+    { mRhs = x; }
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
@@ -426,6 +442,9 @@ public:
 
 private:
   SourceT mSourceType;
+  SEXP mRhs;               // right side, if assignment
+  // bool mIsBindingKnown;
+  // set of uses reached?
 };
 
 
@@ -487,7 +506,7 @@ private:
 //****************************************************************************
 
 // ---------------------------------------------------------------------------
-// VarInfo: 'Definition' information about a variable
+// VarInfo: Location information about a variable
 // ---------------------------------------------------------------------------
 class VarInfo
   : public AnnotationBase
@@ -516,23 +535,13 @@ public:
   // member data manipulation
   // -------------------------------------------------------
 
-  // definition
-  SEXP getDefn() const
-    { return mDefn; }
-  void setDefn(SEXP x)
-    { mDefn = x; }
-  
-  // is-binding-known
-  bool getIsBindingKnown() const
-    { return mIsBindingKnown; }
-  void setIsBindingKnown(bool x)
-    { mIsBindingKnown = x; }
+  // symbol table
+  SymbolTable* getSymbolTable() const
+    { return mST; }
+  void setSymbolTable(SymbolTable* x)
+    { mST = x; }
 
-  // environment
-  Environment* getEnvironment() const
-    { return mEnv; }
-  void setEnvironment(Environment* x)
-    { mEnv = x; }
+  // FIXME: should this be a set of mentions instead of uses?
 
   // uses iterators:
   iterator beginUses()
@@ -570,6 +579,17 @@ public:
   size_type countUses(const key_type& x) const
     { return mUses.count(x); }
 
+  // singleton status
+  bool isSingleton() const
+    { return mIsSingleton; }
+  void setSingleton(bool x)
+    { mIsSingleton = x; }
+
+  FuncInfo* getSingletonDef() const
+    { assert(mIsSingleton); return mSingletonDef; }
+  void setSingletonDef(FuncInfo* x)
+    { mSingletonDef = x; }
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -577,14 +597,12 @@ public:
 
 private:
   // data_type mType
-  SEXP mDefn;
-  bool mIsBindingKnown;
-  Environment* mEnv;
+  SymbolTable* mST;
   MySet_t mUses;
-  // scope of def // may be vector if upwardly exposed to cond defs
-    // ???how do scopes compare to environmetns?
+  bool mIsSingleton;
+  FuncInfo* mSingletonDef; // if it exists
+  //  FuncInfo* mDefiningScope;  
 };
-
 
 //****************************************************************************
 // Annotations: Function info
@@ -664,7 +682,11 @@ public:
   const_mentions_iterator endMentions() const
     { return mMentions.end(); }
 
-  // environment
+  // symbol table
+  SymbolTable* getSymbolTable() const
+    { return mST; }
+  void setSymbolTable(SymbolTable* x)
+    { mST = x; }
 
   // CFG
   OA::OA_ptr<OA::CFG::Interface> getCFG() const
@@ -683,7 +705,7 @@ private:
   bool mHasVarArgs;        // variable number of arguments
   std::string mCName;      // C linkage name
   bool mRequiresContext;   // is an R context object needed for the function?
-  Environment* mEnv;       // (not owned)
+  SymbolTable* mST;       // (not owned)
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
 

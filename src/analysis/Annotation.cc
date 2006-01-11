@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.11 2005/09/29 17:17:15 jin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.12 2006/01/11 19:56:50 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -42,27 +42,31 @@ namespace RAnnot {
 
 
 //****************************************************************************
-// Environment
+// SymbolTable
 //****************************************************************************
 
-Environment::Environment()
+SymbolTable::SymbolTable()
 {
 }
 
 
-Environment::~Environment()
+SymbolTable::~SymbolTable()
 {
 }
 
 
 std::ostream&
-Environment::dump(std::ostream& os) const
+SymbolTable::dump(std::ostream& os) const
 {
-  beginObjDump(os, Environment);
+  beginObjDump(os, SymbolTable);
   for (const_iterator it = this->begin(); it != this->end(); ++it) {
-    os << "(" << it->first << " --> " << it->second << ")\n";
+    os << "(";
+    Rf_PrintValue(it->first);
+    os << " --> ";
+    dumpObj(os, it->second);
+    os << ")\n";
   }
-  endObjDump(os, Environment);
+  endObjDump(os, SymbolTable);
 }
 
 
@@ -171,6 +175,7 @@ UseVar::dump(std::ostream& os) const
   dumpVar(os,mMayMustType);
   dumpVar(os,mScopeType);
   //dumpPtr(os,mReachingDef);
+  dumpPtr(os,mBoundScope);
   dumpVar(os,mPositionType);
   endObjDump(os,UseVar);
 }
@@ -211,6 +216,7 @@ DefVar::dump(std::ostream& os) const
   dumpVar(os,mMayMustType);
   dumpVar(os,mScopeType);
   // dumpPtr(os,mReachingDef);
+  dumpPtr(os,mBoundScope);
   dumpVar(os,mSourceType);
   endObjDump(os,DefVar);
 }
@@ -278,7 +284,7 @@ std::ostream&
 VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
-  // FIXME: add implementation
+  dumpVar(os, mIsSingleton);
   endObjDump(os, VarInfo);
 }
 
@@ -295,7 +301,7 @@ FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mDefn(defn),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
-  mEnv = new Environment();
+  mST = new SymbolTable();
   mRequiresContext = functionRequiresContext(defn);
   SEXP args = getArgs();
   for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
@@ -383,7 +389,7 @@ FuncInfo::dump(std::ostream& os) const
   dumpVar(os, mHasVarArgs);
   dumpVar(os, mCName);
   dumpVar(os, mRequiresContext);
-  dumpObj(os, mEnv);
+  dumpObj(os, mST);
   //dumpObj(os, mCFG);      // can't call CFG::dump; it requires the IRInterface
   dumpSEXP(os, mFirstName);
   dumpSEXP(os, mDefn);

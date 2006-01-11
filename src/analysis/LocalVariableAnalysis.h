@@ -17,7 +17,7 @@
 //! count are those directly used or modified, not those found in the
 //! loop body.
 class LocalVariableAnalysis {
- public:
+public:
   LocalVariableAnalysis(const SEXP _stmt);
 
   void perform_analysis();
@@ -27,7 +27,7 @@ private:
     IN_FREE_ASSIGN
   };
   void build_ud_rhs(const SEXP cell);
-  void build_ud_lhs(const SEXP cell, RAnnot::Var::MayMustT may_must_type, LhsType lhs_type);
+  void build_ud_lhs(const SEXP cell, const SEXP rhs, RAnnot::Var::MayMustT may_must_type, LhsType lhs_type);
   const SEXP m_stmt;
   RAnnot::ExpressionInfo * m_stmt_annot;
 };
