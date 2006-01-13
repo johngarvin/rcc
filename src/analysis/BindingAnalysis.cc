@@ -40,7 +40,7 @@ void BindingAnalysis::find_free_mentions() {
     }
     if (finfo != m_root) {
       // for each mention
-      FuncInfo::mentions_iterator mi;
+      FuncInfo::mention_iterator mi;
       for(mi = finfo->beginMentions(); mi != finfo->endMentions(); ++mi) {
 	Var * v = *mi;
 	Var::ScopeT scope_type = v->getScopeType();
@@ -80,7 +80,7 @@ void BindingAnalysis::assign_scopes() {
   for( ; fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
     // each free mention
-    FuncInfo::mentions_iterator mi;
+    FuncInfo::mention_iterator mi;
     for (mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       Var * v = *mi;
       FuncInfo * scope;
@@ -134,7 +134,7 @@ void BindingAnalysis::fill_in_symbol_tables() {
   for( ; fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
     // each mention (defs, not uses)
-    for (FuncInfo::mentions_iterator mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
+    for (FuncInfo::mention_iterator mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       DefVar* def; def = dynamic_cast<DefVar*>(*mi);
       if (def == 0) continue;
       FuncInfo * ds = def->getBoundScope();
@@ -146,8 +146,8 @@ void BindingAnalysis::fill_in_symbol_tables() {
 	if (info == st->end()) { // not yet in symbol table
 	  VarInfo * vi = new VarInfo();
 	  vi->setSymbolTable(st);
-	  SEXP rhs = def->getRhs();
-	  if (is_fundef(CAR(rhs))) {
+	  SEXP rhs = CAR(def->getRhs());
+	  if (is_fundef(rhs)) {
 	    vi->setSingleton(true);
 	    vi->setSingletonDef(getProperty(FuncInfo, rhs));
 	  } else {
@@ -165,7 +165,7 @@ void BindingAnalysis::fill_in_symbol_tables() {
 
 //! Is the given variable defined as local in the given scope?
 static bool defined_local_in_scope(Var * v, FuncInfo * s) {
-  FuncInfo::mentions_iterator mi;
+  FuncInfo::mention_iterator mi;
   for(mi = s->beginMentions(); mi != s->endMentions(); ++mi) {
     Var * m = *mi;
     if (m->getUseDefType() == Var::Var_DEF  &&

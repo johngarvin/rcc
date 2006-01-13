@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.13 2006/01/11 19:56:51 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.14 2006/01/13 16:49:05 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -619,12 +619,16 @@ public:
   static PropertyHndlT FuncInfoProperty;
 
 public:
-  typedef Var*                                              mentions_key_type;
+  typedef Var*                                              mention_key_type;
 
-  typedef std::set<mentions_key_type>                       MySet_t;
-  typedef MySet_t::iterator                                 mentions_iterator;
-  typedef MySet_t::const_iterator                           const_mentions_iterator;
+  typedef std::set<mention_key_type>                        MentionSet_t;
+  typedef MentionSet_t::iterator                            mention_iterator;
+  typedef MentionSet_t::const_iterator                      const_mention_iterator;
 
+  typedef FuncInfo*                                         call_key_type;
+  typedef std::multiset<call_key_type>                      CallSet_t;
+  typedef CallSet_t::iterator                               call_iterator;
+  typedef CallSet_t::const_iterator                         const_call_iterator;
 public:
   FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
@@ -651,7 +655,7 @@ public:
 
   // definition
   SEXP getDefn() 
-     { return mDefn; }
+    { return mDefn; }
 
   // has-variable-arguments
   bool getHasVarArgs() const
@@ -673,13 +677,13 @@ public:
   void insertMention(Var * v);
 
   // mention iterators
-  mentions_iterator beginMentions()
+  mention_iterator beginMentions()
     { return mMentions.begin(); }
-  const_mentions_iterator beginMentions() const
+  const_mention_iterator beginMentions() const
     { return mMentions.begin(); }
-  mentions_iterator endMentions()
+  mention_iterator endMentions()
     { return mMentions.end(); }
-  const_mentions_iterator endMentions() const
+  const_mention_iterator endMentions() const
     { return mMentions.end(); }
 
   // symbol table
@@ -693,6 +697,29 @@ public:
     { return mCFG; }
   void setCFG(OA::OA_ptr<OA::CFG::Interface> x)
     { mCFG = x; }
+
+  // callee and caller
+  void insertCallIn(FuncInfo *fi);
+  void insertCallOut(FuncInfo *fi);
+
+  // callee and caller iterators
+  call_iterator beginCallsIn()
+    { return mCallsIn.begin(); }
+  const_call_iterator beginCallsIn() const
+    { return mCallsIn.begin(); }
+  call_iterator endCallsIn()
+    { return mCallsIn.end(); }
+  const_call_iterator endCallsIn() const
+    { return mCallsIn.end(); }
+
+  call_iterator beginCallsOut()
+    { return mCallsOut.begin(); }
+  const_call_iterator beginCallsOut() const
+    { return mCallsOut.begin(); }
+  call_iterator endCallsOut()
+    { return mCallsOut.end(); }
+  const_call_iterator endCallsOut() const
+    { return mCallsOut.end(); }
 
   // -------------------------------------------------------
   // debugging
@@ -709,11 +736,14 @@ private:
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
 
-  MySet_t mMentions;    // uses and defs inside function (including nested functions)
+  MentionSet_t mMentions; // uses and defs inside function (NOT including nested functions)
 
   SEXP mDefn;            // function definition
   SEXP mFirstName;       // name of function at original definition 
   FuncInfo *mLexicalParent; // parent scope definition
+
+  CallSet_t mCallsIn;     // (not owned)
+  CallSet_t mCallsOut;    // (not owned)
 
   // argument description: types, strict?
 };

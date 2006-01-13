@@ -41,6 +41,8 @@ rcc_bin_SOURCES =				\
   Assertion.h					\
   BindingAnalysis.cc				\
   BindingAnalysis.h				\
+  CallGraphBuilder.cc                           \
+  CallGraphBuilder.h                            \
   HandleInterface.cc				\
   HandleInterface.h				\
   IRInterface.cc				\

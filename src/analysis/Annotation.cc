@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.12 2006/01/11 19:56:50 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.13 2006/01/13 16:49:05 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -381,6 +381,16 @@ void FuncInfo::insertMention(Var * v)
   mMentions.insert(v);
 }
 
+void FuncInfo::insertCallIn(FuncInfo* fi)
+{
+  mCallsIn.insert(fi);
+}
+
+void FuncInfo::insertCallOut(FuncInfo* fi)
+{
+  mCallsOut.insert(fi);
+}
+
 std::ostream&
 FuncInfo::dump(std::ostream& os) const
 {
@@ -395,10 +405,21 @@ FuncInfo::dump(std::ostream& os) const
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);
   os << "Begin mentions:" << std::endl;
-  for(mentions_iterator i = mMentions.begin(); i != mMentions.end(); ++i) {
+  for(mention_iterator i = mMentions.begin(); i != mMentions.end(); ++i) {
     (*i)->dump(os);
   }
   os << "End mentions" << std::endl;
+  os << "Begin calls" << std::endl;
+  os << "In:" << std::endl;
+  call_iterator i;
+  for(i = mCallsIn.begin(); i != mCallsIn.end(); ++i) {
+    dumpPtr(os, *i);
+  }
+  os << "Out:" << std::endl;
+  for(i = mCallsOut.begin(); i != mCallsOut.end(); ++i) {
+    dumpPtr(os, *i);
+  }
+  os << "End calls" << std::endl;
   endObjDump(os, FuncInfo);
 }
 

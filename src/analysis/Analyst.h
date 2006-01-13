@@ -52,6 +52,7 @@ private:
   void build_local_variable_info();
   void build_local_function_info();
   void build_bindings();
+  void build_call_graph();
 };
 
 #endif

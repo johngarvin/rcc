@@ -12,6 +12,7 @@
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/BindingAnalysis.h>
+#include <analysis/CallGraphBuilder.h>
 
 #include "Analyst.h"
 
@@ -27,6 +28,7 @@ R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
   build_local_function_info();
   build_use_def_info();
   build_bindings();
+  build_call_graph();
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -117,4 +119,9 @@ void R_Analyst::build_use_def_info() {
 void R_Analyst::build_bindings() {
   BindingAnalysis ba(m_scope_tree_root);
   ba.perform_analysis();
+}
+
+void R_Analyst::build_call_graph() {
+  CallGraphBuilder cgb(m_scope_tree_root);
+  cgb.perform_analysis();
 }
