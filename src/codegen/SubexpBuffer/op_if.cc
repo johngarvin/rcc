@@ -9,6 +9,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <Visibility.h>
 
 using namespace std;
@@ -98,7 +99,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     append_defs("}\n");
     return Expression(out, FALSE, CHECK_VISIBLE, "");
   } else {
-    err("Badly formed if expression\n");
+    rcc_error("Badly formed if expression");
     return Expression::bogus_exp;
   }
 }

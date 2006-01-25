@@ -6,6 +6,7 @@
 #include <include/R/R_Defn.h>
 
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <analysis/Utils.h>
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
@@ -183,7 +184,7 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
 }
 
 Output CodeGen::op_closure(SEXP e, string rho) {
-  err("CodeGen::op_closure not yet implemented\n");
+  rcc_error("CodeGen::op_closure not yet implemented");
   return Output::bogus;
 }
 
@@ -198,7 +199,7 @@ Output CodeGen::op_primsxp(SEXP e, string rho) {
     is_builtin = 1;
     break;
   default:
-    err("Internal error: op_primsxp called on non-(special or builtin)");
+    rcc_error("Internal error: op_primsxp called on non-(special or builtin)");
     is_builtin = 0; // silence the -Wall Who Cried "Uninitialized variable."
   }
   
@@ -279,10 +280,10 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 			DEPENDENT,
 			VISIBLE);
 	} else if (TYPEOF(op) == PROMSXP) {
-	  err("Hey! I don't think we should see a promise in LANGSXP!\n");
+	  rcc_error("Hey! I don't think we should see a promise in LANGSXP!");
 	  return Output::bogus;
 	} else {
-	  err("LANGSXP encountered non-function op\n");
+	  rcc_error("LANGSXP encountered non-function op");
 	  return Output::bogus;
 	}
       }
@@ -302,7 +303,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 }
 
 Output CodeGen::op_promise(SEXP e) {
-  err("CodeGen::op_promise not yet implemented\n");
+  rcc_error("CodeGen::op_promise not yet implemented");
   return Output::bogus;
 }
 
@@ -386,7 +387,7 @@ Output CodeGen::op_if(SEXP e, string rho) {
 			  emit_unprotect(out)),
 		  DEPENDENT, CHECK_VISIBLE);
   } else {
-    err("Didn't understand form of if statement\n");
+    rcc_error("Didn't understand form of if statement");
     return Output::bogus;
   }
 }
@@ -394,7 +395,7 @@ Output CodeGen::op_if(SEXP e, string rho) {
 Output CodeGen::op_for(SEXP e, string rho) {
   string decls = "";
   SEXP r_iv = CAR(for_iv_c(e));
-  if (!is_var(r_iv)) err("non-symbol induction variable in for loop\n");
+  if (!is_var(r_iv)) rcc_error("non-symbol induction variable in for loop");
 
   Output range = op_exp(for_range_c(e), rho, false);
   decls += "int n;\n";
@@ -415,17 +416,17 @@ Output CodeGen::op_for(SEXP e, string rho) {
   defs += "PROTECT_WITH_INDEX(ans, &api);\n";
   defs += "for (i=0; i < n; i++) {\n";
   
-  err("CodeGen::op_for not yet implemented\n");
+  rcc_error("CodeGen::op_for not yet implemented");
   return Output::bogus;
 }
 
 Output CodeGen::op_while(SEXP e, string rho) {
-  err("CodeGen::op_while not yet implemented\n");
+  rcc_error("CodeGen::op_while not yet implemented");
   return Output::bogus;
 }
 
 Output CodeGen::op_return(SEXP e, string rho) {
-  err("CodeGen::op_return not yet implemented\n");
+  rcc_error("CodeGen::op_return not yet implemented");
   return Output::bogus;
 }
 
@@ -444,12 +445,12 @@ Output CodeGen::op_break(SEXP e, string rho) {
 }
 
 Output CodeGen::op_fundef(SEXP e, string rho, string opt_R_name /* = "" */) {
-  err("CodeGen::op_fundef not yet implemented\n");
+  rcc_error("CodeGen::op_fundef not yet implemented");
   return Output::bogus;
 }
 
 Output CodeGen::op_special(SEXP e, SEXP op, string rho) {
-  err("CodeGen::op_special not yet implemented\n");
+  rcc_error("CodeGen::op_special not yet implemented");
   return Output::bogus;
 }
 
@@ -531,17 +532,17 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
 }
 
 Output CodeGen::op_set(SEXP e, SEXP op, string rho) {
-  err("CodeGen::op_set not yet implemented\n");
+  rcc_error("CodeGen::op_set not yet implemented");
   return Output::bogus;
 }
 
 Output CodeGen::op_subscriptset(SEXP e, string rho) {
-  err("CodeGen::op_subscriptset not yet implemented\n");
+  rcc_error("CodeGen::op_subscriptset not yet implemented");
   return Output::bogus;
 }
 
 Output CodeGen::op_clos_app(string clos_h, SEXP args, string rho) {
-  err("CodeGen::op_clos_app not yet implemented\n");
+  rcc_error("CodeGen::op_clos_app not yet implemented");
   return Output::bogus;
 }
 
@@ -637,7 +638,7 @@ Output CodeGen::op_list(SEXP e,
       my_cons = "lcons";
       break;
     default:
-      err("Internal error: non-list passed to op_list\n");
+      rcc_error("non-list passed to CodeGen::op_list");
       return Output::bogus;
     }
 
@@ -801,7 +802,7 @@ Output CodeGen::op_string(SEXP s) {
 Output CodeGen::op_vector(SEXP vec) {
   int len = Rf_length(vec);
   if (len != 1) {
-    err("unexpected non-scalar vector encountered");
+    rcc_error("unexpected non-scalar vector encountered");
     return Output::bogus;
   }
   int value;
@@ -846,7 +847,7 @@ Output CodeGen::op_vector(SEXP vec) {
     }
     break;
   default:
-    err("Unhandled type in op_vector");
+    rcc_error("Unhandled type in op_vector");
     return Output::bogus;
   }
 }

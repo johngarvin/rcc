@@ -7,6 +7,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <Macro.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
@@ -24,7 +25,7 @@ Expression SubexpBuffer::op_primsxp(SEXP e, string rho) {
     is_builtin = 1;
     break;
   default:
-    err("Internal error: op_primsxp called on non-(special or builtin)");
+    rcc_error("Internal error: op_primsxp called on non-(special or builtin)");
     is_builtin = 0; // silence the -Wall Who Cried "Uninitialized variable."
   }
   

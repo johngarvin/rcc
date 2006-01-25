@@ -14,6 +14,8 @@
 #include <analysis/LocalityDFSetElement.h>
 #include <analysis/LocalityDFSetIterator.h>
 
+#include <support/RccError.h>
+
 #include "LocalityDFSolver.h"
 
 using namespace OA;
@@ -76,7 +78,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 	OA_ptr<R_VarRef> ref; ref = make_var_ref_from_annotation(annot);
 	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
 	if (elem.ptrEqual(NULL)) {
-	  err("Name of a mention not found in mNodeInSetMap");
+	  rcc_error("Name of a mention not found in mNodeInSetMap");
 	}
 	LocalityType locality = elem->get_locality_type();
       
@@ -300,10 +302,10 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
       return new R_ArgVarRef(annot->getMention());
       break;
     default:
-      err("make_var_ref_from_annotation: unrecognized DefVar::SourceT");
+      rcc_error("make_var_ref_from_annotation: unrecognized DefVar::SourceT");
     }
   } else {
-    err("make_var_ref_from_annotation: unknown annotation type");
+    rcc_error("make_var_ref_from_annotation: unknown annotation type");
   }
   return 0;
 }
@@ -349,7 +351,7 @@ static LocalityType to_locality(Var::ScopeT st) {
     t = Locality_BOTTOM;
     break;
   default:
-    err("Non-lattice scope type in Var annotation\n");
+    rcc_error("Non-lattice scope type in Var annotation");
   }
   return t;
 }

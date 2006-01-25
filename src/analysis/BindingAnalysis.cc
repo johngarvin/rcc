@@ -1,6 +1,6 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
-#include <support/StringUtils.h>
+#include <support/RccError.h>
 
 #include "BindingAnalysis.h"
 
@@ -117,7 +117,7 @@ void BindingAnalysis::assign_scopes() {
 	}
 	break;
       default:
-	err("Unknown scope type encountered\n");
+	rcc_error("Unknown scope type encountered");
 	break;
       }
     }

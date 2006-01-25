@@ -112,6 +112,7 @@ rcc_bin_SOURCES =				\
   TransposeMatMul.c				\
 						\
   Parser.cc Parser.h				\
+  RccError.cc RccError.h                        \
   StringUtils.cc StringUtils.h			\
 						\
   IteratorStack.cc				\

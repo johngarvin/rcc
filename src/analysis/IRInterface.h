@@ -60,7 +60,7 @@
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefSet.h>
-#include <support/StringUtils.h>
+// #include <support/StringUtils.h>
 
 //-----------------------------------------------------------------------------
 // R IR representation

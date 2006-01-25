@@ -8,6 +8,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 #include <CodeGen.h>
@@ -84,7 +85,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
 		      TRUE, INVISIBLE, "");
     break;
   default:
-    err("Internal error: op_literal encountered bad type\n");
+    rcc_error("Internal error: op_literal encountered bad type");
     return Expression::bogus_exp; // never reached
     break;
   }

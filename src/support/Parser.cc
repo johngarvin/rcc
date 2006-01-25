@@ -19,8 +19,10 @@
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
 
+#include <string>
+
 #include <include/R/R_Parse.h>
-#include <support/StringUtils.h>
+#include <support/RccError.h>
 
 #include <support/Parser.h>
 
@@ -64,12 +66,12 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
       if (is_simple_source_call(e)) {
 	SEXP interp_arg = Rf_eval(CADR(e), R_GlobalEnv);
 	if (TYPEOF(interp_arg) != STRSXP) {
-	  err("Problem interpreting argument to 'source'\n");
+	  rcc_error("Problem interpreting argument to 'source'");
 	}
 	char * name_c = CHAR(STRING_ELT(interp_arg, 0));
 	FILE * new_file = fopen(name_c, "r");
 	if (new_file == NULL) {
-	  err("Couldn't open sourced file " + std::string(name_c) + "\n");
+	  rcc_error("Couldn't open sourced file " + std::string(name_c));
 	}
 	SEXP * new_exps;
 	parse_R(new_file, &new_exps);
@@ -88,8 +90,7 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
     case PARSE_INCOMPLETE:
       break;
     case PARSE_ERROR:
-      fprintf(stderr, "Error: parsing returned PARSE_ERROR.\n");
-      exit(1);
+      rcc_error("parsing returned PARSE_ERROR");
       break;
     case PARSE_EOF:
       break;

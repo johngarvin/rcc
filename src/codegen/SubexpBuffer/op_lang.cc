@@ -7,6 +7,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <Visibility.h>
 #include <ParseInfo.h>
 #include <CodeGen.h>
@@ -66,10 +67,10 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	  return op_clos_app(func, r_args, rho, resultProtection);
 	} else if (TYPEOF(op) == PROMSXP) {
 	  // ***************** TEST ME! ******************
-	  err("Hey! I don't think we should see a promise in LANGSXP!\n");
+	  rcc_error("Hey! I don't think we should see a promise in LANGSXP!");
 	  return op_exp(PREXPR(op), rho);
 	} else {
-	  err("Internal error: LANGSXP encountered non-function op\n");
+	  rcc_error("Internal error: LANGSXP encountered non-function op");
 	  return Expression::bogus_exp; // never reached
 	}
       }

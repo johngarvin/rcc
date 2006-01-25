@@ -11,6 +11,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <Visibility.h>
 #include <ParseInfo.h>
 
@@ -44,7 +45,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     } else { // not yet defined
       // direct version
       if (rho != "R_GlobalEnv") {
-	cerr << "Warning: function " << opt_R_name.c_str() << " is not in global scope; unable to make direct function call\n";
+	rcc_warn("function " + opt_R_name + " is not in global scope; unable to make direct function call");
       } else {
 	ParseInfo::global_fundefs->append_defs( 
 	  make_fundef_c(this,

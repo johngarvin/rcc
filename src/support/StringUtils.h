@@ -40,6 +40,5 @@ std::string quote(std::string str);
 std::string unp(std::string str);
 std::string strip_suffix(std::string str);
 int filename_pos(std::string str);
-void err(std::string message);
 
 #endif

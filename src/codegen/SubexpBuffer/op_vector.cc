@@ -9,6 +9,7 @@
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 
@@ -84,7 +85,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
     }
     break;
   default:
-    err("Internal error: op_vector encountered bad vector type\n");
+    rcc_error("Internal error: op_vector encountered bad vector type");
     return Expression::bogus_exp; // not reached
     break;
   }

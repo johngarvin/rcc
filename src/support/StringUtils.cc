@@ -30,7 +30,9 @@
 #include <ParseInfo.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
-#include <support/StringUtils.h>
+#include <support/RccError.h>
+
+#include "StringUtils.h"
 
 using namespace std;
 
@@ -79,7 +81,7 @@ string make_type(int t) {
   case EXTPTRSXP:  return "22 /* EXTPTRSXP */";
   case WEAKREFSXP: return "23 /* WEAKREFSXP */";
   case FUNSXP:     return "99 /* FUNSXP */";
-  default: err("make_type: invalid type"); return "BOGUS";
+  default: rcc_error("make_type: invalid type"); return "BOGUS";
   }
 }
 
@@ -196,9 +198,4 @@ int filename_pos(string str) {
   } else {
     return pos + 1;
   }
-}
-
-void err(string message) {
-  cerr << "Error: " << message;
-  exit(1);
 }

@@ -9,6 +9,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <CodeGen.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
@@ -106,7 +107,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
 		      TRUE, INVISIBLE, "");
     break;
   default:
-    err("Internal error: op_exp encountered bad type\n");
+    rcc_error("Internal error: op_exp encountered bad type");
     return Expression::bogus_exp; // never reached
     break;
   }

@@ -40,6 +40,8 @@
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/HandleInterface.h>
 
+#include <support/RccError.h>
+
 #include <analysis/IRInterface.h>
 
 using namespace OA;
@@ -148,7 +150,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
     ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(loop_body_c(e)));
 #endif
   } else {
-    err("getFirstInCompound: unrecognized statement type\n");
+    rcc_error("getFirstInCompound: unrecognized statement type");
   }
   return ptr;
 }
@@ -232,7 +234,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
 // Given a structured multi-way branch, return the number of cases.
 // The count does not include the default/catchall case.
 int R_IRInterface::numMultiCases(StmtHandle h) {
-  err("multicase branches don't exist in R\n");
+  rcc_error("multicase branches don't exist in R");
   return -1;
 }
 
@@ -241,7 +243,7 @@ int R_IRInterface::numMultiCases(StmtHandle h) {
 // 'bodyIndex'. The n targets are indexed [0..n-1].  The user must
 // free the iterator's memory via delete.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::multiBody(StmtHandle h, int bodyIndex) {
-  err("multicase branches don't exist in R\n");
+  rcc_error("multicase branches don't exist in R");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
 }
@@ -253,14 +255,14 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::multiBody(StmtHandle h, int bodyInde
 // the switch statement once a particular case has executed, so this
 // method would return true.
 bool R_IRInterface::isBreakImplied(StmtHandle multicond) {
-  err("multicase branches don't exist in R\n");
+  rcc_error("multicase branches don't exist in R");
   return false;
 }
 
 // Given a structured multi-way branch, return true if the body 
 // corresponding to target 'bodyIndex' is the default/catchall/ case.
 bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
-  err("multicase branches don't exist in R\n");
+  rcc_error("multicase branches don't exist in R");
   return false;
 }
 
@@ -268,7 +270,7 @@ bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
 // for the body corresponding to default/catchall case.  The user
 // must free the iterator's memory via delete.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
-  err("multicase branches don't exist R\n");
+  rcc_error("multicase branches don't exist R");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
 }
@@ -277,7 +279,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
 //! expression corresponding to target 'bodyIndex'. The n targets are
 //! indexed [0..n-1].
 ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
-  err("multicase branches don't exist R\n");
+  rcc_error("multicase branches don't exist R");
   return 0;
 }
 
@@ -289,7 +291,7 @@ ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
 // Given an unstructured two-way branch, return the label of the
 // target statement.  The second parameter is currently unused.
 StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
-  err("unstructured two-way branches don't exist in R");
+  rcc_error("unstructured two-way branches don't exist in R");
   return 0;
 }
 
@@ -301,14 +303,14 @@ StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
 // Given an unstructured multi-way branch, return the number of targets.
 // The count does not include the optional default/catchall case.
 int R_IRInterface::numUMultiTargets(StmtHandle h) {
-  err("unstructured multi-way branches don't exist in R");
+  rcc_error("unstructured multi-way branches don't exist in R");
   return -1;
 }
 
 // Given an unstructured multi-way branch, return the label of the target
 // statement at 'targetIndex'. The n targets are indexed [0..n-1]. 
 StmtLabel R_IRInterface::getUMultiTargetLabel(StmtHandle h, int targetIndex) {
-  err("unstructured multi-way branches don't exist in R");
+  rcc_error("unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -316,7 +318,7 @@ StmtLabel R_IRInterface::getUMultiTargetLabel(StmtHandle h, int targetIndex) {
 // corresponding to the optional default/catchall case.  Return 0
 // if there is no default target.
 StmtLabel R_IRInterface::getUMultiCatchallLabel(StmtHandle h) {
-  err("unstructured multi-way branches don't exist in R");
+  rcc_error("unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -325,7 +327,7 @@ StmtLabel R_IRInterface::getUMultiCatchallLabel(StmtHandle h) {
 // are indexed [0..n-1].
 // multiway target condition 
 ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
-  err("unstructured multi-way branches don't exist in R");
+  rcc_error("unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -337,20 +339,20 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 //! subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
   // FIXME
-  err("OpenAnalysis call graph interface not yet implemented\n");
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
 //! Return an iterator over all of the callsites in a given stmt
 OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
   // FIXME
-  err("OpenAnalysis call graph interface not yet implemented\n");
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
 //! Given a callsite as an ExprHandle, return the SymHandle of the
 //! procedure being called
 SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
   // FIXME
-  err("OpenAnalysis call graph interface not yet implemented\n");
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
 

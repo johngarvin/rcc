@@ -28,6 +28,8 @@
 #include <include/R/R_Internal.h>
 
 #include <analysis/AnalysisResults.h>
+#include <support/RccError.h>
+
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
 #include <Output.h>
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
       arg_err();
       break;
     default:
-      err("Unknown error: getopt() returned " + i_to_s(c) + "\n");
+      rcc_error("Unknown error: getopt() returned " + i_to_s(c));
       break;
     }
   }
@@ -106,11 +108,11 @@ int main(int argc, char *argv[]) {
     in_file_exists = true;
     fullname_c = argv[optind++];
     if (optind < argc) {
-      printf("Warning: ignoring extra arguments: ");
+      cerr << "Warning: ignoring extra arguments: ";
       while (optind < argc) {
-	printf("%s ", argv[optind++]);
+	cerr << argv[optind++] << " ";
       }
-      printf("\n");
+      cerr << endl;
     }
   } else {  // no filename specified
     in_file_exists = FALSE;
@@ -280,7 +282,7 @@ int main(int argc, char *argv[]) {
   }
   ofstream out_file(out_filename.c_str());
   if (!out_file) {
-    err("Couldn't open file " + out_filename + " for output");
+    rcc_error("Couldn't open file " + out_filename + " for output");
   }
   
   string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
@@ -336,7 +338,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (!out_file) {
-    err("Couldn't write to file " + out_filename);
+    rcc_error("Couldn't write to file " + out_filename);
   }
   if (ParseInfo::get_problem_flag()) {
     return 1;

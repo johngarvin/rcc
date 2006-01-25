@@ -4,6 +4,7 @@
 
 #include <include/R/R_RInternals.h>
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
@@ -20,7 +21,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
 				ResultStatus resultStatus) {
   SEXP sym, body, val;
   sym = CAR(for_iv_c(e));
-  if ( !Rf_isSymbol(sym) ) err("non-symbol loop variable\n");
+  if ( !Rf_isSymbol(sym) ) rcc_error("non-symbol loop variable found in for loop");
   Expression range = op_exp(for_range_c(e), rho);
   decls += "int n;\n";
   decls += "int rangetype;\n";

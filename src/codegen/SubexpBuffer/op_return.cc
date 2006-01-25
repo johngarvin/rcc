@@ -4,7 +4,7 @@
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include <include/R/R_RInternals.h>
-#include <support/StringUtils.h>
+// #include <support/StringUtils.h>
 #include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 

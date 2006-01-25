@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 
 #include "Macro.h"
 
@@ -48,7 +49,7 @@ const Macro MacroFactory::get_macro(const std::string name) const {
   const std::string filename = m_path + "/" + name + ".macro";
   std::ifstream mac_file(filename.c_str());
   if (mac_file.fail()) {
-    err("Couldn't open macro file " + filename + "\n");
+    rcc_error("Couldn't open macro file " + filename);
   }
   ss << mac_file.rdbuf();
   mac_file.close();

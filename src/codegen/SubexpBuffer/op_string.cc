@@ -21,6 +21,6 @@ Expression SubexpBuffer::op_string(SEXP s) {
     str += string(CHAR(STRING_ELT(s, i)));
   }
   string out = ParseInfo::global_constants->appl1("mkString", 
-				      quote(escape(str)));
+						  quote(escape(str)));
   return Expression(out, FALSE, VISIBLE, "");
 }
