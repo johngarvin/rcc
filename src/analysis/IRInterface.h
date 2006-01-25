@@ -51,6 +51,7 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
+#include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
 
@@ -66,6 +67,7 @@
 
 //! OpenAnalysis interface to the R AST
 class R_IRInterface : public OA::CFG::CFGIRInterfaceDefault,
+		      public OA::CallGraph::CallGraphIRInterface,
 		      public OA::SSA::SSAIRInterface
 {
 public:
@@ -200,6 +202,25 @@ public:
   //! multiway target condition 
   OA::ExprHandle getUMultiCondition(OA::StmtHandle h, int targetIndex);
 
+  //----------------------------------------------------------------------
+  // Information for building call graphs
+  //----------------------------------------------------------------------
+
+  //! Given a subprogram return an IRStmtIterator for the entire
+  //! subprogram
+  OA::OA_ptr<OA::IRStmtIterator> getStmtIterator(OA::ProcHandle h);
+
+  //! Return an iterator over all of the callsites in a given stmt
+  OA::OA_ptr<OA::IRCallsiteIterator> getCallsites(OA::StmtHandle h);
+
+  //! Given a ProcHandle, return its SymHandle
+  // OA::SymHandle getProcSymHandle(OA::ProcHandle h);
+  // already defined for implementing CFG interface
+
+  //! Given a callsite as an ExprHandle, return the SymHandle of the
+  //! procedure being called
+  OA::SymHandle getSymHandle(OA::ExprHandle expr);
+
   //--------------------------------------------------------
   // Def/use info for SSA
   //--------------------------------------------------------
@@ -236,32 +257,6 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 //--------------------------------------------------------------------
 // Iterators
 //--------------------------------------------------------------------
-
-// FIXME: I don't think R_IRProcIterator is being used.
-// If it is, need to change build_procs to use the scope tree.
-
-//! Enumerate all the procedures in a certain IR
-class R_IRProcIterator : public OA::IRProcIterator {
-public:
-  R_IRProcIterator(OA::StmtHandle _exp)
-    : exp((SEXP)_exp.hval()), iter((SEXP)_exp.hval()) {
-    build_procs();
-    proc_iter = procs.begin();
-  }
-  virtual ~R_IRProcIterator() { }
-
-  OA::ProcHandle current() const;
-  bool isValid() const;
-  void operator++();
-  void reset();
-
-private:
-  const SEXP exp;
-  R_PreorderIterator iter;
-  std::list<SEXP> procs;
-  std::list<SEXP>::const_iterator proc_iter;
-  void build_procs();
-};
 
 //! Enumerate all the statements in a program region, e.g. all the statements
 //! in a procedure or a loop. Does not descend into compound statements.

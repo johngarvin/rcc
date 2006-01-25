@@ -329,8 +329,34 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
   return 0;
 }
 
+//----------------------------------------------------------------------
+// Information for building call graphs
+//----------------------------------------------------------------------
+
+//! Given a subprogram return an IRStmtIterator for the entire
+//! subprogram
+OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
+  // FIXME
+  err("OpenAnalysis call graph interface not yet implemented\n");
+}
+
+//! Return an iterator over all of the callsites in a given stmt
+OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
+  // FIXME
+  err("OpenAnalysis call graph interface not yet implemented\n");
+}
+
+//! Given a callsite as an ExprHandle, return the SymHandle of the
+//! procedure being called
+SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
+  // FIXME
+  err("OpenAnalysis call graph interface not yet implemented\n");
+}
+
+
 //--------------------------------------------------------
-// Obtain uses and defs
+// Obtain uses and defs for SSA
+// FIXME: Currently doesn't handle uses/defs via procedure calls
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
@@ -438,67 +464,6 @@ std::string R_IRInterface::toString(OA::ConstSymHandle h) {
 std::string R_IRInterface::toString(OA::ConstValHandle h) {
   return "";
 }
-
-//--------------------------------------------------------------------
-// R_IRProcIterator
-//--------------------------------------------------------------------
-
-OA::ProcHandle R_IRProcIterator::current() const {
-  return HandleInterface::make_proc_h(*proc_iter);
-}
-
-bool R_IRProcIterator::isValid() const { 
-  return (proc_iter != procs.end());
-}
-
-void R_IRProcIterator::operator++() {
-  ++proc_iter;
-}
-
-void R_IRProcIterator::reset() {
-  proc_iter = procs.begin();
-}
-
-// build_procs is obsolete; iterate over the scope tree instead.
-#if 0
-void R_IRProcIterator::build_procs() {
-  // iter is R_PreorderIterator(exp)
-
-  // Tempted to make these file static? Me too, but that'll blow up
-  // because they can't be defined until after R_init happens.
-  static const SEXP leftarrow_sym = Rf_install("<-");
-  static const SEXP function_sym = Rf_install("function");
-
-  // Two passes: first, find the common case: functions of the form
-  // var <- function(...) ... Then find the anonymous functions left
-  // over.
-
-  // Find functions of the form var <- function(...) ...
-  for(iter.reset(); iter.isValid(); ++iter) {
-    if (TYPEOF(iter.current()) == LANGSXP
-        && CAR(iter.current()) == leftarrow_sym
-	  // CADDR = RHS of assignment
-	&& TYPEOF(CADDR(iter.current())) == LANGSXP
-	&& CAR(CADDR(iter.current())) == function_sym) {
-      procs.push_back(CADDR(iter.current()));
-      proc_names[CADDR(iter.current())] = CADR(iter.current());
-    }
-  }
-
-  // Find anonymous functions
-  iter.reset();
-  int n = 0;
-  for( ; iter.isValid(); ++iter) {
-    if (TYPEOF(iter.current()) == LANGSXP
-	&& CAR(iter.current()) == function_sym
-	&& proc_names.find(iter.current()) == proc_names.end()) {
-      procs.push_back(iter.current());
-      string name = "anon*" + i_to_s(n++);
-      proc_names[iter.current()] = Rf_install(name.c_str());
-    }
-  }
-}
-#endif
 
 //--------------------------------------------------------------------
 // R_RegionStmtIterator
