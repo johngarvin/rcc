@@ -1,7 +1,5 @@
 // -*- Mode: C++ -*-
 
-// #include <support/StringUtils.h>
-
 #include "CallGraphBuilder.h"
 
 using namespace RAnnot;

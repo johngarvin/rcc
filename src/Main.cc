@@ -168,6 +168,7 @@ int main(int argc, char *argv[]) {
 
   // perform analysis
   R_Analyst an(program);
+  bool analysis_ok = an.perform_analysis();
 
   if (analysis_debug) {
     FuncInfo *scope_tree = an.get_scope_tree_root();
@@ -192,15 +193,6 @@ int main(int argc, char *argv[]) {
     e = CDR(e);
   }
 
-  // If certain conditions are not met, we're forced to output trivial code.
-  bool trivial_comp = false;
-  if (ParseInfo::allow_oo()
-      || ParseInfo::allow_envir_manip()
-      || ParseInfo::allow_special_redef())
-  {
-    trivial_comp = true;
-  }
-
 #ifdef USE_OUTPUT_CODEGEN
   // output top-level expressions (Output version)
   string g_decls, g_code, code;
@@ -208,10 +200,11 @@ int main(int argc, char *argv[]) {
     string evar = "e" + i_to_s(i);
     decls += "SEXP " + evar + ";\n";
     Output exp;
-    if (trivial_comp) {
-      exp = CodeGen::op_literal(CAR(r_expressions), "R_GlobalEnv");
-    } else {
+    if (analysis_ok) {
       exp = CodeGen::op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
+    } else {
+      // compile trivially
+      exp = CodeGen::op_literal(CAR(r_expressions), "R_GlobalEnv");
     }      
     string this_exp = exp.decls()
       + Visibility::emit_set_if_visible(exp.visibility())
@@ -235,17 +228,18 @@ int main(int argc, char *argv[]) {
   }
   exprs = g_decls + g_code + code;
   exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
-#else
+#else  // we're using SubexpBuffer codegen
   // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++) {
     SubexpBuffer subexps;
     Expression exp;
-    if (trivial_comp) {
+    if (analysis_ok) {
+      exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
+    } else {
+      // compile trivially
       Expression exp1 = subexps.op_literal(CAR(r_expressions), "R_GlobalEnv");      
       exp = Expression(emit_call2("Rf_eval", exp1.var, "R_GlobalEnv"),
 		       DEPENDENT, CHECK_VISIBLE, exp1.del_text);
-    } else {
-      exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
     }
     string this_exp;
     this_exp += subexps.output_decls();

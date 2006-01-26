@@ -1,5 +1,10 @@
 #include <algorithm>
 
+#include <ParseInfo.h>
+
+#include <support/RccError.h>
+
+#include <analysis/AnalysisException.h>
 #include <analysis/Annotation.h>
 #include <analysis/Utils.h>
 #include <analysis/SimpleIterators.h>
@@ -20,15 +25,34 @@ using namespace RAnnot;
 using namespace RProp;
 
 //! construct an R_Analyst by providing an SEXP representing the whole program
-R_Analyst::R_Analyst(SEXP _program) : m_program(_program) {
-  m_interface = new R_IRInterface();
-  m_scope_tree_root = ScopeTreeBuilder::build_scope_tree_with_given_root(_program);
-  build_cfgs();
-  build_local_variable_info();
-  build_local_function_info();
-  build_use_def_info();
-  build_bindings();
-  build_call_graph();
+R_Analyst::R_Analyst(SEXP _program) : m_program(_program)
+  {}
+
+bool R_Analyst::perform_analysis() {
+  try {
+    m_interface = new R_IRInterface();
+    m_scope_tree_root = ScopeTreeBuilder::build_scope_tree_with_given_root(m_program);
+    if (ParseInfo::allow_oo()           ||
+	ParseInfo::allow_envir_manip()  ||
+	ParseInfo::allow_special_redef())
+    {
+      throw AnalysisException();
+    }
+    build_cfgs();
+    build_local_variable_info();
+    build_local_function_info();
+    build_locality_info();
+    build_bindings();
+    build_call_graph();
+    return true;
+  }
+  catch (AnalysisException ae) {
+    // One phase of analysis rejected a program. Get rid of the
+    // information in preparation to compile trivially.
+    rcc_warn("analysis encountered problems; compiling trivially");
+    clearProperties();
+    return false;
+  }
 }
 
 FuncInfo *R_Analyst::get_scope_tree_root() {
@@ -74,6 +98,7 @@ void R_Analyst::build_cfgs() {
   }
 }
 
+//! Collect basic local info on variables: use/def, "<-"/"<<-", etc.
 void R_Analyst::build_local_variable_info() {
   // each function
   FuncInfoIterator fii(m_scope_tree_root);
@@ -97,6 +122,8 @@ void R_Analyst::build_local_variable_info() {
   }
 }
 
+//! Discovers local information on procedures: arguments, names
+//! mentioned, etc.
 void R_Analyst::build_local_function_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
@@ -106,7 +133,9 @@ void R_Analyst::build_local_function_info() {
   }
 }
 
-void R_Analyst::build_use_def_info() {
+//! For each procedure, use control flow to discover locality for each
+//! name (whether local or free)
+void R_Analyst::build_locality_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
@@ -116,11 +145,14 @@ void R_Analyst::build_use_def_info() {
   }
 }
 
+//! Perform binding analysis to resolve names to a single scope if
+//! possible
 void R_Analyst::build_bindings() {
   BindingAnalysis ba(m_scope_tree_root);
   ba.perform_analysis();
 }
 
+//! For each procedure, discover which other procedures are called
 void R_Analyst::build_call_graph() {
   CallGraphBuilder cgb(m_scope_tree_root);
   cgb.perform_analysis();

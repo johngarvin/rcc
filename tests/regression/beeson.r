@@ -1,5 +1,7 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
+set.seed(3)  # initialize RNG for reproducible results
+
 TWOPI <<- 2*pi
 
 dist <- function (x1,y1,x2,y2) {

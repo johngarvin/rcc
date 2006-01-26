@@ -29,6 +29,9 @@ public:
   //! construct an R_Analyst by providing an SEXP representing the whole program
   R_Analyst(SEXP _program);
 
+  //! Perform analysis. Return true if analysis was successful, false otherwise.
+  bool perform_analysis();
+
   //! methods to get information
   OA::OA_ptr<R_IRInterface> get_interface() { return m_interface; }
 
@@ -48,7 +51,7 @@ private:
   RAnnot::FuncInfo *m_scope_tree_root;
 
   void build_cfgs();
-  void build_use_def_info();
+  void build_locality_info();
   void build_local_variable_info();
   void build_local_function_info();
   void build_bindings();

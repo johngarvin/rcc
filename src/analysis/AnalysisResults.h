@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.4 2005/09/29 20:46:16 fzhao Exp $ */
+/* $Id: AnalysisResults.h,v 1.5 2006/01/26 23:44:03 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -42,7 +42,7 @@ extern func_attribute_map  func_unique_defintion;
 #define putProperty(name, sexp, prop, own) \
   analysisResults.insert(name::name ## Property, sexp, prop, own)
 
-
+void clearProperties();
 
 //**************************************************************************/
 // extern declarations for global variables

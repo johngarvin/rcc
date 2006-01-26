@@ -1,3 +1,4 @@
+#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 #include <support/RccError.h>
@@ -87,6 +88,7 @@ void BindingAnalysis::assign_scopes() {
       switch(v->getScopeType()) {
       case Var::Var_INDEFINITE:
 	v->setBoundScope(0);
+	// throw AnalysisException();   // uncomment if we decide to bail in case of indefinites
 	continue;
       case Var::Var_LOCAL:
 	v->setBoundScope(fi);
@@ -106,6 +108,7 @@ void BindingAnalysis::assign_scopes() {
 	      // defined in more than one ancestor scope
 	      v->setScopeType(Var::Var_FREE);
 	      v->setBoundScope(0);
+	      // throw AnalysisException();  // uncomment if we decide to bail in case of indefinites
 	      break;     // stop searching through ancestors
 	    }
 	  }
