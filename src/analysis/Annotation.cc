@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.13 2006/01/13 16:49:05 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.14 2006/02/19 02:56:12 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -146,6 +146,34 @@ Var::dump(std::ostream& os) const
   endObjDump(os, Var);
 }
 
+const std::string typeName(const Var::UseDefT x)
+{
+  switch(x) {
+  case Var::Var_USE: return "USE";
+  case Var::Var_DEF: return "DEF";
+  }
+}
+
+const std::string typeName(const Var::MayMustT x)
+{
+  switch(x) {
+  case Var::Var_MAY: return "MAY";
+  case Var::Var_MUST: return "MUST";
+  }
+}
+
+const std::string typeName(const Var::ScopeT x)
+{
+  switch(x) {
+  case Var::Var_TOP: return "TOP";
+  case Var::Var_LOCAL: return "LOCAL";
+  case Var::Var_GLOBAL: return "GLOBAL";
+  case Var::Var_FREE_ONE_SCOPE: return "FREE_ONE_SCOPE";
+  case Var::Var_FREE: return "FREE";
+  case Var::Var_INDEFINITE: return "INDEFINITE";
+  }
+}
+
 //****************************************************************************
 // UseVar
 //****************************************************************************
@@ -171,13 +199,21 @@ UseVar::dump(std::ostream& os) const
   //dumpSEXP(os,mSEXP);
   SEXP name = getName();
   dumpSEXP(os,name);
-  dumpVar(os,mUseDefType);
-  dumpVar(os,mMayMustType);
-  dumpVar(os,mScopeType);
+  dumpName(os,mUseDefType);
+  dumpName(os,mMayMustType);
+  dumpName(os,mScopeType);
   //dumpPtr(os,mReachingDef);
   dumpPtr(os,mBoundScope);
-  dumpVar(os,mPositionType);
+  dumpName(os,mPositionType);
   endObjDump(os,UseVar);
+}
+
+const std::string typeName(const UseVar::PositionT x)
+{
+  switch(x) {
+  case UseVar::UseVar_FUNCTION: return "FUNCTION";
+  case UseVar::UseVar_ARGUMENT: return "ARGUMENT";
+  }
 }
 
 //****************************************************************************
@@ -212,13 +248,22 @@ DefVar::dump(std::ostream& os) const
   //dumpSEXP(os,mSEXP);
   SEXP name = getName();
   dumpSEXP(os,name);
-  dumpVar(os,mUseDefType);
-  dumpVar(os,mMayMustType);
-  dumpVar(os,mScopeType);
+  dumpName(os,mUseDefType);
+  dumpName(os,mMayMustType);
+  dumpName(os,mScopeType);
   // dumpPtr(os,mReachingDef);
   dumpPtr(os,mBoundScope);
-  dumpVar(os,mSourceType);
+  dumpName(os,mSourceType);
   endObjDump(os,DefVar);
+}
+
+const std::string typeName(const DefVar::SourceT x)
+{
+  switch(x) {
+  case DefVar::DefVar_ASSIGN: return "ASSIGN";
+  case DefVar::DefVar_FORMAL: return "FORMAL";
+  case DefVar::DefVar_PHI:    return "PHI";
+  }
 }
 
 //****************************************************************************

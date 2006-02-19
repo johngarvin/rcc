@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.14 2006/01/13 16:49:05 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.15 2006/02/19 02:56:12 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -360,8 +360,12 @@ protected:
   ScopeT mScopeType;
   VarInfo* mReachingDef; // (not owned)
   FuncInfo* mBoundScope;  // (not owned)
-  
 };
+
+
+const std::string typeName(const Var::UseDefT x);
+const std::string typeName(const Var::MayMustT x);
+const std::string typeName(const Var::ScopeT x);
 
 // ---------------------------------------------------------------------------
 // UseVar: A variable reference that is a use
@@ -400,6 +404,9 @@ public:
 private:
   PositionT mPositionType;
 };
+
+const std::string typeName(const UseVar::PositionT x);
+
 
 // ---------------------------------------------------------------------------
 // DefVar: A variable reference that is a def
@@ -447,6 +454,7 @@ private:
   // set of uses reached?
 };
 
+const std::string typeName(const DefVar::SourceT x);
 
 // ---------------------------------------------------------------------------
 // FuncVar: A function reference (includes uses and defs)

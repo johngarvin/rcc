@@ -36,6 +36,11 @@
   os << var << " "; \
   dumpVarEnd(os, var)
 
+#define dumpName(os, var)     \
+  dumpVarStart(os, var);      \
+  os << typeName(var) << " "; \
+  dumpVarEnd(os, var)
+
 #define dumpPtr(os, ptr) \
   dumpVarStart(os, ptr); \
   os << (void *) ptr; \
@@ -44,7 +49,7 @@
 #define dumpSEXP(os, sexp) \
   dumpVarStart(os, sexp); \
   os << "(WARNING: Rf_PrintValue does not dump in target ostream)" << std::endl;	\
-  Rf_PrintValue(sexp);				 \
+  Rf_PrintValue(sexp);	  \
   dumpVarEnd(os, sexp)
 
 #define dumpObj(os, obj) \
