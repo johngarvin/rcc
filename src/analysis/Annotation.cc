@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.14 2006/02/19 02:56:12 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.15 2006/03/06 22:08:55 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -440,13 +440,14 @@ std::ostream&
 FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
+  dumpPtr(os, this);
+  dumpSEXP(os, mFirstName);
   dumpVar(os, mNumArgs);
   dumpVar(os, mHasVarArgs);
   dumpVar(os, mCName);
   dumpVar(os, mRequiresContext);
   dumpObj(os, mST);
   //dumpObj(os, mCFG);      // can't call CFG::dump; it requires the IRInterface
-  dumpSEXP(os, mFirstName);
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);
   os << "Begin mentions:" << std::endl;
