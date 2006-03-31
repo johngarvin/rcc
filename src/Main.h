@@ -44,7 +44,6 @@ extern "C" {
 #include <support/Parser.h>
 
 #include <analysis/Analyst.h>
-#include <analysis/AnnotationSet.h>
 #include <analysis/Utils.h>
 
 #include <GetName.h>

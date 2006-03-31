@@ -4,31 +4,33 @@
 
 // includes
 
-#include <set>
-#include <map>
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
 
 #include <analysis/IRInterface.h>
-#include <analysis/AnnotationSet.h>
 
 // forward declarations
 
 // from Annotation.h
-class RAnnot::FuncInfo;
-class RAnnot::Var;
+
+namespace RAnnot {
+class FuncInfo;
+class Var;
+}
 
 //! R_Analyst
 //! 
-//! Manager for annotations. Given requests for information, perform
-//! the analysis or return data already stored.
+//! Singleton manager for annotations.
 
 class R_Analyst {
-public:
-  //! construct an R_Analyst by providing an SEXP representing the whole program
-  R_Analyst(SEXP _program);
 
+  // implement Singleton pattern
+public:
+  static R_Analyst * get_instance(SEXP _program); // regular Singleton: construct or return
+  static R_Analyst * get_instance();  // only get the existing instance; error if not instantiated
+
+public:
   //! Perform analysis. Return true if analysis was successful, false otherwise.
   bool perform_analysis();
 
@@ -43,6 +45,13 @@ public:
 
   void dump_cfg(std::ostream &, SEXP proc);
   void dump_all_cfgs(std::ostream &);
+
+protected:
+  //! construct an R_Analyst by providing an SEXP representing the whole program
+  R_Analyst(SEXP _program);
+
+private:
+  static R_Analyst * m_instance;
 
 private:
   SEXP m_program;

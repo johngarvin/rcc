@@ -8,8 +8,10 @@ CallGraphBuilder::CallGraphBuilder(FuncInfo* root)
   : m_root(root)
   {}
 
+//! FIXME: implement this with multiple scopes
 void CallGraphBuilder::perform_analysis()
 {
+#if 0
   // each scope
   for(FuncInfoIterator fii(m_root, PreOrder); fii.IsValid(); ++fii) {
     FuncInfo* fi = fii.Current();
@@ -34,4 +36,5 @@ void CallGraphBuilder::perform_analysis()
       }
     }
   }
+#endif
 }

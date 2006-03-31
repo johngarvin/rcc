@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.5 2005/09/01 22:06:14 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.6 2006/03/31 16:37:27 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -27,7 +27,7 @@
 //*************************** User Include Files ****************************
 
 #include "PropertyHndl.h"
-#include "AnnotationSet.h"
+#include "AnnotationMap.h"
 
 //*************************** Forward Declarations ***************************
 
@@ -41,11 +41,11 @@ namespace RProp {
 
 // ---------------------------------------------------------------------------
 // PropertySet: Associates arbitrary property names with
-// AnnotationSets.  For example, a property might be the result of an
+// AnnotationMaps.  For example, a property might be the result of an
 // analysis pass over the R AST.
 // ---------------------------------------------------------------------------
 class PropertySet
-  : public std::map<PropertyHndlT, RAnnot::AnnotationSet*>
+  : public std::map<PropertyHndlT, RAnnot::AnnotationMap*>
 {
 public:
   // -------------------------------------------------------

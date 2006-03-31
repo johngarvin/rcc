@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.5 2005/09/01 22:06:14 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.6 2006/03/31 16:37:27 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,6 +29,12 @@
 
 #include "PropertySet.h"
 
+// FIXME: Delete the following when insert() goes away.
+#include <analysis/VarAnnotationMap.h>
+#include <analysis/FuncInfoAnnotationMap.h>
+#include <analysis/ExpressionInfoAnnotationMap.h>
+#include <analysis/FormalArgInfoAnnotationMap.h>
+
 using namespace RAnnot;
 
 //*************************** Forward Declarations ***************************
@@ -54,20 +60,31 @@ PropertySet::~PropertySet()
 void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
 			 AnnotationBase *annot, bool ownsAnnotations) 
 {
-  AnnotationSet *annotations = (*this)[propertyName];
-  if (annotations == NULL) {
-    annotations = new AnnotationSet(ownsAnnotations);
+  AnnotationMap *annotations = (*this)[propertyName];
+  if (annotations == 0) {
+    // temporary ugly conditional. After refactoring is complete this
+    // method will disappear anyway.
+    if (propertyName == Var::VarProperty) {
+      annotations = new VarAnnotationMap(ownsAnnotations);
+    } else if (propertyName == FuncInfo::FuncInfoProperty) {
+      annotations = new FuncInfoAnnotationMap(ownsAnnotations);
+    } else if (propertyName == FormalArgInfo::FormalArgInfoProperty) {
+      annotations = new FormalArgInfoAnnotationMap(ownsAnnotations);
+    } else if (propertyName == ExpressionInfo::ExpressionInfoProperty) {
+      annotations = new ExpressionInfoAnnotationMap(ownsAnnotations);
+    } else {
+      rcc_error("Unhandled property type " + std::string(propertyName));
+    }
     (*this)[propertyName] = annotations; 
   } 
 
   (*annotations)[reinterpret_cast<OA::irhandle_t>(s)] = annot;
 }
 
-
 AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)
 {
-  AnnotationSet *annotations = (*this)[propertyName];
-  if (annotations == NULL) return NULL;
+  AnnotationMap *annotations = (*this)[propertyName];
+  if (annotations == 0) return 0;
   return (*annotations)[reinterpret_cast<OA::irhandle_t>(s)];
 }
 

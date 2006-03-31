@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.15 2006/03/06 22:08:55 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.16 2006/03/31 16:37:26 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -142,7 +142,6 @@ std::ostream&
 Var::dump(std::ostream& os) const
 {
   beginObjDump(os, Var);
-  dumpObj(os, mReachingDef);
   endObjDump(os, Var);
 }
 
@@ -202,8 +201,7 @@ UseVar::dump(std::ostream& os) const
   dumpName(os,mUseDefType);
   dumpName(os,mMayMustType);
   dumpName(os,mScopeType);
-  //dumpPtr(os,mReachingDef);
-  dumpPtr(os,mBoundScope);
+  dumpPtr(os,mContainingScope);
   dumpName(os,mPositionType);
   endObjDump(os,UseVar);
 }
@@ -251,8 +249,7 @@ DefVar::dump(std::ostream& os) const
   dumpName(os,mUseDefType);
   dumpName(os,mMayMustType);
   dumpName(os,mScopeType);
-  // dumpPtr(os,mReachingDef);
-  dumpPtr(os,mBoundScope);
+  dumpPtr(os,mContainingScope);
   dumpName(os,mSourceType);
   endObjDump(os,DefVar);
 }
@@ -329,7 +326,6 @@ std::ostream&
 VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
-  dumpVar(os, mIsSingleton);
   endObjDump(os, VarInfo);
 }
 
@@ -339,6 +335,9 @@ VarInfo::dump(std::ostream& os) const
 //****************************************************************************
 
 PropertyHndlT FuncInfo::FuncInfoProperty = "FuncInfo";
+
+//! Initialize global scope as nonexistent static; will be filled in later
+FuncInfo * FuncInfo::mGlobal = 0;
 
 FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mLexicalParent(lexParent),

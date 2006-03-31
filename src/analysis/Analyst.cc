@@ -16,7 +16,7 @@
 #include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
-#include <analysis/BindingAnalysis.h>
+// #include <analysis/BindingAnalysis.h>
 #include <analysis/CallGraphBuilder.h>
 
 #include "Analyst.h"
@@ -24,9 +24,34 @@
 using namespace RAnnot;
 using namespace RProp;
 
+// ----- implement Singleton pattern -----
+
+// the only instance
+R_Analyst * R_Analyst::m_instance = 0;
+
+// static instantiation
+R_Analyst * R_Analyst::get_instance(SEXP _program) {
+  if (m_instance == 0) {
+    m_instance = new R_Analyst(_program);
+  }
+  return m_instance;
+}
+
+// just get the existing instance; error if not yet instantiated
+R_Analyst * R_Analyst::get_instance() {
+  if (m_instance == 0) {
+    rcc_error("R_Analyst is not yet instantiated");
+  }
+  return m_instance;
+}
+
+// ----- constructor -----
+
 //! construct an R_Analyst by providing an SEXP representing the whole program
 R_Analyst::R_Analyst(SEXP _program) : m_program(_program)
   {}
+
+// ----- analysis -----
 
 bool R_Analyst::perform_analysis() {
   try {
@@ -39,7 +64,7 @@ bool R_Analyst::perform_analysis() {
       throw AnalysisException();
     }
     build_cfgs();
-    build_local_variable_info();
+    //    build_local_variable_info();
     build_local_function_info();
     build_locality_info();
     build_bindings();
@@ -84,8 +109,6 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
 void R_Analyst::build_cfgs() {
   FuncInfo *finfo = get_scope_tree_root();
   OA::CFG::ManagerStandard cfg_man(m_interface, true); // build statement-level CFGs
-
-  OA::OA_ptr<RAnnot::AnnotationSet> aset;
 
   // preorder traversal of scope tree
   FuncInfoIterator fii(finfo);
@@ -148,8 +171,8 @@ void R_Analyst::build_locality_info() {
 //! Perform binding analysis to resolve names to a single scope if
 //! possible
 void R_Analyst::build_bindings() {
-  BindingAnalysis ba(m_scope_tree_root);
-  ba.perform_analysis();
+  //  BindingAnalysis ba(m_scope_tree_root);
+  //  ba.perform_analysis();
 }
 
 //! For each procedure, discover which other procedures are called

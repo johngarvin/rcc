@@ -7,21 +7,22 @@
 
 using namespace RAnnot;
 
+// ----- type definitions for readability -----
+
+typedef LocalVariableAnalysis::const_iterator const_iterator;
+
 LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
-  : m_stmt(_stmt), m_stmt_annot(new ExpressionInfo())
-{
-  m_stmt_annot->setDefn(m_stmt);
-}
+  : m_stmt(_stmt), m_vars()
+{}
 
 //! Traverse the given SEXP and set variable annotations with local
 //! syntactic information.
 void LocalVariableAnalysis::perform_analysis() {
   build_ud_rhs(m_stmt);
-  // adds Var properties, adds Var pointers to m_annot
-
-  // now annotate the original statement with the set of Var annotations
-  putProperty(ExpressionInfo, m_stmt, m_stmt_annot, true);
 }
+
+const_iterator LocalVariableAnalysis::begin() const { return m_vars.begin(); }
+const_iterator LocalVariableAnalysis::end() const { return m_vars.end(); }
 
 //! Traverse the given SEXP (not an lvalue) and set variable
 //! annotations with local syntactic information.
@@ -37,8 +38,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
     var_annot->setMayMustType(Var::Var_MUST);
     var_annot->setScopeType(Var::Var_TOP);
-    putProperty(Var, cell, var_annot, true);
-    m_stmt_annot->insert_var(var_annot);
+    m_vars.push_back(var_annot);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(assign_rhs_c(e));
@@ -79,8 +79,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
       var_annot->setScopeType(Var::Var_TOP);
-      putProperty(Var, e, var_annot, true);
-      m_stmt_annot->insert_var(var_annot);
+      m_vars.push_back(var_annot);
     } else {
       build_ud_rhs(e);
     }
@@ -129,8 +128,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
     } else {                                             // may-def
       var_annot->setScopeType(Var::Var_TOP);
     }
-    putProperty(Var, cell, var_annot, true);
-    m_stmt_annot->insert_var(var_annot);
+    m_vars.push_back(var_annot);
   } else if (is_struct_field(e)) {
     build_ud_lhs(struct_field_lhs_c(e), rhs, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {

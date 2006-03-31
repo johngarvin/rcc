@@ -5,7 +5,6 @@
 
 #include <include/R/R_Defn.h>
 #include <support/StringUtils.h>
-#include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 

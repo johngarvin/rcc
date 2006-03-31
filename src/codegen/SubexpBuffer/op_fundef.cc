@@ -6,7 +6,6 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/AnnotationSet.h>
 #include <analysis/Annotation.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>

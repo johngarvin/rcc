@@ -62,45 +62,35 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
   Var * annot = getProperty(Var, cell);
   if (annot->getScopeType() == Var::Var_GLOBAL) {
-    VarInfo * vi_annot = annot->getReachingDef();
-    //    if (vi_annot != 0) {            // unique reaching definition exists
-    if (true) {                          // FIXME: annotation lying about unique binding
-      // why do we need to ask about the getReachingDef annotation?
-
-
-      // look up the name in loc_map and binding_map. loc_map records a
-      // "location" for each global name -- a pointer to an entry in an
-      // environment, used for variables that may be redefined.
-      // binding_map is used for global variables with
-      // constant values; it records the constant value of each name.
-      map<string, string>::iterator loc, value;
-      loc = ParseInfo::loc_map.find(name);
-      value = ParseInfo::binding_map.find(name);
-      string h;
-      if (loc != ParseInfo::loc_map.end()) {
-	// in location map
-	h = sb->appl1("R_GetVarLocValue", loc->second, Unprotected);
-	return Expression(h, true, VISIBLE, "");
-      } else if (value != ParseInfo::binding_map.end()) {
-	// in binding map
-	return Expression(value->second, false, VISIBLE, "");
+    // look up the name in loc_map and binding_map. loc_map records a
+    // "location" for each global name -- a pointer to an entry in an
+    // environment, used for variables that may be redefined.
+    // binding_map is used for global variables with
+    // constant values; it records the constant value of each name.
+    map<string, string>::iterator loc, value;
+    loc = ParseInfo::loc_map.find(name);
+    value = ParseInfo::binding_map.find(name);
+    string h;
+    if (loc != ParseInfo::loc_map.end()) {
+      // in location map
+      h = sb->appl1("R_GetVarLocValue", loc->second, Unprotected);
+      return Expression(h, true, VISIBLE, "");
+    } else if (value != ParseInfo::binding_map.end()) {
+      // in binding map
+      return Expression(value->second, false, VISIBLE, "");
+    } else {
+      // Built-in or user-defined name? Look up in global environment
+      SEXP env_val;
+      if (lookup_type == FUNCTION_VAR) {
+	env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
       } else {
-	// Built-in or user-defined name? Look up in global environment
-	SEXP env_val;
-	if (lookup_type == FUNCTION_VAR) {
-	  env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
-	} else {
-	  env_val = Rf_findVar(e, R_GlobalEnv);
-	}
-	if (env_val == R_UnboundValue) { 	     // user-defined
-	  return op_new_user_location(sb, name);
-	} else {                                     // builtin/special/library name
-	  return op_internal(sb, e, env_val, name, lookup_function, rho);
-	}
+	env_val = Rf_findVar(e, R_GlobalEnv);
       }
-    } else {  // may be redefined
-      return op_lookup(sb, lookup_function, make_symbol(e), rho,
-		       resultProtection, fullyEvaluatedResult);
+      if (env_val == R_UnboundValue) { 	     // user-defined
+	return op_new_user_location(sb, name);
+      } else {                                     // builtin/special/library name
+	return op_internal(sb, e, env_val, name, lookup_function, rho);
+      }
     }
   } else {                         // not global scope
     // TODO: add similar thing for local variables

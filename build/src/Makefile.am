@@ -35,14 +35,18 @@ rcc_bin_SOURCES =				\
   AnnotationBase.h				\
   Annotation.cc					\
   Annotation.h					\
-  AnnotationSet.cc				\
-  AnnotationSet.h				\
+  AnnotationMap.cc				\
+  AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
-  BindingAnalysis.cc				\
-  BindingAnalysis.h				\
   CallGraphBuilder.cc                           \
   CallGraphBuilder.h                            \
+  ExpressionInfoAnnotationMap.cc                \
+  ExpressionInfoAnnotationMap.h                 \
+  FormalArgInfoAnnotationMap.cc                 \
+  FormalArgInfoAnnotationMap.h                  \
+  FuncInfoAnnotationMap.cc                      \
+  FuncInfoAnnotationMap.h                       \
   HandleInterface.cc				\
   HandleInterface.h				\
   IRInterface.cc				\
@@ -74,6 +78,8 @@ rcc_bin_SOURCES =				\
   TypeInference.h				\
   Utils.cc					\
   Utils.h					\
+  VarAnnotationMap.cc                           \
+  VarAnnotationMap.h                            \
   VarRef.cc					\
   VarRef.h					\
   VarRefSet.cc					\
@@ -124,7 +130,6 @@ rcc_bin_SOURCES =				\
   NonUniformDegreeTree.cc			\
   NonUniformDegreeTree.h			\
   NonUniformDegreeTreeTmpl.h
-
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 

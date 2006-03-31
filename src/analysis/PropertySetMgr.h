@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v 1.3 2005/09/01 22:06:14 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.h,v 1.4 2006/03/31 16:37:27 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -29,6 +29,8 @@
 
 //*************************** Forward Declarations ***************************
 
+class RAnnot::AnnotationMap;
+
 //****************************************************************************
 
 namespace RProp {
@@ -49,7 +51,7 @@ public:
   static PropertyHndlT Prop3;
 
   // function type for annotation-computation functions
-  typedef RAnnot::AnnotationSet* (*AnnotationComputationFn_t)(SEXP);
+  typedef RAnnot::AnnotationMap* (*AnnotationComputationFn_t)(SEXP);
 
   // FIXME: need some way of registering property names and
   // computation routines.
@@ -76,7 +78,7 @@ public:
   // -------------------------------------------------------
 
   // get annotations on demand
-  RAnnot::AnnotationSet* getAnnot(PropertyHndlT prop);
+  RAnnot::AnnotationMap* getAnnot(PropertyHndlT prop);
 
   // property-set (returns non-const set to allow manipulation)
   PropertySet* getPropertySet() const

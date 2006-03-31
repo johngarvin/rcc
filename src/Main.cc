@@ -167,16 +167,16 @@ int main(int argc, char *argv[]) {
   SEXP program = parse_R_as_function(in_file);
 
   // perform analysis
-  R_Analyst an(program);
-  bool analysis_ok = an.perform_analysis();
+  R_Analyst * an = R_Analyst::get_instance(program);
+  bool analysis_ok = an->perform_analysis();
 
   if (analysis_debug) {
-    FuncInfo *scope_tree = an.get_scope_tree_root();
+    FuncInfo *scope_tree = an->get_scope_tree_root();
     FuncInfoIterator fii(scope_tree);
     for(FuncInfo *fi; fi = fii.Current(); fii++) {
       cout << "New procedure:" << endl;
       fi->dump(cout);
-      an.dump_cfg(cout, fi->getDefn());
+      an->dump_cfg(cout, fi->getDefn());
     }
   }
 

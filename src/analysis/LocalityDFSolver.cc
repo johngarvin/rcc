@@ -6,7 +6,6 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/Annotation.h>
-#include <analysis/AnnotationSet.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/LocalVariableAnalysis.h>
 

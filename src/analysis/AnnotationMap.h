@@ -1,8 +1,8 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v 1.4 2005/09/01 19:46:55 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.1 2006/03/31 16:37:26 garvin Exp $
 
-#ifndef ANNOTATION_SET_HPP
-#define ANNOTATION_SET_HPP
+#ifndef ANNOTATION_MAP_H
+#define ANNOTATION_MAP_H
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -10,7 +10,7 @@
 //***************************************************************************
 //
 // File:
-//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/AnnotationSet.h,v $
+//   $Source: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v $
 //
 // Purpose:
 //   [The purpose of this file]
@@ -34,10 +34,6 @@
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include "Annotation.h"
 
-//*************************** Forward Declarations ***************************
-
-//****************************************************************************
-
 namespace RAnnot {
 
 //****************************************************************************
@@ -45,39 +41,62 @@ namespace RAnnot {
 //****************************************************************************
 
 // ---------------------------------------------------------------------------
-// AnnotationSet: A mapping of IRHandles to Annotations.
+// AnnotationMap: A mapping of IRHandles to Annotations.
 // ---------------------------------------------------------------------------
-class AnnotationSet
-  : public std::map<OA::IRHandle, RAnnot::AnnotationBase*>
+class AnnotationMap
 {  
 public:
   // -------------------------------------------------------
+  // type definitions
+  // -------------------------------------------------------
+  // FIXME: It would be better to define our own iterator type so that
+  // this base class doesn't depend on having a map implementation.
+
+  typedef OA::IRHandle MyKeyT;
+  typedef RAnnot::AnnotationBase * MyMappedT;
+  typedef std::map<MyKeyT, MyMappedT>::iterator iterator;
+  typedef std::map<MyKeyT, MyMappedT>::const_iterator const_iterator;
+
+  // -------------------------------------------------------
   // constructor/destructor
   // -------------------------------------------------------
-  AnnotationSet(bool ownsAnnotations = true); 
-  ~AnnotationSet();
+  AnnotationMap();
+  virtual ~AnnotationMap();
 
   // -------------------------------------------------------
   // cloning (proscribe by hiding copy constructor and operator=)
   // -------------------------------------------------------
 
   // -------------------------------------------------------
-  // iterator, find/insert, etc 
+  // iterators
   // -------------------------------------------------------
-  // use inherited std::multimap routines
+  virtual iterator begin() = 0;
+  virtual const_iterator begin() const = 0;
+  virtual iterator end() = 0;
+  virtual const_iterator end() const = 0;
+
+  // -------------------------------------------------------
+  // get the annotation given a key (performs analysis if necessary)
+  // -------------------------------------------------------
+  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // FIXME: remove when refactoring is done
+  virtual MyMappedT get(const MyKeyT & k) = 0;
+  
+  // -------------------------------------------------------
+  // demand-driven analysis
+  // -------------------------------------------------------
+  virtual bool is_computed() = 0;
   
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  std::ostream& dumpCout() const;
-  std::ostream& dump(std::ostream& os) const;
-  
-private:
-  AnnotationSet(const AnnotationSet& x);
-  AnnotationSet& operator=(const AnnotationSet& x) { return *this; }
+  virtual std::ostream& dumpCout() const;
+  virtual std::ostream& dump(std::ostream& os) const;
 
+  // prevent cloning
 private:
-  bool mOwnsAnnotations; // does set own all AnnotationBases within map?
+  AnnotationMap(const AnnotationMap & x);
+  AnnotationMap & operator=(const AnnotationMap & x) { return *this; }
+
 };
 
 

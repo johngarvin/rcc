@@ -22,43 +22,8 @@ BindingAnalysis::BindingAnalysis(FuncInfo * root)
 void BindingAnalysis::perform_analysis() {
   assign_scopes();
   fill_in_symbol_tables();
-
-  //  find_free_mentions();  // do we want functions to contain mentions located elsewhere?
-  // Maybe save this in case we want "get_may_mod" or similar
 }
 
-//! Do a bottom-up traversal of the scope tree to find the variables
-//! that may be mentioned free in that scope, either explicitly
-//! mentioned or mentioned in a descendant scope.
-void BindingAnalysis::find_free_mentions() {
-  // postorder traversal of scope tree
-  FuncInfoIterator fii(m_root, PostOrder);
-  for( ; fii.IsValid(); ++fii) {
-    FuncInfo * finfo = fii.Current();
-    if (debug) {
-      std::cout << "In function:\n";
-      Rf_PrintValue(finfo->getDefn());
-    }
-    if (finfo != m_root) {
-      // for each mention
-      FuncInfo::mention_iterator mi;
-      for(mi = finfo->beginMentions(); mi != finfo->endMentions(); ++mi) {
-	Var * v = *mi;
-	Var::ScopeT scope_type = v->getScopeType();
-	if (scope_type == Var::Var_FREE ||
-	    scope_type == Var::Var_INDEFINITE)
-	{
-	  if (debug) {
-	    std::cout << "Inserting variable ";
-	    v->dump(std::cout);
-	    std::cout << " into parent scope" << std::endl;
-	  }
-	  finfo->Parent()->insertMention(v);
-	}
-      }
-    }
-  }
-}
 
 //! Do a top-down traversal of the scope tree to find (if it exists)
 //! the unique ancestor scope in which each free mention may be bound.

@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.15 2006/02/19 02:56:12 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.16 2006/03/31 16:37:26 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -38,11 +38,12 @@
 
 //*************************** User Include Files ****************************
 
+#include <support/RccError.h>
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
-#include <analysis/LocalityType.h>
 
-#include "PropertyHndl.h"
-#include "AnnotationBase.h"
+#include <analysis/LocalityType.h>
+#include <analysis/PropertyHndl.h>
+#include <analysis/AnnotationBase.h>
 
 //*************************** Forward Declarations ***************************
 
@@ -57,7 +58,7 @@ class Var;
 class FuncInfo;
 
 // N.B.: In order to make memory management sane, all Annotations
-// should live within and owned by an AnnotationSet.  This allows
+// should live within and owned by an AnnotationMap.  This allows
 // Annotations to share pointers to other Annotations without
 // worring about reference counting.
 
@@ -306,16 +307,8 @@ public:
   void setScopeType(ScopeT x)
     { mScopeType = x; }
 
-  // reaching-definition
-  VarInfo* getReachingDef() const
-    { return mReachingDef; }
-  void setReachingDef(VarInfo* x)
-    { mReachingDef = x; }
-
-  FuncInfo* getBoundScope() const
-    { return mBoundScope; }
-  void setBoundScope(FuncInfo* x)
-    { mBoundScope = x; }
+  FuncInfo* getContainingScope() const
+    { return mContainingScope; }
   
   // Mention
   SEXP getMention() const
@@ -358,8 +351,7 @@ protected:
   UseDefT mUseDefType;
   MayMustT mMayMustType;
   ScopeT mScopeType;
-  VarInfo* mReachingDef; // (not owned)
-  FuncInfo* mBoundScope;  // (not owned)
+  FuncInfo* mContainingScope;  // (not owned)
 };
 
 
@@ -587,17 +579,6 @@ public:
   size_type countUses(const key_type& x) const
     { return mUses.count(x); }
 
-  // singleton status
-  bool isSingleton() const
-    { return mIsSingleton; }
-  void setSingleton(bool x)
-    { mIsSingleton = x; }
-
-  FuncInfo* getSingletonDef() const
-    { assert(mIsSingleton); return mSingletonDef; }
-  void setSingletonDef(FuncInfo* x)
-    { mSingletonDef = x; }
-
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -607,9 +588,6 @@ private:
   // data_type mType
   SymbolTable* mST;
   MySet_t mUses;
-  bool mIsSingleton;
-  FuncInfo* mSingletonDef; // if it exists
-  //  FuncInfo* mDefiningScope;  
 };
 
 //****************************************************************************
@@ -729,6 +707,12 @@ public:
   const_call_iterator endCallsOut() const
     { return mCallsOut.end(); }
 
+  static FuncInfo * getGlobalScope()
+    { return mGlobal; }
+  static void setGlobalScope(FuncInfo * x)
+  { if (mGlobal == 0) { mGlobal = x; } else { rcc_error("Global scope already set"); } }
+    
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -752,6 +736,8 @@ private:
 
   CallSet_t mCallsIn;     // (not owned)
   CallSet_t mCallsOut;    // (not owned)
+
+  static FuncInfo * mGlobal;
 
   // argument description: types, strict?
 };

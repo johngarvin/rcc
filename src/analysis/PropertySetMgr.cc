@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.cc,v 1.2 2005/08/31 23:28:25 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySetMgr.cc,v 1.3 2006/03/31 16:37:27 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -54,10 +54,10 @@ PropertySetMgr::~PropertySetMgr()
 }
 
 
-RAnnot::AnnotationSet* 
+RAnnot::AnnotationMap* 
 PropertySetMgr::getAnnot(PropertyHndlT prop) 
 {  
-  RAnnot::AnnotationSet* x = NULL;
+  RAnnot::AnnotationMap* x = NULL;
 
   PropertySet::iterator it = mSet->find(prop);
   if (it == mSet->end()) {
