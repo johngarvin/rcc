@@ -7,7 +7,6 @@
 #include <analysis/IRInterface.h>
 #include <analysis/Annotation.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/LocalVariableAnalysis.h>
 
 #include <analysis/LocalityDFSet.h>
 #include <analysis/LocalityDFSetElement.h>
@@ -159,12 +158,8 @@ void LocalityDFSolver::initialize_sets() {
 	Rf_PrintValue(stmt_r);
       }
 
+      // getProperty will trigger lower-level analysis if necessary
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, stmt_r);
-      if (stmt_annot == 0) {
-	LocalVariableAnalysis lva(stmt_r);
-	lva.perform_analysis();
-	stmt_annot = getProperty(ExpressionInfo, stmt_r);
-      }
 
       // for this statement's annotation, iterate through its set of var mentions
       Var::iterator vi;
@@ -290,7 +285,7 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   DefVar * def_annot;
   if (dynamic_cast<UseVar *>(annot)) {
     return new R_BodyVarRef(annot->getMention());
-  } else if (def_annot = dynamic_cast<DefVar *>(annot)) {
+  } else if ((def_annot = dynamic_cast<DefVar *>(annot)) != 0) {
     DefVar::SourceT source = def_annot->getSourceType();
     R_VarRef * retval;
     switch(source) {

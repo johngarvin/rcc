@@ -5,8 +5,9 @@
 // probably be split up into the different analyses at some point.
 
 #include <analysis/Analyst.h>
-#include <analysis/HandleInterface.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/LocalityDFSolver.h>
 
 #include "VarAnnotationMap.h"
 
@@ -66,9 +67,9 @@ bool VarAnnotationMap::is_computed() {
 //  ----- iterators ----- 
 
 iterator VarAnnotationMap::begin() { return m_map.begin(); }
-const_iterator  VarAnnotationMap::begin() const { return m_map.begin(); }
-iterator  VarAnnotationMap::end() { return m_map.end(); }
-const_iterator  VarAnnotationMap::end() const { return m_map.end(); }
+iterator VarAnnotationMap::end() { return m_map.end(); }
+const_iterator VarAnnotationMap::begin() const { return m_map.begin(); }
+const_iterator VarAnnotationMap::end() const { return m_map.end(); }
 
 // compute all Var annotation information
 void VarAnnotationMap::compute() {
@@ -107,14 +108,28 @@ void VarAnnotationMap::compute_all_syntactic_info() {
   }
 }
 
-// variable locality for each function
-//   R_Analyst::build_locality_info()
-//   Locality::LocalityDFSolver
+// compute variable locality (bound/free) for each function
 void VarAnnotationMap::compute_all_locality_info() {
+  R_Analyst * an = R_Analyst::get_instance();
+  OA_ptr<R_IRInterface> interface; interface = an->get_interface();
+  FuncInfo * root = an->get_scope_tree_root();
+  FuncInfoIterator fii(root);
+  for(FuncInfo *fi; fii.IsValid(); fii++) {
+    fi = fii.Current();
+    ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
+    OA_ptr<CFG> cfg = fi->getCFG();
+    compute_locality_info(interface, ph, cfg);
+  }
 }
 
-// For a given procedure, compute the locality data flow problem; put the info in m_map
-void VarAnnotationMap::compute_locality_info(ProcHandle proc) {
+// For a given procedure, compute the locality data flow problem; put
+// the info in m_map
+void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
+					     ProcHandle proc,
+					     OA_ptr<CFG> cfg)
+{
+  Locality::LocalityDFSolver solver(interface);
+  solver.perform_analysis(proc, cfg);
 }
 
 // interprocedural analysis to find bindings

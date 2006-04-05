@@ -7,6 +7,8 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <analysis/LocalityDFSet.h>
+
 enum LocalityType;
 class OA::CFG::Interface;
 class R_VarRef;
@@ -14,8 +16,6 @@ class R_VarRefSet;
 class R_IRInterface;
 
 namespace Locality {
-
-class DFSet;
 
 //! Implements the OpenAnalysis CFG data flow problem interface to
 //! determine whether variable references refer to local or free

@@ -11,6 +11,10 @@
 
 #include <analysis/AnnotationMap.h>
 
+// ----- forward declarations -----
+
+class R_IRInterface;
+
 namespace RAnnot {
 
 class VarAnnotationMap : public AnnotationMap {
@@ -34,7 +38,9 @@ private:
   void compute();
   void compute_all_syntactic_info();
   void compute_all_locality_info();
-  void compute_locality_info(OA::ProcHandle proc);
+  void compute_locality_info(OA::OA_ptr<R_IRInterface> interface,
+			     OA::ProcHandle proc,
+			     OA::OA_ptr<OA::CFG::Interface> cfg);
   void compute_all_bindings();
 
 private:

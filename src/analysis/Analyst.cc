@@ -12,7 +12,6 @@
 #include <analysis/HandleInterface.h>
 
 #include <analysis/LocalityDFSolver.h>
-#include <analysis/LocalityDFSet.h>
 #include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
@@ -66,7 +65,7 @@ bool R_Analyst::perform_analysis() {
     build_cfgs();
     //    build_local_variable_info();
     build_local_function_info();
-    build_locality_info();
+    //    build_locality_info();
     build_bindings();
     build_call_graph();
     return true;
