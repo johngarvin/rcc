@@ -80,6 +80,10 @@ rcc_bin_SOURCES =				\
   Utils.h					\
   VarAnnotationMap.cc                           \
   VarAnnotationMap.h                            \
+  VarBinding.cc                                 \
+  VarBinding.h                                  \
+  VarBindingAnnotationMap.cc                    \
+  VarBindingAnnotationMap.h                     \
   VarRef.cc					\
   VarRef.h					\
   VarRefSet.cc					\

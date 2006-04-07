@@ -108,13 +108,13 @@ void VarAnnotationMap::compute_all_syntactic_info() {
   }
 }
 
-// compute variable locality (bound/free) for each function
+/// compute variable locality (bound/free) for each function
 void VarAnnotationMap::compute_all_locality_info() {
   R_Analyst * an = R_Analyst::get_instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
   FuncInfo * root = an->get_scope_tree_root();
   FuncInfoIterator fii(root);
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
+  for(FuncInfo * fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
     OA_ptr<CFG> cfg = fi->getCFG();
@@ -122,8 +122,8 @@ void VarAnnotationMap::compute_all_locality_info() {
   }
 }
 
-// For a given procedure, compute the locality data flow problem; put
-// the info in m_map
+/// For a given procedure, solve the locality data flow problem; put
+/// the info in m_map.
 void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
 					     ProcHandle proc,
 					     OA_ptr<CFG> cfg)
