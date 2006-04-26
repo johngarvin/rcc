@@ -1,5 +1,8 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.6 2006/03/31 16:37:27 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.h,v 1.7 2006/04/26 22:09:45 garvin Exp $
+
+#ifndef PROPERTY_SET_H
+#define PROPERTY_SET_H
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -54,10 +57,24 @@ public:
   PropertySet();
   ~PropertySet();
 
-  void insert(PropertyHndlT propertyName, SEXP s,
-	      RAnnot::AnnotationBase *annot, bool ownsAnnotations);
+  // -------------------------------------------------------
+  // managing annotation maps
+  // -------------------------------------------------------
 
-  RAnnot::AnnotationBase *lookup(PropertyHndlT propertyName, SEXP s);
+  /// associate the SEXP s with annotation annot for the propertyName
+  /// property. FIXME: adding annotations from the outside like this
+  /// is bad data hiding. It would be better to create Annotation
+  /// objects only inside AnnotationMaps.
+  void insert(PropertyHndlT propertyName, SEXP s,
+	      RAnnot::AnnotationBase * annot, bool ownsAnnotations);
+
+  /// Look up an annotation associated with an SEXP.
+  RAnnot::AnnotationBase * lookup(PropertyHndlT propertyName, SEXP s);
+
+  /// To be called when new AnnotationMaps are created. Register a
+  /// property name with an AnnotationMap so the Annotations in the
+  /// AnnotationMap can be looked up.
+  void add(PropertyHndlT propertyName, RAnnot::AnnotationMap * amap);
 
   // -------------------------------------------------------
   // cloning (proscribe by hiding copy constructor and operator=)
@@ -85,3 +102,5 @@ private:
 //****************************************************************************
 
 } // end of RProp namespace
+
+#endif

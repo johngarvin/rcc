@@ -25,8 +25,8 @@ using namespace std;
 
 Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
 				resultProtection, bool fullyEvaluatedResult, 
-				ResultStatus resultStatus) {
-
+				ResultStatus resultStatus)
+{
   assert(is_cons(cell));
   SEXP e = CAR(cell);
 

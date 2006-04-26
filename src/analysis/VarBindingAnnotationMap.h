@@ -8,35 +8,45 @@
 
 #include <map>
 
+#include <OpenAnalysis/Utils/Iterator.hpp>
+
 #include <analysis/AnnotationMap.h>
 
 namespace RAnnot {
 
-class VarBindingAnnotationMap : public AnnotationMap {
+class VarBindingAnnotationMap : public AnnotationMap
+{
 public:
   // constructor/deconstructor
   VarBindingAnnotationMap(bool ownsAnnotations = true);
   virtual ~VarBindingAnnotationMap();
 
+  // singleton pattern
+  static VarBindingAnnotationMap * get_instance();
+  static PropertyHndlT handle();
+
   // demand-driven analysis
+  MyMappedT & operator[](const MyKeyT & k);
   MyMappedT get(const MyKeyT & k);
   bool is_computed();
 
   // iterators
-  // TODO: switch to OA-style iterator
-#if 0
   iterator begin();
   const_iterator begin() const;
   iterator end();
   const_iterator end() const;
-#endif
 
 private:
   void compute();
 
+  static void create();
+
 private:
   bool m_computed; // has our information been computed yet?
   std::map<MyKeyT, MyMappedT> m_map;
+
+  static VarBindingAnnotationMap * m_instance;
+  static PropertyHndlT m_handle;
 };
 
 }

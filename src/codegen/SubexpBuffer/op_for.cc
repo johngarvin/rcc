@@ -18,8 +18,9 @@ using namespace std;
 //! Output a for loop
 Expression SubexpBuffer::op_for(SEXP e, string rho,
 				ResultStatus resultStatus) {
-  SEXP sym, body, val;
-  sym = CAR(for_iv_c(e));
+  SEXP sym_c, sym, body, val;
+  sym_c = for_iv_c(e);
+  sym = CAR(sym_c);
   if ( !Rf_isSymbol(sym) ) rcc_error("non-symbol loop variable found in for loop");
   Expression range = op_exp(for_range_c(e), rho);
   decls += "int n;\n";
@@ -36,7 +37,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
     has_i = TRUE;
   }
   string defs;
-  defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
+  //  defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
   defs += "if (isList(" + range.var + ") || isNull(" + range.var + ")) {\n";
   defs += indent("n = length(" + range.var + ");\n");
   defs += indent("PROTECT_WITH_INDEX(v = R_NilValue, &vpi);\n");
@@ -88,6 +89,8 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
   in_loop += "default: errorcall(R_NilValue, \"Bad for loop sequence\");\n";
   in_loop += "}\n";
   defs += indent(in_loop);
+
+  Expression defIV = op_var_def(sym_c, "R_NilValue", rho);
   append_defs(defs);
   Expression ans = op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
   string cleanup;

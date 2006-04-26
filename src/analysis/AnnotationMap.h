@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.1 2006/03/31 16:37:26 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.2 2006/04/26 22:09:45 garvin Exp $
 
 #ifndef ANNOTATION_MAP_H
 #define ANNOTATION_MAP_H
@@ -32,7 +32,7 @@
 //*************************** User Include Files ****************************
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include "Annotation.h"
+#include <analysis/Annotation.h>
 
 namespace RAnnot {
 
@@ -49,9 +49,6 @@ public:
   // -------------------------------------------------------
   // type definitions
   // -------------------------------------------------------
-  // FIXME: It would be better to define our own iterator type so that
-  // this base class doesn't depend on having a map implementation.
-
   typedef OA::IRHandle MyKeyT;
   typedef RAnnot::AnnotationBase * MyMappedT;
   typedef std::map<MyKeyT, MyMappedT>::iterator iterator;
@@ -62,10 +59,6 @@ public:
   // -------------------------------------------------------
   AnnotationMap();
   virtual ~AnnotationMap();
-
-  // -------------------------------------------------------
-  // cloning (proscribe by hiding copy constructor and operator=)
-  // -------------------------------------------------------
 
   // -------------------------------------------------------
   // iterators
@@ -94,8 +87,8 @@ public:
 
   // prevent cloning
 private:
-  AnnotationMap(const AnnotationMap & x);
-  AnnotationMap & operator=(const AnnotationMap & x) { return *this; }
+  AnnotationMap(const AnnotationMap &);
+  AnnotationMap & operator=(const AnnotationMap &);
 
 };
 

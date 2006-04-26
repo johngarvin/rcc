@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.6 2006/03/31 16:37:27 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.7 2006/04/26 22:09:45 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -62,9 +62,13 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
 {
   AnnotationMap *annotations = (*this)[propertyName];
   if (annotations == 0) {
+    rcc_error("Annotation map not found in PropertySet");
+  }
+#if 0
+  if (annotations == 0) {
     // temporary ugly conditional. After refactoring is complete this
     // method will disappear anyway.
-    if (propertyName == Var::VarProperty) {
+    if (propertyName == VarAnnotationMap::handle()) {
       annotations = new VarAnnotationMap(ownsAnnotations);
     } else if (propertyName == FuncInfo::FuncInfoProperty) {
       annotations = new FuncInfoAnnotationMap(ownsAnnotations);
@@ -76,17 +80,25 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
       rcc_error("Unhandled property type " + std::string(propertyName));
     }
     (*this)[propertyName] = annotations; 
-  } 
-
+  }
+#endif
   (*annotations)[reinterpret_cast<OA::irhandle_t>(s)] = annot;
 }
 
 AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)
 {
   AnnotationMap *annotations = (*this)[propertyName];
-  if (annotations == 0) return 0;
-  return (*annotations)[reinterpret_cast<OA::irhandle_t>(s)];
+  if (annotations == 0) {
+    rcc_error("AnnotationMap not found; possible invalid propertyName " + std::string(propertyName));
+  }
+  return annotations->get(OA::IRHandle(reinterpret_cast<OA::irhandle_t>(s)));
 }
+
+void PropertySet::add(PropertyHndlT propertyName, RAnnot::AnnotationMap * amap)
+{
+  (*this)[propertyName] = amap;
+}
+
 
 std::ostream&
 PropertySet::dumpCout() const

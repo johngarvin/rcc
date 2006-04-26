@@ -5,7 +5,7 @@
 
 #include <include/R/R_Defn.h>
 
-#include <analysis/Annotation.h>
+#include <analysis/VarBinding.h>
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
 
@@ -60,8 +60,8 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   SEXP e = CAR(cell);
   string name = CHAR(PRINTNAME(e));
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
-  Var * annot = getProperty(Var, cell);
-  if (annot->getScopeType() == Var::Var_GLOBAL) {
+  VarBinding * annot = getProperty(VarBinding, cell);
+  if (annot->is_global()) {
     // look up the name in loc_map and binding_map. loc_map records a
     // "location" for each global name -- a pointer to an entry in an
     // environment, used for variables that may be redefined.

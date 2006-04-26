@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.5 2006/01/26 23:44:03 garvin Exp $ */
+/* $Id: AnalysisResults.h,v 1.6 2006/04/26 22:09:44 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -37,10 +37,10 @@ extern func_attribute_map  func_unique_defintion;
 // property access
 //--------------------------------------------------------------------------
 #define getProperty(name, sexp) \
-  dynamic_cast<name *>(analysisResults.lookup(name::name ## Property, sexp))
+  dynamic_cast<name *>(analysisResults.lookup(name::handle(), sexp))
 
 #define putProperty(name, sexp, prop, own) \
-  analysisResults.insert(name::name ## Property, sexp, prop, own)
+  analysisResults.insert(name::handle(), sexp, prop, own)
 
 void clearProperties();
 

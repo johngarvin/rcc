@@ -7,6 +7,7 @@
 #include <support/StringUtils.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
+#include <analysis/VarBinding.h>
 
 #include <CodeGen.h>
 #include <CodeGenUtils.h>
@@ -26,8 +27,8 @@ static Expression op_caching_lookup(SubexpBuffer * sb, string name, string symbo
 Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   string name = CHAR(PRINTNAME(CAR(cell)));
   string symbol = make_symbol(CAR(cell));
-  Var * annot = getProperty(Var, cell);
-  if (annot->getScopeType() == Var::Var_GLOBAL) {
+  VarBinding * annot = getProperty(VarBinding, cell);
+  if (annot->is_global()) {
     map<string, string>::iterator loc;
     loc = ParseInfo::loc_map.find(name);
     if (loc == ParseInfo::loc_map.end()) {
@@ -35,8 +36,9 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
       return op_caching_lookup(this, name, symbol, rhs, rho);
     } else {
       // location exists, having been set by a previous use or def.
-      // TODO: do something different if there's a unique binding
-      return op_caching_lookup(this, name, symbol, rhs, rho);
+      // TODO: do something different if there's a unique binding?
+      append_defs(emit_assign(loc->second, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
+      return Expression(rhs, true, INVISIBLE, "");
     }
   } else {   // not global scope
     append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");

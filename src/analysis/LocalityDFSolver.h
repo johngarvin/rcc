@@ -17,9 +17,9 @@ class R_IRInterface;
 
 namespace Locality {
 
-//! Implements the OpenAnalysis CFG data flow problem interface to
-//! determine whether variable references refer to local or free
-//! variables.
+/// Implements the OpenAnalysis CFG data flow problem interface to
+/// determine whether variable references refer to local or free
+/// variables.
 class LocalityDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   LocalityDFSolver(OA::OA_ptr<R_IRInterface> _rir);
@@ -36,13 +36,13 @@ private:
 
   void initializeNode(OA::OA_ptr<OA::CFG::Interface::Node> n);
 
-  //! CFGDFProblem says: OK to modify set1 and return it as result, because solver
-  //! only passes a tempSet in as set1
+  // CFGDFProblem says: OK to modify set1 and return it as result, because solver
+  // only passes a tempSet in as set1
   OA::OA_ptr<OA::DataFlow::DataFlowSet>
   meet (OA::OA_ptr<OA::DataFlow::DataFlowSet> set1, OA::OA_ptr<OA::DataFlow::DataFlowSet> set2);
 
-  //! CFGDFProblem says: OK to modify in set and return it again as result because
-  //! solver clones the BB in sets
+  // CFGDFProblem says: OK to modify in set and return it again as result because
+  // solver clones the BB in sets
   OA::OA_ptr<OA::DataFlow::DataFlowSet> 
   transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
 

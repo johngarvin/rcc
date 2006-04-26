@@ -237,15 +237,13 @@ find_drift_error <- function() {
   print ("Param 4: alpha coefficient (variance)")
   print ("Param 5: rho coefficient (variance)")
   print ("Param 6: constant (variance)")
-  
+
   inp_err <- theta_normalize(raw_params[1,]-real_params[1,])
-  
   drift <<- samplen(inp=raw_params[1:2,],err=inp_err,n=burnin)
 }
 
 
 samplen <- function(inp,err,n=5000,loop=1) {
-
   if (loop == 1) {
     num_params <<-(dim(inp)[1]+1)*2
     inputs <<- inp
@@ -258,6 +256,7 @@ samplen <- function(inp,err,n=5000,loop=1) {
       new_params <- append(new_params,1)
     for (i in 1:models)
       params <<- append(params,new_params)
+
     dim(params) <<- c(length(params)/models,models)
     params <<- t(params)
   }

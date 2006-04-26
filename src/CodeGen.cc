@@ -17,8 +17,9 @@
 #include <ParseInfo.h>
 #include <LoopContext.h>
 
-#include <analysis/Annotation.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/VarBinding.h>
+
 using namespace RAnnot;
 
 using namespace std;
@@ -132,8 +133,8 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
   if (e == R_MissingArg) {
     return Output::invisible_const(Handle("R_MissingArg"));
   } else {
-    Var * annot = getProperty(Var, cell);
-    if (annot->getScopeType() == Var::Var_GLOBAL) {
+    VarBinding * annot = getProperty(VarBinding, cell);
+    if (annot->is_global()) {
       map<string, string>::iterator loc;
       loc = ParseInfo::loc_map.find(name);
       string h, call, g_decls, g_code;

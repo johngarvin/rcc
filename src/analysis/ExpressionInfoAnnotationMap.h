@@ -8,14 +8,20 @@
 #include <map>
 
 #include <analysis/AnnotationMap.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
 class ExpressionInfoAnnotationMap : public AnnotationMap {
 public:
-  // constructor/deconstructor
-  ExpressionInfoAnnotationMap(bool ownsAnnotations = true);
+  // deconstructor
   virtual ~ExpressionInfoAnnotationMap();
+
+  // singleton
+  static ExpressionInfoAnnotationMap * get_instance();
+
+  // getting the handle causes this map to be created and registered
+  static PropertyHndlT handle();
 
   // demand-driven analysis
   MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
@@ -29,11 +35,17 @@ public:
   const_iterator end() const;
 
 private:
+  // singleton: only this class is allowed to instantiate
+  ExpressionInfoAnnotationMap(bool ownsAnnotations = true);
+
   void compute(const MyKeyT & k);
 
-private:
-  bool m_computed; // has our information been computed yet?
   std::map<MyKeyT, MyMappedT> m_map;
+
+  // static members and methods for singleton
+  static ExpressionInfoAnnotationMap * m_instance;
+  static PropertyHndlT m_handle;
+  static void create();
 };
 
 }

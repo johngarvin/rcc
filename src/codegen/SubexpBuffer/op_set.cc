@@ -16,7 +16,7 @@
 
 using namespace std;
 
-//! Output an assignment statement
+/// Output an assignment statement
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho, 
 				Protection resultProtection)
 {
@@ -37,7 +37,9 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     if (is_fundef(rhs)) {
       body = op_fundef(rhs, rho, resultProtection, var_name(lhs));
     } else {
-      body = op_exp(rhs_c, rho);
+      // Right side of an assignment is always evaluated.
+      // Pass 'true' to tell op_exp to evaluate the result
+      body = op_exp(rhs_c, rho, Protected, true);
     }
 
     // whether the assignment is local or free
@@ -48,6 +50,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     } else {
       target_env = emit_call1("ENCLOS", rho);
     }
+
     Expression out = op_var_def(assign_lhs_c(e), body.var, target_env);
     if (!body.del_text.empty())
       append_defs("UNPROTECT(1);\n");

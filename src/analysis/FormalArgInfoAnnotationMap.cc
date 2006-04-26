@@ -1,5 +1,7 @@
 // -*- Mode: C++ -*-
 
+#include <analysis/AnalysisResults.h>
+
 #include "FormalArgInfoAnnotationMap.h"
 
 namespace RAnnot {
@@ -18,6 +20,27 @@ FormalArgInfoAnnotationMap::FormalArgInfoAnnotationMap(bool ownsAnnotations /* =
   {}
 
 FormalArgInfoAnnotationMap::~FormalArgInfoAnnotationMap() {}
+
+// ----- singleton pattern -----
+
+FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::get_instance() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_instance;
+}
+
+PropertyHndlT FormalArgInfoAnnotationMap::handle() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_handle;
+}
+
+void FormalArgInfoAnnotationMap::create() {
+  m_instance = new FormalArgInfoAnnotationMap();
+  analysisResults.add(m_handle, m_instance);
+}
 
 // ----- demand-driven analysis -----
 
@@ -59,5 +82,8 @@ const_iterator  FormalArgInfoAnnotationMap::end() const { return m_map.end(); }
 // FIXME: implement this
 void FormalArgInfoAnnotationMap::compute() {
 }
+
+FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::m_instance = 0;
+PropertyHndlT FormalArgInfoAnnotationMap::m_handle = "FormalArgInfo";
 
 }

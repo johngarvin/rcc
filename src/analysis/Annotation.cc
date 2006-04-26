@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.16 2006/03/31 16:37:26 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.17 2006/04/26 22:09:44 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -30,6 +30,11 @@
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/RequiresContext.h>
+#include <analysis/VarAnnotationMap.h>
+#include <analysis/VarBinding.h>
+#include <analysis/FuncInfoAnnotationMap.h>
+#include <analysis/ExpressionInfoAnnotationMap.h>
+#include <analysis/FormalArgInfoAnnotationMap.h>
 
 #include "Annotation.h"
 
@@ -74,8 +79,6 @@ SymbolTable::dump(std::ostream& os) const
 // ExpressionInfo
 //****************************************************************************
 
-PropertyHndlT ExpressionInfo::ExpressionInfoProperty = "ExpressionInfo";
-
 ExpressionInfo::ExpressionInfo()
 {
 }
@@ -92,13 +95,19 @@ ExpressionInfo::dump(std::ostream& os) const
   beginObjDump(os, ExpressionInfo);
   SEXP definition = CAR(mDefn);
   dumpSEXP(os, definition);
+  os << "Begin mentions:" << std::endl;
   MySet_t::iterator var_iter;
   for(var_iter = mVars.begin(); var_iter != mVars.end(); ++var_iter) {
     (*var_iter)->dump(os);
   }
+  os << "End mentions" << std::endl;
   endObjDump(os, ExpressionInfo);
 }
 
+PropertyHndlT
+ExpressionInfo::handle() {
+  return ExpressionInfoAnnotationMap::handle();
+}
 
 //****************************************************************************
 // TermInfo
@@ -126,8 +135,6 @@ TermInfo::dump(std::ostream& os) const
 // Var
 //****************************************************************************
 
-PropertyHndlT Var::VarProperty = "Var";
-
 Var::Var()
 {
 }
@@ -144,6 +151,15 @@ Var::dump(std::ostream& os) const
   beginObjDump(os, Var);
   endObjDump(os, Var);
 }
+
+PropertyHndlT
+Var::handle() {
+  return VarAnnotationMap::handle();
+}
+
+//****************************************************************************
+// typeName
+//****************************************************************************
 
 const std::string typeName(const Var::UseDefT x)
 {
@@ -166,8 +182,6 @@ const std::string typeName(const Var::ScopeT x)
   switch(x) {
   case Var::Var_TOP: return "TOP";
   case Var::Var_LOCAL: return "LOCAL";
-  case Var::Var_GLOBAL: return "GLOBAL";
-  case Var::Var_FREE_ONE_SCOPE: return "FREE_ONE_SCOPE";
   case Var::Var_FREE: return "FREE";
   case Var::Var_INDEFINITE: return "INDEFINITE";
   }
@@ -201,7 +215,6 @@ UseVar::dump(std::ostream& os) const
   dumpName(os,mUseDefType);
   dumpName(os,mMayMustType);
   dumpName(os,mScopeType);
-  dumpPtr(os,mContainingScope);
   dumpName(os,mPositionType);
   endObjDump(os,UseVar);
 }
@@ -249,7 +262,6 @@ DefVar::dump(std::ostream& os) const
   dumpName(os,mUseDefType);
   dumpName(os,mMayMustType);
   dumpName(os,mScopeType);
-  dumpPtr(os,mContainingScope);
   dumpName(os,mSourceType);
   endObjDump(os,DefVar);
 }
@@ -334,11 +346,6 @@ VarInfo::dump(std::ostream& os) const
 // FuncInfo
 //****************************************************************************
 
-PropertyHndlT FuncInfo::FuncInfoProperty = "FuncInfo";
-
-//! Initialize global scope as nonexistent static; will be filled in later
-FuncInfo * FuncInfo::mGlobal = 0;
-
 FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mLexicalParent(lexParent),
   mFirstName(name),
@@ -368,11 +375,7 @@ void FuncInfo::setRequiresContext(bool requiresContext)
 
 bool FuncInfo::getRequiresContext() 
 { 
-#if 1
   return mRequiresContext;
-#else
-  return false ; // for now 
-#endif
 }
 
 SEXP FuncInfo::getArgs() 
@@ -451,7 +454,10 @@ FuncInfo::dump(std::ostream& os) const
   dumpPtr(os, mLexicalParent);
   os << "Begin mentions:" << std::endl;
   for(mention_iterator i = mMentions.begin(); i != mMentions.end(); ++i) {
-    (*i)->dump(os);
+    Var * v = *i;
+    v->dump(os);
+    VarBinding * vb = getProperty(VarBinding, (*i)->getMention());
+    vb->dump(os);
   }
   os << "End mentions" << std::endl;
   os << "Begin calls" << std::endl;
@@ -466,6 +472,11 @@ FuncInfo::dump(std::ostream& os) const
   }
   os << "End calls" << std::endl;
   endObjDump(os, FuncInfo);
+}
+
+PropertyHndlT
+FuncInfo::handle() {
+  return FuncInfoAnnotationMap::handle();
 }
 
 //****************************************************************************
@@ -518,8 +529,6 @@ ArgInfo::dump(std::ostream& os) const
 // FormalArgInfo
 //****************************************************************************
 
-PropertyHndlT FormalArgInfo::FormalArgInfoProperty = "FormalArgInfo";
-
 FormalArgInfo::FormalArgInfo() 
 {
   isvalue = false;
@@ -539,5 +548,9 @@ FormalArgInfo::dump(std::ostream& os) const
   endObjDump(os, FormalArgInfo);
 }
 
+PropertyHndlT
+FormalArgInfo::handle() {
+  return FormalArgInfoAnnotationMap::handle();
+}
 
 } // end of RAnnot namespace

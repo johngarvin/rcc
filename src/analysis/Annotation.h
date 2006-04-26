@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.16 2006/03/31 16:37:26 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.17 2006/04/26 22:09:44 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -41,9 +41,9 @@
 #include <support/RccError.h>
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
 
+#include <analysis/AnnotationBase.h>
 #include <analysis/LocalityType.h>
 #include <analysis/PropertyHndl.h>
-#include <analysis/AnnotationBase.h>
 
 //*************************** Forward Declarations ***************************
 
@@ -182,8 +182,6 @@ class ExpressionInfo
   : public AnnotationBase
 {
 public:
-  static PropertyHndlT ExpressionInfoProperty;
-public:
   ExpressionInfo();
   virtual ~ExpressionInfo();
 
@@ -214,6 +212,8 @@ public:
     { return mDefn; }
   void setDefn(SEXP x)
     { mDefn = x; }
+
+  static PropertyHndlT handle();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
@@ -262,8 +262,6 @@ class Var
   : public TermInfo
 {
 public:
-  static PropertyHndlT VarProperty;
-public:
   enum UseDefT {
     Var_USE,
     Var_DEF
@@ -275,10 +273,10 @@ public:
   };
 
   enum ScopeT {
+    //    Var_GLOBAL,         // information at this level moved to VarBinding
+    //    Var_FREE_ONE_SCOPE,
     Var_TOP,
     Var_LOCAL,
-    Var_GLOBAL,
-    Var_FREE_ONE_SCOPE,
     Var_FREE,
     Var_INDEFINITE
   };
@@ -307,9 +305,6 @@ public:
   void setScopeType(ScopeT x)
     { mScopeType = x; }
 
-  FuncInfo* getContainingScope() const
-    { return mContainingScope; }
-  
   // Mention
   SEXP getMention() const
     { return mSEXP; }
@@ -317,6 +312,8 @@ public:
     { mSEXP = x; }
 
   virtual SEXP getName() const = 0;
+
+  static PropertyHndlT handle();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
@@ -351,7 +348,6 @@ protected:
   UseDefT mUseDefType;
   MayMustT mMayMustType;
   ScopeT mScopeType;
-  FuncInfo* mContainingScope;  // (not owned)
 };
 
 
@@ -602,9 +598,6 @@ class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>,
 		 public AnnotationBase
 {
 public:
-  static PropertyHndlT FuncInfoProperty;
-
-public:
   typedef Var*                                              mention_key_type;
 
   typedef std::set<mention_key_type>                        MentionSet_t;
@@ -623,6 +616,8 @@ public:
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
   virtual AnnotationBase* clone() { return 0; } // don't support this since it is linked! 
+
+  static PropertyHndlT handle();
 
   // -------------------------------------------------------
   // member data manipulation
@@ -707,17 +702,10 @@ public:
   const_call_iterator endCallsOut() const
     { return mCallsOut.end(); }
 
-  static FuncInfo * getGlobalScope()
-    { return mGlobal; }
-  static void setGlobalScope(FuncInfo * x)
-  { if (mGlobal == 0) { mGlobal = x; } else { rcc_error("Global scope already set"); } }
-    
-
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
-  void dumpStmtsInCFG(std::ostream& os) const;
 
 private:
   unsigned int mNumArgs;   // number of known arguments
@@ -736,8 +724,6 @@ private:
 
   CallSet_t mCallsIn;     // (not owned)
   CallSet_t mCallsOut;    // (not owned)
-
-  static FuncInfo * mGlobal;
 
   // argument description: types, strict?
 };
@@ -901,10 +887,10 @@ class FormalArgInfo
   : public ArgInfo
 {
 public:
-  static PropertyHndlT FormalArgInfoProperty;
-public:
   FormalArgInfo();
   virtual ~FormalArgInfo();
+
+  static PropertyHndlT handle();
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

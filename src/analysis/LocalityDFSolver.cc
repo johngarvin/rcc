@@ -35,11 +35,10 @@ namespace Locality {
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
   : DataFlow::CFGDFProblem( DataFlow::Forward ), rir(_rir)
-{
-}
+  {}
 
-//! Perform the data flow analysis. Sets each variable reference's Var
-//! annotation with its locality information.
+/// Perform the data flow analysis. Sets each variable reference's Var
+/// annotation with its locality information.
 void LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_cfg = cfg;
@@ -91,7 +90,8 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
       } // end mention iteration
     }
     // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
-    //  FIXME: add this assertion back
+    // FIXME: add back annotation
+    // why does this fail sometimes?
   }  // end node iteration
 }
 
@@ -99,7 +99,7 @@ void LocalityDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-//! Print out a representation of the in and out sets for each CFG node.
+/// Print out a representation of the in and out sets for each CFG node.
 void LocalityDFSolver::dump_node_maps(ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
@@ -122,7 +122,7 @@ void LocalityDFSolver::dump_node_maps(ostream &os) {
 // Implementing the callbacks for CFGDFProblem
 //------------------------------------------------------------------
 
-//! Create a set of all variables set to TOP
+/// Create a set of all variables set to TOP
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeTop() {
   if (m_all_top.ptrEqual(NULL)) {
     initialize_sets();
@@ -130,7 +130,7 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeTop() {
   return m_all_top->clone();
 }
 
-//! Create a set of all variable set to BOTTOM
+/// Create a set of all variable set to BOTTOM
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
   if (m_all_bottom.ptrEqual(NULL)) {
     initialize_sets();
@@ -191,8 +191,8 @@ void LocalityDFSolver::initialize_sets() {
   m_entry_values->insert_varset(vs, Locality_LOCAL);
 }
 
-//! Creates in and out DFSets and stores them in mNodeInSetMap and
-//! mNodeOutSetMap.
+/// Creates in and out DFSets and stores them in mNodeInSetMap and
+/// mNodeOutSetMap.
 void LocalityDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
     mNodeInSetMap[n] = m_entry_values->clone();
@@ -202,9 +202,9 @@ void LocalityDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
   mNodeOutSetMap[n] = m_all_top->clone();
 }
 
-//! Meet function merges info from predecessors. CFGDFProblem says: OK
-//! to modify set1 and return it as result, because solver only passes
-//! a tempSet in as set1
+/// Meet function merges info from predecessors. CFGDFProblem says: OK
+/// to modify set1 and return it as result, because solver only passes
+/// a tempSet in as set1
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
   OA_ptr<DFSet> retval;
@@ -213,9 +213,9 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
   return retval.convert<DataFlow::DataFlowSet>();
 }
 
-//! Transfer function adds data given a statement. CFGDFProblem says:
-//! OK to modify in set and return it again as result because solver
-//! clones the BB in sets
+/// Transfer function adds data given a statement. CFGDFProblem says:
+/// OK to modify in set and return it again as result because solver
+/// clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
@@ -242,7 +242,7 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
 // Static meet functions
 //--------------------------------------------------------------------
 
-//! meet function for a single lattice element
+/// meet function for a single lattice element
 LocalityType var_meet(LocalityType x, LocalityType y) {
   if (x == y) {
     return x;
@@ -255,8 +255,8 @@ LocalityType var_meet(LocalityType x, LocalityType y) {
   }
 }
 
-//! Meet function for two DFSets, using the single-variable meet
-//! operation when a use appears in both sets
+/// Meet function for two DFSets, using the single-variable meet
+/// operation when a use appears in both sets
 OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2) {
   OA_ptr<Locality::DFSet> retval;
   retval = set1->clone().convert<Locality::DFSet>();
@@ -278,9 +278,9 @@ OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locali
 // Other static functions
 //------------------------------------------------------------
 
-//! Creates and returns an R_VarRef element from the information
-//! contained in a Var annotation. The caller is responsible for
-//! managing the memory created. (Sticking it in an OA_ptr will do.)
+/// Creates and returns an R_VarRef element from the information
+/// contained in a Var annotation. The caller is responsible for
+/// managing the memory created. (Sticking it in an OA_ptr will do.)
 static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   DefVar * def_annot;
   if (dynamic_cast<UseVar *>(annot)) {
@@ -304,9 +304,9 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   return 0;
 }
 
-//! transfer between our lattice-based LocalityType (TOP, LOCAL,
-//! FREE, BOTTOM) and the more full-featured ScopeT of the Var
-//! annotation
+/// transfer between our lattice-based LocalityType (TOP, LOCAL,
+/// FREE, BOTTOM) and the more full-featured ScopeT of the Var
+/// annotation
 static Var::ScopeT to_scope_type(LocalityType lt) {
   Var::ScopeT t;
   switch(lt) {
@@ -326,9 +326,9 @@ static Var::ScopeT to_scope_type(LocalityType lt) {
   return t; 
 }
 
-//! transfer between our lattice-based LocalityType (TOP, LOCAL,
-//! FREE, BOTTOM) and the more full-featured ScopeT of the Var
-//! annotation
+/// transfer between our lattice-based LocalityType (TOP, LOCAL,
+/// FREE, BOTTOM) and the more full-featured ScopeT of the Var
+/// annotation
 static LocalityType to_locality(Var::ScopeT st) {
   LocalityType t;
   switch(st) {

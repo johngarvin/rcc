@@ -171,11 +171,12 @@ int main(int argc, char *argv[]) {
   bool analysis_ok = an->perform_analysis();
 
   if (analysis_debug) {
-    FuncInfo *scope_tree = an->get_scope_tree_root();
+    FuncInfo * scope_tree = an->get_scope_tree_root();
     FuncInfoIterator fii(scope_tree);
     for(FuncInfo *fi; fi = fii.Current(); fii++) {
       cout << "New procedure:" << endl;
       fi->dump(cout);
+      cout << "Dumping CFG via Analyst:" << endl;
       an->dump_cfg(cout, fi->getDefn());
     }
   }

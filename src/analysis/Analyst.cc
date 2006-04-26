@@ -25,10 +25,10 @@ using namespace RProp;
 
 // ----- implement Singleton pattern -----
 
-// the only instance
+/// the only instance
 R_Analyst * R_Analyst::m_instance = 0;
 
-// static instantiation
+/// static instantiation
 R_Analyst * R_Analyst::get_instance(SEXP _program) {
   if (m_instance == 0) {
     m_instance = new R_Analyst(_program);
@@ -36,7 +36,7 @@ R_Analyst * R_Analyst::get_instance(SEXP _program) {
   return m_instance;
 }
 
-// just get the existing instance; error if not yet instantiated
+/// just get the existing instance; error if not yet instantiated
 R_Analyst * R_Analyst::get_instance() {
   if (m_instance == 0) {
     rcc_error("R_Analyst is not yet instantiated");
@@ -46,16 +46,21 @@ R_Analyst * R_Analyst::get_instance() {
 
 // ----- constructor -----
 
-//! construct an R_Analyst by providing an SEXP representing the whole program
-R_Analyst::R_Analyst(SEXP _program) : m_program(_program)
+/// construct an R_Analyst by providing an SEXP representing the whole program
+R_Analyst::R_Analyst(SEXP _program)
+  : m_program(_program),
+    m_interface(),
+    m_scope_tree_root(0)
   {}
 
 // ----- analysis -----
 
 bool R_Analyst::perform_analysis() {
   try {
+    // initialize what's not initialized by the constructor
     m_interface = new R_IRInterface();
-    m_scope_tree_root = ScopeTreeBuilder::build_scope_tree_with_given_root(m_program);
+    m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
+
     if (ParseInfo::allow_oo()           ||
 	ParseInfo::allow_envir_manip()  ||
 	ParseInfo::allow_special_redef())
@@ -66,7 +71,7 @@ bool R_Analyst::perform_analysis() {
     //    build_local_variable_info();
     build_local_function_info();
     //    build_locality_info();
-    build_bindings();
+    //    build_bindings();
     build_call_graph();
     return true;
   }
@@ -79,12 +84,12 @@ bool R_Analyst::perform_analysis() {
   }
 }
 
-FuncInfo *R_Analyst::get_scope_tree_root() {
+FuncInfo * R_Analyst::get_scope_tree_root() {
   return m_scope_tree_root;
 }
 
-//! Dump the CFG of the given function definition. Located here in
-//! R_Analyst because cfg->dump needs the IRInterface as an argument.
+/// Dump the CFG of the given function definition. Located here in
+/// R_Analyst because cfg->dump needs the IRInterface as an argument.
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
   if (proc != R_NilValue) {
     FuncInfo *fi = getProperty(FuncInfo, proc);
@@ -104,7 +109,7 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
   }
 }
 
-//! Populate m_cfgs with the CFG for each procedure
+/// Populate m_cfgs with the CFG for each procedure
 void R_Analyst::build_cfgs() {
   FuncInfo *finfo = get_scope_tree_root();
   OA::CFG::ManagerStandard cfg_man(m_interface, true); // build statement-level CFGs
@@ -120,7 +125,7 @@ void R_Analyst::build_cfgs() {
   }
 }
 
-//! Collect basic local info on variables: use/def, "<-"/"<<-", etc.
+/// Collect basic local info on variables: use/def, "<-"/"<<-", etc.
 void R_Analyst::build_local_variable_info() {
   // each function
   FuncInfoIterator fii(m_scope_tree_root);
@@ -144,8 +149,8 @@ void R_Analyst::build_local_variable_info() {
   }
 }
 
-//! Discovers local information on procedures: arguments, names
-//! mentioned, etc.
+/// Discovers local information on procedures: arguments, names
+/// mentioned, etc.
 void R_Analyst::build_local_function_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
@@ -155,8 +160,8 @@ void R_Analyst::build_local_function_info() {
   }
 }
 
-//! For each procedure, use control flow to discover locality for each
-//! name (whether local or free)
+/// For each procedure, use control flow to discover locality for each
+/// name (whether local or free)
 void R_Analyst::build_locality_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
@@ -167,14 +172,14 @@ void R_Analyst::build_locality_info() {
   }
 }
 
-//! Perform binding analysis to resolve names to a single scope if
-//! possible
+/// Perform binding analysis to resolve names to a single scope if
+/// possible
 void R_Analyst::build_bindings() {
   //  BindingAnalysis ba(m_scope_tree_root);
   //  ba.perform_analysis();
 }
 
-//! For each procedure, discover which other procedures are called
+/// For each procedure, discover which other procedures are called
 void R_Analyst::build_call_graph() {
   CallGraphBuilder cgb(m_scope_tree_root);
   cgb.perform_analysis();

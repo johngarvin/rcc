@@ -22,6 +22,12 @@ public:
   MyMappedT get(const MyKeyT & k);
   bool is_computed();
 
+  // singleton
+  static FormalArgInfoAnnotationMap * get_instance();
+
+  // getting the name causes this map to be created and registered
+  static PropertyHndlT handle();
+
   // iterators
   iterator begin();
   const_iterator begin() const;
@@ -34,6 +40,10 @@ private:
 private:
   bool m_computed; // has our information been computed yet?
   std::map<MyKeyT, MyMappedT> m_map;
+  
+  static FormalArgInfoAnnotationMap * m_instance;
+  static PropertyHndlT m_handle;
+  static void create();
 };
 
 }

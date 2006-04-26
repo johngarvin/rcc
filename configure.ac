@@ -166,7 +166,7 @@ case ${host} in
       :
     elif HPCcxxcmp([g++]) ; then
       CXXFLAGS=""
-      my_opt_cxxflags="-g -O2 -pedantic"
+      my_opt_cxxflags="-ggdb3 -O2 -pedantic"
     fi
     ;;
 

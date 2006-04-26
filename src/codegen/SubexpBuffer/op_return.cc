@@ -25,7 +25,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
     v = "R_NilValue";
     break;
   case 1:
-    // pass true as third argument to yield fully evaluated result
+    // pass true as fourth argument to yield fully evaluated result
     value = op_exp(e, rho, Unprotected, true);
 #if 0
     if (value.is_dep) {

@@ -6,7 +6,7 @@
 
 using namespace RAnnot;
 
-//! Build a scope tree rooted at the given fundef assignment.
+/// Build a scope tree rooted at the given fundef assignment.
 FuncInfo * ScopeTreeBuilder::build_scope_tree_with_given_root(SEXP r_root) {
   assert(is_simple_assign(r_root));
   SEXP name = CAR(assign_lhs_c(r_root));
@@ -22,8 +22,8 @@ FuncInfo * ScopeTreeBuilder::build_scope_tree_with_given_root(SEXP r_root) {
   return root;
 }
 
-//! Recursively traverse e to build the scope tree. 'parent' is a
-//! pointer to the parent lexical scope.
+/// Recursively traverse e to build the scope tree. 'parent' is a
+/// pointer to the parent lexical scope.
 void ScopeTreeBuilder::build_scope_tree(SEXP e, FuncInfo *parent) {
   switch(TYPEOF(e)) {
   case NILSXP:

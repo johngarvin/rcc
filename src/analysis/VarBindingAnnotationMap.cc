@@ -3,11 +3,23 @@
 // Set of VarBinding annotations that describe the binding scopes of
 // variables.
 
+#include <vector>
+
+#include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/Annotation.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/PropertySet.h>
+#include <analysis/VarBinding.h>
 #include <analysis/VarBindingAnnotationMap.h>
 
 #include "VarBindingAnnotationMap.h"
+
+using namespace RAnnot;
+
+// ----- forward declarations of file-scope functions
+
+static bool defined_local_in_scope(Var * v, FuncInfo * s);
 
 namespace RAnnot {
 
@@ -28,7 +40,35 @@ VarBindingAnnotationMap::VarBindingAnnotationMap(bool ownsAnnotations /* = true 
 VarBindingAnnotationMap::~VarBindingAnnotationMap()
   {}
 
+// ----- singleton pattern -----
+
+VarBindingAnnotationMap * VarBindingAnnotationMap::get_instance() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_instance;
+}
+
+PropertyHndlT VarBindingAnnotationMap::handle() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_handle;
+}
+
+void VarBindingAnnotationMap::create() {
+  m_instance = new VarBindingAnnotationMap();
+  analysisResults.add(m_handle, m_instance);
+}
+
+VarBindingAnnotationMap * VarBindingAnnotationMap::m_instance = 0;
+PropertyHndlT VarBindingAnnotationMap::m_handle = "VarBinding";
+
 // ----- demand-driven analysis -----
+
+MyMappedT & VarBindingAnnotationMap::operator[](const MyKeyT & k) {
+  rcc_error("VarBindingAnnotationMap::operator[] not implemented");
+}
 
 MyMappedT VarBindingAnnotationMap::get(const MyKeyT & k) {
   if (!m_computed) {
@@ -50,53 +90,88 @@ bool VarBindingAnnotationMap::is_computed() {
   return m_computed;
 }
 
+//  ----- iterators ----- 
+
+iterator VarBindingAnnotationMap::begin() { return m_map.begin(); }
+iterator VarBindingAnnotationMap::end() { return m_map.end(); }
+const_iterator VarBindingAnnotationMap::begin() const { return m_map.begin(); }
+const_iterator VarBindingAnnotationMap::end() const { return m_map.end(); }
+
+// ----- computation -----
+
 /// Each Var is bound in some subset of the sequence of ancestor
 /// scopes of its containing function. Compute the subsequence of
 /// scopes in which each Var is bound and add the (Var,sequence) pair
 /// into the annotation map.
 void VarBindingAnnotationMap::compute() {
-#if 0
+  static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
   // for each scope
-  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
+  FuncInfoIterator fii(global);
   for( ; fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
+    assert(fi != 0);
     // each mention
     FuncInfo::mention_iterator mi;
     for (mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       Var * v = *mi;
-      
-      bool binding_found;
-      switch(v->getScopeType()) {
-      case Var::Var_LOCAL:
-	// bound in current scope only
-	m_scopes.push_back(v->getContainingScope());
-	break;
-      case Var::Var_INDEFINITE:
-	// bound in current scope and one or more ancestors
-	m_scopes.push_back(v->getContainingScope());
-	// FALLTHROUGH
-      case Var::Var_FREE:
-	// start at this scope's parent; iterate upward through ancestors
-	binding_found = false;
-	for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
-	  if (defined_local_in_scope(v,a)) {
-	    m_scopes.push_back(a);
-	    binding_found = true;
+      v = getProperty(Var, v->getMention()); 
+      // FIXME: should make sure we always get the data-flow-solved
+      // version of the Var. Shouldn't have to loop through
+      // getProperty!
+      VarBinding * scopes = new VarBinding();
+      if (fi == global) {
+	scopes->insert(global);
+      } else {
+	bool binding_found;
+	switch(v->getScopeType()) {
+	case Var::Var_LOCAL:
+	  // bound in current scope only
+	  scopes->insert(fi);
+	  break;
+	case Var::Var_INDEFINITE:
+	  // bound in current scope and one or more ancestors
+	  scopes->insert(fi);
+	  // FALLTHROUGH
+	case Var::Var_FREE:
+	  // start at this scope's parent; iterate upward through ancestors
+	  binding_found = false;
+	  for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
+	    if (defined_local_in_scope(v,a)) {
+	      scopes->insert(a);
+	      binding_found = true;
+	    }
 	  }
+	  // If no definition found at any ancestor scope, binding is global.
+	  // This is the case for library function uses, etc.
+	  if (!binding_found) {
+	    scopes->insert(global);
+	  }
+	  break;
+	default:
+	  rcc_error("Unknown scope type encountered");
+	  break;
 	}
-	// If no definition found at any ancestor scope, binding is global.
-	// This is the case for library function uses, etc.
-	if (!binding_found) {
-	  m_scopes.push_back(FuncInfo::getGlobalScope());
-	}
-	break;
-      default:
-	rcc_error("Unknown scope type encountered");
-	break;
       }
+      // whether global or not...
+      m_map[HandleInterface::make_sym_h(v->getMention())] = scopes;
     }
   }
-#endif
+}
+  
+  
 }
 
+/// Is the given variable defined as local in the given scope?
+static bool defined_local_in_scope(Var * v, FuncInfo * s) {
+  FuncInfo::mention_iterator mi;
+  for(mi = s->beginMentions(); mi != s->endMentions(); ++mi) {
+    Var * m = *mi;
+    if (m->getUseDefType() == Var::Var_DEF  &&
+	m->getScopeType() == Var::Var_LOCAL &&
+	m->getName() == v->getName())
+    {
+      return true;
+    }
+  }
+  return false;
 }

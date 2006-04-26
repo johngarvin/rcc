@@ -15,8 +15,8 @@ LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
   : m_stmt(_stmt), m_vars()
 {}
 
-//! Traverse the given SEXP and set variable annotations with local
-//! syntactic information.
+/// Traverse the given SEXP and set variable annotations with local
+/// syntactic information.
 void LocalVariableAnalysis::perform_analysis() {
   build_ud_rhs(m_stmt);
 }
@@ -24,9 +24,9 @@ void LocalVariableAnalysis::perform_analysis() {
 const_iterator LocalVariableAnalysis::begin() const { return m_vars.begin(); }
 const_iterator LocalVariableAnalysis::end() const { return m_vars.end(); }
 
-//! Traverse the given SEXP (not an lvalue) and set variable
-//! annotations with local syntactic information.
-//! cell          = a cons cell whose CAR is the expression we're talking about
+/// Traverse the given SEXP (not an lvalue) and set variable
+/// annotations with local syntactic information.
+/// cell          = a cons cell whose CAR is the expression we're talking about
 void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
@@ -92,13 +92,13 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
   }  
 }
 
-//! Traverse the SEXP contained in the given cons cell, assuming that
-//! it's an lvalue. Set variable annotations with local syntactic
-//! information.
-//! cell          = a cons cell whose CAR is the lvalue we're talking about
-//! rhs           = a cons cell whose CAR is the right side of the assignment statement
-//! may_must_type = whether we are in a may-def or a must-def
-//! lhs_type      = whether we are in a local or free assignment
+/// Traverse the SEXP contained in the given cons cell, assuming that
+/// it's an lvalue. Set variable annotations with local syntactic
+/// information.
+/// cell          = a cons cell whose CAR is the lvalue we're talking about
+/// rhs           = a cons cell whose CAR is the right side of the assignment statement
+/// may_must_type = whether we are in a may-def or a must-def
+/// lhs_type      = whether we are in a local or free assignment
 void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
 					 Var::MayMustT may_must_type, LhsType lhs_type)
 {

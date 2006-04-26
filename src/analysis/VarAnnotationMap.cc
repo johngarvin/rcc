@@ -8,6 +8,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityDFSolver.h>
+#include <analysis/PropertySet.h>
 
 #include "VarAnnotationMap.h"
 
@@ -32,6 +33,30 @@ VarAnnotationMap::VarAnnotationMap(bool ownsAnnotations /* = true */)
   {}
   
 VarAnnotationMap::~VarAnnotationMap() {}
+
+// ----- singleton pattern -----
+
+VarAnnotationMap * VarAnnotationMap::get_instance() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_instance;
+}
+
+PropertyHndlT VarAnnotationMap::handle() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_handle;
+}
+
+void VarAnnotationMap::create() {
+  m_instance = new VarAnnotationMap();
+  analysisResults.add(m_handle, m_instance);
+}
+
+VarAnnotationMap * VarAnnotationMap::m_instance = 0;
+PropertyHndlT VarAnnotationMap::m_handle = "Var";
 
 //  ----- demand-driven analysis ----- 
 
@@ -71,11 +96,12 @@ iterator VarAnnotationMap::end() { return m_map.end(); }
 const_iterator VarAnnotationMap::begin() const { return m_map.begin(); }
 const_iterator VarAnnotationMap::end() const { return m_map.end(); }
 
+// ----- computation -----
+
 // compute all Var annotation information
 void VarAnnotationMap::compute() {
   compute_all_syntactic_info();
   compute_all_locality_info();
-  compute_all_bindings();
 }
   
 // Compute syntactic variable info for the whole program. Refers to
@@ -132,10 +158,4 @@ void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
   solver.perform_analysis(proc, cfg);
 }
 
-// interprocedural analysis to find bindings
-//   R_Analyst::build_bindings()
-//   BindingAnalysis
-void VarAnnotationMap::compute_all_bindings() {
-}
-  
 }

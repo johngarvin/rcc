@@ -1,6 +1,9 @@
 // -*- Mode: C++ -*-
 
+#include <analysis/AnalysisResults.h>
+#include <analysis/HandleInterface.h>
 #include <analysis/LocalVariableAnalysis.h>
+#include <analysis/PropertySet.h>
 
 #include "ExpressionInfoAnnotationMap.h"
 
@@ -13,10 +16,9 @@ typedef ExpressionInfoAnnotationMap::iterator iterator;
 typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor ----- 
-  
+
 ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap(bool ownsAnnotations /* = true */)
-: m_computed(false),
-  m_map()
+  : m_map()
   {}
 
 ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {}
@@ -27,28 +29,24 @@ ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {}
 // PropertySet::insert to work right.
 // FIXME: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & ExpressionInfoAnnotationMap::operator[](const MyKeyT & k) {
-  return m_map[k];
-}
-
-// Perform the computation if necessary and return the requested data.
-MyMappedT ExpressionInfoAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute(k);
-    m_computed = true;
-  }
-  
-  // after computing, an annotation ought to exist for every valid
-  // key. No annotations means an error, most likely an invalid key.
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
+  std::map<MyKeyT, MyMappedT>::iterator annot = m_map.find(k);
   if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
+    compute(k);
+    return m_map[k];
+  } else {
+    return annot->second; 
   }
+}
 
-  return annot->second;
+/// Perform the computation for the given expression if necessary and
+/// return the requested data.
+MyMappedT ExpressionInfoAnnotationMap::get(const MyKeyT & k) {
+  return (*this)[k];
 }
   
+/// Expression info is computed piece by piece, so it's never fully computed
 bool ExpressionInfoAnnotationMap::is_computed() {
-  return m_computed;
+  return false;
 }
 
 //  ----- iterators ----- 
@@ -61,12 +59,42 @@ const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
 // ----- computation -----
 
 void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
-  const SEXP e = reinterpret_cast<const SEXP>(k.hval());
+  SEXP e = HandleInterface::make_sexp(k);
+  ExpressionInfo * annot = new ExpressionInfo();
+  annot->setDefn(e);
   LocalVariableAnalysis lva(e);
+  lva.perform_analysis();
   LocalVariableAnalysis::const_iterator it;
   for(it = lva.begin(); it != lva.end(); ++it) {
-    m_map[k] = *it;
+    annot->insert_var(*it);
   }
-}  
+  m_map[k] = annot;
+}
+
+// ----- singleton pattern -----
+
+ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::get_instance() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_instance;
+}
+
+PropertyHndlT ExpressionInfoAnnotationMap::handle() {
+  if (m_instance == 0) {
+    create();
+  }
+  return m_handle;
+}
+
+// Create the singleton instance and register the map in PropertySet
+// for getProperty
+void ExpressionInfoAnnotationMap::create() {
+  m_instance = new ExpressionInfoAnnotationMap(true);
+  analysisResults.add(m_handle, m_instance);
+}
+
+ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::m_instance = 0;
+PropertyHndlT ExpressionInfoAnnotationMap::m_handle = "ExpressionInfo";
 
 }
