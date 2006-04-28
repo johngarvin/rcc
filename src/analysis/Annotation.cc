@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.17 2006/04/26 22:09:44 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.18 2006/04/28 09:03:34 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -44,36 +44,6 @@
 
 
 namespace RAnnot {
-
-
-//****************************************************************************
-// SymbolTable
-//****************************************************************************
-
-SymbolTable::SymbolTable()
-{
-}
-
-
-SymbolTable::~SymbolTable()
-{
-}
-
-
-std::ostream&
-SymbolTable::dump(std::ostream& os) const
-{
-  beginObjDump(os, SymbolTable);
-  for (const_iterator it = this->begin(); it != this->end(); ++it) {
-    os << "(";
-    Rf_PrintValue(it->first);
-    os << " --> ";
-    dumpObj(os, it->second);
-    os << ")\n";
-  }
-  endObjDump(os, SymbolTable);
-}
-
 
 //****************************************************************************
 // ExpressionInfo
@@ -352,7 +322,6 @@ FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mDefn(defn),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
-  mST = new SymbolTable();
   mRequiresContext = functionRequiresContext(defn);
   SEXP args = getArgs();
   for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
@@ -448,7 +417,6 @@ FuncInfo::dump(std::ostream& os) const
   dumpVar(os, mHasVarArgs);
   dumpVar(os, mCName);
   dumpVar(os, mRequiresContext);
-  dumpObj(os, mST);
   //dumpObj(os, mCFG);      // can't call CFG::dump; it requires the IRInterface
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);

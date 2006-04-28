@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.17 2006/04/26 22:09:44 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.18 2006/04/28 09:03:35 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -53,7 +53,6 @@ namespace RAnnot {
 
 // forward declarations
 
-class VarInfo;
 class Var;
 class FuncInfo;
 
@@ -61,115 +60,6 @@ class FuncInfo;
 // should live within and owned by an AnnotationMap.  This allows
 // Annotations to share pointers to other Annotations without
 // worring about reference counting.
-
-
-//****************************************************************************
-// Annotations: Symbol tables
-//****************************************************************************
-
-// ---------------------------------------------------------------------------
-// Name
-// ---------------------------------------------------------------------------
-
-typedef SEXP Name;  // should be of type SYMSXP
-
-// ---------------------------------------------------------------------------
-// Symbol table
-// ---------------------------------------------------------------------------
-
-class SymbolTable 
-  : public AnnotationBase
-{
-public:
-  enum AllocT {
-    Alloc_Heap,  // the heap
-    Alloc_Frame, // the local frame of the execution stack
-    Alloc_Stack  // separately managed stack of objects
-  };
-
-  typedef Name                                              key_type;
-  typedef VarInfo*                                          mapped_type;
-  
-  typedef std::map<Name, VarInfo*>                          MyMap_t;
-  typedef std::pair<const key_type, mapped_type>            value_type;
-  typedef MyMap_t::key_compare                              key_compare;
-  typedef MyMap_t::allocator_type                           allocator_type;
-  typedef MyMap_t::reference                                reference;
-  typedef MyMap_t::const_reference                          const_reference;
-  typedef MyMap_t::iterator                                 iterator;
-  typedef MyMap_t::const_iterator                           const_iterator;
-  typedef MyMap_t::size_type                                size_type;
-
-public:
-  SymbolTable();
-  virtual ~SymbolTable();
-
-  // -------------------------------------------------------
-  // cloning: return a shallow copy... 
-  // -------------------------------------------------------
-  virtual SymbolTable* clone() { return new SymbolTable(*this); }
-
-  // -------------------------------------------------------
-  // iterator, find/insert, etc 
-  // -------------------------------------------------------
-
-  // iterators:
-  iterator begin() 
-    { return mVars.begin(); }
-  const_iterator begin() const 
-    { return mVars.begin(); }
-  iterator end() 
-    { return mVars.end(); }
-  const_iterator end() const 
-    { return mVars.end(); }
-  
-  // capacity:
-  size_type size() const
-    { return mVars.size(); }
-
-  // element access:
-  reference operator[](const key_type& x)
-    { return operator[](x); }
-
-  // modifiers:
-  std::pair<iterator, bool> insert(const value_type& x)
-    { return mVars.insert(x); }
-  iterator insert(iterator position, const value_type& x)
-    { return mVars.insert(position, x); }
-
-  void erase(iterator position) 
-    { mVars.erase(position); }
-  size_type erase(const key_type& x) 
-    { return mVars.erase(x); }
-  void erase(iterator first, iterator last) 
-    { return mVars.erase(first, last); }
-
-  void clear() 
-    { mVars.clear(); }
-
-  // map operations:
-  iterator find(const key_type& x)
-    { return mVars.find(x); }
-  const_iterator find(const key_type& x) const
-    { return mVars.find(x); }
-  size_type count(const key_type& x) const
-    { return mVars.count(x); }
-  
-  // -------------------------------------------------------
-  // code generation
-  // -------------------------------------------------------
-  // genCode1: generate code to initialize ST
-  // genCode2...
-
-  // -------------------------------------------------------
-  // debugging
-  // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
-
-private:
-  MyMap_t mVars; // (contents of map not owned)
-};
-
 
 //****************************************************************************
 // Annotations: Expressions
@@ -527,16 +417,6 @@ public:
   // -------------------------------------------------------
   virtual VarInfo* clone() { return new VarInfo(*this); }
 
-  // -------------------------------------------------------
-  // member data manipulation
-  // -------------------------------------------------------
-
-  // symbol table
-  SymbolTable* getSymbolTable() const
-    { return mST; }
-  void setSymbolTable(SymbolTable* x)
-    { mST = x; }
-
   // FIXME: should this be a set of mentions instead of uses?
 
   // uses iterators:
@@ -582,7 +462,6 @@ public:
 
 private:
   // data_type mType
-  SymbolTable* mST;
   MySet_t mUses;
 };
 
@@ -667,12 +546,6 @@ public:
   const_mention_iterator endMentions() const
     { return mMentions.end(); }
 
-  // symbol table
-  SymbolTable* getSymbolTable() const
-    { return mST; }
-  void setSymbolTable(SymbolTable* x)
-    { mST = x; }
-
   // CFG
   OA::OA_ptr<OA::CFG::Interface> getCFG() const
     { return mCFG; }
@@ -712,7 +585,6 @@ private:
   bool mHasVarArgs;        // variable number of arguments
   std::string mCName;      // C linkage name
   bool mRequiresContext;   // is an R context object needed for the function?
-  SymbolTable* mST;       // (not owned)
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
 

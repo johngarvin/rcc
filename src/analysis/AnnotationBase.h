@@ -1,5 +1,8 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationBase.h,v 1.1 2005/08/29 18:04:08 johnmc Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationBase.h,v 1.2 2006/04/28 09:03:35 garvin Exp $
+
+#ifndef ANNOTATION_BASE_H
+#define ANNOTATION_BASE_H
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -67,3 +70,4 @@ private:
 
 } // end of RAnnot namespace
 
+#endif

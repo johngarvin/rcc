@@ -28,6 +28,8 @@
 #include <include/R/R_Internal.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/SymbolTable.h>
 #include <support/RccError.h>
 
 #include <CodeGenUtils.h>
@@ -178,6 +180,9 @@ int main(int argc, char *argv[]) {
       fi->dump(cout);
       cout << "Dumping CFG via Analyst:" << endl;
       an->dump_cfg(cout, fi->getDefn());
+      cout << "Dumping symbol table:" << endl;
+      SymbolTable * st = getProperty(SymbolTable, fi->getDefn());
+      st->dump(cout);
     }
   }
 

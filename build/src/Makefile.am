@@ -75,6 +75,10 @@ rcc_bin_SOURCES =				\
   ScopeTreeBuilder.h				\
   SimpleIterators.cc				\
   SimpleIterators.h				\
+  SymbolTable.cc                                \
+  SymbolTable.h                                 \
+  SymbolTableAnnotationMap.cc                   \
+  SymbolTableAnnotationMap.h                    \
   TypeInference.h				\
   Utils.cc					\
   Utils.h					\
