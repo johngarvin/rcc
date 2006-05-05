@@ -166,7 +166,8 @@ case ${host} in
       :
     elif HPCcxxcmp([g++]) ; then
       CXXFLAGS=""
-      my_opt_cxxflags="-ggdb3 -O2 -pedantic"
+      my_opt_cxxflags="-O2 -pedantic"
+      my_link_cxxflags=""   #"-Ur"   # perform incremental linking --not working...
     fi
     ;;
 
@@ -195,7 +196,7 @@ case ${host} in
 esac
 
 # Grab optimization flags
-HOST_CXXFLAGS="${HOST_CXXFLAGS} ${my_opt_cxxflags}"
+HOST_CXXFLAGS="${HOST_CXXFLAGS} ${my_opt_cxxflags} ${my_link_cxxflags}"
 
 #-------------------------------------------------
 # Distribute these settings into makefiles

@@ -11,12 +11,12 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
 
-#include <analysis/LocalityDFSolver.h>
-#include <analysis/ScopeTreeBuilder.h>
+//#include <analysis/LocalityDFSolver.h>
+//#include <analysis/ScopeTreeBuilder.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
 // #include <analysis/BindingAnalysis.h>
-#include <analysis/CallGraphBuilder.h>
+//#include <analysis/CallGraphBuilder.h>
 
 #include "Analyst.h"
 
@@ -72,7 +72,7 @@ bool R_Analyst::perform_analysis() {
     build_local_function_info();
     //    build_locality_info();
     //    build_bindings();
-    build_call_graph();
+    //    build_call_graph();
     return true;
   }
   catch (AnalysisException ae) {
@@ -160,6 +160,7 @@ void R_Analyst::build_local_function_info() {
   }
 }
 
+#if 0
 /// For each procedure, use control flow to discover locality for each
 /// name (whether local or free)
 void R_Analyst::build_locality_info() {
@@ -171,6 +172,7 @@ void R_Analyst::build_locality_info() {
     uds.perform_analysis(ph, fi->getCFG());
   }
 }
+#endif
 
 /// Perform binding analysis to resolve names to a single scope if
 /// possible
@@ -179,8 +181,10 @@ void R_Analyst::build_bindings() {
   //  ba.perform_analysis();
 }
 
+#if 0
 /// For each procedure, discover which other procedures are called
 void R_Analyst::build_call_graph() {
   CallGraphBuilder cgb(m_scope_tree_root);
   cgb.perform_analysis();
 }
+#endif

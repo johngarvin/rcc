@@ -39,14 +39,24 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
-  CallGraphBuilder.cc                           \
-  CallGraphBuilder.h                            \
+  CallGraphAnnotationMap.cc                     \
+  CallGraphAnnotationMap.h                      \
+  CallGraphEdge.cc                              \
+  CallGraphEdge.h                               \
+  CallGraphInfo.cc                              \
+  CallGraphInfo.h                               \
+  CallGraphNode.cc                              \
+  CallGraphNode.h                               \
+  CoordinateCallGraphNode.cc                    \
+  CoordinateCallGraphNode.h                     \
   ExpressionInfoAnnotationMap.cc                \
   ExpressionInfoAnnotationMap.h                 \
   FormalArgInfoAnnotationMap.cc                 \
   FormalArgInfoAnnotationMap.h                  \
   FuncInfoAnnotationMap.cc                      \
   FuncInfoAnnotationMap.h                       \
+  FundefCallGraphNode.cc                        \
+  FundefCallGraphNode.h                         \
   HandleInterface.cc				\
   HandleInterface.h				\
   IRInterface.cc				\
