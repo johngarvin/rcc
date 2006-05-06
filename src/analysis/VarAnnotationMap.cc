@@ -122,8 +122,8 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	stmt = si->current();
 	ExpressionInfo * expr = getProperty(ExpressionInfo, reinterpret_cast<SEXP>(stmt.hval()));
 	// each variable in the expression
-	ExpressionInfo::const_iterator ei;
-	for(ei = expr->begin(); ei != expr->end(); ++ei) {
+	ExpressionInfo::const_var_iterator ei;
+	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
 	  SymHandle s = HandleInterface::make_sym_h(v->getMention());

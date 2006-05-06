@@ -11,12 +11,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
 
-//#include <analysis/LocalityDFSolver.h>
-//#include <analysis/ScopeTreeBuilder.h>
-#include <analysis/LocalVariableAnalysis.h>
 #include <analysis/LocalFunctionAnalysis.h>
-// #include <analysis/BindingAnalysis.h>
-//#include <analysis/CallGraphBuilder.h>
 
 #include "Analyst.h"
 
@@ -68,11 +63,7 @@ bool R_Analyst::perform_analysis() {
       throw AnalysisException();
     }
     build_cfgs();
-    //    build_local_variable_info();
     build_local_function_info();
-    //    build_locality_info();
-    //    build_bindings();
-    //    build_call_graph();
     return true;
   }
   catch (AnalysisException ae) {
@@ -125,6 +116,7 @@ void R_Analyst::build_cfgs() {
   }
 }
 
+#if 0
 /// Collect basic local info on variables: use/def, "<-"/"<<-", etc.
 void R_Analyst::build_local_variable_info() {
   // each function
@@ -148,6 +140,7 @@ void R_Analyst::build_local_variable_info() {
     }
   }
 }
+#endif
 
 /// Discovers local information on procedures: arguments, names
 /// mentioned, etc.

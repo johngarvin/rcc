@@ -64,10 +64,15 @@ void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
   annot->setDefn(e);
   LocalVariableAnalysis lva(e);
   lva.perform_analysis();
-  LocalVariableAnalysis::const_iterator it;
-  for(it = lva.begin(); it != lva.end(); ++it) {
-    annot->insert_var(*it);
+  LocalVariableAnalysis::const_var_iterator v;
+  for(v = lva.begin_vars(); v != lva.end_vars(); ++v) {
+    annot->insert_var(*v);
   }
+  LocalVariableAnalysis::const_call_site_iterator cs;
+  for(cs = lva.begin_call_sites(); cs != lva.end_call_sites(); ++cs) {
+    annot->insert_call_site(*cs);
+  }
+  
   m_map[k] = annot;
 }
 

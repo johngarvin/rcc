@@ -68,8 +68,8 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 
       // each mention in the statement
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, (SEXP)si->current().hval());
-      ExpressionInfo::iterator mi;
-      for(mi = stmt_annot->begin(); mi != stmt_annot->end(); ++mi) {
+      ExpressionInfo::var_iterator mi;
+      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * annot = *mi;
 	// look up the mention's name in in_set to get lattice type
 	OA_ptr<R_VarRef> ref; ref = make_var_ref_from_annotation(annot);
@@ -162,8 +162,8 @@ void LocalityDFSolver::initialize_sets() {
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, stmt_r);
 
       // for this statement's annotation, iterate through its set of var mentions
-      Var::iterator vi;
-      for(vi = stmt_annot->begin(); vi != stmt_annot->end(); ++vi) {
+      ExpressionInfo::const_var_iterator vi;
+      for(vi = stmt_annot->begin_vars(); vi != stmt_annot->end_vars(); ++vi) {
 	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*vi)->getMention());
 
 	// all_top and all_bottom: all variables set to TOP/BOTTOM,
@@ -221,8 +221,8 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   SEXP stmt = (SEXP)stmt_handle.hval();
   ExpressionInfo * annot = getProperty(ExpressionInfo, stmt);
-  ExpressionInfo::iterator var_iter;
-  for(var_iter = annot->begin(); var_iter != annot->end(); ++var_iter) {
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
     // if variable was found to be local during statement-level
     // analysis, add it in
     Var::ScopeT scope = (*var_iter)->getScopeType();

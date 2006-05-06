@@ -9,7 +9,8 @@ using namespace RAnnot;
 
 // ----- type definitions for readability -----
 
-typedef LocalVariableAnalysis::const_iterator const_iterator;
+typedef LocalVariableAnalysis::const_var_iterator const_var_iterator;
+typedef LocalVariableAnalysis::const_call_site_iterator const_call_site_iterator;
 
 LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
   : m_stmt(_stmt), m_vars()
@@ -21,8 +22,10 @@ void LocalVariableAnalysis::perform_analysis() {
   build_ud_rhs(m_stmt);
 }
 
-const_iterator LocalVariableAnalysis::begin() const { return m_vars.begin(); }
-const_iterator LocalVariableAnalysis::end() const { return m_vars.end(); }
+const_var_iterator LocalVariableAnalysis::begin_vars() const { return m_vars.begin(); }
+const_var_iterator LocalVariableAnalysis::end_vars() const { return m_vars.end(); }
+const_call_site_iterator LocalVariableAnalysis::begin_call_sites() const { return m_call_sites.begin(); }
+const_call_site_iterator LocalVariableAnalysis::end_call_sites() const { return m_call_sites.end(); }
 
 /// Traverse the given SEXP (not an lvalue) and set variable
 /// annotations with local syntactic information.
@@ -73,6 +76,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
       build_ud_rhs(stmt);
     }
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
+    m_call_sites.push_back(e);
     if (is_var(CAR(e))) {
       UseVar * var_annot = new UseVar();
       var_annot->setMention(e);

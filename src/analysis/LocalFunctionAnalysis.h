@@ -14,7 +14,8 @@ public:
   void perform_analysis();
 private:
   void analyze_args();
-  void collect_mentions();
+  void collect_mentions_and_call_sites();
+
   const SEXP m_fundef;
 };
 

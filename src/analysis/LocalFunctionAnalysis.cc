@@ -21,7 +21,7 @@ LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
 /// definition. Adds annotations to the global AnalysisResults.
 void LocalFunctionAnalysis::perform_analysis() {
   analyze_args();
-  collect_mentions();
+  collect_mentions_and_call_sites();
 }
 
 void LocalFunctionAnalysis::analyze_args() {
@@ -48,8 +48,8 @@ void LocalFunctionAnalysis::analyze_args() {
   f_annot->setHasVarArgs(has_var_args);
 }
 
-/// Find each mention (use or def) in the function
-void LocalFunctionAnalysis::collect_mentions() {
+/// Find each mention (use or def) and call site in the function
+void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   FuncInfo * f_annot = getProperty(FuncInfo, m_fundef);
   OA_ptr<CFG::Interface> cfg; cfg = f_annot->getCFG();
   assert(!cfg.ptrEqual(0));
@@ -64,13 +64,17 @@ void LocalFunctionAnalysis::collect_mentions() {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, HandleInterface::make_sexp(si->current()));
       assert(stmt_annot != 0);
-      ExpressionInfo::iterator mi;
-      for(mi = stmt_annot->begin(); mi != stmt_annot->end(); ++mi) {
+      ExpressionInfo::const_var_iterator mi;
+      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * v = getProperty(Var, (*mi)->getMention());
 	// FIXME: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
 	f_annot->insertMention(v);
+      }
+      ExpressionInfo::const_call_site_iterator cs;
+      for(cs = stmt_annot->begin_call_sites(); cs != stmt_annot->end_call_sites(); ++cs) {
+	f_annot->insertCallSite(*cs);
       }
     }
   }

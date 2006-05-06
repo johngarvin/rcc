@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.18 2006/04/28 09:03:35 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.19 2006/05/06 01:00:01 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -75,27 +75,42 @@ public:
   ExpressionInfo();
   virtual ~ExpressionInfo();
 
-  typedef Var *                   value_type, key_type;
+  typedef Var *                      MyVar_t;
+  typedef std::list<MyVar_t>         MyVarSet_t;
+  typedef MyVarSet_t::iterator       var_iterator;
+  typedef MyVarSet_t::const_iterator const_var_iterator;
 
-  typedef std::set<Var *>         MySet_t;
-  typedef MySet_t::iterator       iterator;
-  typedef MySet_t::const_iterator const_iterator;
+  typedef SEXP                            MyCallSite_t;
+  typedef std::list<MyCallSite_t>         MyCallSiteSet_t;
+  typedef MyCallSiteSet_t::iterator       call_site_iterator;
+  typedef MyCallSiteSet_t::const_iterator const_call_site_iterator;
 
   // -------------------------------------------------------
   // set operations
   // -------------------------------------------------------
-  std::pair<iterator, bool> insert_var(const value_type& x)
-    { return mVars.insert(x); }
+  void insert_var(const MyVar_t & x)
+    { mVars.push_back(x); }
+  void insert_call_site(const MyCallSite_t & x)
+    { mCallSites.push_back(x); }
 
   // iterators:
-  iterator begin() 
+  var_iterator begin_vars()
     { return mVars.begin(); }
-  const_iterator begin() const 
+  const_var_iterator begin_vars() const 
     { return mVars.begin(); }
-  iterator end() 
+  var_iterator end_vars()
     { return mVars.end(); }
-  const_iterator end() const 
+  const_var_iterator end_vars() const 
     { return mVars.end(); }
+
+  call_site_iterator begin_call_sites()
+    { return mCallSites.begin(); }
+  const_call_site_iterator begin_call_sites() const 
+    { return mCallSites.begin(); }
+  call_site_iterator end_call_sites()
+    { return mCallSites.end(); }
+  const_call_site_iterator end_call_sites() const 
+    { return mCallSites.end(); }
 
   // definition of the expression
   SEXP getDefn() const
@@ -117,7 +132,8 @@ public:
 
 private:
   SEXP mDefn;
-  MySet_t mVars;  // contents of set not owned
+  MyVarSet_t mVars;            // contents of set not owned
+  MyCallSiteSet_t mCallSites;  // contents of set not owned
 };
 
 
@@ -477,16 +493,16 @@ class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>,
 		 public AnnotationBase
 {
 public:
-  typedef Var*                                              mention_key_type;
+  typedef Var*                                             MentionT;
 
-  typedef std::set<mention_key_type>                        MentionSet_t;
-  typedef MentionSet_t::iterator                            mention_iterator;
-  typedef MentionSet_t::const_iterator                      const_mention_iterator;
+  typedef std::list<MentionT>                              MentionSetT;
+  typedef MentionSetT::iterator                            mention_iterator;
+  typedef MentionSetT::const_iterator                      const_mention_iterator;
 
-  typedef FuncInfo*                                         call_key_type;
-  typedef std::multiset<call_key_type>                      CallSet_t;
-  typedef CallSet_t::iterator                               call_iterator;
-  typedef CallSet_t::const_iterator                         const_call_iterator;
+  typedef SEXP                                             CallSiteT;
+  typedef std::list<CallSiteT>                             CallSiteSetT;
+  typedef CallSiteSetT::iterator                           call_site_iterator;
+  typedef CallSiteSetT::const_iterator                     const_call_site_iterator;
 public:
   FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
@@ -531,10 +547,17 @@ public:
 
   // context
   void setRequiresContext(bool requiresContext); 
-  bool getRequiresContext(); 
+  bool getRequiresContext();
 
-  // mention set
-  void insertMention(Var * v);
+  // insert methods into sets
+  void insertMention(MentionT v);
+  void insertCallSite(CallSiteT e);
+
+  // CFG
+  OA::OA_ptr<OA::CFG::Interface> getCFG() const
+    { return mCFG; }
+  void setCFG(OA::OA_ptr<OA::CFG::Interface> x)
+    { mCFG = x; }
 
   // mention iterators
   mention_iterator beginMentions()
@@ -546,34 +569,15 @@ public:
   const_mention_iterator endMentions() const
     { return mMentions.end(); }
 
-  // CFG
-  OA::OA_ptr<OA::CFG::Interface> getCFG() const
-    { return mCFG; }
-  void setCFG(OA::OA_ptr<OA::CFG::Interface> x)
-    { mCFG = x; }
-
-  // callee and caller
-  void insertCallIn(FuncInfo *fi);
-  void insertCallOut(FuncInfo *fi);
-
-  // callee and caller iterators
-  call_iterator beginCallsIn()
-    { return mCallsIn.begin(); }
-  const_call_iterator beginCallsIn() const
-    { return mCallsIn.begin(); }
-  call_iterator endCallsIn()
-    { return mCallsIn.end(); }
-  const_call_iterator endCallsIn() const
-    { return mCallsIn.end(); }
-
-  call_iterator beginCallsOut()
-    { return mCallsOut.begin(); }
-  const_call_iterator beginCallsOut() const
-    { return mCallsOut.begin(); }
-  call_iterator endCallsOut()
-    { return mCallsOut.end(); }
-  const_call_iterator endCallsOut() const
-    { return mCallsOut.end(); }
+  // call site iterators
+  call_site_iterator beginCallSites()
+    { return mCallSites.begin(); }
+  const_call_site_iterator beginCallSites() const
+    { return mCallSites.begin(); }
+  call_site_iterator endCallSites()
+    { return mCallSites.end(); }
+  const_call_site_iterator endCallSites() const
+    { return mCallSites.end(); }
 
   // -------------------------------------------------------
   // debugging
@@ -588,14 +592,12 @@ private:
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
 
-  MentionSet_t mMentions; // uses and defs inside function (NOT including nested functions)
+  MentionSetT mMentions; // uses and defs inside function (NOT including nested functions)
+  CallSiteSetT mCallSites; // call sites inside function (NOT including nested functions)
 
   SEXP mDefn;            // function definition
   SEXP mFirstName;       // name of function at original definition 
   FuncInfo *mLexicalParent; // parent scope definition
-
-  CallSet_t mCallsIn;     // (not owned)
-  CallSet_t mCallsOut;    // (not owned)
 
   // argument description: types, strict?
 };

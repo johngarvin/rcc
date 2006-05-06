@@ -21,15 +21,19 @@
 
 class LocalVariableAnalysis {
 public:
-  typedef RAnnot::Var * MyKeyT;
-  typedef std::vector<MyKeyT>::const_iterator const_iterator;
+  typedef RAnnot::Var * MyVarT;
+  typedef std::list<MyVarT>::const_iterator const_var_iterator;
+  typedef SEXP MyCallSiteT;
+  typedef std::list<MyCallSiteT>::const_iterator const_call_site_iterator;
 
   LocalVariableAnalysis(const SEXP _stmt);
 
   void perform_analysis();
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  const_var_iterator begin_vars() const;
+  const_var_iterator end_vars() const;
+  const_call_site_iterator begin_call_sites() const;
+  const_call_site_iterator end_call_sites() const;
 
 private:
   enum LhsType {
@@ -39,7 +43,8 @@ private:
   void build_ud_rhs(const SEXP cell);
   void build_ud_lhs(const SEXP cell, const SEXP rhs, RAnnot::Var::MayMustT may_must_type, LhsType lhs_type);
   const SEXP m_stmt;
-  std::vector<MyKeyT> m_vars;
+  std::list<MyVarT> m_vars;
+  std::list<MyCallSiteT> m_call_sites;
 };
 
 #endif

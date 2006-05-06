@@ -81,8 +81,6 @@ rcc_bin_SOURCES =				\
   PropertySetMgr.h				\
   RequiresContext.cc				\
   RequiresContext.h				\
-  ScopeTreeBuilder.cc				\
-  ScopeTreeBuilder.h				\
   SimpleIterators.cc				\
   SimpleIterators.h				\
   SymbolTable.cc                                \

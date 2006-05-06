@@ -37,7 +37,6 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Annotation.h>
-#include <analysis/LocalVariableAnalysis.h>
 #include <analysis/HandleInterface.h>
 
 #include <support/RccError.h>
@@ -46,24 +45,6 @@
 
 using namespace OA;
 using namespace RAnnot;
-
-//--------------------------------------------------------------------
-// Callsite iterator
-//--------------------------------------------------------------------
-
-#if 0
-void R_IRCallsiteIterator::build_callsites() {
-  for( ; exp_iter.isValid(); ++exp_iter) {
-    if (TYPEOF(exp_iter.current()) == LANGSXP
-	&& TYPEOF(CAR(exp_iter.current())) == SYMSXP) {
-      SEXP func = Rf_findVar(CAR(exp_iter.current()), R_GlobalEnv);
-      if (func == R_UnboundValue || TYPEOF(func) == CLOSXP) {  // user-defined or R library function
-	callsites.push_back(exp_iter.current());               // (we assume no unbound variables)
-      }
-    }
-  }
-}
-#endif
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -364,15 +345,12 @@ SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   SEXP stmt = (SEXP)h.hval();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
-  if (stmt_info == 0) {
-    LocalVariableAnalysis lva(stmt);
-    lva.perform_analysis();
-  }
+  assert(stmt_info != 0);
 
   // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs;
-  ExpressionInfo::iterator var_iter;
-  for(var_iter = stmt_info->begin(); var_iter != stmt_info->end(); ++var_iter) {
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if (dynamic_cast<DefVar *>(*var_iter)) {
       OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
       defs->insert_ref(bvr);
@@ -386,15 +364,12 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   SEXP stmt = (SEXP)h.hval();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
-  if (stmt_info == 0) {
-    LocalVariableAnalysis lva(stmt);
-    lva.perform_analysis();
-  }  
+  assert(stmt_info == 0);
 
   // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs;
-  ExpressionInfo::iterator var_iter;
-  for(var_iter = stmt_info->begin(); var_iter != stmt_info->end(); ++var_iter) {
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if (dynamic_cast<DefVar *>(*var_iter)) {
       OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
       defs->insert_ref(bvr);

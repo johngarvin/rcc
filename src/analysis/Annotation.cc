@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.18 2006/04/28 09:03:34 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.19 2006/05/06 01:00:01 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -65,12 +65,21 @@ ExpressionInfo::dump(std::ostream& os) const
   beginObjDump(os, ExpressionInfo);
   SEXP definition = CAR(mDefn);
   dumpSEXP(os, definition);
+
   os << "Begin mentions:" << std::endl;
-  MySet_t::iterator var_iter;
+  const_var_iterator var_iter;
   for(var_iter = mVars.begin(); var_iter != mVars.end(); ++var_iter) {
     (*var_iter)->dump(os);
   }
   os << "End mentions" << std::endl;
+
+  os << "Begin call sites:" << std::endl;
+  const_call_site_iterator cs_iter;
+  for(cs_iter = mCallSites.begin(); cs_iter != mCallSites.end(); ++cs_iter) {
+    dumpSEXP(os, *cs_iter);
+  }
+  os << "End call sites" << std::endl;
+
   endObjDump(os, ExpressionInfo);
 }
 
@@ -392,19 +401,14 @@ bool FuncInfo::areAllValue()
   return allvalue;
 }
 
-void FuncInfo::insertMention(Var * v)
+void FuncInfo::insertMention(FuncInfo::MentionT v)
 {
-  mMentions.insert(v);
+  mMentions.push_back(v);
 }
 
-void FuncInfo::insertCallIn(FuncInfo* fi)
+void FuncInfo::insertCallSite(FuncInfo::CallSiteT cs)
 {
-  mCallsIn.insert(fi);
-}
-
-void FuncInfo::insertCallOut(FuncInfo* fi)
-{
-  mCallsOut.insert(fi);
+  mCallSites.push_back(cs);
 }
 
 std::ostream&
@@ -421,24 +425,13 @@ FuncInfo::dump(std::ostream& os) const
   dumpSEXP(os, mDefn);
   dumpPtr(os, mLexicalParent);
   os << "Begin mentions:" << std::endl;
-  for(mention_iterator i = mMentions.begin(); i != mMentions.end(); ++i) {
+  for(const_mention_iterator i = beginMentions(); i != endMentions(); ++i) {
     Var * v = *i;
     v->dump(os);
     VarBinding * vb = getProperty(VarBinding, (*i)->getMention());
     vb->dump(os);
   }
   os << "End mentions" << std::endl;
-  os << "Begin calls" << std::endl;
-  os << "In:" << std::endl;
-  call_iterator i;
-  for(i = mCallsIn.begin(); i != mCallsIn.end(); ++i) {
-    dumpPtr(os, *i);
-  }
-  os << "Out:" << std::endl;
-  for(i = mCallsOut.begin(); i != mCallsOut.end(); ++i) {
-    dumpPtr(os, *i);
-  }
-  os << "End calls" << std::endl;
   endObjDump(os, FuncInfo);
 }
 
