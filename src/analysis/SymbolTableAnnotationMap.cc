@@ -59,6 +59,11 @@ PropertyHndlT SymbolTableAnnotationMap::m_handle = "SymbolTable";
 // PropertySet::insert to work right.
 // FIXME: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & SymbolTableAnnotationMap::operator[](const MyKeyT & k) {
+  if (!is_computed()) {
+    compute();
+    m_computed = true;
+  }
+
   return m_map[k];
 }
 
@@ -108,15 +113,17 @@ void SymbolTableAnnotationMap::compute() {
   for(fii.Reset(); fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
 
-    for (FuncInfo::mention_iterator mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
+    FuncInfo::mention_iterator mi;
+    for(mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       // count only defs, not uses
       DefVar * def; def = dynamic_cast<DefVar *>(*mi);
       if (def == 0) continue;
       SEXP name = CAR(def->getMention());
-      VarBinding * vb; vb = getProperty(VarBinding, def->getMention());
+      VarBinding * vb = getProperty(VarBinding, def->getMention());
       // for each scope in which the variable might be defined
-      for (vb->reset(); vb->isValid(); ++*vb) {
-	AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h(vb->current()->getDefn())];
+      VarBinding::const_iterator vbi;
+      for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {
+	AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h((*vbi)->getDefn())];
 	SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
 	assert(target_st != 0);
 	SymbolTable::iterator it = target_st->find(name);
@@ -127,7 +134,7 @@ void SymbolTableAnnotationMap::compute() {
 	} else {
 	  vi = it->second;
 	}
-	vi->insertUses(def);  // should change name
+	vi->insertDef(def);
       }
     }
   }  

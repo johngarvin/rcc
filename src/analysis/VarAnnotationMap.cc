@@ -64,6 +64,11 @@ PropertyHndlT VarAnnotationMap::m_handle = "Var";
 // PropertySet::insert to work right.
 // FIXME: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & VarAnnotationMap::operator[](const MyKeyT & k) {
+  if (!is_computed()) {
+    compute();
+    m_computed = true;
+  }
+
   return m_map[k];
 }
 

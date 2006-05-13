@@ -31,6 +31,9 @@ bool is_var(const SEXP e);
 std::string var_name(const SEXP e);
 bool is_cons(const SEXP e);
 bool is_string(const SEXP e);
+bool is_call(const SEXP e);
+SEXP call_lhs(const SEXP e);
+SEXP call_args(const SEXP e);
 
 bool is_if(const SEXP e);
 SEXP if_cond_c(const SEXP e);

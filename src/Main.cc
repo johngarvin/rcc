@@ -27,7 +27,10 @@
 #include <CheckProtect.h>
 #include <include/R/R_Internal.h>
 
+#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/CallGraphAnnotationMap.h>
+#include <analysis/CallGraphInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <support/RccError.h>
@@ -172,18 +175,30 @@ int main(int argc, char *argv[]) {
   R_Analyst * an = R_Analyst::get_instance(program);
   bool analysis_ok = an->perform_analysis();
 
-  if (analysis_debug) {
-    FuncInfo * scope_tree = an->get_scope_tree_root();
-    FuncInfoIterator fii(scope_tree);
-    for(FuncInfo *fi; fi = fii.Current(); fii++) {
-      cout << "New procedure:" << endl;
-      fi->dump(cout);
-      cout << "Dumping CFG via Analyst:" << endl;
-      an->dump_cfg(cout, fi->getDefn());
-      cout << "Dumping symbol table:" << endl;
-      SymbolTable * st = getProperty(SymbolTable, fi->getDefn());
-      st->dump(cout);
+  try {
+    if (analysis_debug) {
+      FuncInfo * scope_tree = an->get_scope_tree_root();
+      FuncInfoIterator fii(scope_tree);
+      for(FuncInfo *fi; fi = fii.Current(); ++fii) {
+	cout << "New procedure:" << endl;
+	fi->dump(cout);
+	cout << "Dumping CFG via Analyst:" << endl;
+	an->dump_cfg(cout, fi->getDefn());
+	cout << "Dumping symbol table:" << endl;
+	SymbolTable * st = getProperty(SymbolTable, fi->getDefn());
+	st->dump(cout);
+      }
+      cout << "Dumping call graph:" << endl;
+      CallGraphInfo * cgi = getProperty(CallGraphInfo, CAR(assign_rhs_c(program)));
+      CallGraphAnnotationMap::get_instance()->dump(cout);
     }
+  }
+  catch (AnalysisException ae) {
+    // One phase of analysis rejected a program. Get rid of the
+    // information in preparation to compile trivially.
+    rcc_warn("analysis encountered problems; compiling trivially");
+    clearProperties();
+    analysis_ok = false;
   }
 
   // We had to make our program one big function to use

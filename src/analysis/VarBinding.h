@@ -38,25 +38,21 @@
 
 namespace RAnnot {
 
-class VarBinding : public AnnotationBase,
-		   public OA::Iterator
+class VarBinding : public AnnotationBase
 {
 public:
 
   // typedefs to let us function as wrapper around container
   typedef FuncInfo *                            KeyT;
-  typedef std::vector<KeyT>                     MyContainerT;
+  typedef std::list<KeyT>                       MyContainerT;
+  typedef MyContainerT::const_iterator          const_iterator;
 
   explicit VarBinding(); // constructor
 
-  // inherited from Iterator
-  bool isValid() const;
-  void operator++();
+  const_iterator begin();
+  const_iterator end();
   
-  // other iteration methods
-  KeyT current();
   void insert(KeyT key);
-  void reset();
 
   // get handle to lookup in PropertySet
   static PropertyHndlT handle();
@@ -72,7 +68,6 @@ public:
 private:
 
   MyContainerT m_scopes; // sequence of scopes where var is bound
-  MyContainerT::iterator m_pointer;
 
   static PropertyHndlT m_handle;
 };

@@ -11,11 +11,16 @@ namespace RAnnot {
 
 class CoordinateCallGraphNode : public CallGraphNode {
 public:
-  explicit CoordinateCallGraphNode(SEXP name, SEXP scope);
+  explicit CoordinateCallGraphNode(const SEXP name, const SEXP scope);
   virtual ~CoordinateCallGraphNode();
+
+  const OA::IRHandle get_handle() const;
+
+  const SEXP get_name() const;
+  const SEXP get_scope() const;
 private:
-  SEXP m_name;
-  SEXP m_scope;
+  const SEXP m_name;
+  const SEXP m_scope;
 };
 
 } // end namespace RAnnot

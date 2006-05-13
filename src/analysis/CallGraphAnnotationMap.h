@@ -12,6 +12,7 @@
 
 #include <map>
 #include <set>
+#include <ostream>
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
@@ -19,6 +20,9 @@
 #include <analysis/CallGraphEdge.h>
 #include <analysis/CallGraphInfo.h>
 #include <analysis/CallGraphNode.h>
+#include <analysis/CoordinateCallGraphNode.h>
+#include <analysis/FundefCallGraphNode.h>
+#include <analysis/LibraryCallGraphNode.h>
 
 namespace RAnnot {
 
@@ -44,21 +48,31 @@ public:
   iterator end();
   const_iterator end() const;
 
+  void dump(std::ostream & stream);
+
 private:
   // private constructor for singleton pattern
   CallGraphAnnotationMap();
 
   void compute();
 
-  bool m_computed; // has our information been computed yet?
-
   static CallGraphAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
   static void create();
+
+  FundefCallGraphNode * make_fundef_node(SEXP e);
+  LibraryCallGraphNode * make_library_node(SEXP e);
+  CoordinateCallGraphNode * make_coordinate_node(SEXP name, SEXP scope);
+  void add_edge(CallGraphNode * source_node, SEXP source_call_site, CallGraphNode * sink);
+  void add_edge(CoordinateCallGraphNode * source, CallGraphNode * sink);
   
 private:
+  bool m_computed; // has our information been computed yet?
   std::map<MyKeyT, MyMappedT> m_node_map;
   std::set<const CallGraphEdge *> m_edge_set;
+  std::map<SEXP, FundefCallGraphNode *> m_fundef_map;
+  std::map<SEXP, LibraryCallGraphNode *> m_library_map;
+  std::map<std::pair<SEXP,SEXP>, CoordinateCallGraphNode *> m_coord_map;
 };
 
 }  // end namespace RAnnot

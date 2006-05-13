@@ -1,5 +1,7 @@
 #include "CallGraphInfo.h"
 
+#include <analysis/CallGraphAnnotationMap.h>
+
 namespace RAnnot {
 
   // typedef for readability
@@ -45,8 +47,21 @@ namespace RAnnot {
     return 0; // don't support this
   }
 
+  PropertyHndlT CallGraphInfo::handle() {
+    return CallGraphAnnotationMap::handle();
+  }
+
   std::ostream & CallGraphInfo::dump(std::ostream & stream) const {
-    // TODO: implement
+    MySetT::const_iterator it;
+    stream << "Calls in:" << std::endl;
+    for (it = begin_calls_in(); it != end_calls_in(); ++it) {
+      stream << "edge" << std::endl;
+    }
+    stream << "Calls out:" << std::endl;
+    for (it = begin_calls_out(); it != end_calls_out(); ++it) {
+      stream << "edge" << std::endl;
+    }
+    stream << "End call graph node";
   }
 
 } // end namespace RAnnot

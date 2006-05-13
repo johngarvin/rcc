@@ -166,7 +166,7 @@ case ${host} in
       :
     elif HPCcxxcmp([g++]) ; then
       CXXFLAGS=""
-      my_opt_cxxflags="-O2 -pedantic"
+      my_opt_cxxflags="-g3 -pedantic"
       my_link_cxxflags=""   #"-Ur"   # perform incremental linking --not working...
     fi
     ;;

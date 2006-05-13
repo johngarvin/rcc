@@ -134,6 +134,20 @@ bool is_string(const SEXP e) {
   return (TYPEOF(e) == STRSXP);
 }
 
+bool is_call(const SEXP e) {
+  return (TYPEOF(e) == LANGSXP);
+}
+
+SEXP call_lhs(const SEXP e) {
+  assert(is_call(e));
+  return CAR(e);
+}
+
+SEXP call_args(const SEXP e) {
+  assert(is_call(e));
+  return CDR(e);
+}
+
 //--------------------------------------------------------------------
 // control flow statements
 //--------------------------------------------------------------------

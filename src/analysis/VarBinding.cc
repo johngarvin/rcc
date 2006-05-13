@@ -38,32 +38,23 @@ namespace RAnnot {
 
 /// constructor
 VarBinding::VarBinding()
-  : m_scopes(),
-    m_pointer(m_scopes.begin())
+  : m_scopes()
   {}
 
 // ----- iterator methods -----
 
-  bool VarBinding::isValid() const {
-    return (m_pointer != m_scopes.end());
+  VarBinding::const_iterator VarBinding::begin() {
+    return m_scopes.begin();
   }
-  
-  void VarBinding::operator++() {
-    m_pointer++;
+
+  VarBinding::const_iterator VarBinding::end() {
+    return m_scopes.end();
   }
-  
-  VarBinding::KeyT VarBinding::current() {
-    return *m_pointer;
-  }
-  
+
   void VarBinding::insert(KeyT key) {
     m_scopes.push_back(key);
   }
   
-  void VarBinding::reset() {
-    m_pointer = m_scopes.begin();
-  }
-    
   PropertyHndlT VarBinding::handle() {
     return VarBindingAnnotationMap::handle();
   }

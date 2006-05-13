@@ -80,7 +80,7 @@ MyMappedT VarBindingAnnotationMap::get(const MyKeyT & k) {
   // key. If not, it's an error
   std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
   if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
+    rcc_error("Possible invalid key not found in VarBinding map");
   }
 
   return annot->second;

@@ -1,7 +1,7 @@
 // -*- Mode: C++ -*-
 
-#ifndef FUNDEF_CALL_GRAPH_NODE_H
-#define FUNDEF_CALL_GRAPH_NODE_H
+#ifndef LIBRARY_CALL_GRAPH_NODE_H
+#define LIBRARY_CALL_GRAPH_NODE_H
 
 #include <include/R/R_RInternals.h>
 
@@ -9,15 +9,15 @@
 
 namespace RAnnot {
 
-class FundefCallGraphNode : public CallGraphNode {
+class LibraryCallGraphNode : public CallGraphNode {
 public:
-  explicit FundefCallGraphNode(const SEXP fundef);
-  virtual ~FundefCallGraphNode();
+  explicit LibraryCallGraphNode(const SEXP def);
+  virtual ~LibraryCallGraphNode();
 
   const OA::IRHandle get_handle() const;
   const SEXP get_sexp() const;
 private:
-  const SEXP m_fundef;
+  const SEXP m_def;
 };
 
 } // end namespace RAnnot

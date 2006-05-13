@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.19 2006/05/06 01:00:01 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.20 2006/05/13 07:31:08 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -433,43 +433,41 @@ public:
   // -------------------------------------------------------
   virtual VarInfo* clone() { return new VarInfo(*this); }
 
-  // FIXME: should this be a set of mentions instead of uses?
-
   // uses iterators:
-  iterator beginUses()
-    { return mUses.begin(); }
-  const_iterator beginUses() const
-    { return mUses.begin(); }
-  iterator endUses()
-    { return mUses.end(); }
-  const_iterator endUses() const
-    { return mUses.end(); }
+  iterator beginDefs()
+    { return mDefs.begin(); }
+  const_iterator beginDefs() const
+    { return mDefs.begin(); }
+  iterator endDefs()
+    { return mDefs.end(); }
+  const_iterator endDefs() const
+    { return mDefs.end(); }
   
   // uses capacity:
-  size_type sizeUses() const
-    { return mUses.size(); }
+  size_type sizeDefs() const
+    { return mDefs.size(); }
   
   // uses modifiers:
-  std::pair<iterator,bool> insertUses(const value_type& x)
-    { return mUses.insert(x); }
-  iterator insertUses(iterator position, const value_type& x)
-    { return mUses.insert(position, x); }
+  std::pair<iterator,bool> insertDef(const value_type& x)
+    { return mDefs.insert(x); }
+  iterator insertDef(iterator position, const value_type& x)
+    { return mDefs.insert(position, x); }
 
-  void eraseUses(iterator position)
-    { mUses.erase(position); }
-  size_type eraseUses(const key_type& x)
-    { return mUses.erase(x); }
-  void eraseUses(iterator first, iterator last)
-    { return mUses.erase(first, last); }
+  void eraseDefs(iterator position)
+    { mDefs.erase(position); }
+  size_type eraseDefs(const key_type& x)
+    { return mDefs.erase(x); }
+  void eraseDefs(iterator first, iterator last)
+    { return mDefs.erase(first, last); }
 
-  void clearUses()
-    { mUses.clear(); }
+  void clearDefs()
+    { mDefs.clear(); }
 
   // uses set operations:
-  iterator findUses(const key_type& x) const
-    { return mUses.find(x); }
-  size_type countUses(const key_type& x) const
-    { return mUses.count(x); }
+  iterator findDefs(const key_type& x) const
+    { return mDefs.find(x); }
+  size_type countDefs(const key_type& x) const
+    { return mDefs.count(x); }
 
   // -------------------------------------------------------
   // debugging
@@ -478,7 +476,7 @@ public:
 
 private:
   // data_type mType
-  MySet_t mUses;
+  MySet_t mDefs;
 };
 
 //****************************************************************************

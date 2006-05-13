@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.19 2006/05/06 01:00:01 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.20 2006/05/13 07:31:08 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -317,9 +317,12 @@ std::ostream&
 VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
+  const_iterator it;
+  for(it = beginDefs(); it != endDefs(); ++it) {
+    dumpSEXP(os,(*it)->getName());
+  }
   endObjDump(os, VarInfo);
 }
-
 
 //****************************************************************************
 // FuncInfo

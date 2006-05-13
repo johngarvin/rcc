@@ -47,6 +47,10 @@ rcc_bin_SOURCES =				\
   CallGraphInfo.h                               \
   CallGraphNode.cc                              \
   CallGraphNode.h                               \
+  CallSiteCallGraphEdge.cc                      \
+  CallSiteCallGraphEdge.h                       \
+  CoordinateCallGraphEdge.cc                    \
+  CoordinateCallGraphEdge.h                     \
   CoordinateCallGraphNode.cc                    \
   CoordinateCallGraphNode.h                     \
   ExpressionInfoAnnotationMap.cc                \
@@ -61,6 +65,8 @@ rcc_bin_SOURCES =				\
   HandleInterface.h				\
   IRInterface.cc				\
   IRInterface.h					\
+  LibraryCallGraphNode.cc                       \
+  LibraryCallGraphNode.h                        \
   LocalFunctionAnalysis.cc			\
   LocalFunctionAnalysis.h			\
   LocalityDFSet.cc				\
