@@ -131,7 +131,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
-	  SymHandle s = HandleInterface::make_sym_h(v->getMention());
+	  SymHandle s = HandleInterface::make_sym_h(v->getMention_c());
 	  m_map[s] = v;
 	}
       }

@@ -231,13 +231,9 @@ void CallGraphAnnotationMap::compute() {
       }
     } else if ((cnode = dynamic_cast<CoordinateCallGraphNode *>(c)) != 0) {
       // if node is a Coordinate
-      std::cout << "A" << std::endl;
       SymbolTable * st = getProperty(SymbolTable, cnode->get_scope());
-      std::cout << "B" << std::endl;
-      st->dump(std::cout);
       Rf_PrintValue(cnode->get_name());
       SymbolTable::const_iterator it = st->find(cnode->get_name());
-      std::cout << "C" << std::endl;
       if (it == st->end()) {
 	// Name not found in SymbolTable. This means either an unbound
 	// variable or a predefined (library or built-in) function.
@@ -252,31 +248,21 @@ void CallGraphAnnotationMap::compute() {
 	VarInfo * vi = it->second;
 	VarInfo::const_iterator var;
 	for(var = vi->beginDefs(); var != vi->endDefs(); ++var) {
-	  std::cout << "D" << std::endl;
 	  DefVar * def = dynamic_cast<DefVar *>(*var);
 	  assert(def != 0);
-	  std::cout << "E" << std::endl;
-	  if (is_fundef(def->getRhs())) {
-	    std::cout << "F" << std::endl;
+	  if (is_fundef(CAR(def->getRhs_c()))) {
 	    // def is of the form _ <- function(...)
-	    FundefCallGraphNode * node = make_fundef_node(def->getRhs());
-	    std::cout << "G" << std::endl;
+	    FundefCallGraphNode * node = make_fundef_node(CAR(def->getRhs_c()));
 	    add_edge(cnode, node);
-	    std::cout << "H" << std::endl;
 	    if (processed.find(node) != processed.end()) {
-	      std::cout << "I" << std::endl;
 	      worklist.push_back(node);
-	      std::cout << "J" << std::endl;
 	    }
-	    std::cout << "K" << std::endl;
 	  } else {
 	    // RHS of def is a non-fundef
 	    // TODO: handle this case
 	    throw AnalysisException();
 	  }
-	  std::cout << "L" << std::endl;	
 	}
-	std::cout << "M" << std::endl;
       }
     } else {
       rcc_error("Unrecognized CallGraphNode type");
@@ -307,12 +293,13 @@ void CallGraphAnnotationMap::compute() {
 }
 
 void CallGraphAnnotationMap::dump(std::ostream & stream) {
-  const_iterator node;
+  const_iterator node_it;
   CallGraphInfo::const_iterator edge;
-  for(node = begin(); node != end(); ++node) {
+  for(node_it = begin(); node_it != end(); ++node_it) {
     stream << "Node: ";
-    dumpVar(stream, node->first.hval());  // dump node
-    CallGraphInfo * info = dynamic_cast<CallGraphInfo *>(node->second);
+    void * node = reinterpret_cast<void *>(node_it->first.hval());
+    dumpPtr(stream, node);  // dump node
+    CallGraphInfo * info = dynamic_cast<CallGraphInfo *>(node_it->second);
     assert(info != 0);
     stream << "In: ";
     for(edge = info->begin_calls_in();

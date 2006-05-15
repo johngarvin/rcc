@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.20 2006/05/13 07:31:08 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.21 2006/05/15 18:06:29 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -319,7 +319,12 @@ VarInfo::dump(std::ostream& os) const
   beginObjDump(os, VarInfo);
   const_iterator it;
   for(it = beginDefs(); it != endDefs(); ++it) {
-    dumpSEXP(os,(*it)->getName());
+    DefVar * def = dynamic_cast<DefVar *>(*it);
+    assert(def != 0);
+    SEXP name = def->getName();
+    SEXP rhs = CAR(def->getRhs_c());
+    dumpSEXP(os, name);
+    dumpSEXP(os, rhs);
   }
   endObjDump(os, VarInfo);
 }
@@ -431,7 +436,7 @@ FuncInfo::dump(std::ostream& os) const
   for(const_mention_iterator i = beginMentions(); i != endMentions(); ++i) {
     Var * v = *i;
     v->dump(os);
-    VarBinding * vb = getProperty(VarBinding, (*i)->getMention());
+    VarBinding * vb = getProperty(VarBinding, (*i)->getMention_c());
     vb->dump(os);
   }
   os << "End mentions" << std::endl;

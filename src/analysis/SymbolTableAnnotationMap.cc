@@ -116,10 +116,10 @@ void SymbolTableAnnotationMap::compute() {
     FuncInfo::mention_iterator mi;
     for(mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       // count only defs, not uses
-      DefVar * def; def = dynamic_cast<DefVar *>(*mi);
+      DefVar * def = dynamic_cast<DefVar *>(*mi);
       if (def == 0) continue;
-      SEXP name = CAR(def->getMention());
-      VarBinding * vb = getProperty(VarBinding, def->getMention());
+      SEXP name = CAR(def->getMention_c());
+      VarBinding * vb = getProperty(VarBinding, def->getMention_c());
       // for each scope in which the variable might be defined
       VarBinding::const_iterator vbi;
       for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {

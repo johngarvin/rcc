@@ -114,7 +114,7 @@ void VarBindingAnnotationMap::compute() {
     FuncInfo::mention_iterator mi;
     for (mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
       Var * v = *mi;
-      v = getProperty(Var, v->getMention()); 
+      v = getProperty(Var, v->getMention_c()); 
       // FIXME: should make sure we always get the data-flow-solved
       // version of the Var. Shouldn't have to loop through
       // getProperty!
@@ -153,7 +153,7 @@ void VarBindingAnnotationMap::compute() {
 	}
       }
       // whether global or not...
-      m_map[HandleInterface::make_sym_h(v->getMention())] = scopes;
+      m_map[HandleInterface::make_sym_h(v->getMention_c())] = scopes;
     }
   }
 }

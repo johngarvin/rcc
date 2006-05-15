@@ -32,11 +32,11 @@ void LocalFunctionAnalysis::analyze_args() {
   for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
     ++n_args;
     DefVar * annot = new DefVar();
-    annot->setMention(e);
+    annot->setMention_c(e);
     annot->setSourceType(DefVar::DefVar_FORMAL);
     annot->setMayMustType(Var::Var_MUST);
     annot->setScopeType(Var::Var_LOCAL);
-    annot->setRhs(0);
+    annot->setRhs_c(0);
     putProperty(Var, e, annot, true);
     if (TAG(e) == ddd) {
       has_var_args = true;
@@ -66,7 +66,7 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	Var * v = getProperty(Var, (*mi)->getMention());
+	Var * v = getProperty(Var, (*mi)->getMention_c());
 	// FIXME: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!

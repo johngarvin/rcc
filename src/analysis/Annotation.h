@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.20 2006/05/13 07:31:08 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.21 2006/05/15 18:06:29 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -211,10 +211,10 @@ public:
   void setScopeType(ScopeT x)
     { mScopeType = x; }
 
-  // Mention
-  SEXP getMention() const
+  // Mention (cons cell whose CAR is the name)
+  SEXP getMention_c() const
     { return mSEXP; }
-  void setMention(SEXP x)
+  void setMention_c(SEXP x)
     { mSEXP = x; }
 
   virtual SEXP getName() const = 0;
@@ -326,10 +326,10 @@ public:
 
   virtual SEXP getName() const;
 
-  SEXP getRhs() const
-    { return mRhs; }
-  void setRhs(SEXP x)
-    { mRhs = x; }
+  SEXP getRhs_c() const
+    { return mRhs_c; }
+  void setRhs_c(SEXP x)
+    { mRhs_c = x; }
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
@@ -343,7 +343,7 @@ public:
 
 private:
   SourceT mSourceType;
-  SEXP mRhs;               // right side, if assignment
+  SEXP mRhs_c;               // cell containing right side, if assignment
   // bool mIsBindingKnown;
   // set of uses reached?
 };

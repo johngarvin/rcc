@@ -37,7 +37,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     // ignore
   } else if (is_var(e)) {
     UseVar * var_annot = new UseVar();
-    var_annot->setMention(cell);
+    var_annot->setMention_c(cell);
     var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
     var_annot->setMayMustType(Var::Var_MUST);
     var_annot->setScopeType(Var::Var_TOP);
@@ -79,7 +79,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     m_call_sites.push_back(e);
     if (is_var(CAR(e))) {
       UseVar * var_annot = new UseVar();
-      var_annot->setMention(e);
+      var_annot->setMention_c(e);
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
       var_annot->setScopeType(Var::Var_TOP);
@@ -103,18 +103,18 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
 /// rhs           = a cons cell whose CAR is the right side of the assignment statement
 /// may_must_type = whether we are in a may-def or a must-def
 /// lhs_type      = whether we are in a local or free assignment
-void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
+void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
 					 Var::MayMustT may_must_type, LhsType lhs_type)
 {
   assert(is_cons(cell));
-  assert(is_cons(rhs));
+  assert(is_cons(rhs_c));
   SEXP e = CAR(cell);
   if (is_var(e)) {
     DefVar * var_annot = new DefVar();
-    var_annot->setMention(cell);
+    var_annot->setMention_c(cell);
     var_annot->setMayMustType(may_must_type);
     var_annot->setSourceType(DefVar::DefVar_ASSIGN);
-    var_annot->setRhs(rhs);
+    var_annot->setRhs_c(rhs_c);
     // Note this subtlety in the R language. For a must-def, syntactic
     // information (i.e., whether the arrow is single or double) tells
     // us whether we are dealing with a local or free
@@ -134,9 +134,9 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
     }
     m_vars.push_back(var_annot);
   } else if (is_struct_field(e)) {
-    build_ud_lhs(struct_field_lhs_c(e), rhs, Var::Var_MAY, lhs_type);
+    build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {
-    build_ud_lhs(subscript_lhs_c(e), rhs, Var::Var_MAY, lhs_type);
+    build_ud_lhs(subscript_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
     build_ud_rhs(subscript_rhs_c(e));
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. For example: dim(x) <- foo
@@ -145,7 +145,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs,
     // only some functions applied to arguments make a valid lvalue.
     assert(CDDR(e) == R_NilValue); // more than one argument is an error, right?
     build_ud_rhs(e);
-    build_ud_lhs(CDR(e), rhs, Var::Var_MAY, lhs_type);
+    build_ud_lhs(CDR(e), rhs_c, Var::Var_MAY, lhs_type);
   } else {
     assert(0);
   }

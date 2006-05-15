@@ -352,7 +352,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if (dynamic_cast<DefVar *>(*var_iter)) {
-      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
+      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
   }
@@ -371,7 +371,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if (dynamic_cast<DefVar *>(*var_iter)) {
-      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention());
+      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
   }

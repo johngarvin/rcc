@@ -164,7 +164,7 @@ void LocalityDFSolver::initialize_sets() {
       // for this statement's annotation, iterate through its set of var mentions
       ExpressionInfo::const_var_iterator vi;
       for(vi = stmt_annot->begin_vars(); vi != stmt_annot->end_vars(); ++vi) {
-	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*vi)->getMention());
+	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*vi)->getMention_c());
 
 	// all_top and all_bottom: all variables set to TOP/BOTTOM,
 	// must be initialized for OA data flow analysis
@@ -284,16 +284,16 @@ OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locali
 static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   DefVar * def_annot;
   if (dynamic_cast<UseVar *>(annot)) {
-    return new R_BodyVarRef(annot->getMention());
+    return new R_BodyVarRef(annot->getMention_c());
   } else if ((def_annot = dynamic_cast<DefVar *>(annot)) != 0) {
     DefVar::SourceT source = def_annot->getSourceType();
     R_VarRef * retval;
     switch(source) {
     case DefVar::DefVar_ASSIGN:
-      return new R_BodyVarRef(annot->getMention());
+      return new R_BodyVarRef(annot->getMention_c());
       break;
     case DefVar::DefVar_FORMAL:
-      return new R_ArgVarRef(annot->getMention());
+      return new R_ArgVarRef(annot->getMention_c());
       break;
     default:
       rcc_error("make_var_ref_from_annotation: unrecognized DefVar::SourceT");
