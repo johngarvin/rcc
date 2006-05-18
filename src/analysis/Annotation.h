@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.22 2006/05/18 21:00:19 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.23 2006/05/18 21:19:55 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -414,7 +414,7 @@ class VarInfo
   : public AnnotationBase
 {
 public:
-  typedef Var*                                              key_type;
+  typedef DefVar*                                           key_type;
 
   typedef std::set<key_type>                                MySet_t;
   typedef key_type                                          value_type;

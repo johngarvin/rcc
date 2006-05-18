@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.22 2006/05/18 21:00:19 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.23 2006/05/18 21:19:55 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -319,8 +319,7 @@ VarInfo::dump(std::ostream& os) const
   beginObjDump(os, VarInfo);
   const_iterator it;
   for(it = beginDefs(); it != endDefs(); ++it) {
-    DefVar * def = dynamic_cast<DefVar *>(*it);
-    assert(def != 0);
+    DefVar * def = *it;
     SEXP name = def->getName();
     SEXP rhs = CAR(def->getRhs_c());
 

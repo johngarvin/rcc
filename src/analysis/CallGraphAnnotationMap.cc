@@ -259,8 +259,7 @@ void CallGraphAnnotationMap::compute() {
 	    VarInfo * vi = it->second;
 	    VarInfo::const_iterator var;
 	    for(var = vi->beginDefs(); var != vi->endDefs(); ++var) {
-	      DefVar * def = dynamic_cast<DefVar *>(*var);
-	      assert(def != 0);
+	      DefVar * def = *var;
 	      if (is_fundef(CAR(def->getRhs_c()))) {
 		// def is of the form _ <- function(...)
 		FundefCallGraphNode * node = make_fundef_node(CAR(def->getRhs_c()));
