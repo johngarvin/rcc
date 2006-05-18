@@ -3,7 +3,7 @@
 #ifndef ANNOTATION_ANNOTATION_H
 #define ANNOTATION_ANNOTATION_H
 
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.21 2006/05/15 18:06:29 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.h,v 1.22 2006/05/18 21:00:19 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -530,6 +530,10 @@ public:
   // definition
   SEXP getDefn() 
     { return mDefn; }
+
+  // first name assigned
+  SEXP getFirstName()
+    { return mFirstName; }
 
   // has-variable-arguments
   bool getHasVarArgs() const

@@ -3,6 +3,8 @@
 #ifndef COORDINATE_CALL_GRAPH_NODE_H
 #define COORDINATE_CALL_GRAPH_NODE_H
 
+#include <ostream>
+
 #include <include/R/R_RInternals.h>
 
 #include <analysis/CallGraphNode.h>
@@ -18,6 +20,8 @@ public:
 
   const SEXP get_name() const;
   const SEXP get_scope() const;
+
+  void dump(std::ostream & os) const;
 private:
   const SEXP m_name;
   const SEXP m_scope;

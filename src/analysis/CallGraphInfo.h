@@ -5,13 +5,12 @@
 
 #include <set>
 
-#include <analysis/AnnotationBase.h>
 #include <analysis/CallGraphEdge.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class CallGraphInfo : public AnnotationBase {
+class CallGraphInfo {
 public:
   typedef std::set<const CallGraphEdge *> MySetT;
   typedef MySetT::const_iterator const_iterator;
@@ -27,10 +26,6 @@ public:
   const_iterator begin_calls_out() const;
   const_iterator end_calls_out() const;
 
-  AnnotationBase * clone();
-
-  static PropertyHndlT handle();
-  
   std::ostream & dump(std::ostream & stream) const;
 
 private:

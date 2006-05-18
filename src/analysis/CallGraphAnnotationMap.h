@@ -20,6 +20,7 @@
 #include <analysis/CallGraphEdge.h>
 #include <analysis/CallGraphInfo.h>
 #include <analysis/CallGraphNode.h>
+#include <analysis/CallSiteCallGraphNode.h>
 #include <analysis/CoordinateCallGraphNode.h>
 #include <analysis/FundefCallGraphNode.h>
 #include <analysis/LibraryCallGraphNode.h>
@@ -48,9 +49,11 @@ public:
   iterator end();
   const_iterator end() const;
 
-  void dump(std::ostream & stream);
+  void dump(std::ostream & os);
 
 private:
+  // ----- implement singleton pattern -----
+
   // private constructor for singleton pattern
   CallGraphAnnotationMap();
 
@@ -60,19 +63,29 @@ private:
   static PropertyHndlT m_handle;
   static void create();
 
+  // ----- creation methods -----
+  //
+  // return different derived classes of CallGraphNode. Create new if
+  // needed; otherwise return existing node in a map.
+  //
   FundefCallGraphNode * make_fundef_node(SEXP e);
-  LibraryCallGraphNode * make_library_node(SEXP e);
+  LibraryCallGraphNode * make_library_node(SEXP name, SEXP value);
   CoordinateCallGraphNode * make_coordinate_node(SEXP name, SEXP scope);
-  void add_edge(CallGraphNode * source_node, SEXP source_call_site, CallGraphNode * sink);
-  void add_edge(CoordinateCallGraphNode * source, CallGraphNode * sink);
+  CallSiteCallGraphNode * make_call_site_node(SEXP e);
+
+  void add_edge(const CallGraphNode * const source, const CallGraphNode * const sink);
   
 private:
   bool m_computed; // has our information been computed yet?
-  std::map<MyKeyT, MyMappedT> m_node_map;
+  std::map<const CallGraphNode *, CallGraphInfo *> m_node_map;
   std::set<const CallGraphEdge *> m_edge_set;
+
+  std::map<MyKeyT, MyMappedT> m_traversed_map; // stores info on problems we've solved
+
   std::map<SEXP, FundefCallGraphNode *> m_fundef_map;
   std::map<SEXP, LibraryCallGraphNode *> m_library_map;
   std::map<std::pair<SEXP,SEXP>, CoordinateCallGraphNode *> m_coord_map;
+  std::map<SEXP, CallSiteCallGraphNode *> m_call_site_map;
 };
 
 }  // end namespace RAnnot

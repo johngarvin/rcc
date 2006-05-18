@@ -30,7 +30,7 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/CallGraphAnnotationMap.h>
-#include <analysis/CallGraphInfo.h>
+#include <analysis/CallGraphAnnotation.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <support/RccError.h>
@@ -189,7 +189,6 @@ int main(int argc, char *argv[]) {
 	st->dump(cout);
       }
       cout << "Dumping call graph:" << endl;
-      CallGraphInfo * cgi = getProperty(CallGraphInfo, CAR(assign_rhs_c(program)));
       CallGraphAnnotationMap::get_instance()->dump(cout);
     }
   }

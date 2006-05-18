@@ -1,5 +1,7 @@
 #include "CallGraphInfo.h"
 
+#include <support/DumpMacros.h>
+
 #include <analysis/CallGraphAnnotationMap.h>
 
 namespace RAnnot {
@@ -41,27 +43,30 @@ namespace RAnnot {
     return m_calls_out.end();
   }
 
-  // ----- AnnotationBase -----
-
-  AnnotationBase * CallGraphInfo::clone() {
-    return 0; // don't support this
-  }
-
-  PropertyHndlT CallGraphInfo::handle() {
-    return CallGraphAnnotationMap::handle();
-  }
+  // ----- debug -----
 
   std::ostream & CallGraphInfo::dump(std::ostream & stream) const {
     MySetT::const_iterator it;
-    stream << "Calls in:" << std::endl;
-    for (it = begin_calls_in(); it != end_calls_in(); ++it) {
-      stream << "edge" << std::endl;
+
+    if (m_calls_in.empty()) {
+      stream << "Calls in: <empty>" << std::endl;
+    } else {
+      stream << "Calls in:" << std::endl;
+      for (it = begin_calls_in(); it != end_calls_in(); ++it) {
+	const CallGraphEdge * edge = *it;
+	dumpPtr(stream, edge->get_source());
+      }
     }
-    stream << "Calls out:" << std::endl;
-    for (it = begin_calls_out(); it != end_calls_out(); ++it) {
-      stream << "edge" << std::endl;
+
+    if (m_calls_out.empty()) {
+      stream << "Calls out: <empty>" << std::endl;
+    } else {
+      stream << "Calls out:" << std::endl;
+      for (it = begin_calls_out(); it != end_calls_out(); ++it) {
+	const CallGraphEdge * edge = *it;
+	dumpPtr(stream, edge->get_sink());
+      }
     }
-    stream << "End call graph node";
   }
 
 } // end namespace RAnnot

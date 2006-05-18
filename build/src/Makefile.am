@@ -39,6 +39,8 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
+  CallGraphAnnotation.cc                        \
+  CallGraphAnnotation.h                         \
   CallGraphAnnotationMap.cc                     \
   CallGraphAnnotationMap.h                      \
   CallGraphEdge.cc                              \
@@ -47,10 +49,8 @@ rcc_bin_SOURCES =				\
   CallGraphInfo.h                               \
   CallGraphNode.cc                              \
   CallGraphNode.h                               \
-  CallSiteCallGraphEdge.cc                      \
-  CallSiteCallGraphEdge.h                       \
-  CoordinateCallGraphEdge.cc                    \
-  CoordinateCallGraphEdge.h                     \
+  CallSiteCallGraphNode.cc                      \
+  CallSiteCallGraphNode.h                       \
   CoordinateCallGraphNode.cc                    \
   CoordinateCallGraphNode.h                     \
   ExpressionInfoAnnotationMap.cc                \

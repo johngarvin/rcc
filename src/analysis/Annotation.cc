@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.21 2006/05/15 18:06:29 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/Attic/Annotation.cc,v 1.22 2006/05/18 21:00:19 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -323,8 +323,12 @@ VarInfo::dump(std::ostream& os) const
     assert(def != 0);
     SEXP name = def->getName();
     SEXP rhs = CAR(def->getRhs_c());
+
+    os << "(";
     dumpSEXP(os, name);
+    os << " ---> ";
     dumpSEXP(os, rhs);
+    os << ")" << std::endl;
   }
   endObjDump(os, VarInfo);
 }

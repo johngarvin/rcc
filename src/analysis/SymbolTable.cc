@@ -31,11 +31,7 @@ std::ostream& SymbolTable::dump(std::ostream& os) const
 {
   beginObjDump(os, SymbolTable);
   for (const_iterator it = this->begin(); it != this->end(); ++it) {
-    os << "(";
-    Rf_PrintValue(it->first);
-    os << " --> ";
     dumpObj(os, it->second);
-    os << ")\n";
   }
   endObjDump(os, SymbolTable);
 }
