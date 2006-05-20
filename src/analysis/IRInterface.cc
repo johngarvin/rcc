@@ -36,8 +36,10 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/Annotation.h>
+#include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/Var.h>
+#include <analysis/DefVar.h>
 
 #include <support/RccError.h>
 
@@ -50,8 +52,8 @@ using namespace RAnnot;
 // Procedures and call sites
 //--------------------------------------------------------
 
-//! Given a ProcHandle, return an IRRegionStmtIterator for the
-//! procedure.
+/// Given a ProcHandle, return an IRRegionStmtIterator for the
+/// procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
   SEXP e = (SEXP)h.hval();
   OA_ptr<IRRegionStmtIterator> ptr;
@@ -63,11 +65,11 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
 // Statements: General
 //--------------------------------------------------------
 
-//! Return statements are allowed in R.
+/// Return statements are allowed in R.
 bool R_IRInterface::returnStatementsAllowed() { return true; }
 
-//! Local R-specific function: return the CFG type (loop, conditional,
-//! etc.) of an SEXP.
+/// Local R-specific function: return the CFG type (loop, conditional,
+/// etc.) of an SEXP.
 CFG::IRStmtType getSexpCfgType(SEXP e) {
   switch(TYPEOF(e)) {
   case NILSXP:  // expressions as statements
@@ -100,21 +102,21 @@ CFG::IRStmtType getSexpCfgType(SEXP e) {
   return CFG::SIMPLE; // never reached
 }
 
-//! Given a statement handle, return its IRStmtType.
+/// Given a statement handle, return its IRStmtType.
 CFG::IRStmtType R_IRInterface::getCFGStmtType(StmtHandle h) {
   SEXP cell = (SEXP)h.hval();
   return getSexpCfgType(CAR(cell));
 }
 
-//! Given a statement, return a label (or NULL if there is no label
-//! associated with the statement).
-//! Note that no statements have labels in R.
+/// Given a statement, return a label (or NULL if there is no label
+/// associated with the statement).
+/// Note that no statements have labels in R.
 StmtLabel R_IRInterface::getLabel(StmtHandle h) {
   return 0;
 }
 
-//! Given a compound statement (which contains a list of statements),
-//! return an IRRegionStmtIterator for the statements.
+/// Given a compound statement (which contains a list of statements),
+/// return an IRRegionStmtIterator for the statements.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
   SEXP cell = (SEXP)h.hval();
   SEXP e = CAR(cell);
@@ -140,7 +142,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
 // Loops
 //--------------------------------------------------------
 
-//! Given a loop statement, return an IRRegionStmtIterator for the loop body.
+/// Given a loop statement, return an IRRegionStmtIterator for the loop body.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP body_c = loop_body_c(e);
@@ -149,46 +151,46 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
   return ptr;
 }
 
-//! Given a loop statement, return the loop header statement.  This 
-//! would be the initialization statement in a C 'for' loop, for example.
-//!
-//! This doesn't exactly exist in R. Currently just returning the whole
-//! compound statement pointer so later analyses can parse it.
+/// Given a loop statement, return the loop header statement.  This 
+/// would be the initialization statement in a C 'for' loop, for example.
+///
+/// This doesn't exactly exist in R. Currently just returning the whole
+/// compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
   // XXXXX: signal that this is a header for use/def analysis
   return h;
 }
 
-//! Given a loop statement, return the increment statement.
-//!
-//! This doesn't exactly exist in R. Currently just returning the whole
-//! compound statement pointer so later analyses can parse it.
+/// Given a loop statement, return the increment statement.
+///
+/// This doesn't exactly exist in R. Currently just returning the whole
+/// compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::getLoopIncrement(StmtHandle h) {
   // XXXXX: signal that this is the increment for use/def analysis
   return h;
 }
 
-//! Given a loop statement, return:
-//! 
-//! True: If the number of loop iterations is defined
-//! at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
-//! to add the loop statement representative to the header node so that
-//! definitions from inside the loop don't reach the condition and increment
-//! specifications in the loop statement.
-//!
-//! False: If the number of iterations is not defined at
-//! entry (i.e. C semantics), we add the loop statement to a node that
-//! is inside the loop in the CFG so definitions inside the loop will 
-//! reach uses in the conditional test. For C style semantics, the 
-//! increment itself may be a separate statement. if so, it will appear
-//! explicitly at the bottom of the loop. 
+/// Given a loop statement, return:
+/// 
+/// True: If the number of loop iterations is defined
+/// at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
+/// to add the loop statement representative to the header node so that
+/// definitions from inside the loop don't reach the condition and increment
+/// specifications in the loop statement.
+///
+/// False: If the number of iterations is not defined at
+/// entry (i.e. C semantics), we add the loop statement to a node that
+/// is inside the loop in the CFG so definitions inside the loop will 
+/// reach uses in the conditional test. For C style semantics, the 
+/// increment itself may be a separate statement. if so, it will appear
+/// explicitly at the bottom of the loop. 
 bool R_IRInterface::loopIterationsDefinedAtEntry(StmtHandle h) {
   return true;
 }
 
-//! Given a structured two-way conditional statement, return an
-//! IRRegionStmtIterator for the "true" part (i.e., the statements
-//! under the "if" clause).
+/// Given a structured two-way conditional statement, return an
+/// IRRegionStmtIterator for the "true" part (i.e., the statements
+/// under the "if" clause).
 OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP truebody_c = if_truebody_c(e);
@@ -197,9 +199,9 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
   return ptr;
 }
 
-//! Given a structured two-way conditional statement, return an
-//! IRRegionStmtIterator for the "else" part (i.e., the statements
-//! under the "else" clause).
+/// Given a structured two-way conditional statement, return an
+/// IRRegionStmtIterator for the "else" part (i.e., the statements
+/// under the "else" clause).
 OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
   SEXP e = CAR((SEXP)h.hval());
   SEXP falsebody_c = if_falsebody_c(e);
@@ -256,9 +258,9 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
   return dummy;
 }
 
-//! Given a structured multi-way branch, return the condition
-//! expression corresponding to target 'bodyIndex'. The n targets are
-//! indexed [0..n-1].
+/// Given a structured multi-way branch, return the condition
+/// expression corresponding to target 'bodyIndex'. The n targets are
+/// indexed [0..n-1].
 ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
   rcc_error("multicase branches don't exist R");
   return 0;
@@ -316,21 +318,21 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 // Information for building call graphs
 //----------------------------------------------------------------------
 
-//! Given a subprogram return an IRStmtIterator for the entire
-//! subprogram
+/// Given a subprogram return an IRStmtIterator for the entire
+/// subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
   // FIXME
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
-//! Return an iterator over all of the callsites in a given stmt
+/// Return an iterator over all of the callsites in a given stmt
 OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
   // FIXME
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
-//! Given a callsite as an ExprHandle, return the SymHandle of the
-//! procedure being called
+/// Given a callsite as an ExprHandle, return the SymHandle of the
+/// procedure being called
 SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
   // FIXME
   rcc_error("OpenAnalysis call graph interface not yet implemented");
@@ -462,9 +464,9 @@ void R_RegionStmtIterator::reset() {
   stmt_iter_ptr->reset();
 }
 
-//! Build the list of statements for iterator. Does not descend into
-//! compound statements. The given StmtHandle is a CONS cell whose CAR
-//! is the actual expression.
+/// Build the list of statements for iterator. Does not descend into
+/// compound statements. The given StmtHandle is a CONS cell whose CAR
+/// is the actual expression.
 void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
   SEXP cell = (SEXP)stmt.hval();
   SEXP exp = CAR(cell);

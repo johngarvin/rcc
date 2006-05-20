@@ -8,6 +8,7 @@
 #include <map>
 
 #include <analysis/AnnotationMap.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 

@@ -1,4 +1,3 @@
-
 //****************************************************************************
 // SymbolTable
 //****************************************************************************
@@ -7,8 +6,8 @@
 
 #include <support/DumpMacros.h>
 
-#include <analysis/Annotation.h>
 #include <analysis/SymbolTableAnnotationMap.h>
+#include <analysis/VarInfo.h>
 
 #include "SymbolTable.h"
 

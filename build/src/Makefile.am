@@ -33,8 +33,6 @@ rcc_bin_SOURCES =				\
   Analyst.h					\
   AnnotationBase.cc				\
   AnnotationBase.h				\
-  Annotation.cc					\
-  Annotation.h					\
   AnnotationMap.cc				\
   AnnotationMap.h				\
   Assertion.cc					\
@@ -53,10 +51,18 @@ rcc_bin_SOURCES =				\
   CallSiteCallGraphNode.h                       \
   CoordinateCallGraphNode.cc                    \
   CoordinateCallGraphNode.h                     \
+  DefVar.cc                                     \
+  DefVar.h                                      \
+  ExpressionInfo.cc                             \
+  ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
   ExpressionInfoAnnotationMap.h                 \
+  FormalArgInfo.cc                              \
+  FormalArgInfo.h                               \
   FormalArgInfoAnnotationMap.cc                 \
   FormalArgInfoAnnotationMap.h                  \
+  FuncInfo.cc                                   \
+  FuncInfo.h                                    \
   FuncInfoAnnotationMap.cc                      \
   FuncInfoAnnotationMap.h                       \
   FundefCallGraphNode.cc                        \
@@ -80,6 +86,8 @@ rcc_bin_SOURCES =				\
   LocalityType.h				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
+  Phi.cc                                        \
+  Phi.h                                         \
   PropertyHndl.h				\
   PropertySet.cc				\
   PropertySet.h					\
@@ -94,8 +102,14 @@ rcc_bin_SOURCES =				\
   SymbolTableAnnotationMap.cc                   \
   SymbolTableAnnotationMap.h                    \
   TypeInference.h				\
+  UseVar.cc                                     \
+  UseVar.h                                      \
   Utils.cc					\
   Utils.h					\
+  Var.cc                                        \
+  Var.h                                         \
+  VarInfo.cc                                    \
+  VarInfo.h                                     \
   VarAnnotationMap.cc                           \
   VarAnnotationMap.h                            \
   VarBinding.cc                                 \

@@ -5,8 +5,11 @@
 
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/Annotation.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/ExpressionInfo.h>
+#include <analysis/Var.h>
+#include <analysis/UseVar.h>
+#include <analysis/DefVar.h>
 
 #include <analysis/LocalityDFSet.h>
 #include <analysis/LocalityDFSetElement.h>

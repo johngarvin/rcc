@@ -28,12 +28,13 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <vector>
+#include <list>
 #include <ostream>
 
 #include <OpenAnalysis/Utils/Iterator.hpp>
 
-#include <analysis/Annotation.h>
+#include <analysis/AnnotationBase.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {

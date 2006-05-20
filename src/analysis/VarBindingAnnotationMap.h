@@ -11,6 +11,7 @@
 #include <OpenAnalysis/Utils/Iterator.hpp>
 
 #include <analysis/AnnotationMap.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 

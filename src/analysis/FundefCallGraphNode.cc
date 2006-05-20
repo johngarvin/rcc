@@ -3,7 +3,7 @@
 #include <support/DumpMacros.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/Annotation.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 
 namespace RAnnot {

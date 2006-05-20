@@ -8,6 +8,8 @@
 
 #include <map>
 
+#include <OpenAnalysis/CFG/Interface.hpp>
+
 #include <analysis/AnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 

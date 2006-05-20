@@ -16,7 +16,6 @@
 
 namespace RAnnot {
 class FuncInfo;
-class Var;
 }
 
 /// R_Analyst

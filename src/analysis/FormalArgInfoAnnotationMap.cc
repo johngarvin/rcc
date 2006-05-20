@@ -1,5 +1,7 @@
 // -*- Mode: C++ -*-
 
+#include <support/RccError.h>
+
 #include <analysis/AnalysisResults.h>
 
 #include "FormalArgInfoAnnotationMap.h"

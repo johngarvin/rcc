@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.7 2006/04/26 22:09:45 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/PropertySet.cc,v 1.8 2006/05/20 14:50:00 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // *********************************************************** EndCopyright *
@@ -27,13 +27,9 @@
 
 //*************************** User Include Files ****************************
 
-#include "PropertySet.h"
+#include <support/RccError.h>
 
-// FIXME: Delete the following when insert() goes away.
-#include <analysis/VarAnnotationMap.h>
-#include <analysis/FuncInfoAnnotationMap.h>
-#include <analysis/ExpressionInfoAnnotationMap.h>
-#include <analysis/FormalArgInfoAnnotationMap.h>
+#include "PropertySet.h"
 
 using namespace RAnnot;
 
@@ -64,24 +60,6 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
   if (annotations == 0) {
     rcc_error("Annotation map not found in PropertySet");
   }
-#if 0
-  if (annotations == 0) {
-    // temporary ugly conditional. After refactoring is complete this
-    // method will disappear anyway.
-    if (propertyName == VarAnnotationMap::handle()) {
-      annotations = new VarAnnotationMap(ownsAnnotations);
-    } else if (propertyName == FuncInfo::FuncInfoProperty) {
-      annotations = new FuncInfoAnnotationMap(ownsAnnotations);
-    } else if (propertyName == FormalArgInfo::FormalArgInfoProperty) {
-      annotations = new FormalArgInfoAnnotationMap(ownsAnnotations);
-    } else if (propertyName == ExpressionInfo::ExpressionInfoProperty) {
-      annotations = new ExpressionInfoAnnotationMap(ownsAnnotations);
-    } else {
-      rcc_error("Unhandled property type " + std::string(propertyName));
-    }
-    (*this)[propertyName] = annotations; 
-  }
-#endif
   (*annotations)[reinterpret_cast<OA::irhandle_t>(s)] = annot;
 }
 

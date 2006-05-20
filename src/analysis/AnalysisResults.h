@@ -1,4 +1,4 @@
-/* $Id: AnalysisResults.h,v 1.6 2006/04/26 22:09:44 garvin Exp $ */
+/* $Id: AnalysisResults.h,v 1.7 2006/05/20 14:49:59 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //                          All Rights Reserved
@@ -22,7 +22,7 @@
 #define AnalysisResults_h
 
 #include <analysis/PropertySet.h>
-#include <analysis/Annotation.h>
+#include <analysis/FuncInfo.h>
 
 #include <support/stacks/StackTmpl.h>
 

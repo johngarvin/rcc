@@ -1,7 +1,6 @@
 #include "LocalityDFSetElement.h"
 
 using namespace OA;
-using namespace RAnnot;
 
 // constructors
 

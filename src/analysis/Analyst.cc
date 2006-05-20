@@ -5,12 +5,11 @@
 #include <support/RccError.h>
 
 #include <analysis/AnalysisException.h>
-#include <analysis/Annotation.h>
 #include <analysis/Utils.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
-
+#include <analysis/FuncInfo.h>
 #include <analysis/LocalFunctionAnalysis.h>
 
 #include "Analyst.h"

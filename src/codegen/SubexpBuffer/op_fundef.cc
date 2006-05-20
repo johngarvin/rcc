@@ -6,11 +6,13 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/Annotation.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/Utils.h>
+
 #include <support/StringUtils.h>
 #include <support/RccError.h>
+
 #include <Visibility.h>
 #include <ParseInfo.h>
 

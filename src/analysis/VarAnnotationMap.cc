@@ -4,11 +4,15 @@
 // including the methods for computing the information. This should
 // probably be split up into the different analyses at some point.
 
+#include <support/RccError.h>
+
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityDFSolver.h>
 #include <analysis/PropertySet.h>
+#include <analysis/Var.h>
 
 #include "VarAnnotationMap.h"
 

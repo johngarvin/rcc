@@ -17,13 +17,14 @@
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnnotationMap.h>
-#include <analysis/CallGraphEdge.h>
-#include <analysis/CallGraphInfo.h>
-#include <analysis/CallGraphNode.h>
-#include <analysis/CallSiteCallGraphNode.h>
-#include <analysis/CoordinateCallGraphNode.h>
-#include <analysis/FundefCallGraphNode.h>
-#include <analysis/LibraryCallGraphNode.h>
+
+class CallGraphEdge;
+class CallGraphNode;
+class CallGraphInfo;
+class CallSiteCallGraphNode;
+class CoordinateCallGraphNode;
+class FundefCallGraphNode;
+class LibraryCallGraphNode;
 
 namespace RAnnot {
 

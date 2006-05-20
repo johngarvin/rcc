@@ -1,9 +1,13 @@
+#include <support/RccError.h>
+
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/DefVar.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/VarBinding.h>
+#include <analysis/VarInfo.h>
 
 #include "SymbolTableAnnotationMap.h"
 

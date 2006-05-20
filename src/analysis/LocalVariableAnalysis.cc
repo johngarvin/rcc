@@ -2,6 +2,9 @@
 
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Var.h>
+#include <analysis/DefVar.h>
+#include <analysis/UseVar.h>
 
 #include "LocalVariableAnalysis.h"
 

@@ -1,6 +1,7 @@
 // -*- Mode: C++ -*-
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/PropertySet.h>

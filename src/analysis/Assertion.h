@@ -2,7 +2,8 @@
 #define ASSERTION_H
 
 #include <include/R/R_RInternals.h>
-#include <analysis/Annotation.h>
+
+class FuncInfo;
 
 namespace RAnnot {
 

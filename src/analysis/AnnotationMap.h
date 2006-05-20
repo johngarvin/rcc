@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.2 2006/04/26 22:09:45 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.3 2006/05/20 14:49:59 garvin Exp $
 
 #ifndef ANNOTATION_MAP_H
 #define ANNOTATION_MAP_H
@@ -22,7 +22,7 @@
 
 //************************* System Include Files ****************************
 
-#include <iostream>
+#include <ostream>
 #include <map>
 
 //**************************** R Include Files ******************************
@@ -32,7 +32,7 @@
 //*************************** User Include Files ****************************
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include <analysis/Annotation.h>
+#include <analysis/AnnotationBase.h>
 
 namespace RAnnot {
 

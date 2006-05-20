@@ -5,12 +5,18 @@
 #include <analysis/Analyst.h>
 #include <analysis/CallGraphEdge.h>
 #include <analysis/CallGraphNode.h>
+#include <analysis/CallGraphInfo.h>
 #include <analysis/FundefCallGraphNode.h>
+#include <analysis/LibraryCallGraphNode.h>
+#include <analysis/CoordinateCallGraphNode.h>
+#include <analysis/CallSiteCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/VarBinding.h>
+#include <analysis/VarInfo.h>
 
 #include <support/DumpMacros.h>
+#include <support/RccError.h>
 
 #include "CallGraphAnnotationMap.h"
 

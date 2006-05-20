@@ -1,6 +1,7 @@
 #include <analysis/VarRefSet.h>
 #include <analysis/LocalityDFSetElement.h>
 #include <analysis/LocalityDFSetIterator.h>
+#include <analysis/LocalityType.h>
 
 #include "LocalityDFSet.h"
 

@@ -5,11 +5,14 @@
 
 #include <vector>
 
+#include <support/RccError.h>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
-#include <analysis/Annotation.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
+#include <analysis/Var.h>
 #include <analysis/VarBinding.h>
 #include <analysis/VarBindingAnnotationMap.h>
 

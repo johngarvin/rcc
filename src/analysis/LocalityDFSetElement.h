@@ -7,14 +7,13 @@
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/LocalityType.h>
-#include <analysis/Annotation.h>
 #include <analysis/VarRef.h>
 
 namespace Locality {
 
-//! Associates an R_VarRef with a LocalityType. This is the unit that
-//! DFSet (which implements DataFlowSet) contains.
-//! Modeled after ConstDef in ReachConstsStandard.hpp.
+/// Associates an R_VarRef with a LocalityType. This is the unit that
+/// DFSet (which implements DataFlowSet) contains.
+/// Modeled after ConstDef in ReachConstsStandard.hpp.
 class DFSetElement {
 public:
   // constructors
@@ -28,12 +27,12 @@ public:
   // relationships
   DFSetElement& operator= (const DFSetElement& other);
 
-  //! not doing a deep copy
+  /// not doing a deep copy
   OA::OA_ptr<DFSetElement> clone();
     
-  //! operator== just compares content of loc
+  /// operator== just compares content of loc
   bool operator== (const DFSetElement &other) const;
-  //! method equiv compares all parts of DFSetElement as appropriate
+  /// method equiv compares all parts of DFSetElement as appropriate
   bool equiv(const DFSetElement& other);
   
   bool operator!= (const DFSetElement &other) const;

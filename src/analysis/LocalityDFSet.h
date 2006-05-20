@@ -7,6 +7,8 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <analysis/LocalityType.h>
+
 class R_VarRef;
 class R_VarRefSet;
 
@@ -15,8 +17,8 @@ namespace Locality {
 class DFSetElement;
 class DFSetIterator;
 
-//! Set of DFSetElement objects. Inherits from DataFlowSet for use in
-//! CFGDFProblem.
+/// Set of DFSetElement objects. Inherits from DataFlowSet for use in
+/// CFGDFProblem.
 // Removed "virtual": need clone() to be able to return an DFSet.
 //class DFSet : public virtual OA::DataFlow::DataFlowSet {
 class DFSet : public OA::DataFlow::DataFlowSet {
@@ -39,11 +41,11 @@ public:
   int insert_and_tell(OA::OA_ptr<DFSetElement> h);
   int remove_and_tell(OA::OA_ptr<DFSetElement> h);
 
-  //! replace any DFSetElement in mSet with location locPtr 
-  //! with DFSetElement(locPtr,cdType)
-  //! must use this instead of insert because std::set::insert will just see
-  //! that the element with the same locptr is already in the set and then not
-  //! insert the new element
+  /// replace any DFSetElement in mSet with location locPtr 
+  /// with DFSetElement(locPtr,cdType)
+  /// must use this instead of insert because std::set::insert will just see
+  /// that the element with the same locptr is already in the set and then not
+  /// insert the new element
   void replace(OA::OA_ptr<R_VarRef> loc, LocalityType locality_type);
   void replace(OA::OA_ptr<DFSetElement> ru);
 
@@ -54,14 +56,14 @@ public:
   bool operator !=(OA::DataFlow::DataFlowSet &other) const
   { return (!(*this==other)); }
 
-  //! need this one for stl containers
+  /// need this one for stl containers
   bool operator==(const DFSet& other) const 
   { return DFSet::operator==(const_cast<DFSet&>(other)); }
 
   bool empty() const { return mSet->empty(); }
   
-  //! Return pointer to a copy of a DFSetElement in this set with matching loc
-  //! NULL is returned if no DFSetElement in this set matches loc
+  /// Return pointer to a copy of a DFSetElement in this set with matching loc
+  /// NULL is returned if no DFSetElement in this set matches loc
   OA::OA_ptr<DFSetElement> find(OA::OA_ptr<R_VarRef> locPtr) const;
 
   void insert_varset(OA::OA_ptr<R_VarRefSet> vars, LocalityType type);
