@@ -15,7 +15,7 @@ namespace RAnnot {
 
   // ----- methods to insert nodes -----
 
-  void CallGraphAnnotation::insert_node(const CallGraphNode * const node) {
+  void CallGraphAnnotation::insert_node(const CallGraphAnnotationMap::CallGraphNode * const node) {
     m_nodes.insert(node);
   }
 

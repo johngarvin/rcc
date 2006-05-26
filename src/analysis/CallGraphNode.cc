@@ -2,10 +2,16 @@
 
 namespace RAnnot {
 
-  CallGraphNode::CallGraphNode()
+  CallGraphAnnotationMap::CallGraphNode::CallGraphNode() : m_id(m_max_id++)
   {}
 
-  CallGraphNode::~CallGraphNode()
+  CallGraphAnnotationMap::CallGraphNode::~CallGraphNode()
   {}
+
+  int CallGraphAnnotationMap::CallGraphNode::get_id() const {
+    return m_id;
+  }
+
+  int CallGraphAnnotationMap::CallGraphNode::m_max_id = 0;
 
 } // end namespace RAnnot

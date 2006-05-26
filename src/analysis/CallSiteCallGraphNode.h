@@ -11,7 +11,7 @@
 
 namespace RAnnot {
 
-class CallSiteCallGraphNode : public CallGraphNode {
+class CallGraphAnnotationMap::CallSiteCallGraphNode : public CallGraphNode {
 public:
   explicit CallSiteCallGraphNode(const SEXP def);
   virtual ~CallSiteCallGraphNode();
@@ -19,7 +19,15 @@ public:
   const OA::IRHandle get_handle() const;
   const SEXP get_sexp() const;
 
+  void compute(CallGraphAnnotationMap::NodeListT & worklist,
+	       CallGraphAnnotationMap::NodeSetT & visited) const;
+
+  void get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
+			 CallGraphAnnotationMap::NodeSetT & visited,
+			 CallGraphAnnotation * ann) const;
+
   void dump(std::ostream & os) const;
+  void dump_string(std::ostream & os) const;
 private:
   const SEXP m_cs;
 };

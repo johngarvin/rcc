@@ -1,31 +1,120 @@
 #include <support/DumpMacros.h>
+#include <support/RccError.h>
 
+#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/DefVar.h>
+#include <analysis/FundefCallGraphNode.h>
+#include <analysis/LibraryCallGraphNode.h>
+#include <analysis/SymbolTable.h>
+#include <analysis/Utils.h>
+#include <analysis/VarInfo.h>
 
 #include "CoordinateCallGraphNode.h"
 
 namespace RAnnot {
 
-  CoordinateCallGraphNode::CoordinateCallGraphNode(SEXP name, SEXP scope)
+  CallGraphAnnotationMap::CoordinateCallGraphNode::CoordinateCallGraphNode(SEXP name, SEXP scope)
     : m_name(name), m_scope(scope)
   {}
 
-  CoordinateCallGraphNode::~CoordinateCallGraphNode()
+  CallGraphAnnotationMap::CoordinateCallGraphNode::~CoordinateCallGraphNode()
   {}
 
-  const SEXP CoordinateCallGraphNode::get_name() const {
+  const SEXP CallGraphAnnotationMap::CoordinateCallGraphNode::get_name() const {
     return m_name;
   }
 
-  const SEXP CoordinateCallGraphNode::get_scope() const {
+  const SEXP CallGraphAnnotationMap::CoordinateCallGraphNode::get_scope() const {
     return m_scope;
   }
 
-  const OA::IRHandle CoordinateCallGraphNode::get_handle() const {
+  const OA::IRHandle CallGraphAnnotationMap::CoordinateCallGraphNode::get_handle() const {
     return reinterpret_cast<OA::irhandle_t>(this);
   }
 
-  void CoordinateCallGraphNode::dump(std::ostream & os) const {
+  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  compute(CallGraphAnnotationMap::NodeListT & worklist,
+	  CallGraphAnnotationMap::NodeSetT & visited) const
+  {
+    CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
+    SymbolTable * st = getProperty(SymbolTable, m_scope);
+    SymbolTable::const_iterator it = st->find(m_name);
+    if (it == st->end()) {
+      // Name not found in SymbolTable. This means either an unbound
+      // variable or a predefined (library or built-in) function.
+      SEXP value = Rf_findFun(m_name, R_GlobalEnv);
+      if (value == R_UnboundValue) {
+	rcc_error("Unbound variable " + var_name(m_name));
+      } else {
+	cg->add_edge(this, cg->make_library_node(m_name, value));
+	// but don't add library fun to worklist
+      }
+    } else {  // symbol is defined at least once in this scope
+      VarInfo * vi = it->second;
+      VarInfo::const_iterator var;
+      for(var = vi->beginDefs(); var != vi->endDefs(); ++var) {
+	DefVar * def = *var;
+	if (is_fundef(CAR(def->getRhs_c()))) {
+	  // def is of the form _ <- function(...)
+	  FundefCallGraphNode * node = cg->make_fundef_node(CAR(def->getRhs_c()));
+	  cg->add_edge(this, node);
+	  if (visited.find(node) == visited.end()) {
+	    worklist.push_back(node);
+	  }
+	} else {
+	  // if it's a variable, then we know how to handle
+	  // RHS of def is a non-fundef
+	  // TODO: handle this case
+	  throw AnalysisException();
+	}
+      }
+    }
+  }
+
+  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
+		    CallGraphAnnotationMap::NodeSetT & visited,
+		    CallGraphAnnotation * ann) const
+  {
+    CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
+    SymbolTable * st = getProperty(SymbolTable, m_scope);
+    SymbolTable::const_iterator it = st->find(m_name);
+    if (it == st->end()) {
+      // Name not found in SymbolTable. This means either an unbound
+      // variable or a predefined (library or built-in) function.
+      SEXP value = Rf_findFun(m_name, R_GlobalEnv);
+      if (value == R_UnboundValue) {
+	rcc_error("Unbound variable " + var_name(m_name));
+      } else {
+	LibraryCallGraphNode * node = cg->make_library_node(m_name, value);
+	if (visited.find(node) == visited.end()) {
+	  worklist.push_back(node);
+	}
+      }
+    } else {  // symbol is defined at least once in this scope
+      VarInfo * vi = it->second;
+      VarInfo::const_iterator var;
+      for(var = vi->beginDefs(); var != vi->endDefs(); ++var) {
+	DefVar * def = *var;
+	if (is_fundef(CAR(def->getRhs_c()))) {
+	  // def is of the form _ <- function(...)
+	  FundefCallGraphNode * node = cg->make_fundef_node(CAR(def->getRhs_c()));
+	  if (visited.find(node) == visited.end()) {
+	    worklist.push_back(node);
+	  }
+	} else {
+	  // if it's a variable, then we know how to handle
+	  // RHS of def is a non-fundef
+	  // TODO: handle this case
+	  throw AnalysisException();
+	}
+      }
+    }
+    
+  }
+
+  void CallGraphAnnotationMap::CoordinateCallGraphNode::dump(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_scope);
     SEXP scope_first_name = finfo->getFirstName();
 
@@ -33,6 +122,17 @@ namespace RAnnot {
     dumpPtr(os, this);
     dumpSEXP(os, m_name);
     dumpSEXP(os, scope_first_name);
+    endObjDump(os, CoordinateCallGraphNode);
+  }
+
+  void CallGraphAnnotationMap::CoordinateCallGraphNode::dump_string(std::ostream & os) const {
+    FuncInfo * finfo = getProperty(FuncInfo, m_scope);
+    std::string first_name = CHAR(PRINTNAME(m_name));
+    std::string scope_first_name = CHAR(PRINTNAME(finfo->getFirstName()));
+    beginObjDump(os, CoordinateCallGraphNode);
+    dumpVar(os, get_id());
+    dumpString(os, first_name);
+    dumpString(os, scope_first_name);
     endObjDump(os, CoordinateCallGraphNode);
   }
 

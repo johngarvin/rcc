@@ -4,9 +4,9 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-//! Provide an interface between IRHandles and SEXPs. This will
-//! improve typing ability and provide a single point of control for
-//! the casts necessary.
+/// Provide an interface between IRHandles and SEXPs. This will
+/// improve typing ability and provide a single point of control for
+/// the casts necessary.
 class HandleInterface {
 public:
   static OA::ProcHandle make_proc_h(SEXP e);

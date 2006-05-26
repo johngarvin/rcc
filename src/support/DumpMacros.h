@@ -57,4 +57,9 @@
   obj->dump(os); \
   dumpVarEnd(os, obj)
 
+#define dumpString(os, str) \
+  dumpVarStart(os, str);    \
+  os << str;                \
+  dumpVarEnd(os, str)
+
 #define endObjDump(os, name) os << "}" << std::endl; os.flush()

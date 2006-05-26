@@ -3,62 +3,77 @@
 #ifndef CALL_GRAPH_ANNOTATION_MAP_H
 #define CALL_GRAPH_ANNOTATION_MAP_H
 
-// Represents the call graph of the program. To represent R's binding
-// semantics, a call graph node can be a function definition
-// ("fundef") or a coordinate (a name in a scope). This system
-// reflects the fact that a call site in R can refer to more than one
-// coordinate, and a coordinate can refer to more than one fundef
-// (i.e., a name in a scope can be bound to more than one function).
+// Represents the call graph of the program. A call graph node can be
+// a function definition ("fundef"), a call site, a coordinate (a name
+// in a scope), or an R library function.
 
 #include <map>
+#include <list>
 #include <set>
 #include <ostream>
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnnotationMap.h>
-
-class CallGraphEdge;
-class CallGraphNode;
-class CallGraphInfo;
-class CallSiteCallGraphNode;
-class CoordinateCallGraphNode;
-class FundefCallGraphNode;
-class LibraryCallGraphNode;
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
+
+class CallGraphEdge;
+class CallGraphInfo;
 
 class CallGraphAnnotationMap : public AnnotationMap
 {
 public:
+  // ----- inner classes -----
+  class CallGraphNode;
+  class FundefCallGraphNode;
+  class CallSiteCallGraphNode;
+  class CoordinateCallGraphNode;
+  class LibraryCallGraphNode;
+
+  // ----- types -----
+  typedef std::list<const CallGraphNode *>                 NodeListT;
+  typedef std::set<const CallGraphNode *>                  NodeSetT;
+  typedef std::map<const CallGraphNode *, CallGraphInfo *> NodeMapT;
+  typedef std::set<const CallGraphEdge *>                  EdgeSetT;
+
+  // ----- destructor -----
   virtual ~CallGraphAnnotationMap();
 
-  // demand-driven analysis
+  // ----- demand-driven analysis -----
+
   MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
   MyMappedT get(const MyKeyT & k);
   bool is_computed();
 
-  // singleton
+  // ----- implement singleton pattern -----
+
   static CallGraphAnnotationMap * get_instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
-  // iterators
+  // ----- iterators -----
+
   iterator begin();
   const_iterator begin() const;
   iterator end();
   const_iterator end() const;
 
+  // ----- debugging -----
+
+  /// dump debugging information about the call graph
   void dump(std::ostream & os);
+
+  /// dump the call graph in dot form
+  void dumpdot(std::ostream & os);
 
 private:
   // ----- implement singleton pattern -----
 
   // private constructor for singleton pattern
   CallGraphAnnotationMap();
-
-  void compute();
 
   static CallGraphAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
@@ -76,10 +91,24 @@ private:
 
   void add_edge(const CallGraphNode * const source, const CallGraphNode * const sink);
   
+  // ----- compute call graph -----
+
+  void compute();
+
+  // ----- traverse call graph, get annotation -----
+
+  /// given a call site, traverse call graph to find the functions to
+  /// which the left side may be bound. Specifically: let a
+  /// _definition_ node be a FundefCallGraphNode or
+  /// LibraryCallGraphNode. get_call_bindings finds all definition
+  /// nodes that can be reached from the call site by a path that
+  /// includes exactly one definition node.
+  MyMappedT get_call_bindings(MyKeyT cs);
+
 private:
   bool m_computed; // has our information been computed yet?
-  std::map<const CallGraphNode *, CallGraphInfo *> m_node_map;
-  std::set<const CallGraphEdge *> m_edge_set;
+  NodeMapT m_node_map; // owns nodes and node info
+  EdgeSetT m_edge_set;              // owns edges for memory purposes
 
   std::map<MyKeyT, MyMappedT> m_traversed_map; // stores info on problems we've solved
 

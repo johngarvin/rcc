@@ -45,26 +45,26 @@ namespace RAnnot {
 
   // ----- debug -----
 
-  std::ostream & CallGraphInfo::dump(std::ostream & stream) const {
+  std::ostream & CallGraphInfo::dump(std::ostream & os) const {
     MySetT::const_iterator it;
 
     if (m_calls_in.empty()) {
-      stream << "Calls in: <empty>" << std::endl;
+      os << "Calls in: <empty>" << std::endl;
     } else {
-      stream << "Calls in:" << std::endl;
+      os << "Calls in:" << std::endl;
       for (it = begin_calls_in(); it != end_calls_in(); ++it) {
 	const CallGraphEdge * edge = *it;
-	dumpPtr(stream, edge->get_source());
+	dumpPtr(os, edge->get_source());
       }
     }
 
     if (m_calls_out.empty()) {
-      stream << "Calls out: <empty>" << std::endl;
+      os << "Calls out: <empty>" << std::endl;
     } else {
-      stream << "Calls out:" << std::endl;
+      os << "Calls out:" << std::endl;
       for (it = begin_calls_out(); it != end_calls_out(); ++it) {
 	const CallGraphEdge * edge = *it;
-	dumpPtr(stream, edge->get_sink());
+	dumpPtr(os, edge->get_sink());
       }
     }
   }

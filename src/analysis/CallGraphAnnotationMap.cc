@@ -1,8 +1,14 @@
 #include <list>
 
+#include <support/DumpMacros.h>
+#include <support/RccError.h>
+#include <support/StringUtils.h>
+
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/AnnotationBase.h>
+#include <analysis/CallGraphAnnotation.h>
 #include <analysis/CallGraphEdge.h>
 #include <analysis/CallGraphNode.h>
 #include <analysis/CallGraphInfo.h>
@@ -15,9 +21,6 @@
 #include <analysis/VarBinding.h>
 #include <analysis/VarInfo.h>
 
-#include <support/DumpMacros.h>
-#include <support/RccError.h>
-
 #include "CallGraphAnnotationMap.h"
 
 namespace RAnnot {
@@ -28,7 +31,17 @@ typedef CallGraphAnnotationMap::MyKeyT MyKeyT;
 typedef CallGraphAnnotationMap::MyMappedT MyMappedT;
 typedef CallGraphAnnotationMap::iterator iterator;
 typedef CallGraphAnnotationMap::const_iterator const_iterator;
-  
+
+typedef CallGraphAnnotationMap::NodeListT NodeListT;
+typedef CallGraphAnnotationMap::NodeSetT NodeSetT;
+typedef CallGraphAnnotationMap::NodeMapT NodeMapT;
+typedef CallGraphAnnotationMap::EdgeSetT EdgeSetT;
+
+typedef CallGraphAnnotationMap::FundefCallGraphNode FundefCallGraphNode;
+typedef CallGraphAnnotationMap::CallSiteCallGraphNode CallSiteCallGraphNode;
+typedef CallGraphAnnotationMap::CoordinateCallGraphNode CoordinateCallGraphNode;
+typedef CallGraphAnnotationMap::LibraryCallGraphNode LibraryCallGraphNode;
+
 // ----- constructor, destructor -----
 
 CallGraphAnnotationMap::CallGraphAnnotationMap()
@@ -37,7 +50,7 @@ CallGraphAnnotationMap::CallGraphAnnotationMap()
 {}
   
 CallGraphAnnotationMap::~CallGraphAnnotationMap() {
-  std::map<const CallGraphNode *, CallGraphInfo *>::const_iterator i;
+  NodeMapT::const_iterator i;
   
   // delete CallGraphInfo objects
   for(i = m_node_map.begin(); i != m_node_map.end(); ++i) {
@@ -45,7 +58,7 @@ CallGraphAnnotationMap::~CallGraphAnnotationMap() {
   }
   
   // delete edges
-  std::set<const CallGraphEdge *>::const_iterator j;
+  EdgeSetT::const_iterator j;
   for(j = m_edge_set.begin(); j != m_edge_set.end(); ++j) {
     delete(*j);
   }
@@ -168,7 +181,7 @@ CoordinateCallGraphNode * CallGraphAnnotationMap::make_coordinate_node(SEXP name
 }
 
 CallSiteCallGraphNode * CallGraphAnnotationMap::make_call_site_node(SEXP e) {
-  assert(is_cons(e));
+  assert(is_call(e));
   CallSiteCallGraphNode * node;
   std::map<SEXP, CallSiteCallGraphNode *>::const_iterator it = m_call_site_map.find(e);
   if (it == m_call_site_map.end()) {  // not yet in map
@@ -194,9 +207,39 @@ void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const 
 
 // ----- computation -----  
 
+MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
+  std::map<MyKeyT, MyMappedT>::const_iterator it = m_traversed_map.find(cs);
+  if (it != m_traversed_map.end()) {  // already computed and stored in map
+    return it->second;
+  } else {
+    SEXP r_cs = HandleInterface::make_sexp(cs);
+    const CallSiteCallGraphNode * const cs_node = make_call_site_node(r_cs);
+    
+    // search graph, accumulate fundefs/library functions
+    NodeListT worklist;
+    NodeSetT visited;
+    
+    // new annotation
+    CallGraphAnnotation * ann = new CallGraphAnnotation();
+    
+    // start with worklist containing the given call site
+    worklist.push_back(cs_node);
+    
+    while(!worklist.empty()) {
+      const CallGraphNode * c = worklist.front();
+      worklist.pop_front();
+      if (visited.find(c) == visited.end()) {
+	visited.insert(c);
+	c->get_call_bindings(worklist, visited, ann);
+      }
+    }
+    return ann;
+  }
+}
+
 void CallGraphAnnotationMap::compute() {
-  std::list<CallGraphNode *> worklist;
-  std::set<const CallGraphNode *> visited;
+  NodeListT worklist;
+  NodeSetT visited;
 
   // start with worklist containing one entry, the whole program
   SEXP program = CAR(assign_rhs_c(R_Analyst::get_instance()->get_program()));
@@ -206,91 +249,16 @@ void CallGraphAnnotationMap::compute() {
   while(!worklist.empty()) {
     const CallGraphNode * c = worklist.front();
     worklist.pop_front();
-
-    visited.insert(c);
-    
-    const FundefCallGraphNode * fnode = dynamic_cast<const FundefCallGraphNode *>(c);
-    if (fnode != 0) {
-      // if node is a fundef
-      visited.insert(fnode);
-      FuncInfo * fi = getProperty(FuncInfo, fnode->get_sexp());
-      FuncInfo::const_call_site_iterator csi;
-      for(csi = fi->beginCallSites(); csi != fi->endCallSites(); ++csi) {
-	SEXP cs = *csi;
-	CallSiteCallGraphNode * csnode = make_call_site_node(cs);
-	add_edge(fnode, csnode);
-	if (visited.find(csnode) == visited.end()) {
-	  worklist.push_back(csnode);
-	}
-      }
-    } else {
-      const CallSiteCallGraphNode * csnode = dynamic_cast<const CallSiteCallGraphNode *>(c);
-      if (csnode != 0) {    // if node is a call site
-	visited.insert(csnode);
-	SEXP cs = csnode->get_sexp();
-	if (is_var(call_lhs(cs))) {
-	  // if left side of call is a symbol
-	  VarBinding * binding = getProperty(VarBinding, cs);  // cell containing symbol
-	  VarBinding::const_iterator si;
-	  for(si = binding->begin(); si != binding->end(); ++si) {
-	    CoordinateCallGraphNode * node;
-	    node = make_coordinate_node(call_lhs(cs), (*si)->getDefn());
-	    add_edge(csnode, node);
-	    if (visited.find(node) == visited.end()) {
-	      worklist.push_back(node);
-	    }
-	  }
-	} else {
-	  // LHS of call is a non-symbol expression
-	  // TODO: handle this case
-	  throw AnalysisException();
-	}
-      } else {
-	const CoordinateCallGraphNode * cnode = dynamic_cast<const CoordinateCallGraphNode *>(c);
-	if (cnode != 0) {      // if node is a Coordinate
-	  visited.insert(cnode);
-	  SymbolTable * st = getProperty(SymbolTable, cnode->get_scope());
-	  SymbolTable::const_iterator it = st->find(cnode->get_name());
-	  if (it == st->end()) {
-	    // Name not found in SymbolTable. This means either an unbound
-	    // variable or a predefined (library or built-in) function.
-	    SEXP value = Rf_findFun(cnode->get_name(), R_GlobalEnv);
-	    if (value == R_UnboundValue) {
-	      rcc_error("Unbound variable " + var_name(cnode->get_name()));
-	    } else {
-	      add_edge(cnode, make_library_node(cnode->get_name(), value));
-	      // but don't add library fun to worklist
-	    }
-	  } else {  // symbol is defined at least once in this scope
-	    VarInfo * vi = it->second;
-	    VarInfo::const_iterator var;
-	    for(var = vi->beginDefs(); var != vi->endDefs(); ++var) {
-	      DefVar * def = *var;
-	      if (is_fundef(CAR(def->getRhs_c()))) {
-		// def is of the form _ <- function(...)
-		FundefCallGraphNode * node = make_fundef_node(CAR(def->getRhs_c()));
-		add_edge(cnode, node);
-		if (visited.find(node) == visited.end()) {
-		  worklist.push_back(node);
-		}
-	      } else {
-		// if it's a variable, then we know how to handle
-		// RHS of def is a non-fundef
-		// TODO: handle this case
-		throw AnalysisException();
-	      }
-	    }
-	  }
-	} else {
-	  rcc_error("Unrecognized CallGraphNode type");
-	}
-      }
+    if (visited.find(c) == visited.end()) {
+      visited.insert(c);
+      c->compute(worklist, visited);
     }
   }
 
   //  for each procedure entry point (just the big proc if one executable):
   //    add to worklist as new call graph node
   //  for each node in worklist:
+  //    mark node visited
   //    if it's a Fundef:
   //      for each call site:
   //        add edge (fundef, call site)
@@ -322,20 +290,57 @@ void CallGraphAnnotationMap::dump(std::ostream & os) {
   
   beginObjDump(os, CallGraph);
 
-  std::map<const CallGraphNode *, CallGraphInfo *>::const_iterator node_it;
+  NodeMapT::const_iterator node_it;
   CallGraphInfo::const_iterator edge_it;
   const CallGraphEdge * edge;
   for(node_it = m_node_map.begin(); node_it != m_node_map.end(); ++node_it) {
     const CallGraphNode * node = node_it->first;
     assert(node != 0);
     dumpObj(os, node);
-    CallGraphInfo * info = node_it->second;
+    CallGraphInfo * const info = node_it->second;
     assert(info != 0);
     info->dump(os);
     os << std::endl;
   }
 
   endObjDump(os, CallGraph);
+}
+
+void CallGraphAnnotationMap::dumpdot(std::ostream & os) {
+  if (!is_computed()) {
+    compute();
+    m_computed = true;
+  }
+
+  os << "digraph CallGraph" << " {" << std::endl;
+
+  // dump nodes
+  NodeMapT::const_iterator node_it;
+  const CallGraphNode * node;
+  unsigned int node_num;
+  for(node_it = m_node_map.begin(); node_it != m_node_map.end(); ++node_it) {
+    node = node_it->first;
+    node_num = node->get_id();
+    os << node_num << " [ label=\"" << node_num << "\\n";
+    std::ostringstream ss;
+    node->dump_string(ss);
+    os << escape(ss.str());
+    os << "\\n\" ];" << std::endl;
+    os.flush();
+  }
+
+  // dump edges
+  EdgeSetT::const_iterator edge_it;
+  unsigned int source_num, sink_num;
+  for(edge_it = m_edge_set.begin(); edge_it != m_edge_set.end(); ++edge_it) {
+    source_num = (*edge_it)->get_source()->get_id();
+    sink_num = (*edge_it)->get_sink()->get_id();
+    os << source_num << " -> " << sink_num << ";" << std::endl;
+    os.flush();
+  }
+
+  os << "}" << std::endl;
+  os.flush();
 }
 
 } // end namespace RAnnot

@@ -51,6 +51,7 @@ static bool global_self_allocate = false;
 static bool output_main_program = true;
 static bool output_default_args = true;
 static bool analysis_debug = false;
+static bool cfg_dot_dump = false;
 
 int main(int argc, char *argv[]) {
   int i;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
 
   // get options
   while(1) {
-    c = getopt(argc, argv, "adf:lmo:");
+    c = getopt(argc, argv, "acdf:lmo:");
     if (c == -1) {
       break;
     }
@@ -80,19 +81,28 @@ int main(int argc, char *argv[]) {
     case 'a':
       output_default_args = false;
       break;
+    case 'c':
+      // dump CFG in dot form
+      cfg_dot_dump = true;
+      break;
     case 'd':
+      // print debugging information
       analysis_debug = true;
       break;
     case 'f':
+      // argument is the name of a function that can be called directly
       ParseInfo::direct_funcs.insert(string(optarg));
       break;
     case 'l':
+      // use local allocation
       global_self_allocate = true;
       break;
     case 'm':
+      // don't output a main program
       output_main_program = false;
       break;
     case 'o':
+      // specify output file
       out_file_exists = true;
       out_filename = string(optarg);
       break;
@@ -190,6 +200,9 @@ int main(int argc, char *argv[]) {
       }
       cout << "Dumping call graph:" << endl;
       CallGraphAnnotationMap::get_instance()->dump(cout);
+    }
+    if (cfg_dot_dump) {
+      CallGraphAnnotationMap::get_instance()->dumpdot(cout);
     }
   }
   catch (AnalysisException ae) {
@@ -362,7 +375,7 @@ int main(int argc, char *argv[]) {
 }
 
 static void arg_err() {
-  cerr << "Usage: rcc [input-file] [-a] [-d] [-l] [-m] [-o output-file] [-f function-name]*\n";
+  cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file] [-f function-name]*\n";
   exit(1);
 }
 

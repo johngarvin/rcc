@@ -3,22 +3,24 @@
 #ifndef CALL_GRAPH_EDGE_H
 #define CALL_GRAPH_EDGE_H
 
+#include <analysis/CallGraphAnnotationMap.h>
+
 namespace RAnnot {
 
-class CallGraphNode;
+  // class CallGraphAnnotationMap::CallGraphNode;  // why doesn't this work?
 
 class CallGraphEdge {
 public:
-  explicit CallGraphEdge(const CallGraphNode * const source,
-			 const CallGraphNode * const sink);
+  explicit CallGraphEdge(const CallGraphAnnotationMap::CallGraphNode * const source,
+			 const CallGraphAnnotationMap::CallGraphNode * const sink);
   virtual ~CallGraphEdge();
 
-  const CallGraphNode * const get_source() const;
-  const CallGraphNode * const get_sink() const;
+  const CallGraphAnnotationMap::CallGraphNode * const get_source() const;
+  const CallGraphAnnotationMap::CallGraphNode * const get_sink() const;
 
 private:
-  const CallGraphNode * const m_source;
-  const CallGraphNode * const m_sink;
+  const CallGraphAnnotationMap::CallGraphNode * const m_source;
+  const CallGraphAnnotationMap::CallGraphNode * const m_sink;
 };
 
 } // end namespace RAnnot
