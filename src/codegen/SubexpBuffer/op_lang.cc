@@ -15,7 +15,8 @@ using namespace std;
 
 Expression SubexpBuffer::op_lang(SEXP e, string rho, 
 	   Protection resultProtection,
-	   ResultStatus resultStatus) {
+	   ResultStatus resultStatus)
+{
   SEXP op;
   string out;
   Expression exp;
@@ -33,12 +34,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       Expression args = op_list(r_args, rho, false, Protected);
 #endif
       string call = appl1(func, args.var, Unprotected);
-#if 0
-      del(args);
-#else
       if (!args.del_text.empty())
 	append_defs("UNPROTECT(1);\n");
-#endif
       string cleanup;
       if (resultProtection == Protected) {
 	// if we know there is at least one free slot on the protection stack
@@ -48,7 +45,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	  append_defs("PROTECT(" + call + ");\n");
 	cleanup = unp(call);
       }
-      return Expression(call, TRUE, VISIBLE, cleanup);
+      return Expression(call, true, VISIBLE, cleanup);
     } else { // not direct; call via closure
       // is it an R library function? Look up in global environment
       op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);

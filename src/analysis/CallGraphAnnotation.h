@@ -30,6 +30,8 @@ public:
 
   static PropertyHndlT handle();
 
+  // ----- debugging -----
+
   std::ostream & dump(std::ostream & stream) const;
 
 private:

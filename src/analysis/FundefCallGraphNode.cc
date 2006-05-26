@@ -31,14 +31,23 @@ namespace RAnnot {
   {
     CallGraphAnnotationMap * const cg = CallGraphAnnotationMap::get_instance();
     FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-    FuncInfo::const_call_site_iterator csi;
+
+    // Keep track of call sites attached to this node to avoid
+    // redundancy. This is a temporary workaround for a bug in which
+    // the CFG has duplicate nodes.
+    NodeSetT visited_cs;
+
     const CallSiteCallGraphNode * csnode;
+    FuncInfo::const_call_site_iterator csi;
     for(csi = fi->beginCallSites(); csi != fi->endCallSites(); ++csi) {
       SEXP cs = *csi;
       csnode = cg->make_call_site_node(cs);
-      cg->add_edge(this, csnode);
-      if (visited.find(csnode) == visited.end()) {
-	worklist.push_back(csnode);
+      if (visited_cs.find(csnode) == visited_cs.end()) {
+	visited_cs.insert(csnode);
+	cg->add_edge(this, csnode);
+	if (visited.find(csnode) == visited.end()) {
+	  worklist.push_back(csnode);
+	}
       }
     }
   }

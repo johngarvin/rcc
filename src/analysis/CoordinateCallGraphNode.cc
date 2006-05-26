@@ -39,6 +39,7 @@ namespace RAnnot {
   {
     CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
     SymbolTable * st = getProperty(SymbolTable, m_scope);
+
     SymbolTable::const_iterator it = st->find(m_name);
     if (it == st->end()) {
       // Name not found in SymbolTable. This means either an unbound
