@@ -4,6 +4,7 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/CallGraphInfo.h>
 #include <analysis/CoordinateCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>
@@ -55,22 +56,14 @@ namespace RAnnot {
 		    CallGraphAnnotation * ann) const
   {
     CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
-    if (is_var(call_lhs(m_cs))) {
-      // if left side of call is a symbol
-      VarBinding * binding = getProperty(VarBinding, m_cs);  // cell containing symbol
-      VarBinding::const_iterator si;
-      for(si = binding->begin(); si != binding->end(); ++si) {
-	CoordinateCallGraphNode * node;
-	node = cg->make_coordinate_node(call_lhs(m_cs), (*si)->getDefn());
-	if (visited.find(node) == visited.end()) {
-	  worklist.push_back(node);
-	}
-      }
-    } else {
-      // LHS of call is a non-symbol expression
-      // TODO: handle this case
-      throw AnalysisException();
-    }    
+    CallGraphInfo * info = cg->get_edges(this);
+    // TODO: remove cast when maps are parametrized
+    for (CallGraphInfo::const_iterator edge = info->begin_calls_out();
+	 edge != info->end_calls_out();
+	 ++edge) {
+      assert(dynamic_cast<const CoordinateCallGraphNode*>((*edge)->get_sink()) != 0);
+      worklist.push_back((*edge)->get_sink());
+    }
   }
 
   void CallGraphAnnotationMap::CallSiteCallGraphNode::dump(std::ostream & os) const {

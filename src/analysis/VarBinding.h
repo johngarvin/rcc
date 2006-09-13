@@ -60,6 +60,9 @@ public:
 
   bool is_global();
 
+  /// Is this mention bound in only one scope?
+  bool is_single();
+
   // clone
   AnnotationBase * clone();
 

@@ -92,6 +92,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
     }
+#ifdef ADD_ENVIR_POINTER_MAP_TO_FUNC_INFOS
+  } else if (annot->is_single()) {
+    FuncInfo * scope = *(annot->begin());
+#endif    
   } else {                         // not global scope
     // TODO: add similar thing for local variables
     return op_lookup(sb, lookup_function, make_symbol(e), rho,

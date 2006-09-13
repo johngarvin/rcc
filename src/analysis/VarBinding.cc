@@ -75,6 +75,11 @@ VarBinding::VarBinding()
     return true;
   }
 
+  bool VarBinding::is_single() {
+    MyContainerT::iterator i = m_scopes.begin();
+    return (++i == m_scopes.end());
+  }
+
   AnnotationBase * VarBinding::clone() {
     VarBinding * vb = new VarBinding();
     for(MyContainerT::iterator i = m_scopes.begin(); i != m_scopes.end(); ++i) {

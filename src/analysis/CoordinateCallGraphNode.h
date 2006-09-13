@@ -1,4 +1,4 @@
-// -*- Mode: C++ -*-x
+// -*- Mode: C++ -*-
 
 #ifndef COORDINATE_CALL_GRAPH_NODE_H
 #define COORDINATE_CALL_GRAPH_NODE_H

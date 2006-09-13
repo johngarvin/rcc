@@ -24,6 +24,8 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
+  const CallGraphAnnotationMap::CallGraphNode * get_singleton_if_exists() const;
+
   // ----- methods that implement AnnotationBase -----
 
   AnnotationBase * clone();

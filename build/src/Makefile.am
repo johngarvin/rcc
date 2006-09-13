@@ -102,6 +102,8 @@ rcc_bin_SOURCES =				\
   SymbolTableAnnotationMap.cc                   \
   SymbolTableAnnotationMap.h                    \
   TypeInference.h				\
+  UnknownValueCallGraphNode.cc                  \
+  UnknownValueCallGraphNode.h                   \
   UseVar.cc                                     \
   UseVar.h                                      \
   Utils.cc					\

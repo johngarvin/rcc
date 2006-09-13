@@ -29,6 +29,20 @@ namespace RAnnot {
     return m_nodes.end();
   }
 
+  // ----- get_singleton_if_exists -----
+
+  const CallGraphAnnotationMap::CallGraphNode * CallGraphAnnotation::get_singleton_if_exists() const {
+    if (begin() == end()) return 0;
+    MySetT::const_iterator elt1 = begin();
+    MySetT::const_iterator elt2 = begin();
+    elt2++;
+    if (elt2 == end()) {  // set contains one element
+      return *elt1;
+    } else {
+      return 0;
+    }
+  }
+
   // ----- AnnotationBase -----
 
   AnnotationBase * CallGraphAnnotation::clone() {

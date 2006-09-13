@@ -16,6 +16,7 @@
 #include <analysis/LibraryCallGraphNode.h>
 #include <analysis/CoordinateCallGraphNode.h>
 #include <analysis/CallSiteCallGraphNode.h>
+#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/VarBinding.h>
@@ -110,14 +111,20 @@ MyMappedT CallGraphAnnotationMap::get(const MyKeyT & k) {
     m_computed = true;
   }
   
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_traversed_map.find(k);
-  if (annot == m_traversed_map.end()) {
-    rcc_error("Possible invalid key not found in CallGraph map");
+  std::map<MyKeyT, MyMappedT>::const_iterator it = m_traversed_map.find(k);
+  if (it != m_traversed_map.end()) {  // already computed and stored in map
+    return it->second;
+  } else {
+    return get_call_bindings(k);
   }
+}
 
-  return annot->second;
+CallGraphInfo* CallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
+  if (!is_computed()) {
+    compute();
+    m_computed = true;
+  }
+  return m_node_map[node];
 }
   
 bool CallGraphAnnotationMap::is_computed() {
@@ -194,6 +201,14 @@ CallSiteCallGraphNode * CallGraphAnnotationMap::make_call_site_node(SEXP e) {
   return node; 
 }
 
+CallGraphAnnotationMap::UnknownValueCallGraphNode * CallGraphAnnotationMap::make_unknown_value_node() {
+  UnknownValueCallGraphNode * node = UnknownValueCallGraphNode::get_instance();
+  if (m_node_map.find(node) == m_node_map.end()) {
+    m_node_map[node] = new CallGraphInfo();
+  }
+  return node;  
+}
+
 void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const CallGraphNode * const sink) {
   CallGraphEdge * edge = new CallGraphEdge(source, sink);
   m_edge_set.insert(edge);
@@ -208,33 +223,29 @@ void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const 
 // ----- computation -----  
 
 MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
-  std::map<MyKeyT, MyMappedT>::const_iterator it = m_traversed_map.find(cs);
-  if (it != m_traversed_map.end()) {  // already computed and stored in map
-    return it->second;
-  } else {
-    SEXP r_cs = HandleInterface::make_sexp(cs);
-    const CallSiteCallGraphNode * const cs_node = make_call_site_node(r_cs);
-    
-    // search graph, accumulate fundefs/library functions
-    NodeListT worklist;
-    NodeSetT visited;
-    
-    // new annotation
-    CallGraphAnnotation * ann = new CallGraphAnnotation();
-    
-    // start with worklist containing the given call site
-    worklist.push_back(cs_node);
-    
-    while(!worklist.empty()) {
-      const CallGraphNode * c = worklist.front();
-      worklist.pop_front();
-      if (visited.find(c) == visited.end()) {
-	visited.insert(c);
-	c->get_call_bindings(worklist, visited, ann);
-      }
+  SEXP r_cs = HandleInterface::make_sexp(cs);
+  const CallSiteCallGraphNode * const cs_node = make_call_site_node(r_cs);
+  
+  // search graph, accumulate fundefs/library functions
+  NodeListT worklist;
+  NodeSetT visited;
+  
+  // new annotation
+  CallGraphAnnotation * ann = new CallGraphAnnotation();
+  
+  // start with worklist containing the given call site
+  worklist.push_back(cs_node);
+  
+  while(!worklist.empty()) {
+    const CallGraphNode * c = worklist.front();
+    worklist.pop_front();
+    if (visited.find(c) == visited.end()) {
+      visited.insert(c);
+      c->get_call_bindings(worklist, visited, ann);
     }
-    return ann;
   }
+  m_traversed_map[cs] = ann;
+  return ann;
 }
 
 void CallGraphAnnotationMap::compute() {

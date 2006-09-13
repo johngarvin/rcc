@@ -31,6 +31,7 @@ public:
   class CallSiteCallGraphNode;
   class CoordinateCallGraphNode;
   class LibraryCallGraphNode;
+  class UnknownValueCallGraphNode;
 
   // ----- types -----
   typedef std::list<const CallGraphNode *>                 NodeListT;
@@ -44,7 +45,12 @@ public:
   // ----- demand-driven analysis -----
 
   MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
+
+  /// given a call site, return the list of fundef/library nodes reachable; compute if necessary
   MyMappedT get(const MyKeyT & k);
+
+  /// given a node, return a CallGraphInfo containing the in and out edges
+  CallGraphInfo* get_edges(const CallGraphNode* node);
   bool is_computed();
 
   // ----- implement singleton pattern -----
@@ -88,6 +94,7 @@ private:
   LibraryCallGraphNode * make_library_node(SEXP name, SEXP value);
   CoordinateCallGraphNode * make_coordinate_node(SEXP name, SEXP scope);
   CallSiteCallGraphNode * make_call_site_node(SEXP e);
+  UnknownValueCallGraphNode * make_unknown_value_node();
 
   void add_edge(const CallGraphNode * const source, const CallGraphNode * const sink);
   
@@ -97,6 +104,7 @@ private:
 
   // ----- traverse call graph, get annotation -----
 
+private:
   /// given a call site, traverse call graph to find the functions to
   /// which the left side may be bound. Specifically: let a
   /// _definition_ node be a FundefCallGraphNode or
@@ -104,6 +112,7 @@ private:
   /// nodes that can be reached from the call site by a path that
   /// includes exactly one definition node.
   MyMappedT get_call_bindings(MyKeyT cs);
+  
 
 private:
   bool m_computed; // has our information been computed yet?
