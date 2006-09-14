@@ -6,6 +6,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/CallGraphInfo.h>
 #include <analysis/CoordinateCallGraphNode.h>
+#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
@@ -45,8 +46,7 @@ namespace RAnnot {
       }
     } else {
       // LHS of call is a non-symbol expression
-      // TODO: handle this case
-      throw AnalysisException();
+      cg->add_edge(this, cg->make_unknown_value_node());
     }
   }
 
