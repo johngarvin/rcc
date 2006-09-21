@@ -24,16 +24,15 @@ std::string make_fundef(SubexpBuffer * this_buf, std::string func_name,
 std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, 
 			  SEXP fndef);
 
-//! Output a function definition.
+/// Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   Protection resultProtection,
 				   string opt_R_name /* = "" */)
 {
   FuncInfo *fi = getProperty(FuncInfo, fndef);
-
   lexicalContext.Push(fi);
-
   SEXP e = CDR(fndef); // skip over "function" symbol
+  string c_name = fi->getCName();
 
   bool direct = FALSE;
   if (!opt_R_name.empty() && ParseInfo::is_direct(opt_R_name)) {
@@ -48,79 +47,46 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
       if (rho != "R_GlobalEnv") {
 	rcc_warn("function " + opt_R_name + " is not in global scope; unable to make direct function call");
       } else {
-	ParseInfo::global_fundefs->append_defs( 
+	ParseInfo::global_fundefs->append_defs(
 	  make_fundef_c(this,
-			make_c_id(opt_R_name) + "_direct",
+			c_name + "_direct",
 			fndef));
       }
       // in any case, continue to closure version
     }
   }
   // closure version
-  string func_name = ParseInfo::global_fundefs->new_var();
   ParseInfo::global_fundefs->append_defs(make_fundef(this,
-						     func_name,
+						     c_name,
 						     fndef));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
 							     rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
-#if 0
-    string r_form = ParseInfo::global_constants->appl3("mkCLOSXP", r_args.var, r_code.var, rho);
-    Expression c_f_args = ParseInfo::global_constants->op_arglist(CAR(e), rho);
-    string c_args = ParseInfo::global_constants->appl2("cons", rho, c_f_args.var);
-    string c_call = ParseInfo::global_constants->appl2("cons", func_sym, c_args);
-    string r_call = ParseInfo::global_constants->appl2("lcons",
-			  make_symbol(Rf_install(".External")),
-			  c_call);
-    string c_clos = ParseInfo::global_constants->appl3("mkCLOSXP ", formals.var,
-				   func_name, rho);
-#endif
-    string r_form = 
-      ParseInfo::global_constants->appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho);
-#if 0
-    ParseInfo::global_constants->append_defs("setAttrib(" + r_form
-          + ", Rf_install(\"RCC_CompiledSymbol\"), " + c_clos + ");\n");
-#endif
+    string closure = fi->getClosure();
+    ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     ParseInfo::global_constants->del(formals);
-    if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, r_form));
+    if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, closure));
     lexicalContext.Pop();
-    return Expression(r_form, FALSE, INVISIBLE, "");
+    return Expression(closure, false, INVISIBLE, "");
   } else {   // not the global environment
     Expression r_args = op_literal(CAR(e), rho);
     Expression r_code = op_literal(CADR(e), rho);
-    string r_form = appl4("mkRCC_CLOSXP", r_args.var, func_name, r_code.var, rho, resultProtection);
+    string closure = fi->getClosure();
+    appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     del(r_args);
     del(r_code);
-#if 0
-    Expression c_f_args = op_arglist(CAR(e), rho);
-    string c_args = appl2("cons", rho, c_f_args.var);
-    del(c_f_args);
-    string c_call = appl2("cons", func_sym, c_args);
-    string defs = unp(c_args);
-    string r_call = appl2("lcons",
-			  make_symbol(Rf_install(".External")),
-			  c_call);
-    defs += unp(c_call);
-    string out = appl3("mkCLOSXP ", formals.var, r_call, rho);
-    del(formals);
-    defs += unp(r_call);
-    defs += "setAttrib(" + r_form
-          + ", Rf_install(\"RCC_CompiledSymbol\"), " + out + ");\n";
-    defs += unp(out);
-    append_defs(defs);
-#endif
     lexicalContext.Pop();
-    string cleanup = (resultProtection == Protected ? unp(r_form) : "");
-    return Expression(r_form, true, CHECK_VISIBLE, cleanup);
+    string cleanup = (resultProtection == Protected ? unp(closure) : "");
+    return Expression(closure, true, CHECK_VISIBLE, cleanup);
   }
 }
 
-//!  Given an R function, emit a C function with two arguments. The
-//!  first is a list containing all the R arguments. (This is to work
-//!  easily with "...", default arguments, etc.) The second is the
-//!  environment in which the function is to be executed.
+///  Given an R function, emit a C function with two arguments. The
+///  first is a list containing all the R arguments. (This is to work
+///  easily with "...", default arguments, etc.) The second is the
+///  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   SEXP args = CAR(fundef_args_c(fndef));
 
@@ -186,7 +152,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   return f;
 }
 
-// Like make_fundef but for directly-called functions.
+/// Like make_fundef but for directly-called functions.
 string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef) 
 {
   SEXP args = CAR(fundef_args_c(fndef));

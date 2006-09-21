@@ -1,6 +1,10 @@
 #include <include/R/R_RInternals.h>
 
+#include <ParseInfo.h>
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
+
 #include <support/DumpMacros.h>
+#include <support/StringUtils.h>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/FormalArgInfo.h>
@@ -21,6 +25,8 @@ FuncInfo::FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn) :
   mLexicalParent(lexParent),
   mFirstName(name),
   mDefn(defn),
+  mCName(""),
+  mClosure(""),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(lexParent)
 {
   mRequiresContext = functionRequiresContext(defn);
@@ -91,6 +97,27 @@ bool FuncInfo::areAllValue()
     if (!isArgValue(e)) allvalue = false;
   }
   return allvalue;
+}
+
+const std::string& FuncInfo::getCName()
+{
+  if (mCName == "") {
+    SEXP name_sym = getFirstName();
+    if (name_sym == R_NilValue) {
+      mCName = make_c_id("anon" + ParseInfo::global_fundefs->new_var_unp());
+    } else {
+      mCName = make_c_id(ParseInfo::global_fundefs->new_var_unp_name(var_name(getFirstName())));
+    }
+  }
+  return mCName;
+}
+
+const std::string& FuncInfo::getClosure()
+{
+  if (mClosure == "") {
+    mClosure = ParseInfo::global_fundefs->new_sexp_unp();
+  }
+  return mClosure;
 }
 
 void FuncInfo::insertMention(FuncInfo::MentionT v)

@@ -67,7 +67,7 @@ public:
   SEXP getDefn() 
     { return mDefn; }
 
-  // first name assigned
+  // first R name assigned
   SEXP getFirstName()
     { return mFirstName; }
 
@@ -77,11 +77,11 @@ public:
   void setHasVarArgs(bool x)
     { mHasVarArgs = x; }
 
-  // c-linkage-name
-  const std::string& getCName() const
-    { return mCName; }
-  void setCName(std::string& x)
-    { mCName = x; }
+  // C function name
+  const std::string& getCName();
+
+  // name of closure (CLOSXP)
+  const std::string& getClosure();
 
   // context
   void setRequiresContext(bool requiresContext); 
@@ -126,6 +126,7 @@ private:
   unsigned int mNumArgs;   // number of known arguments
   bool mHasVarArgs;        // variable number of arguments
   std::string mCName;      // C linkage name
+  std::string mClosure;    // C closure (CLOSXP) name
   bool mRequiresContext;   // is an R context object needed for the function?
 
   OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
