@@ -122,7 +122,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     // for each CFG node (basic block)
-    OA_ptr<CFG::NodesIterator> ni = fi->getCFG()->getNodesIterator();
+    OA_ptr<CFG::NodesIterator> ni = fi->get_cfg()->getNodesIterator();
     for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
       node = ni->current();
       // each statement in basic block
@@ -151,8 +151,8 @@ void VarAnnotationMap::compute_all_locality_info() {
   FuncInfoIterator fii(root);
   for(FuncInfo * fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
-    OA_ptr<CFG> cfg = fi->getCFG();
+    ProcHandle ph = HandleInterface::make_proc_h(fi->get_defn());
+    OA_ptr<CFG> cfg = fi->get_cfg();
     compute_locality_info(interface, ph, cfg);
   }
 }

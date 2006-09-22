@@ -115,7 +115,7 @@ void VarBindingAnnotationMap::compute() {
     assert(fi != 0);
     // each mention
     FuncInfo::mention_iterator mi;
-    for (mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
+    for (mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
       Var * v = *mi;
       v = getProperty(Var, v->getMention_c()); 
       // FIXME: should make sure we always get the data-flow-solved
@@ -167,7 +167,7 @@ void VarBindingAnnotationMap::compute() {
 /// Is the given variable defined as local in the given scope?
 static bool defined_local_in_scope(Var * v, FuncInfo * s) {
   FuncInfo::mention_iterator mi;
-  for(mi = s->beginMentions(); mi != s->endMentions(); ++mi) {
+  for(mi = s->begin_mentions(); mi != s->end_mentions(); ++mi) {
     Var * m = *mi;
     if (m->getUseDefType() == Var::Var_DEF  &&
 	m->getScopeType() == Var::Var_LOCAL &&

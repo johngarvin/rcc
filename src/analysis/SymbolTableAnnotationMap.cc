@@ -109,7 +109,7 @@ void SymbolTableAnnotationMap::compute() {
   // create empty symbol table for each scope
   for( ; fii.IsValid(); ++fii) {
     SymbolTable * st = new SymbolTable();
-    m_map[HandleInterface::make_proc_h(fii.Current()->getDefn())] = st;
+    m_map[HandleInterface::make_proc_h(fii.Current()->get_defn())] = st;
   }
 
   // for each def in each scope, add the appropriate info to the
@@ -118,7 +118,7 @@ void SymbolTableAnnotationMap::compute() {
     FuncInfo * fi = fii.Current();
 
     FuncInfo::mention_iterator mi;
-    for(mi = fi->beginMentions(); mi != fi->endMentions(); ++mi) {
+    for(mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
       // count only defs, not uses
       DefVar * def = dynamic_cast<DefVar *>(*mi);
       if (def == 0) continue;
@@ -127,7 +127,7 @@ void SymbolTableAnnotationMap::compute() {
       // for each scope in which the variable might be defined
       VarBinding::const_iterator vbi;
       for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {
-	AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h((*vbi)->getDefn())];
+	AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h((*vbi)->get_defn())];
 	SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
 	assert(target_st != 0);
 	SymbolTable::iterator it = target_st->find(name);

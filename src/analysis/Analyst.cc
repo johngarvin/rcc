@@ -84,7 +84,7 @@ void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
   if (proc != R_NilValue) {
     FuncInfo *fi = getProperty(FuncInfo, proc);
     OA::OA_ptr<OA::CFG::Interface> cfg;
-    cfg = fi->getCFG();
+    cfg = fi->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
@@ -94,24 +94,23 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
   for( ; fii.IsValid(); ++fii) {
     FuncInfo *finfo = fii.Current();
     OA::OA_ptr<OA::CFG::Interface> cfg;
-    cfg = finfo->getCFG();
+    cfg = finfo->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
 
 /// Populate m_cfgs with the CFG for each procedure
 void R_Analyst::build_cfgs() {
-  FuncInfo *finfo = get_scope_tree_root();
   OA::CFG::ManagerStandard cfg_man(m_interface, true); // build statement-level CFGs
 
   // preorder traversal of scope tree
-  FuncInfoIterator fii(finfo);
+  FuncInfoIterator fii(get_scope_tree_root());
   for( ; fii.IsValid(); ++fii) {
-    FuncInfo *finfo = fii.Current();
-    SEXP fundef = finfo->getDefn();
+    FuncInfo *fi = fii.Current();
+    SEXP fundef = fi->get_defn();
     OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
     OA::OA_ptr<OA::CFG::CFGStandard> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
-    finfo->setCFG(cfg_ptr);
+    fi->set_cfg(cfg_ptr);
   }
 }
 
@@ -147,7 +146,7 @@ void R_Analyst::build_local_function_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    LocalFunctionAnalysis lfa(fi->getDefn());
+    LocalFunctionAnalysis lfa(fi->get_defn());
     lfa.perform_analysis();
   }
 }
@@ -160,7 +159,7 @@ void R_Analyst::build_locality_info() {
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     Locality::LocalityDFSolver uds(m_interface);
-    OA::ProcHandle ph = HandleInterface::make_proc_h(fi->getDefn());
+    OA::ProcHandle ph = HandleInterface::make_proc_h(fi->get_defn());
     uds.perform_analysis(ph, fi->getCFG());
   }
 }

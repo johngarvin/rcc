@@ -32,7 +32,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
   FuncInfo *fi = getProperty(FuncInfo, fndef);
   lexicalContext.Push(fi);
   SEXP e = CDR(fndef); // skip over "function" symbol
-  string c_name = fi->getCName();
+  string c_name = fi->get_c_name();
 
   bool direct = FALSE;
   if (!opt_R_name.empty() && ParseInfo::is_direct(opt_R_name)) {
@@ -64,7 +64,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
 							     rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
-    string closure = fi->getClosure();
+    string closure = fi->get_closure();
     ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     ParseInfo::global_constants->del(formals);
     if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, closure));
@@ -73,7 +73,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
   } else {   // not the global environment
     Expression r_args = op_literal(CAR(e), rho);
     Expression r_code = op_literal(CADR(e), rho);
-    string closure = fi->getClosure();
+    string closure = fi->get_closure();
     appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     del(r_args);
     del(r_code);
@@ -105,7 +105,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 
   FuncInfo *fi = lexicalContext.Top();
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("RCNTXT context;\n");
   }
 
@@ -121,7 +121,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("if (SETJMP(context.cjmpbuf)) {\n");
     f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
     f += indent("} else {\n");
@@ -137,7 +137,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("}\n");
     f += indent("endcontext(&context);\n");
   }
@@ -228,7 +228,7 @@ string make_fundef(string func_name, SEXP fndef) {
   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("RCNTXT context;\n");
   }
 
@@ -248,7 +248,7 @@ string make_fundef(string func_name, SEXP fndef) {
 		     + indent(actuals) + ",\n"
 		     + indent("env") + "));\n"));
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("if (SETJMP(context.cjmpbuf)) {\n");
     f += indent(indent("out = R_ReturnedValue;\n"));
     f += indent("} else {\n");
@@ -261,7 +261,7 @@ string make_fundef(string func_name, SEXP fndef) {
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
-  if (fi->getRequiresContext()) {
+  if (fi->requires_context()) {
     f += indent("}\n");
     f += indent("endcontext(&context);\n");
   }

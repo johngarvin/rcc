@@ -38,7 +38,7 @@ public:
   typedef CallSiteSetT::iterator                           call_site_iterator;
   typedef CallSiteSetT::const_iterator                     const_call_site_iterator;
 public:
-  FuncInfo(FuncInfo *lexParent, SEXP name, SEXP defn);
+  FuncInfo(FuncInfo* parent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
 
   // -------------------------------------------------------
@@ -53,69 +53,52 @@ public:
   // -------------------------------------------------------
   
   // arguments
-  unsigned int getNumArgs() const 
-     { return mNumArgs; }
-  void setNumArgs(unsigned int x) 
-     { mNumArgs = x; }
-  SEXP getArgs(); 
-  bool areAllValue();
-  bool isArgValue(SEXP arg);
-  SEXP getArg(int position);
-  int findArgPosition(char* name);
+  unsigned int get_num_args() const;
+  void set_num_args(unsigned int x);
+  SEXP get_args(); 
+  bool are_all_value();
+  bool is_arg_value(SEXP arg);
+  SEXP get_arg(int position);
+  int find_arg_position(char* name);
 
-  // definition
-  SEXP getDefn() 
-    { return mDefn; }
+  SEXP get_defn();
 
-  // first R name assigned
-  SEXP getFirstName()
-    { return mFirstName; }
+  /// first R name assigned
+  SEXP get_first_name();
 
-  // has-variable-arguments
-  bool getHasVarArgs() const
-    { return mHasVarArgs; }
-  void setHasVarArgs(bool x)
-    { mHasVarArgs = x; }
+  // has variable arguments
+  bool get_has_var_args() const;
+  void set_has_var_args(bool x);
 
-  // C function name
-  const std::string& getCName();
+  /// name of C function
+  const std::string& get_c_name();
 
-  // name of closure (CLOSXP)
-  const std::string& getClosure();
+  /// name of C variable storing the closure (CLOSXP)
+  const std::string& get_closure();
 
   // context
-  void setRequiresContext(bool requiresContext); 
-  bool getRequiresContext();
+  void set_requires_context(bool requires_context); 
+  bool requires_context();
 
-  // insert methods into sets
-  void insertMention(MentionT v);
-  void insertCallSite(CallSiteT e);
+  // add information about mentions and call sites
+  void insert_mention(MentionT v);
+  void insert_call_site(CallSiteT e);
 
   // CFG
-  OA::OA_ptr<OA::CFG::Interface> getCFG() const
-    { return mCFG; }
-  void setCFG(OA::OA_ptr<OA::CFG::Interface> x)
-    { mCFG = x; }
-
+  OA::OA_ptr<OA::CFG::Interface> get_cfg() const;
+  void set_cfg(OA::OA_ptr<OA::CFG::Interface> x);
+  
   // mention iterators
-  mention_iterator beginMentions()
-    { return mMentions.begin(); }
-  const_mention_iterator beginMentions() const
-    { return mMentions.begin(); }
-  mention_iterator endMentions()
-    { return mMentions.end(); }
-  const_mention_iterator endMentions() const
-    { return mMentions.end(); }
-
+  mention_iterator begin_mentions();
+  const_mention_iterator begin_mentions() const;
+  mention_iterator end_mentions();
+  const_mention_iterator end_mentions() const;
+  
   // call site iterators
-  call_site_iterator beginCallSites()
-    { return mCallSites.begin(); }
-  const_call_site_iterator beginCallSites() const
-    { return mCallSites.begin(); }
-  call_site_iterator endCallSites()
-    { return mCallSites.end(); }
-  const_call_site_iterator endCallSites() const
-    { return mCallSites.end(); }
+  call_site_iterator begin_call_sites();
+  const_call_site_iterator begin_call_sites() const;
+  call_site_iterator end_call_sites();
+  const_call_site_iterator end_call_sites() const;
 
   // -------------------------------------------------------
   // debugging
@@ -123,20 +106,20 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  unsigned int mNumArgs;   // number of known arguments
-  bool mHasVarArgs;        // variable number of arguments
-  std::string mCName;      // C linkage name
-  std::string mClosure;    // C closure (CLOSXP) name
-  bool mRequiresContext;   // is an R context object needed for the function?
+  unsigned int m_num_args;    // number of known arguments
+  bool m_has_var_args;        // variable number of arguments
+  std::string m_c_name;       // C linkage name
+  std::string m_closure;      // C closure (CLOSXP) name
+  bool m_requires_context;    // is an R context object needed for the function?
 
-  OA::OA_ptr<OA::CFG::Interface> mCFG; // control flow graph
+  OA::OA_ptr<OA::CFG::Interface> m_cfg; // control flow graph
 
-  MentionSetT mMentions; // uses and defs inside function (NOT including nested functions)
-  CallSiteSetT mCallSites; // call sites inside function (NOT including nested functions)
+  MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)
+  CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)
 
-  SEXP mDefn;            // function definition
-  SEXP mFirstName;       // name of function at original definition 
-  FuncInfo *mLexicalParent; // parent scope definition
+  SEXP m_defn;         // function definition
+  SEXP m_first_name;   // name of function at original definition 
+  FuncInfo *m_parent;  // parent scope definition
 
   // argument description: types, strict?
 };

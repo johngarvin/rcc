@@ -39,7 +39,7 @@ namespace RAnnot {
 
     const CallSiteCallGraphNode * csnode;
     FuncInfo::const_call_site_iterator csi;
-    for(csi = fi->beginCallSites(); csi != fi->endCallSites(); ++csi) {
+    for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
       SEXP cs = *csi;
       csnode = cg->make_call_site_node(cs);
       if (visited_cs.find(csnode) == visited_cs.end()) {
@@ -62,7 +62,7 @@ namespace RAnnot {
 
   void CallGraphAnnotationMap::FundefCallGraphNode::dump(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
-    SEXP first_name = finfo->getFirstName();
+    SEXP first_name = finfo->get_first_name();
 
     beginObjDump(os, FundefCallGraphNode);
     dumpPtr(os, this);
@@ -72,7 +72,7 @@ namespace RAnnot {
 
   void CallGraphAnnotationMap::FundefCallGraphNode::dump_string(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
-    std::string first_name = CHAR(PRINTNAME(finfo->getFirstName()));
+    std::string first_name = CHAR(PRINTNAME(finfo->get_first_name()));
     beginObjDump(os, FundefCallGraphNode);
     dumpVar(os, get_id());
     dumpString(os, first_name);

@@ -92,7 +92,7 @@ namespace RAnnot {
   void CallGraphAnnotationMap::CoordinateCallGraphNode::
   dump(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_scope);
-    SEXP scope_first_name = finfo->getFirstName();
+    SEXP scope_first_name = finfo->get_first_name();
 
     beginObjDump(os, CoordinateCallGraphNode);
     dumpPtr(os, this);
@@ -105,7 +105,7 @@ namespace RAnnot {
   dump_string(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_scope);
     std::string first_name = CHAR(PRINTNAME(m_name));
-    std::string scope_first_name = CHAR(PRINTNAME(finfo->getFirstName()));
+    std::string scope_first_name = CHAR(PRINTNAME(finfo->get_first_name()));
     beginObjDump(os, CoordinateCallGraphNode);
     dumpVar(os, get_id());
     dumpString(os, first_name);

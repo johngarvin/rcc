@@ -63,7 +63,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   // tear down context, if any
   //---------------------------
-  if (fi && fi->getRequiresContext())  
+  if (fi && fi->requires_context())  
     append_defs("endcontext(&context);\n"); 
 
   //---------------------------

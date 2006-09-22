@@ -33,8 +33,8 @@ void process_assert(SEXP assertion, FuncInfo * fi) {
 	// .rcc.assert(value(foo))
 	SEXP v = CADR(e);
 	char* vname = CHAR(PRINTNAME(v));
-	int position = fi->findArgPosition(vname);
-	SEXP arg = fi->getArg(position);
+	int position = fi->find_arg_position(vname);
+	SEXP arg = fi->get_arg(position);
 	FormalArgInfo* fargInfo = getProperty(FormalArgInfo, arg);
 	fargInfo->setIsValue(true);
       }

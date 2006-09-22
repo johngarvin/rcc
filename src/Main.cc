@@ -193,9 +193,9 @@ int main(int argc, char *argv[]) {
 	cout << "New procedure:" << endl;
 	fi->dump(cout);
 	cout << "Dumping CFG via Analyst:" << endl;
-	an->dump_cfg(cout, fi->getDefn());
+	an->dump_cfg(cout, fi->get_defn());
 	cout << "Dumping symbol table:" << endl;
-	SymbolTable * st = getProperty(SymbolTable, fi->getDefn());
+	SymbolTable * st = getProperty(SymbolTable, fi->get_defn());
 	st->dump(cout);
       }
       cout << "Dumping call graph:" << endl;

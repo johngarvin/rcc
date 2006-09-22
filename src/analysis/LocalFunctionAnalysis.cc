@@ -44,16 +44,16 @@ void LocalFunctionAnalysis::analyze_args() {
       has_var_args = true;
     }
   }
-  FuncInfo * f_annot = getProperty(FuncInfo, m_fundef);
-  assert(f_annot != 0);
-  f_annot->setNumArgs(n_args);
-  f_annot->setHasVarArgs(has_var_args);
+  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+  assert(fi != 0);
+  fi->set_num_args(n_args);
+  fi->set_has_var_args(has_var_args);
 }
 
 /// Find each mention (use or def) and call site in the function
 void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
-  FuncInfo * f_annot = getProperty(FuncInfo, m_fundef);
-  OA_ptr<CFG::Interface> cfg; cfg = f_annot->getCFG();
+  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
 
   // for each node
@@ -72,11 +72,11 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
 	// FIXME: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
-	f_annot->insertMention(v);
+	fi->insert_mention(v);
       }
       ExpressionInfo::const_call_site_iterator cs;
       for(cs = stmt_annot->begin_call_sites(); cs != stmt_annot->end_call_sites(); ++cs) {
-	f_annot->insertCallSite(*cs);
+	fi->insert_call_site(*cs);
       }
     }
   }
