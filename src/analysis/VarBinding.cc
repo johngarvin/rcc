@@ -27,7 +27,10 @@
 // ----- includes -----
 
 #include <analysis/Analyst.h>
+#include <analysis/AnalysisResults.h>
+#include <analysis/SymbolTable.h>
 #include <analysis/VarBindingAnnotationMap.h>
+#include <analysis/VarInfo.h>
 #include <support/DumpMacros.h>
 
 #include "VarBinding.h"
@@ -65,7 +68,9 @@ VarBinding::VarBinding()
     MyContainerT::iterator s1, s2;
     static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
     s1 = s2 = m_scopes.begin();
-    assert(s1 != m_scopes.end());    // empty scope list is an error
+    if (s1 == m_scopes.end()) {  // empty scope list
+      return false;
+    }
     if (*s1 != global) {
       return false;
     }
@@ -77,7 +82,26 @@ VarBinding::VarBinding()
 
   bool VarBinding::is_single() {
     MyContainerT::iterator i = m_scopes.begin();
+    if (i == m_scopes.end()) {
+      return false;
+    }
     return (++i == m_scopes.end());
+  }
+
+  bool VarBinding::is_unbound() {
+    return (begin() == end());
+  }
+
+  std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {
+    if (is_single()) {
+      FuncInfo * scope = *(begin());
+      SymbolTable * st = getProperty(SymbolTable, scope->get_defn());
+      VarInfo * vi = (*st)[name];
+      assert(vi);
+      return vi->get_location(sb);
+    } else {
+      return "";
+    }
   }
 
   AnnotationBase * VarBinding::clone() {

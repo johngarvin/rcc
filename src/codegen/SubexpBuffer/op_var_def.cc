@@ -28,35 +28,15 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   string name = CHAR(PRINTNAME(CAR(cell)));
   string symbol = make_symbol(CAR(cell));
   VarBinding * annot = getProperty(VarBinding, cell);
-  if (annot->is_global()) {
-    map<string, string>::iterator loc;
-    loc = ParseInfo::loc_map.find(name);
-    if (loc == ParseInfo::loc_map.end()) {
-      // not found; emit code to define name and cache location
-      return op_caching_lookup(this, name, symbol, rhs, rho);
-    } else {
-      // location exists, having been set by a previous use or def.
-      // TODO: do something different if there's a unique binding?
-      append_defs(emit_assign(loc->second, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
-      return Expression(rhs, true, INVISIBLE, "");
-    }
-  } else {   // not global scope
+  if (annot->is_single()) {
+    string location = annot->get_location(CAR(cell), this);
+    append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
+    return Expression(rhs, true, INVISIBLE, "");
+  } else {   // no unique location; emit lookup
     append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
     return Expression(rhs, true, INVISIBLE, "");
   }
 }
 
-// if unique binding:
-//      append_defs(emit_call2("R_SetVarLocValue", loc->second, rhs) + ";\n");
-
-// file static function
-
-static Expression op_caching_lookup(SubexpBuffer * sb, string name, string symbol, string rhs, string rho) {
-  string loc_h = sb->new_var_unp();
-  string decl = "static R_varloc_t " + loc_h + ";\n";
-  ParseInfo::global_constants->append_decls(decl);
-  string call = emit_call3("defineVarReturnLoc", symbol, rhs, rho);
-  sb->append_defs(emit_assign(loc_h, call));
-  ParseInfo::loc_map.insert(pair<string,string>(name, loc_h));
-  return Expression(rhs, true, INVISIBLE, "");
-}
+// TODO: if we can prove the variable is already declared by another def
+//      append_defs(emit_call2("R_SetVarLocValue", location, rhs) + ";\n");

@@ -6,6 +6,10 @@
 
 #include <analysis/DefVar.h>
 
+// ----- forward declaration -----
+
+class SubexpBuffer;
+
 namespace RAnnot {
 
 //****************************************************************************
@@ -74,6 +78,9 @@ public:
   size_type countDefs(const key_type& x) const
     { return mDefs.count(x); }
 
+  /// get the location in the R environment
+  std::string get_location(SubexpBuffer* sb);
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -82,6 +89,7 @@ public:
 private:
   // data_type mType
   MySet_t mDefs;
+  std::string m_c_location;
 };
 
 }

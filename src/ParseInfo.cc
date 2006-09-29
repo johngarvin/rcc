@@ -28,7 +28,6 @@ std::map<double, std::string> ParseInfo::sc_real_map;
 std::map<int, std::string> ParseInfo::sc_logical_map;
 std::map<int, std::string> ParseInfo::sc_integer_map;
 std::map<int, std::string> ParseInfo::primsxp_map;
-std::map<std::string, std::string> ParseInfo::loc_map;
 std::map<std::string, std::string> ParseInfo::binding_map;
 std::set<std::string> ParseInfo::direct_funcs;
 SubexpBuffer * ParseInfo::global_fundefs;

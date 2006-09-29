@@ -4,6 +4,8 @@
 
 #include <analysis/DefVar.h>
 
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
+
 #include "VarInfo.h"
 
 namespace RAnnot {
@@ -13,12 +15,20 @@ namespace RAnnot {
 //****************************************************************************
 
 VarInfo::VarInfo()
+  : m_c_location("")
 {
 }
 
 
 VarInfo::~VarInfo()
 {
+}
+
+std::string VarInfo::get_location(SubexpBuffer * sb) {
+  if (m_c_location.empty()) {
+    m_c_location = sb->new_location();
+  }
+  return m_c_location;
 }
 
 

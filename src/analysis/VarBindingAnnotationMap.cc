@@ -12,6 +12,7 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
+#include <analysis/Utils.h>
 #include <analysis/Var.h>
 #include <analysis/VarBinding.h>
 #include <analysis/VarBindingAnnotationMap.h>
@@ -122,38 +123,29 @@ void VarBindingAnnotationMap::compute() {
       // version of the Var. Shouldn't have to loop through
       // getProperty!
       VarBinding * scopes = new VarBinding();
-      if (fi == global) {
-	scopes->insert(global);
-      } else {
-	bool binding_found;
-	switch(v->getScopeType()) {
-	case Var::Var_LOCAL:
-	  // bound in current scope only
-	  scopes->insert(fi);
-	  break;
-	case Var::Var_INDEFINITE:
-	  // bound in current scope and one or more ancestors
-	  scopes->insert(fi);
-	  // FALLTHROUGH
-	case Var::Var_FREE:
-	  // start at this scope's parent; iterate upward through ancestors
-	  binding_found = false;
-	  for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
-	    if (defined_local_in_scope(v,a)) {
-	      scopes->insert(a);
-	      binding_found = true;
-	    }
+      bool binding_found;
+      switch(v->getScopeType()) {
+      case Var::Var_LOCAL:
+	// bound in current scope only
+	scopes->insert(fi);
+	break;
+      case Var::Var_INDEFINITE:
+	// bound in current scope and one or more ancestors
+	scopes->insert(fi);
+	// FALLTHROUGH
+      case Var::Var_FREE:
+	// start at this scope's parent; iterate upward through ancestors
+	binding_found = false;
+	for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
+	  if (defined_local_in_scope(v,a)) {
+	    scopes->insert(a);
+	    binding_found = true;
 	  }
-	  // If no definition found at any ancestor scope, binding is global.
-	  // This is the case for library function uses, etc.
-	  if (!binding_found) {
-	    scopes->insert(global);
-	  }
-	  break;
-	default:
-	  rcc_error("Unknown scope type encountered");
-	  break;
 	}
+	break;
+      default:
+	rcc_error("Unknown scope type encountered");
+	break;
       }
       // whether global or not...
       m_map[HandleInterface::make_sym_h(v->getMention_c())] = scopes;

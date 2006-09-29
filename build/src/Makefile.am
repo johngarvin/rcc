@@ -127,6 +127,7 @@ rcc_bin_SOURCES =				\
   SubexpBuffer.cc SubexpBuffer.h		\
   SubexpBufferUtils.cc				\
   Expression.cc Expression.h			\
+  new_location.cc                               \
   op_begin.cc					\
   op_break.cc					\
   op_builtin.cc					\

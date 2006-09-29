@@ -49,19 +49,19 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       if (node) {
 	// node is Fundef, Library, or UnknownValue node
 	if (const CallGraphAnnotationMap::FundefCallGraphNode * cs = dynamic_cast<const CallGraphAnnotationMap::FundefCallGraphNode *>(node)) {
-	  // TODO: replace with C name
-	  Expression func = op_fun_use(e, rho);
-	  return op_clos_app(func, r_args, rho, resultProtection);
+	  string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
+	  Expression closure_exp = Expression(closure, false, INVISIBLE, "");
+	  return op_clos_app(closure_exp, r_args, rho, resultProtection);
 	} else if (const CallGraphAnnotationMap::LibraryCallGraphNode * lib = dynamic_cast<const CallGraphAnnotationMap::LibraryCallGraphNode *>(node)) {
-	  // it's from the R environment: builtin, special, or library
+	  // it's from the R environment
 	  const SEXP op = lib->get_value();
-	  if (TYPEOF(op) == CLOSXP) {
-	    // generate code to get the closure, then apply it
-	    Expression func = op_fun_use(e, rho);
+	  if (TYPEOF(op) == SPECIALSXP) {
+	    return op_special(e, op, rho, resultProtection, resultStatus);
+	  } else if (TYPEOF(op) == BUILTINSXP) {
+	    return op_builtin(e, op, rho, resultProtection);
+	  } else if (TYPEOF(op) == CLOSXP) {
+	    Expression func = op_closure(op, rho, resultProtection);
 	    return op_clos_app(func, r_args, rho, resultProtection);
-	  } else if (TYPEOF(op) == PROMSXP) {
-	    rcc_error("Internal error: LANGSXP encountered invalid promise as LHS");
-	    return op_exp(PREXPR(op), rho);
 	  } else {
 	    rcc_error("Internal error: LANGSXP encountered non-function op");
 	    return Expression::bogus_exp; // never reached
@@ -72,7 +72,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	} else {
 	  rcc_error("Internal error: in call graph, didn't find expected Fundef, Library, or UnknownValue node");
 	}
-      } else { // more than one possible function value; generate lookup and call
+      } else { // more than one possible function value; let op_fun_use decide
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, r_args, rho, resultProtection);
       }

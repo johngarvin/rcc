@@ -15,6 +15,7 @@
 using namespace std;
 
 Expression SubexpBuffer::op_closure(SEXP e, string rho, Protection resultProtection) {
+  assert(TYPEOF(e) == CLOSXP);
   Expression formals = op_list(FORMALS(e), rho, true, Protected);
   Expression body = op_literal(BODY(e), rho);
   if (rho == "R_GlobalEnv" && !formals.is_dep && !body.is_dep) {

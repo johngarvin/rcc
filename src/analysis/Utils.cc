@@ -126,6 +126,12 @@ std::string var_name(const SEXP e) {
   return CHAR(PRINTNAME(e));
 }
 
+bool is_library(const SEXP e) {
+  assert(is_var(e));
+  SEXP fun = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
+  return (fun != R_UnboundValue);
+}
+
 bool is_cons(const SEXP e) {
   return (TYPEOF(e) == LISTSXP || TYPEOF(e) == LANGSXP);
 }

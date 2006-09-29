@@ -32,7 +32,6 @@ static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
 			    bool fullyEvaluatedResult);
 static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string name,
 			      string lookup_function, string rho);
-static Expression op_new_user_location(SubexpBuffer * sb, string name);
 
 // interface functions
 
@@ -61,50 +60,50 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   string name = CHAR(PRINTNAME(e));
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
   VarBinding * annot = getProperty(VarBinding, cell);
+
+  // first, check for constants
   if (annot->is_global()) {
-    // look up the name in loc_map and binding_map. loc_map records a
-    // "location" for each global name -- a pointer to an entry in an
-    // environment, used for variables that may be redefined.
     // binding_map is used for global variables with
     // constant values; it records the constant value of each name.
-    map<string, string>::iterator loc, value;
-    loc = ParseInfo::loc_map.find(name);
+    map<string, string>::iterator value;
     value = ParseInfo::binding_map.find(name);
-    string h;
-    if (loc != ParseInfo::loc_map.end()) {
-      // in location map
-      h = sb->appl1("R_GetVarLocValue", loc->second, Unprotected);
-      return Expression(h, true, VISIBLE, "");
-    } else if (value != ParseInfo::binding_map.end()) {
-      // in binding map
+    if (value != ParseInfo::binding_map.end()) {       // in binding map
       return Expression(value->second, false, VISIBLE, "");
-    } else {
-      // Built-in or user-defined name? Look up in global environment
-      SEXP env_val;
-      if (lookup_type == FUNCTION_VAR) {
-	env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
-      } else {
-	env_val = Rf_findVar(e, R_GlobalEnv);
-      }
-      if (env_val == R_UnboundValue) { 	     // user-defined
-	return op_new_user_location(sb, name);
-      } else {                                     // builtin/special/library name
-	return op_internal(sb, e, env_val, name, lookup_function, rho);
-      }
     }
-#ifdef ADD_ENVIR_POINTER_MAP_TO_FUNC_INFOS
-  } else if (annot->is_single()) {
-    FuncInfo * scope = *(annot->begin());
-#endif    
-  } else {                         // not global scope
-    // TODO: add similar thing for local variables
+  }
+  if (annot->is_single()) {
+    FuncInfo* fi = *(annot->begin());
+    if (fi->is_arg(e)) {
+      // TODO: handle this case; need to know when to evaluate promise
+      return op_lookup(sb, lookup_function, make_symbol(e), rho,
+		       resultProtection, fullyEvaluatedResult);
+    } else {
+      string location = annot->get_location(e, sb);
+      string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
+      return Expression(h, true, VISIBLE, "");
+    }
+  } else if (annot->is_unbound()) {  // may be unbound or an R library/builtin/special
+    // Look up in global environment to see if it's an R internal
+    SEXP env_val;
+    if (lookup_type == FUNCTION_VAR) {
+      env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
+    } else {
+      env_val = Rf_findVar(e, R_GlobalEnv);
+    }
+    if (env_val != R_UnboundValue) {        // builtin/special/library name
+      return op_internal(sb, e, env_val, name, lookup_function, rho);
+    } else {
+      return op_lookup(sb, lookup_function, make_symbol(e), rho,
+		       resultProtection, fullyEvaluatedResult);
+    }
+  } else {                                  // more than one binding
     return op_lookup(sb, lookup_function, make_symbol(e), rho,
 		     resultProtection, fullyEvaluatedResult);
   }
 }
 
 
-// output a lookup of a name in the given environment
+/// output a lookup of a name in the given environment
 static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
 			    string symbol, string rho,
 			    Protection resultProtection, bool fullyEvaluatedResult)
@@ -121,7 +120,7 @@ static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
 }
 
 
-// output the value of an internal R name
+/// output the value of an internal R name
 static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string name,
 			      string lookup_function, string rho)
 {
@@ -149,14 +148,3 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
   return Expression(h, false, VISIBLE, "");
 }
 
-
-// A use with a location not yet in the map. Output a new location
-// reference and add the entry to loc_map.
-static Expression op_new_user_location(SubexpBuffer * sb, string name) {
-  string loc_h = ParseInfo::global_constants->new_var_unp();
-  string decl = "static R_varloc_t " + loc_h + ";\n";
-  ParseInfo::global_constants->append_decls(decl);
-  ParseInfo::loc_map.insert(pair<string,string>(name, loc_h));
-  string h = sb->appl1("R_GetVarLocValue", loc_h, Unprotected);
-  return Expression(h, false, VISIBLE, "");
-}

@@ -134,28 +134,14 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
     return Output::invisible_const(Handle("R_MissingArg"));
   } else {
     VarBinding * annot = getProperty(VarBinding, cell);
-    if (annot->is_global()) {
-      map<string, string>::iterator loc;
-      loc = ParseInfo::loc_map.find(name);
-      string h, call, g_decls, g_code;
-      h = m_scope.new_label();
-      if (loc == ParseInfo::loc_map.end()) {
-	// not found; emit global code to grab location
-	string loc_h = m_scope.new_label();
-	g_decls = "static R_varloc_t " + loc_h + ";\n";
-	g_code = emit_assign(loc_h, emit_call3("defineVarReturnLoc",
-					       make_symbol(e),
-					       "R_NilValue",
-					       "R_GlobalEnv"));
-	ParseInfo::loc_map.insert(pair<string,string>(name, loc_h));
-	call = emit_assign(h, emit_call1("R_GetVarLocValue", loc_h));
-      } else {
-	call = emit_assign(h, emit_call1("R_GetVarLocValue", loc->second));
-      }
+    if (annot->is_single()) {
+      string location = annot->get_location(NULL, NULL);  // TODO: fix this
+      string h = m_scope.new_label();
+      string call = emit_assign(h, emit_call1("R_GetVarLocValue", location));
       return Output(Decls(emit_decl(h)),
 		    Code(call),
-		    GDecls(g_decls),
-		    GCode(g_code),
+		    GDecls(""),
+		    GCode(""),
 		    Handle(h),
 		    DelText(""),
 		    DEPENDENT,

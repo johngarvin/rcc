@@ -56,6 +56,7 @@ public:
   unsigned int get_num_args() const;
   void set_num_args(unsigned int x);
   SEXP get_args(); 
+  bool is_arg(SEXP sym);
   bool are_all_value();
   bool is_arg_value(SEXP arg);
   SEXP get_arg(int position);

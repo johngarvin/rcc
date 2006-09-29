@@ -93,6 +93,16 @@ SEXP FuncInfo::get_args()
   return CAR(fundef_args_c(m_defn)); 
 }
 
+bool FuncInfo::is_arg(SEXP sym)
+{
+  SEXP args = get_args();
+  SEXP e;
+  for (e = args; e != R_NilValue; e = CDR(e)) {
+    if (TAG(e) == sym) return true;
+  }
+  return false;
+}
+
 int FuncInfo::find_arg_position(char* name)
 {
   SEXP args = get_args();

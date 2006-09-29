@@ -78,9 +78,6 @@ public:
   // primitive functions (PRIMSXP)
   static std::map<int, std::string> primsxp_map;
 
-  // locations of user global variables
-  static std::map<std::string, std::string> loc_map;
-
   // bindings of global library functions/variables
   static std::map<std::string, std::string> binding_map;
 

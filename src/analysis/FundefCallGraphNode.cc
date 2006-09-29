@@ -34,7 +34,7 @@ namespace RAnnot {
 
     // Keep track of call sites attached to this node to avoid
     // redundancy. This is a temporary workaround for a bug in which
-    // the CFG has duplicate nodes.
+    // the CFG has duplicate nodes. TODO: fix
     NodeSetT visited_cs;
 
     const CallSiteCallGraphNode * csnode;

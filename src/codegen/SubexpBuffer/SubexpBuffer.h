@@ -138,9 +138,10 @@ public:
 			  std::string & out_const, bool literal);
   Expression op_string(SEXP s);
   Expression op_vector(SEXP e);
+  std::string new_location();
 
-  //! Convert an Output into an Expression. Will go away as soon as
-  //! everything uses Output instead of Expression.
+  /// Convert an Output into an Expression. Will go away as soon as
+  /// everything uses Output instead of Expression.
   const Expression output_to_expression(const Output op);
   const std::string get_prefix() { return prefix; }
 

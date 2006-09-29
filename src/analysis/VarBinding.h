@@ -22,9 +22,12 @@
 // File: VarBinding.h
 //
 // Annotates a mention with binding information: the list of scopes in
-// which the mention may be bound locally. (Most mentions are bound in
-// only one scope, so the list will commonly be a singleton.) Knows
-// how to compute itself using local/free information from Var.
+// which the mention may be bound locally. Knows how to compute itself
+// using local/free information from Var.
+//
+// Most mentions are bound in only one scope, so the list will
+// commonly be a singleton. An empty scope list means the variable is
+// unbound or (more likely) refers to an R library/special/builtin.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -36,6 +39,8 @@
 #include <analysis/AnnotationBase.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/PropertyHndl.h>
+
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 namespace RAnnot {
 
@@ -62,6 +67,12 @@ public:
 
   /// Is this mention bound in only one scope?
   bool is_single();
+
+  /// Is this mention bound in no scopes? (may be unbound or an internal name)
+  bool is_unbound();
+
+  /// get the location in the R environment (empty string if no unique location)
+  std::string get_location(SEXP name, SubexpBuffer* sb);
 
   // clone
   AnnotationBase * clone();

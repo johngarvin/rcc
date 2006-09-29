@@ -23,6 +23,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   switch(Rf_length(e)) {
   case 0:
     v = "R_NilValue";
+    value = Expression::nil_exp;
     break;
   case 1:
     // pass true as fourth argument to yield fully evaluated result
@@ -73,6 +74,13 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
 #ifdef CHECK_PROTECT
   append_defs("assert(topval == R_PPStackTop);\n");
 #endif
+
+  //---------------------------
+  // set visibility
+  //---------------------------
+  if (value.is_visible == VISIBLE) append_defs("R_Visible = 1;");
+  if (value.is_visible == INVISIBLE) append_defs("R_Visible = 0;");
+  // if CHECK_VISIBILITY, then don't change anything
 
   //---------------------------
   // return v
