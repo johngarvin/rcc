@@ -67,8 +67,8 @@ VarBinding::VarBinding()
     // scope.
     MyContainerT::iterator s1, s2;
     static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
-    s1 = s2 = m_scopes.begin();
-    if (s1 == m_scopes.end()) {  // empty scope list
+    s1 = s2 = begin();
+    if (s1 == end()) {  // empty scope list
       return false;
     }
     if (*s1 != global) {
@@ -76,13 +76,13 @@ VarBinding::VarBinding()
     }
     // At this point s1 is the global scope.
     // Ensure only one element; any scope above global is an error
-    assert(++s2 == m_scopes.end());
+    assert(++s2 == end());
     return true;
   }
 
   bool VarBinding::is_single() {
-    MyContainerT::iterator i = m_scopes.begin();
-    if (i == m_scopes.end()) {
+    MyContainerT::iterator i = begin();
+    if (i == end()) {
       return false;
     }
     return (++i == m_scopes.end());
@@ -106,7 +106,7 @@ VarBinding::VarBinding()
 
   AnnotationBase * VarBinding::clone() {
     VarBinding * vb = new VarBinding();
-    for(MyContainerT::iterator i = m_scopes.begin(); i != m_scopes.end(); ++i) {
+    for(MyContainerT::iterator i = begin(); i != end(); ++i) {
       vb->insert(*i);
     }
     return vb;
@@ -116,7 +116,7 @@ VarBinding::VarBinding()
   std::ostream & VarBinding::dump(std::ostream & os) const {
     os << "VarBinding {";
     // print out each binding scope in sequence
-    for (MyContainerT::const_iterator s = m_scopes.begin(); s != m_scopes.end(); ++s) {
+    for (MyContainerT::const_iterator s = begin(); s != end(); ++s) {
       dumpPtr(os, *s);
     }
     os << "}\n";

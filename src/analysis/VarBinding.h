@@ -55,20 +55,22 @@ public:
 
   explicit VarBinding(); // constructor
 
+  // iterators for list of scopes
   const_iterator begin();
   const_iterator end();
   
   void insert(KeyT key);
 
-  // get handle to lookup in PropertySet
+  /// get handle to lookup in PropertySet
   static PropertyHndlT handle();
 
+  /// Does this mention refer to the global as its only scope?
   bool is_global();
 
   /// Is this mention bound in only one scope?
   bool is_single();
 
-  /// Is this mention bound in no scopes? (may be unbound or an internal name)
+  /// Is this mention bound in no scopes? (may be an internal name or just plain unbound)
   bool is_unbound();
 
   /// get the location in the R environment (empty string if no unique location)
