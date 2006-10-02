@@ -1,4 +1,4 @@
-/* $Id: NonUniformDegreeTree.cc,v 1.1 2005/08/31 05:15:38 johnmc Exp $ */
+/* $Id: NonUniformDegreeTree.cc,v 1.2 2006/10/02 01:55:39 garvin Exp $ */
 /****************************************************************************/
 //                 Copyright (c) 1990-1999 Rice University
 //                          All Rights Reserved
@@ -184,7 +184,7 @@ NonUniformDegreeTreeNode::AncestorCount() const
 // class NonUniformDegreeTreeNodeChildIterator interface operations
 //****************************************************************************
 
-CLASS_NAME_IMPL(NonUniformDegreeTreeNodeChildIterator);
+CLASS_NAME_IMPL(NonUniformDegreeTreeNodeChildIterator)
 
 
 NonUniformDegreeTreeNodeChildIterator::NonUniformDegreeTreeNodeChildIterator
@@ -243,7 +243,7 @@ void NonUniformDegreeTreeNodeChildIterator::operator++(int)
 // class NonUniformDegreeTreeIterator interface operations
 //****************************************************************************
 
-CLASS_NAME_IMPL(NonUniformDegreeTreeIterator);
+CLASS_NAME_IMPL(NonUniformDegreeTreeIterator)
 
 
 NonUniformDegreeTreeIterator::NonUniformDegreeTreeIterator(

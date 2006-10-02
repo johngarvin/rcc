@@ -46,11 +46,11 @@ VarBinding::VarBinding()
 
 // ----- iterator methods -----
 
-  VarBinding::const_iterator VarBinding::begin() {
+  VarBinding::const_iterator VarBinding::begin() const {
     return m_scopes.begin();
   }
 
-  VarBinding::const_iterator VarBinding::end() {
+  VarBinding::const_iterator VarBinding::end() const {
     return m_scopes.end();
   }
 
@@ -65,7 +65,7 @@ VarBinding::VarBinding()
   bool VarBinding::is_global() {
     // global if m_scopes has exactly one element and it's the global
     // scope.
-    MyContainerT::iterator s1, s2;
+    MyContainerT::const_iterator s1, s2;
     static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
     s1 = s2 = begin();
     if (s1 == end()) {  // empty scope list
@@ -81,7 +81,7 @@ VarBinding::VarBinding()
   }
 
   bool VarBinding::is_single() {
-    MyContainerT::iterator i = begin();
+    MyContainerT::const_iterator i = begin();
     if (i == end()) {
       return false;
     }
@@ -106,7 +106,7 @@ VarBinding::VarBinding()
 
   AnnotationBase * VarBinding::clone() {
     VarBinding * vb = new VarBinding();
-    for(MyContainerT::iterator i = begin(); i != end(); ++i) {
+    for(MyContainerT::const_iterator i = begin(); i != end(); ++i) {
       vb->insert(*i);
     }
     return vb;

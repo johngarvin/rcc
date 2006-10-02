@@ -8,7 +8,7 @@ SubexpBuffer::SubexpBuffer(std::string pref /* = "v" */, bool is_c /* = false */
   encl_fn = this;
 }
 
-SubexpBuffer::~SubexpBuffer() {};
+SubexpBuffer::~SubexpBuffer() {}
 
 SubexpBuffer &SubexpBuffer::operator=(SubexpBuffer &sb) {
   return sb;

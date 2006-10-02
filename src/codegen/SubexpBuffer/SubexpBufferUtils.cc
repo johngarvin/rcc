@@ -4,7 +4,7 @@
 
 #include <support/StringUtils.h>
 
-void SubexpBuffer::finalize() {};
+void SubexpBuffer::finalize() {}
 
 const std::string &SubexpBuffer::output_decls() {
   return decls;

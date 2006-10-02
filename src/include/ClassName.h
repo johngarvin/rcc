@@ -1,4 +1,4 @@
-/* $Id: ClassName.h,v 1.1 2005/08/31 05:15:37 johnmc Exp $ */
+/* $Id: ClassName.h,v 1.2 2006/10/02 01:55:39 garvin Exp $ */
 /******************************************************************************/
 //                 Copyright (c) 1990-1999 Rice University
 //                          All Rights Reserved
@@ -34,10 +34,10 @@
 // extern defs of CLASS_NAME(Class) variable and ConvertTo ## Class fct //
 //----------------------------------------------------------------------//
 #define CLASS_NAME_EDEF(Class) \
-   extern const char *CLASS_NAME(Class); \
+   extern const char *CLASS_NAME(Class) \
 
 #define CLASS_NAME_EIMPL(Class) \
-   const char *CLASS_NAME(Class) = # Class; \
+   const char *CLASS_NAME(Class) = # Class \
 
 
 #define CLASS_NAME_CONVERT_EDEF(Class, BaseClass) \

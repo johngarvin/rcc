@@ -1,4 +1,4 @@
-/* $Id: StackableIterator.cc,v 1.1 2005/08/31 05:15:38 johnmc Exp $ */
+/* $Id: StackableIterator.cc,v 1.2 2006/10/02 01:55:39 garvin Exp $ */
 /******************************************************************************/
 //                 Copyright (c) 1990-1999 Rice University
 //                          All Rights Reserved
@@ -30,7 +30,7 @@
 // class StackableIterator interface operations
 //***************************************************************************
 
-CLASS_NAME_IMPL(StackableIterator);
+CLASS_NAME_IMPL(StackableIterator)
 
 
 StackableIterator::StackableIterator()  

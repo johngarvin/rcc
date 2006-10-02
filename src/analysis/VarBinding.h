@@ -56,8 +56,8 @@ public:
   explicit VarBinding(); // constructor
 
   // iterators for list of scopes
-  const_iterator begin();
-  const_iterator end();
+  const_iterator begin() const;
+  const_iterator end() const;
   
   void insert(KeyT key);
 

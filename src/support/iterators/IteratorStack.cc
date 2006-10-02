@@ -1,4 +1,4 @@
-/* $Id: IteratorStack.cc,v 1.1 2005/08/31 05:15:37 johnmc Exp $ */
+/* $Id: IteratorStack.cc,v 1.2 2006/10/02 01:55:39 garvin Exp $ */
 /******************************************************************************/
 //                 Copyright (c) 1990-1999 Rice University
 //                          All Rights Reserved
@@ -34,7 +34,7 @@ struct IteratorStackS {
 };
 
 
-CLASS_NAME_IMPL(IteratorStack);
+CLASS_NAME_IMPL(IteratorStack)
 
 
 IteratorStack::IteratorStack(TraversalOrder torder, 
@@ -272,7 +272,7 @@ void IteratorStack::DumpUpCall()
 // class SingletonIterator
 //****************************************************************************
 
-CLASS_NAME_IMPL(SingletonIterator);
+CLASS_NAME_IMPL(SingletonIterator)
 
 
 SingletonIterator::SingletonIterator
