@@ -18,10 +18,6 @@
 
 // File: VarBinding.cc
 //
-// Annotates a mention with binding information: the list of scopes in
-// which the mention may be bound locally. (Most mentions are bound in
-// only one scope, so the list will commonly be a singleton.)
-//
 // Author: John Garvin (garvin@cs.rice.edu)
 
 // ----- includes -----
@@ -85,7 +81,7 @@ VarBinding::VarBinding()
     if (i == end()) {
       return false;
     }
-    return (++i == m_scopes.end());
+    return (++i == end());
   }
 
   bool VarBinding::is_unbound() {
