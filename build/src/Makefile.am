@@ -71,6 +71,8 @@ rcc_bin_SOURCES =				\
   HandleInterface.h				\
   IRInterface.cc				\
   IRInterface.h					\
+  LexicalScope.cc                               \
+  LexicalScope.h                                \
   LibraryCallGraphNode.cc                       \
   LibraryCallGraphNode.h                        \
   LocalFunctionAnalysis.cc			\

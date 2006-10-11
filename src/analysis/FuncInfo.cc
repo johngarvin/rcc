@@ -41,6 +41,7 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name, SEXP defn) :
     FormalArgInfo * formal_info = new FormalArgInfo();
     putProperty(FormalArgInfo, e, formal_info, false);
   }
+  m_scope = new FundefLexicalScope(defn);
 }
 
 FuncInfo::~FuncInfo()
@@ -227,6 +228,10 @@ void FuncInfo::insert_mention(FuncInfo::MentionT v)
 void FuncInfo::insert_call_site(FuncInfo::CallSiteT cs)
 {
   m_call_sites.push_back(cs);
+}
+
+FundefLexicalScope * FuncInfo::get_scope() const {
+  return m_scope;
 }
 
 std::ostream& FuncInfo::dump(std::ostream& os) const

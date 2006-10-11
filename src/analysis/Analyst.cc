@@ -44,7 +44,9 @@ R_Analyst * R_Analyst::get_instance() {
 R_Analyst::R_Analyst(SEXP _program)
   : m_program(_program),
     m_interface(),
-    m_scope_tree_root(0)
+    m_scope_tree_root(0),
+    m_library_scope(0),
+    m_global_scope(0)
   {}
 
 // ----- analysis -----
@@ -54,10 +56,11 @@ bool R_Analyst::perform_analysis() {
     // initialize what's not initialized by the constructor
     m_interface = new R_IRInterface();
     m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
+    m_global_scope = m_scope_tree_root->get_scope();
+    m_library_scope = new InternalLexicalScope();
 
     if (ParseInfo::allow_oo()           ||
-	ParseInfo::allow_envir_manip()  ||
-	ParseInfo::allow_special_redef())
+	ParseInfo::allow_envir_manip())
     {
       throw AnalysisException();
     }
@@ -68,7 +71,7 @@ bool R_Analyst::perform_analysis() {
   catch (AnalysisException ae) {
     // One phase of analysis rejected a program. Get rid of the
     // information in preparation to compile trivially.
-    rcc_warn("analysis encountered problems; compiling trivially");
+    rcc_warn("analysis encountered difficulties; compiling trivially");
     clearProperties();
     return false;
   }
@@ -76,6 +79,14 @@ bool R_Analyst::perform_analysis() {
 
 FuncInfo * R_Analyst::get_scope_tree_root() {
   return m_scope_tree_root;
+}
+
+LexicalScope * R_Analyst::get_library_scope() {
+  return m_library_scope;
+}
+
+LexicalScope * R_Analyst::get_global_scope() {
+  return m_global_scope;
 }
 
 /// Dump the CFG of the given function definition. Located here in

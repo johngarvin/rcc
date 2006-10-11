@@ -10,6 +10,7 @@
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/Var.h>
 
@@ -101,6 +102,9 @@ public:
   call_site_iterator end_call_sites();
   const_call_site_iterator end_call_sites() const;
 
+  // lexical scope
+  FundefLexicalScope * get_scope() const;
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -112,7 +116,7 @@ private:
   std::string m_c_name;       // C linkage name
   std::string m_closure;      // C closure (CLOSXP) name
   bool m_requires_context;    // is an R context object needed for the function?
-
+  FundefLexicalScope * m_scope;  // lexical scope
   OA::OA_ptr<OA::CFG::Interface> m_cfg; // control flow graph
 
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)

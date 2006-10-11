@@ -25,6 +25,7 @@
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/SymbolTable.h>
+#include <analysis/LexicalScope.h>
 #include <analysis/VarBindingAnnotationMap.h>
 #include <analysis/VarInfo.h>
 #include <support/DumpMacros.h>
@@ -58,24 +59,6 @@ VarBinding::VarBinding()
     return VarBindingAnnotationMap::handle();
   }
 
-  bool VarBinding::is_global() {
-    // global if m_scopes has exactly one element and it's the global
-    // scope.
-    MyContainerT::const_iterator s1, s2;
-    static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
-    s1 = s2 = begin();
-    if (s1 == end()) {  // empty scope list
-      return false;
-    }
-    if (*s1 != global) {
-      return false;
-    }
-    // At this point s1 is the global scope.
-    // Ensure only one element; any scope above global is an error
-    assert(++s2 == end());
-    return true;
-  }
-
   bool VarBinding::is_single() {
     MyContainerT::const_iterator i = begin();
     if (i == end()) {
@@ -84,14 +67,28 @@ VarBinding::VarBinding()
     return (++i == end());
   }
 
+  bool VarBinding::is_global() {
+    // global if m_scopes has exactly one element and it's the global
+    // scope.
+    static LexicalScope * global = R_Analyst::get_instance()->get_global_scope();
+    return (is_single() && *begin() == global);
+  }
+
+  bool VarBinding::is_internal() {
+    // internal (library, builtin, or special) if m_scopes has exactly
+    // one element and it's the library scope.
+    static LexicalScope * library_scope = R_Analyst::get_instance()->get_library_scope();
+    return (is_single() && *begin() == library_scope);
+  }
+
   bool VarBinding::is_unbound() {
     return (begin() == end());
   }
 
   std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {
-    if (is_single()) {
-      FuncInfo * scope = *(begin());
-      SymbolTable * st = getProperty(SymbolTable, scope->get_defn());
+    FundefLexicalScope * scope;
+    if (is_single() && (scope = dynamic_cast<FundefLexicalScope *>(*begin()))) {
+      SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
       VarInfo * vi = (*st)[name];
       assert(vi);
       return vi->get_location(sb);

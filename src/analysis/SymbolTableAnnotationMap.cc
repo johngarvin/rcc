@@ -127,18 +127,20 @@ void SymbolTableAnnotationMap::compute() {
       // for each scope in which the variable might be defined
       VarBinding::const_iterator vbi;
       for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {
-	AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h((*vbi)->get_defn())];
-	SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
-	assert(target_st != 0);
-	SymbolTable::iterator it = target_st->find(name);
-	VarInfo * vi;
-	if (it == target_st->end()) {
-	  vi = new VarInfo();
-	  (*target_st)[name] = vi;
-	} else {
-	  vi = it->second;
+	if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*vbi)) {
+	  AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h(scope->get_fundef())];
+	  SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
+	  assert(target_st != 0);
+	  SymbolTable::iterator it = target_st->find(name);
+	  VarInfo * vi;
+	  if (it == target_st->end()) {
+	    vi = new VarInfo();
+	    (*target_st)[name] = vi;
+	  } else {
+	    vi = it->second;
+	  }
+	  vi->insertDef(def);
 	}
-	vi->insertDef(def);
       }
     }
   }  

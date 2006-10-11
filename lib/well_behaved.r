@@ -10,5 +10,3 @@
 .rcc.assert(no.oo)
 .rcc.assert(no.envir.manip)
 .rcc.assert(no.special.redef)
-.rcc.assert(no.builtin.redef)
-.rcc.assert(no.library.redef)

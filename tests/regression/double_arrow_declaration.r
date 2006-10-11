@@ -1,4 +1,10 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
-outer <- function(a) a
-outer(6)
+g <- function() {
+  print(v)
+}
+f <- function() {
+  v <<- 37
+}
+f()
+g()

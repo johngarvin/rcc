@@ -109,7 +109,7 @@ const_iterator VarBindingAnnotationMap::end() const { return m_map.end(); }
 /// into the annotation map.
 void VarBindingAnnotationMap::compute() {
   static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
-  // for each scope
+  // for each function
   FuncInfoIterator fii(global);
   for( ; fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
@@ -118,7 +118,7 @@ void VarBindingAnnotationMap::compute() {
     FuncInfo::mention_iterator mi;
     for (mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
       Var * v = *mi;
-      v = getProperty(Var, v->getMention_c()); 
+      v = getProperty(Var, v->getMention_c());
       // FIXME: should make sure we always get the data-flow-solved
       // version of the Var. Shouldn't have to loop through
       // getProperty!
@@ -127,21 +127,35 @@ void VarBindingAnnotationMap::compute() {
       switch(v->getScopeType()) {
       case Var::Var_LOCAL:
 	// bound in current scope only
-	scopes->insert(fi);
+	scopes->insert(fi->get_scope());
 	break;
       case Var::Var_INDEFINITE:
 	// bound in current scope and one or more ancestors
-	scopes->insert(fi);
+	scopes->insert(fi->get_scope());
 	// FALLTHROUGH
       case Var::Var_FREE:
 	// start at this scope's parent; iterate upward through ancestors
 	binding_found = false;
 	for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
 	  if (defined_local_in_scope(v,a)) {
-	    scopes->insert(a);
+	    scopes->insert(a->get_scope());
 	    binding_found = true;
 	  }
 	}
+
+	// for R internal names, add the library scope
+	if (is_library(CAR(v->getMention_c()))) {
+	  scopes->insert(R_Analyst::get_instance()->get_library_scope());
+	}
+
+	// double-arrow (<<-) definitions declare the name in the
+	// global scope if it's not local in some middle scope. Just
+	// check for a def; since we're here, we already know the
+	// mention is non-local.
+	if (v->getUseDefType() == Var::Var_DEF) {
+	  scopes->insert(R_Analyst::get_instance()->get_global_scope());
+	}
+
 	break;
       default:
 	rcc_error("Unknown scope type encountered");

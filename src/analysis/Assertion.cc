@@ -28,6 +28,9 @@ void process_assert(SEXP assertion, FuncInfo * fi) {
 	} else if (e == Rf_install("no.library.redef")) {
 	  ParseInfo::set_allow_library_redef(false);
 	}
+	// NOTE: our analysis now handles user redefinition of
+	// builtin, and library functions, so these assertions have no
+	// effect.
       } else if (is_value_assert(e)) {
 	// assertion that a formal argument is call-by-value, of the form:
 	// .rcc.assert(value(foo))

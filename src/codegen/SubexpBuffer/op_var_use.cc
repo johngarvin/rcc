@@ -7,7 +7,9 @@
 
 #include <analysis/VarBinding.h>
 #include <analysis/AnalysisResults.h>
+
 #include <support/StringUtils.h>
+#include <support/RccError.h>
 
 #include <CodeGen.h>
 #include <CodeGenUtils.h>
@@ -61,47 +63,45 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
   VarBinding * annot = getProperty(VarBinding, cell);
 
-  // first, check for constants
-  if (annot->is_global()) {
-    // binding_map is used for global variables with
-    // constant values; it records the constant value of each name.
-    map<string, string>::iterator value;
-    value = ParseInfo::binding_map.find(name);
-    if (value != ParseInfo::binding_map.end()) {       // in binding map
-      return Expression(value->second, false, VISIBLE, "");
-    }
-  }
   if (annot->is_single()) {
-    FuncInfo* fi = *(annot->begin());
-    if (fi->is_arg(e)) {
-      // TODO: handle this case; need to know when to evaluate promise
-      return op_lookup(sb, lookup_function, make_symbol(e), rho,
-		       resultProtection, fullyEvaluatedResult);
+    if (InternalLexicalScope * scope = dynamic_cast<InternalLexicalScope *>(*(annot->begin()))) {
+      // check for global constants
+      // binding_map is used for global variables with
+      // constant values; it records the constant value of each name.
+      map<string, string>::iterator value;
+      value = ParseInfo::binding_map.find(name);
+      if (value != ParseInfo::binding_map.end()) {       // in binding map
+	return Expression(value->second, false, VISIBLE, "");
+      } else {
+	SEXP env_val;
+	if (lookup_type == FUNCTION_VAR) {
+	  env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
+	} else {
+	  env_val = Rf_findVar(e, R_GlobalEnv);
+	}
+	assert(env_val != R_UnboundValue);
+	return op_internal(sb, e, env_val, name, lookup_function, rho);
+      }
+    } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(annot->begin()))) {
+      FuncInfo* fi = getProperty(FuncInfo, scope->get_fundef());
+      if (fi->is_arg(e)) {
+	// have to produce a lookup here; we don't know whether we need to evalaute a promise
+	// TODO: handle this case
+	return op_lookup(sb, lookup_function, make_symbol(e), rho,
+			 resultProtection, fullyEvaluatedResult);
+      } else {
+	string location = annot->get_location(e, sb);
+	string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
+	return Expression(h, true, VISIBLE, "");
+      }
     } else {
-      string location = annot->get_location(e, sb);
-      string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
-      return Expression(h, true, VISIBLE, "");
+      rcc_error("Unknown derived type of LexicalScope found");
     }
-  } else if (annot->is_unbound()) {  // may be unbound or an R library/builtin/special
-    // Look up in global environment to see if it's an R internal
-    SEXP env_val;
-    if (lookup_type == FUNCTION_VAR) {
-      env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
-    } else {
-      env_val = Rf_findVar(e, R_GlobalEnv);
-    }
-    if (env_val != R_UnboundValue) {        // builtin/special/library name
-      return op_internal(sb, e, env_val, name, lookup_function, rho);
-    } else {
-      return op_lookup(sb, lookup_function, make_symbol(e), rho,
-		       resultProtection, fullyEvaluatedResult);
-    }
-  } else {                                  // more than one binding
+  } else {   // more than one possible scope
     return op_lookup(sb, lookup_function, make_symbol(e), rho,
 		     resultProtection, fullyEvaluatedResult);
   }
 }
-
 
 /// output a lookup of a name in the given environment
 static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
@@ -127,7 +127,7 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
   string h;
   SEXP sym_value = SYMVALUE(e);
   if (sym_value == R_UnboundValue) {
-    // library function e.g. dnorm
+    // library function
     string call = emit_call2(lookup_function, make_symbol(e), "R_GlobalEnv");
     if (TYPEOF(env_val) == PROMSXP) {
       call = emit_call2("Rf_eval", call, "R_GlobalEnv");

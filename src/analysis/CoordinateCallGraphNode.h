@@ -8,18 +8,19 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/CallGraphNode.h>
+#include <analysis/LexicalScope.h>
 
 namespace RAnnot {
 
 class CallGraphAnnotationMap::CoordinateCallGraphNode : public CallGraphAnnotationMap::CallGraphNode {
 public:
-  explicit CoordinateCallGraphNode(const SEXP name, const SEXP scope);
+  explicit CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope);
   virtual ~CoordinateCallGraphNode();
 
   const OA::IRHandle get_handle() const;
 
   const SEXP get_name() const;
-  const SEXP get_scope() const;
+  const LexicalScope * get_scope() const;
 
   void compute(CallGraphAnnotationMap::NodeListT & worklist,
 	       CallGraphAnnotationMap::NodeSetT & visited) const;
@@ -32,7 +33,7 @@ public:
   void dump_string(std::ostream & os) const;
 private:
   const SEXP m_name;
-  const SEXP m_scope;
+  const LexicalScope * m_scope;
 };
 
 } // end namespace RAnnot

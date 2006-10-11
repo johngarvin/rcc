@@ -38,7 +38,7 @@ namespace RAnnot {
       VarBinding::const_iterator si;
       for(si = binding->begin(); si != binding->end(); ++si) {
 	CoordinateCallGraphNode * node;
-	node = cg->make_coordinate_node(call_lhs(m_cs), (*si)->get_defn());
+	node = cg->make_coordinate_node(call_lhs(m_cs), *si);
 	cg->add_edge(this, node);
 	if (visited.find(node) == visited.end()) {
 	  worklist.push_back(node);

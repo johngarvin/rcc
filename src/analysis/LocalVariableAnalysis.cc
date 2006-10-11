@@ -72,8 +72,10 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     build_ud_rhs(while_cond_c(e));
   } else if (is_repeat(e)) {
     // ignore
-  } else if (is_paren_exp(e)) {
-    build_ud_rhs(paren_body_c(e));
+
+    //  } else if (is_paren_exp(e)) {
+    //    build_ud_rhs(paren_body_c(e));
+
   } else if (is_curly_list(e)) {
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
       build_ud_rhs(stmt);

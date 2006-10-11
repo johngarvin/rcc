@@ -30,6 +30,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   VarBinding * annot = getProperty(VarBinding, cell);
   if (annot->is_single()) {
     string location = annot->get_location(CAR(cell), this);
+    assert(location != "");
     append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
     return Expression(rhs, true, INVISIBLE, "");
   } else {   // no unique location; emit lookup

@@ -32,50 +32,42 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
   SEXP r_args = CDR(e);
   if (TYPEOF(lhs) == SYMSXP) {
     string r_sym = CHAR(PRINTNAME(lhs));
-
-    // see if it's a builtin or special in the R environment
-    // TODO: memoize results to avoid multiple findFun calls
     SEXP op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);
     if (TYPEOF(op) == SPECIALSXP) {
       return op_special(e, op, rho, resultProtection, resultStatus);
-    } else if (TYPEOF(op) == BUILTINSXP) {
-      return op_builtin(e, op, rho, resultProtection);
-    } else {
-      // see if call graph supplies a single definition
-      CallGraphAnnotationMap * amap = CallGraphAnnotationMap::get_instance();
-      // TODO: parametrize CallGraphAnnotationMap to avoid cast
-      CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(HandleInterface::make_mem_ref_h(e)));
-      const CallGraphAnnotationMap::CallGraphNode * node = ann->get_singleton_if_exists();
-      if (node) {
-	// node is Fundef, Library, or UnknownValue node
-	if (const CallGraphAnnotationMap::FundefCallGraphNode * cs = dynamic_cast<const CallGraphAnnotationMap::FundefCallGraphNode *>(node)) {
-	  string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
-	  Expression closure_exp = Expression(closure, false, INVISIBLE, "");
-	  return op_clos_app(closure_exp, r_args, rho, resultProtection);
-	} else if (const CallGraphAnnotationMap::LibraryCallGraphNode * lib = dynamic_cast<const CallGraphAnnotationMap::LibraryCallGraphNode *>(node)) {
-	  // it's from the R environment
-	  const SEXP op = lib->get_value();
-	  if (TYPEOF(op) == SPECIALSXP) {
-	    return op_special(e, op, rho, resultProtection, resultStatus);
-	  } else if (TYPEOF(op) == BUILTINSXP) {
-	    return op_builtin(e, op, rho, resultProtection);
-	  } else if (TYPEOF(op) == CLOSXP) {
-	    Expression func = op_closure(op, rho, resultProtection);
-	    return op_clos_app(func, r_args, rho, resultProtection);
-	  } else {
-	    rcc_error("Internal error: LANGSXP encountered non-function op");
-	    return Expression::bogus_exp; // never reached
-	  }
-	} else if (const CallGraphAnnotationMap::UnknownValueCallGraphNode * uv = dynamic_cast<const CallGraphAnnotationMap::UnknownValueCallGraphNode *>(node)) {
-	  Expression func = op_fun_use(e, rho);
+    }
+    // see if call graph supplies a single definition
+    CallGraphAnnotationMap * amap = CallGraphAnnotationMap::get_instance();
+    // TODO: parametrize CallGraphAnnotationMap to avoid cast
+    CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(HandleInterface::make_mem_ref_h(e)));
+    const CallGraphAnnotationMap::CallGraphNode * node = ann->get_singleton_if_exists();
+    if (node) {
+      // node is Fundef, Library, or UnknownValue node
+      if (const CallGraphAnnotationMap::FundefCallGraphNode * cs = dynamic_cast<const CallGraphAnnotationMap::FundefCallGraphNode *>(node)) {
+	string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
+	Expression closure_exp = Expression(closure, false, INVISIBLE, "");
+	return op_clos_app(closure_exp, r_args, rho, resultProtection);
+      } else if (const CallGraphAnnotationMap::LibraryCallGraphNode * lib = dynamic_cast<const CallGraphAnnotationMap::LibraryCallGraphNode *>(node)) {
+	// it's from the R environment
+	const SEXP op = lib->get_value();
+	if (TYPEOF(op) == CLOSXP) {
+	  Expression func = op_closure(op, rho, resultProtection);
 	  return op_clos_app(func, r_args, rho, resultProtection);
+	} else if (TYPEOF(op) == BUILTINSXP) {
+	  return op_builtin(e, op, rho, resultProtection);
 	} else {
-	  rcc_error("Internal error: in call graph, didn't find expected Fundef, Library, or UnknownValue node");
+	  rcc_error("Internal error: LANGSXP encountered non-function op");
+	  return Expression::bogus_exp; // never reached
 	}
-      } else { // more than one possible function value; let op_fun_use decide
+      } else if (const CallGraphAnnotationMap::UnknownValueCallGraphNode * uv = dynamic_cast<const CallGraphAnnotationMap::UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, r_args, rho, resultProtection);
+      } else {
+	rcc_error("Internal error: in call graph, didn't find expected Fundef, Library, or UnknownValue node");
       }
+    } else { // more than one possible function value; let op_fun_use decide
+      Expression func = op_fun_use(e, rho);
+      return op_clos_app(func, r_args, rho, resultProtection);
     }
   } else {  // left side is not a symbol
     // generate closure and application

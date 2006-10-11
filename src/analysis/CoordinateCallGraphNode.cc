@@ -16,7 +16,7 @@
 
 namespace RAnnot {
 
-  CallGraphAnnotationMap::CoordinateCallGraphNode::CoordinateCallGraphNode(SEXP name, SEXP scope)
+  CallGraphAnnotationMap::CoordinateCallGraphNode::CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope)
     : m_name(name), m_scope(scope)
   {}
 
@@ -27,7 +27,7 @@ namespace RAnnot {
     return m_name;
   }
 
-  const SEXP CallGraphAnnotationMap::CoordinateCallGraphNode::get_scope() const {
+  const LexicalScope * CallGraphAnnotationMap::CoordinateCallGraphNode::get_scope() const {
     return m_scope;
   }
 
@@ -40,37 +40,37 @@ namespace RAnnot {
 	  CallGraphAnnotationMap::NodeSetT & visited) const
   {
     CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
-    SymbolTable * st = getProperty(SymbolTable, m_scope);
 
-    SymbolTable::const_iterator it = st->find(m_name);
-    if (it == st->end()) {
-      // Name not found in SymbolTable. This means either an unbound
-      // variable or a predefined (library or built-in) function.
-      SEXP value = Rf_findFun(m_name, R_GlobalEnv);
-      if (value == R_UnboundValue) {
+    if (const InternalLexicalScope * scope = dynamic_cast<const InternalLexicalScope *>(m_scope)) {
+      SEXP value = Rf_findFunUnboundOK(m_name, R_GlobalEnv, TRUE);
+      assert(value != R_UnboundValue);
+      cg->add_edge(this, cg->make_library_node(m_name, value));
+      // but don't add library fun to worklist
+    } else if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(m_scope)) {
+      SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
+      SymbolTable::const_iterator it = st->find(m_name);
+      if (it == st->end()) {
+	// Name not found in SymbolTable: unbound variable
 	rcc_error("Unbound variable " + var_name(m_name));
-      } else {
-	cg->add_edge(this, cg->make_library_node(m_name, value));
-	// but don't add library fun to worklist
-      }
-    } else {  // symbol is defined at least once in this scope
-      VarInfo * vi = it->second;
-      VarInfo::const_iterator var;
-      for (var = vi->beginDefs(); var != vi->endDefs(); ++var) {
-	DefVar * def = *var;
-	if (is_fundef(CAR(def->getRhs_c()))) {
-	  // def is of the form _ <- function(...)
-	  FundefCallGraphNode * node = cg->make_fundef_node(CAR(def->getRhs_c()));
-	  cg->add_edge(this, node);
-	  if (visited.find(node) == visited.end()) {
-	    worklist.push_back(node);
+      } else {  // symbol is defined at least once in this scope
+	VarInfo * vi = it->second;
+	VarInfo::const_iterator var;
+	for (var = vi->beginDefs(); var != vi->endDefs(); ++var) {
+	  DefVar * def = *var;
+	  if (is_fundef(CAR(def->getRhs_c()))) {
+	    // def is of the form _ <- function(...)
+	    FundefCallGraphNode * node = cg->make_fundef_node(CAR(def->getRhs_c()));
+	    cg->add_edge(this, node);
+	    if (visited.find(node) == visited.end()) {
+	      worklist.push_back(node);
+	    }
+	  } else {
+	    // RHS of def is a non-fundef; we don't know the function value
+	    cg->add_edge(this, cg->make_unknown_value_node());
+	    // TODO: if it's a variable, then we might know how to handle
 	  }
-	} else {
-	  // RHS of def is a non-fundef; we don't know the function value
-	  cg->add_edge(this, cg->make_unknown_value_node());
-	  // TODO: if it's a variable, then we might know how to handle
 	}
-      }
+      }  
     }
   }
 
@@ -91,25 +91,17 @@ namespace RAnnot {
 
   void CallGraphAnnotationMap::CoordinateCallGraphNode::
   dump(std::ostream & os) const {
-    FuncInfo * finfo = getProperty(FuncInfo, m_scope);
-    SEXP scope_first_name = finfo->get_first_name();
-
-    beginObjDump(os, CoordinateCallGraphNode);
-    dumpPtr(os, this);
-    dumpSEXP(os, m_name);
-    dumpSEXP(os, scope_first_name);
-    endObjDump(os, CoordinateCallGraphNode);
+    dump_string(os);
   }
 
   void CallGraphAnnotationMap::CoordinateCallGraphNode::
   dump_string(std::ostream & os) const {
-    FuncInfo * finfo = getProperty(FuncInfo, m_scope);
-    std::string first_name = CHAR(PRINTNAME(m_name));
-    std::string scope_first_name = CHAR(PRINTNAME(finfo->get_first_name()));
+    const std::string name = var_name(m_name);
+    const std::string scope_name = get_scope()->get_name();
     beginObjDump(os, CoordinateCallGraphNode);
     dumpVar(os, get_id());
-    dumpString(os, first_name);
-    dumpString(os, scope_first_name);
+    dumpString(os, name);
+    dumpString(os, scope_name);
     endObjDump(os, CoordinateCallGraphNode);
   }
 

@@ -9,6 +9,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/IRInterface.h>
+#include <analysis/LexicalScope.h>
 
 // forward declarations
 
@@ -38,6 +39,8 @@ public:
   SEXP get_program() { return m_program; }
 
   RAnnot::FuncInfo * get_scope_tree_root();
+  LexicalScope * get_library_scope();
+  LexicalScope * get_global_scope();
 
   //  ----- debugging -----
 
@@ -57,8 +60,10 @@ private:
   SEXP m_program;
   OA::OA_ptr<R_IRInterface> m_interface;
 
-  RAnnot::FuncInfo *m_scope_tree_root;
-
+  RAnnot::FuncInfo * m_scope_tree_root;
+  LexicalScope * m_library_scope;
+  LexicalScope * m_global_scope;
+  
   void build_cfgs();
   void build_locality_info();
   void build_local_variable_info();

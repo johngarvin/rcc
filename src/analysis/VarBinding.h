@@ -38,6 +38,7 @@
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
@@ -49,7 +50,7 @@ class VarBinding : public AnnotationBase
 public:
 
   // typedefs to let us function as wrapper around container
-  typedef FuncInfo *                            KeyT;
+  typedef LexicalScope *                        KeyT;
   typedef std::list<KeyT>                       MyContainerT;
   typedef MyContainerT::const_iterator          const_iterator;
 
@@ -64,11 +65,14 @@ public:
   /// get handle to lookup in PropertySet
   static PropertyHndlT handle();
 
+  /// Is this mention bound in only one scope?
+  bool is_single();
+
   /// Does this mention refer to the global as its only scope?
   bool is_global();
 
-  /// Is this mention bound in only one scope?
-  bool is_single();
+  /// Is this mention an internal R name not redefined?
+  bool is_internal();
 
   /// Is this mention bound in no scopes? (may be an internal name or just plain unbound)
   bool is_unbound();

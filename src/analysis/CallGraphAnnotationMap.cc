@@ -171,11 +171,10 @@ LibraryCallGraphNode * CallGraphAnnotationMap::make_library_node(SEXP name, SEXP
   return node;
 }
 
-CoordinateCallGraphNode * CallGraphAnnotationMap::make_coordinate_node(SEXP name, SEXP scope) {
+CoordinateCallGraphNode * CallGraphAnnotationMap::make_coordinate_node(SEXP name, LexicalScope * scope) {
   assert(is_var(name));
-  assert(is_fundef(scope));
   CoordinateCallGraphNode * node;
-  std::map<std::pair<SEXP, SEXP>, CoordinateCallGraphNode *>::const_iterator it;
+  std::map<std::pair<SEXP, LexicalScope *>, CoordinateCallGraphNode *>::const_iterator it;
   it = m_coord_map.find(std::make_pair(name, scope));
   if (it == m_coord_map.end()) {
     node = new CoordinateCallGraphNode(name, scope);

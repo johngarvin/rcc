@@ -15,6 +15,7 @@
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnnotationMap.h>
+#include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
@@ -92,7 +93,7 @@ private:
   //
   FundefCallGraphNode * make_fundef_node(SEXP e);
   LibraryCallGraphNode * make_library_node(SEXP name, SEXP value);
-  CoordinateCallGraphNode * make_coordinate_node(SEXP name, SEXP scope);
+  CoordinateCallGraphNode * make_coordinate_node(SEXP name, LexicalScope * scope);
   CallSiteCallGraphNode * make_call_site_node(SEXP e);
   UnknownValueCallGraphNode * make_unknown_value_node();
 
@@ -123,7 +124,7 @@ private:
 
   std::map<SEXP, FundefCallGraphNode *> m_fundef_map;
   std::map<SEXP, LibraryCallGraphNode *> m_library_map;
-  std::map<std::pair<SEXP,SEXP>, CoordinateCallGraphNode *> m_coord_map;
+  std::map<std::pair<SEXP, LexicalScope * >, CoordinateCallGraphNode *> m_coord_map;
   std::map<SEXP, CallSiteCallGraphNode *> m_call_site_map;
 };
 
