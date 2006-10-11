@@ -251,10 +251,12 @@ void CallGraphAnnotationMap::compute() {
   NodeListT worklist;
   NodeSetT visited;
 
-  // start with worklist containing one entry, the whole program
+  // add all fundefs to the worklist
   SEXP program = CAR(assign_rhs_c(R_Analyst::get_instance()->get_program()));
-  FundefCallGraphNode * root_node = make_fundef_node(program);
-  worklist.push_back(root_node);
+  FuncInfoIterator fii(getProperty(FuncInfo, program));
+  for(FuncInfo *fi; fi = fii.Current(); ++fii) {
+    worklist.push_back(make_fundef_node(fi->get_defn()));
+  }
 
   while(!worklist.empty()) {
     const CallGraphNode * c = worklist.front();
@@ -265,7 +267,7 @@ void CallGraphAnnotationMap::compute() {
     }
   }
 
-  //  for each procedure entry point (just the big proc if one executable):
+  //  for each procedure:
   //    add to worklist as new call graph node
   //  for each node in worklist:
   //    mark node visited
@@ -280,16 +282,14 @@ void CallGraphAnnotationMap::compute() {
   //          add edge (call site, coordinate)
   //          if coordinate node hasn't been visited, add to worklist
   //      else [LHS is not a simple name]:
-  //        add edge (call site, any-coordinate)
+  //        add edge (call site, unknown)
   //    else if worklist item is a Coordinate:
   //      look up name, scope in SymbolTable, get list of defs
   //      for each def:
   //        if RHS is a fundef:
-  //          add fundef as fundef node if not already present
   //          add edge (Coordinate, fundef)
-  //          if fundef hasn't been visited, add to worklist
   //        else:
-  //          add edge (Coordinate, any-fundef) NOTE: look up DSystem's name
+  //          add edge (Coordinate, unknown) NOTE: look up DSystem's name
 }
 
 void CallGraphAnnotationMap::dump(std::ostream & os) {

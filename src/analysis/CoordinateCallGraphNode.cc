@@ -61,9 +61,6 @@ namespace RAnnot {
 	    // def is of the form _ <- function(...)
 	    FundefCallGraphNode * node = cg->make_fundef_node(CAR(def->getRhs_c()));
 	    cg->add_edge(this, node);
-	    if (visited.find(node) == visited.end()) {
-	      worklist.push_back(node);
-	    }
 	  } else {
 	    // RHS of def is a non-fundef; we don't know the function value
 	    cg->add_edge(this, cg->make_unknown_value_node());

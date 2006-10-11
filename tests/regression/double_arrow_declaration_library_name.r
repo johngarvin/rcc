@@ -1,10 +1,10 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
 g <- function() {
-  print(qnorm)
+  print(raw)
 }
 f <- function() {
-  qnorm <<- 37
+  raw <<- 37
 }
 f()
 g()
