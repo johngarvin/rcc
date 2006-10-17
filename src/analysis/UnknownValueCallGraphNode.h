@@ -1,12 +1,29 @@
 // -*- Mode: C++ -*-
+//
+// Copyright (c) 2006 Rice University
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+
+// File: UnknownValueCallGraphNode.h
+//
+// Call graph node representing an unknown value.
+//
+// Author: John Garvin (garvin@cs.rice.edu)
 
 #ifndef UNKNOWN_VALUE_CALL_GRAPH_NODE_H
 #define UNKNOWN_VALUE_CALL_GRAPH_NODE_H
-
-/// UnknownValueCallGraphNode represents an unknown function value in
-/// the call graph. Incoming edges come from Coordinate nodes; no
-/// edges go out. This class is a singleton because there's no reason
-/// to distinguish different instances.
 
 #include <ostream>
 
@@ -16,6 +33,10 @@
 
 namespace RAnnot {
 
+/// UnknownValueCallGraphNode represents an unknown function value in
+/// the call graph. Incoming edges come from Coordinate nodes; no
+/// edges go out. This class is a singleton because there's no reason
+/// to distinguish different instances.
 class CallGraphAnnotationMap::UnknownValueCallGraphNode : public CallGraphAnnotationMap::CallGraphNode {
 public:
   virtual ~UnknownValueCallGraphNode();

@@ -1,7 +1,6 @@
 // -*- Mode: C++ -*-
-// Copyright (c) 2005 Rice University
 //
-// August 29, 2005
+// Copyright (c) 2006 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,7 +15,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-///
+
+// File: ParseInfo.cc
+//
+// collection of global (whole-program) information collected during code generation
+//
+// Author: John Garvin (garvin@cs.rice.edu)
 
 #include "ParseInfo.h"
 

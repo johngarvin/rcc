@@ -1,9 +1,7 @@
-// Copyright (c) 2003-2005 John Garvin
+// -*- Mode: C++ -*-
 //
-// July 11, 2003 
+// Copyright (c) 2003-2006 Rice University
 //
-// Interface to the R parser. Parses R code, returns S-expressions.
-// 
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -18,6 +16,11 @@
 //   along with this program; if not, write to the Free Software
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
+// File: Parser.cc
+//
+// Interface to the R parser. Parses R code, returns S-expressions.
+//
+// Author: John Garvin (garvin@cs.rice.edu)
 
 #include <string>
 
@@ -150,8 +153,9 @@ SEXP parse_R_as_function(FILE *in_file) {
   return big_exp;
 }
 
-//! Returns true if the given SEXP is a call to source with exactly
-//! one argument. The single argument must not be a named argument.
+/// Returns true if the given SEXP is a call to the 'source' function
+/// with exactly one argument. The single argument must not be a named
+/// argument.
 static bool is_simple_source_call(SEXP e) {
   return (TYPEOF(e) == LANGSXP &&
 	  CAR(e) == Rf_install("source") &&

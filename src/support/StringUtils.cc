@@ -1,25 +1,26 @@
-// Copyright (c) 2003-2005 John Garvin 
+// -*- Mode: C++ -*-
 //
-//  July 11, 2003 
+// Copyright (c) 2003-2006 Rice University
 //
-//  Parses R code, turns into C code that uses internal R functions.
-//  Attempts to output some code in regular C rather than using R
-//  functions.
-//  
-//   This program is free software; you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation; either version 2 of the License, or
-//   (at your option) any later version.
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
 //
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
 //
-//   You should have received a copy of the GNU General Public License
-//   along with this program; if not, write to the Free Software
-//   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+
+// File: StringUtils.cc
 //
+// Utilities for managing strings of C code.
+//
+// Author: John Garvin (garvin@cs.rice.edu)
 
 #define __USE_STD_IOSTREAM
 
@@ -152,11 +153,11 @@ string escape(string str) {
   return out;
 }
 
-// Make a string suitable for use as a C identifier. Used for both R
-// identifiers and arbitrary strings for syntactic sugar in
-// variable names. It's important that no two R identifiers can map to
-// the same C name, but for arbitrary strings it doesn't matter.
-//
+/// Make a string suitable for use as a C identifier. Used for both R
+/// identifiers and arbitrary strings for syntactic sugar in
+/// variable names. It's important that no two R identifiers can map to
+/// the same C name, but for arbitrary strings it doesn't matter.
+///
 string make_c_id(string str) {
   string out;
   unsigned int i;
@@ -173,7 +174,7 @@ string make_c_id(string str) {
   return out;
 }
 
-// Simple function to add quotation marks around a string
+/// Simple function to add quotation marks around a string
 string quote(string str) {
   return "\"" + str + "\"";
 }

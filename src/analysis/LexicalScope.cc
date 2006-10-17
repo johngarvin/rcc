@@ -18,6 +18,12 @@
 
 // File: LexicalScope.cc
 //
+// Represents an R lexical scope. A lexical scope can be pre-defined
+// (InternalLexicalScope) (e.g. the scope where R internal names are
+// bound) or created by a function definition (FundefLexicalScope). The
+// global scope, because it contains code, is represented as a
+// UserLexicalScope.
+//
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <string>

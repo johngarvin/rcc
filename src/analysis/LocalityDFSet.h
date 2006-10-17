@@ -1,7 +1,30 @@
 // -*- Mode: C++ -*-
+//
+// Copyright (c) 2006 Rice University
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-#ifndef LOCALITY_DF_SET
-#define LOCALITY_DF_SET
+// File: LocalityDFSet.h
+//
+// Set of LocalityDFSetElement objects. Inherits from DataFlowSet for
+// use in CFGDFProblem.
+//
+// Author: John Garvin (garvin@cs.rice.edu)
+
+#ifndef LOCALITY_DF_SET_H
+#define LOCALITY_DF_SET_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
@@ -17,8 +40,8 @@ namespace Locality {
 class DFSetElement;
 class DFSetIterator;
 
-/// Set of DFSetElement objects. Inherits from DataFlowSet for use in
-/// CFGDFProblem.
+/// Set of LocalityDFSetElement objects. Inherits from DataFlowSet for
+/// use in CFGDFProblem.
 // Removed "virtual": need clone() to be able to return an DFSet.
 //class DFSet : public virtual OA::DataFlow::DataFlowSet {
 class DFSet : public OA::DataFlow::DataFlowSet {

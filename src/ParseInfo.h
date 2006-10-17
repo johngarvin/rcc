@@ -1,7 +1,6 @@
 // -*- Mode: C++ -*-
-// Copyright (c) 2005 Rice University
 //
-// August 29, 2005
+// Copyright (c) 2006 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,7 +15,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-///
+
+// File: ParseInfo.h
+//
+// collection of global (whole-program) information collected during code generation
+//
+// Author: John Garvin (garvin@cs.rice.edu)
 
 #ifndef PARSE_INFO_H
 #define PARSE_INFO_H
@@ -29,8 +33,6 @@
 class SubexpBuffer;
 class SplitSubexpBuffer;
 
-//! ParseInfo:
-//! collection of global (whole-program) information collected during code generation
 // TODO: improve encapsulation
 class ParseInfo {
 public:
