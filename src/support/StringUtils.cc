@@ -18,7 +18,7 @@
 
 // File: StringUtils.cc
 //
-// Utilities for managing strings of C code.
+// Utilities for handling strings of C code.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 

@@ -42,18 +42,16 @@ namespace RAnnot {
 
 class CallGraphEdge;
 class CallGraphInfo;
+class CallGraphNode;
+class CallSiteCallGraphNode;
+class CoordinateCallGraphNode;
+class FundefCallGraphNode;
+class LibraryCallGraphNode;
+class UnknownValueCallGraphNode;
 
 class CallGraphAnnotationMap : public AnnotationMap
 {
 public:
-  // ----- inner classes -----
-  class CallGraphNode;
-  class FundefCallGraphNode;
-  class CallSiteCallGraphNode;
-  class CoordinateCallGraphNode;
-  class LibraryCallGraphNode;
-  class UnknownValueCallGraphNode;
-
   // ----- types -----
   typedef std::list<const CallGraphNode *>                 NodeListT;
   typedef std::set<const CallGraphNode *>                  NodeSetT;
@@ -111,6 +109,7 @@ private:
   // return different derived classes of CallGraphNode. Create new if
   // needed; otherwise return existing node in a map.
   //
+public:
   FundefCallGraphNode * make_fundef_node(SEXP e);
   LibraryCallGraphNode * make_library_node(SEXP name, SEXP value);
   CoordinateCallGraphNode * make_coordinate_node(SEXP name, LexicalScope * scope);
@@ -121,6 +120,7 @@ private:
   
   // ----- compute call graph -----
 
+private:
   void compute();
 
   // ----- traverse call graph, get annotation -----

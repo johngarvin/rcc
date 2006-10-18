@@ -34,22 +34,22 @@
 
 namespace RAnnot {
 
-  CallGraphAnnotationMap::FundefCallGraphNode::FundefCallGraphNode(const SEXP fundef)
+  FundefCallGraphNode::FundefCallGraphNode(const SEXP fundef)
     : m_fundef(fundef)
   {}
 
-  CallGraphAnnotationMap::FundefCallGraphNode::~FundefCallGraphNode()
+  FundefCallGraphNode::~FundefCallGraphNode()
   {}
 
-  const OA::IRHandle CallGraphAnnotationMap::FundefCallGraphNode::get_handle() const {
+  const OA::IRHandle FundefCallGraphNode::get_handle() const {
     return HandleInterface::make_proc_h(m_fundef);
   }
 
-  const SEXP CallGraphAnnotationMap::FundefCallGraphNode::get_sexp() const {
+  const SEXP FundefCallGraphNode::get_sexp() const {
     return m_fundef;
   }
 
-  void CallGraphAnnotationMap::FundefCallGraphNode::
+  void FundefCallGraphNode::
   compute(CallGraphAnnotationMap::NodeListT & worklist,
 	  CallGraphAnnotationMap::NodeSetT & visited) const
   {
@@ -59,7 +59,7 @@ namespace RAnnot {
     // Keep track of call sites attached to this node to avoid
     // redundancy. This is a temporary workaround for a bug in which
     // the CFG has duplicate nodes. TODO: fix
-    NodeSetT visited_cs;
+    CallGraphAnnotationMap::NodeSetT visited_cs;
 
     const CallSiteCallGraphNode * csnode;
     FuncInfo::const_call_site_iterator csi;
@@ -76,7 +76,7 @@ namespace RAnnot {
     }
   }
 
-  void CallGraphAnnotationMap::FundefCallGraphNode::
+  void FundefCallGraphNode::
   get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
 		    CallGraphAnnotationMap::NodeSetT & visited,
 		    CallGraphAnnotation * ann) const
@@ -84,17 +84,17 @@ namespace RAnnot {
     ann->insert_node(this);
   }
 
-  void CallGraphAnnotationMap::FundefCallGraphNode::dump(std::ostream & os) const {
+  void FundefCallGraphNode::dump(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
     SEXP first_name = finfo->get_first_name();
 
     beginObjDump(os, FundefCallGraphNode);
-    dumpPtr(os, this);
+    dumpVar(os, get_id());
     dumpSEXP(os, first_name);
     endObjDump(os, FundefCallGraphNode);
   }
 
-  void CallGraphAnnotationMap::FundefCallGraphNode::dump_string(std::ostream & os) const {
+  void FundefCallGraphNode::dump_string(std::ostream & os) const {
     FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
     std::string first_name = CHAR(PRINTNAME(finfo->get_first_name()));
     beginObjDump(os, FundefCallGraphNode);

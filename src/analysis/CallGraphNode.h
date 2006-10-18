@@ -36,9 +36,9 @@ namespace RAnnot {
 class CallGraphAnnotation;
 
 /// Abstract class representing a node of a call graph
-class CallGraphAnnotationMap::CallGraphNode {
+class CallGraphNode {
 public:
-  explicit CallGraphNode();
+  CallGraphNode();
   virtual ~CallGraphNode();
 
   virtual const OA::IRHandle get_handle() const = 0;

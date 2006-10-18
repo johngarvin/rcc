@@ -64,14 +64,14 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     CallGraphAnnotationMap * amap = CallGraphAnnotationMap::get_instance();
     // TODO: parametrize CallGraphAnnotationMap to avoid cast
     CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(HandleInterface::make_mem_ref_h(e)));
-    const CallGraphAnnotationMap::CallGraphNode * node = ann->get_singleton_if_exists();
+    const CallGraphNode * node = ann->get_singleton_if_exists();
     if (node) {
       // node is Fundef, Library, or UnknownValue node
-      if (const CallGraphAnnotationMap::FundefCallGraphNode * cs = dynamic_cast<const CallGraphAnnotationMap::FundefCallGraphNode *>(node)) {
+      if (const FundefCallGraphNode * cs = dynamic_cast<const FundefCallGraphNode *>(node)) {
 	string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
 	Expression closure_exp = Expression(closure, false, INVISIBLE, "");
 	return op_clos_app(closure_exp, r_args, rho, resultProtection);
-      } else if (const CallGraphAnnotationMap::LibraryCallGraphNode * lib = dynamic_cast<const CallGraphAnnotationMap::LibraryCallGraphNode *>(node)) {
+      } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
 	// it's from the R environment
 	const SEXP op = lib->get_value();
 	if (TYPEOF(op) == CLOSXP) {
@@ -83,7 +83,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	  rcc_error("Internal error: LANGSXP encountered non-function op");
 	  return Expression::bogus_exp; // never reached
 	}
-      } else if (const CallGraphAnnotationMap::UnknownValueCallGraphNode * uv = dynamic_cast<const CallGraphAnnotationMap::UnknownValueCallGraphNode *>(node)) {
+      } else if (const UnknownValueCallGraphNode * uv = dynamic_cast<const UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, r_args, rho, resultProtection);
       } else {

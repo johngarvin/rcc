@@ -33,7 +33,7 @@
 
 namespace RAnnot {
 
-class CallGraphAnnotationMap::FundefCallGraphNode : public CallGraphNode {
+class FundefCallGraphNode : public CallGraphNode {
 public:
   explicit FundefCallGraphNode(const SEXP fundef);
   virtual ~FundefCallGraphNode();

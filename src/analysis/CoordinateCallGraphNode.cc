@@ -40,26 +40,26 @@
 
 namespace RAnnot {
 
-  CallGraphAnnotationMap::CoordinateCallGraphNode::CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope)
+  CoordinateCallGraphNode::CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope)
     : m_name(name), m_scope(scope)
   {}
 
-  CallGraphAnnotationMap::CoordinateCallGraphNode::~CoordinateCallGraphNode()
+  CoordinateCallGraphNode::~CoordinateCallGraphNode()
   {}
 
-  const SEXP CallGraphAnnotationMap::CoordinateCallGraphNode::get_name() const {
+  const SEXP CoordinateCallGraphNode::get_name() const {
     return m_name;
   }
 
-  const LexicalScope * CallGraphAnnotationMap::CoordinateCallGraphNode::get_scope() const {
+  const LexicalScope * CoordinateCallGraphNode::get_scope() const {
     return m_scope;
   }
 
-  const OA::IRHandle CallGraphAnnotationMap::CoordinateCallGraphNode::get_handle() const {
+  const OA::IRHandle CoordinateCallGraphNode::get_handle() const {
     return reinterpret_cast<OA::irhandle_t>(this);
   }
 
-  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  void CoordinateCallGraphNode::
   compute(CallGraphAnnotationMap::NodeListT & worklist,
 	  CallGraphAnnotationMap::NodeSetT & visited) const
   {
@@ -95,7 +95,7 @@ namespace RAnnot {
     }
   }
 
-  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  void CoordinateCallGraphNode::
   get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
 		    CallGraphAnnotationMap::NodeSetT & visited,
 		    CallGraphAnnotation * ann) const
@@ -110,12 +110,12 @@ namespace RAnnot {
     }
   }
 
-  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  void CoordinateCallGraphNode::
   dump(std::ostream & os) const {
     dump_string(os);
   }
 
-  void CallGraphAnnotationMap::CoordinateCallGraphNode::
+  void CoordinateCallGraphNode::
   dump_string(std::ostream & os) const {
     const std::string name = var_name(m_name);
     const std::string scope_name = get_scope()->get_name();

@@ -42,7 +42,7 @@ namespace RAnnot {
 
   // ----- methods to insert nodes -----
 
-  void CallGraphAnnotation::insert_node(const CallGraphAnnotationMap::CallGraphNode * const node) {
+  void CallGraphAnnotation::insert_node(const CallGraphNode * const node) {
     m_nodes.insert(node);
   }
 
@@ -58,7 +58,7 @@ namespace RAnnot {
 
   // ----- get_singleton_if_exists -----
 
-  const CallGraphAnnotationMap::CallGraphNode * CallGraphAnnotation::get_singleton_if_exists() const {
+  const CallGraphNode * CallGraphAnnotation::get_singleton_if_exists() const {
     if (begin() == end()) return 0;
     MySetT::const_iterator elt1 = begin();
     MySetT::const_iterator elt2 = begin();

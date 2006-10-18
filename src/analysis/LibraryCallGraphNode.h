@@ -34,7 +34,7 @@
 
 namespace RAnnot {
 
-class CallGraphAnnotationMap::LibraryCallGraphNode : public CallGraphAnnotationMap::CallGraphNode {
+class LibraryCallGraphNode : public CallGraphNode {
 public:
   explicit LibraryCallGraphNode(const SEXP name, const SEXP value);
   virtual ~LibraryCallGraphNode();

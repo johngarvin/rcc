@@ -38,18 +38,18 @@ namespace RAnnot {
 
 class CallGraphAnnotation : public AnnotationBase {
 public:
-  typedef std::set<const CallGraphAnnotationMap::CallGraphNode *> MySetT;
+  typedef std::set<const CallGraphNode *> MySetT;
   typedef MySetT::const_iterator const_iterator;
 
   explicit CallGraphAnnotation();
   virtual ~CallGraphAnnotation();
 
-  void insert_node(const CallGraphAnnotationMap::CallGraphNode * const node);
+  void insert_node(const CallGraphNode * const node);
 
   const_iterator begin() const;
   const_iterator end() const;
 
-  const CallGraphAnnotationMap::CallGraphNode * get_singleton_if_exists() const;
+  const CallGraphNode * get_singleton_if_exists() const;
 
   // ----- methods that implement AnnotationBase -----
 

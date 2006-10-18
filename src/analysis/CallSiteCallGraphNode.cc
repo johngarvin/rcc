@@ -37,21 +37,21 @@
 
 namespace RAnnot {
 
-  CallGraphAnnotationMap::CallSiteCallGraphNode::CallSiteCallGraphNode(const SEXP cs)
+  CallSiteCallGraphNode::CallSiteCallGraphNode(const SEXP cs)
     : m_cs(cs)
   {}
 
-  CallGraphAnnotationMap::CallSiteCallGraphNode::~CallSiteCallGraphNode()
+  CallSiteCallGraphNode::~CallSiteCallGraphNode()
   {}
 
-  const OA::IRHandle CallGraphAnnotationMap::CallSiteCallGraphNode::get_handle() const {
+  const OA::IRHandle CallSiteCallGraphNode::get_handle() const {
     return OA::IRHandle(reinterpret_cast<OA::irhandle_t>(m_cs));
   }
-  const SEXP CallGraphAnnotationMap::CallSiteCallGraphNode::get_sexp() const {
+  const SEXP CallSiteCallGraphNode::get_sexp() const {
     return m_cs;
   }
 
-  void CallGraphAnnotationMap::CallSiteCallGraphNode::
+  void CallSiteCallGraphNode::
   compute(CallGraphAnnotationMap::NodeListT & worklist,
 	  CallGraphAnnotationMap::NodeSetT & visited) const
   {
@@ -74,7 +74,7 @@ namespace RAnnot {
     }
   }
 
-  void CallGraphAnnotationMap::CallSiteCallGraphNode::
+  void CallSiteCallGraphNode::
   get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
 		    CallGraphAnnotationMap::NodeSetT & visited,
 		    CallGraphAnnotation * ann) const
@@ -90,16 +90,16 @@ namespace RAnnot {
     }
   }
 
-  void CallGraphAnnotationMap::CallSiteCallGraphNode::dump(std::ostream & os) const {
+  void CallSiteCallGraphNode::dump(std::ostream & os) const {
     beginObjDump(os, CallSiteCallGraphNode);
-    dumpPtr(os, this);
+    dumpVar(os, get_id());
     dumpSEXP(os, m_cs);
     endObjDump(os, CallSiteCallGraphNode);
   }
 
   // TODO: find a way to print the actual call site without the
   // limitations of R printing
-  void CallGraphAnnotationMap::CallSiteCallGraphNode::dump_string(std::ostream & os) const {
+  void CallSiteCallGraphNode::dump_string(std::ostream & os) const {
     beginObjDump(os, CallSiteCallGraphNode);
     dumpVar(os, get_id());
     endObjDump(os, CallSiteCallGraphNode);

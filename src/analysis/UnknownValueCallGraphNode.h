@@ -37,7 +37,7 @@ namespace RAnnot {
 /// the call graph. Incoming edges come from Coordinate nodes; no
 /// edges go out. This class is a singleton because there's no reason
 /// to distinguish different instances.
-class CallGraphAnnotationMap::UnknownValueCallGraphNode : public CallGraphAnnotationMap::CallGraphNode {
+class UnknownValueCallGraphNode : public CallGraphNode {
 public:
   virtual ~UnknownValueCallGraphNode();
 

@@ -64,11 +64,6 @@ typedef CallGraphAnnotationMap::NodeSetT NodeSetT;
 typedef CallGraphAnnotationMap::NodeMapT NodeMapT;
 typedef CallGraphAnnotationMap::EdgeSetT EdgeSetT;
 
-typedef CallGraphAnnotationMap::FundefCallGraphNode FundefCallGraphNode;
-typedef CallGraphAnnotationMap::CallSiteCallGraphNode CallSiteCallGraphNode;
-typedef CallGraphAnnotationMap::CoordinateCallGraphNode CoordinateCallGraphNode;
-typedef CallGraphAnnotationMap::LibraryCallGraphNode LibraryCallGraphNode;
-
 // ----- constructor, destructor -----
 
 CallGraphAnnotationMap::CallGraphAnnotationMap()
@@ -226,7 +221,7 @@ CallSiteCallGraphNode * CallGraphAnnotationMap::make_call_site_node(SEXP e) {
   return node; 
 }
 
-CallGraphAnnotationMap::UnknownValueCallGraphNode * CallGraphAnnotationMap::make_unknown_value_node() {
+UnknownValueCallGraphNode * CallGraphAnnotationMap::make_unknown_value_node() {
   UnknownValueCallGraphNode * node = UnknownValueCallGraphNode::get_instance();
   if (m_node_map.find(node) == m_node_map.end()) {
     m_node_map[node] = new CallGraphInfo();

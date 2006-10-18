@@ -33,7 +33,7 @@
 
 namespace RAnnot {
 
-class CallGraphAnnotationMap::CallSiteCallGraphNode : public CallGraphNode {
+class CallSiteCallGraphNode : public CallGraphNode {
 public:
   explicit CallSiteCallGraphNode(const SEXP def);
   virtual ~CallSiteCallGraphNode();

@@ -34,7 +34,7 @@
 
 namespace RAnnot {
 
-class CallGraphAnnotationMap::CoordinateCallGraphNode : public CallGraphAnnotationMap::CallGraphNode {
+class CoordinateCallGraphNode : public CallGraphNode {
 public:
   explicit CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope);
   virtual ~CoordinateCallGraphNode();
