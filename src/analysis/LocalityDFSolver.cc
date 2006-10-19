@@ -47,6 +47,7 @@
 
 using namespace OA;
 using namespace RAnnot;
+using namespace HandleInterface;
 
 // forward declarations
 
@@ -60,6 +61,7 @@ static const bool debug = false;
 
 namespace Locality {
 
+/// Initialize as a forward data flow problem.
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
   : DataFlow::CFGDFProblem( DataFlow::Forward ), rir(_rir)
   {}
@@ -85,7 +87,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator mi;
   for(mi = mNodeInSetMap.begin(); mi != mNodeInSetMap.end(); ++mi) {
 
-    // map contains ptrs to DataFlowSet; convert to ptr to derived class DFSet
+    // map contains ptrs to base class DataFlowSet; convert to ptr to derived class DFSet
     OA_ptr<DFSet> in_set = mi->second.convert<DFSet>();
 
     OA_ptr<CFG::Interface::NodeStatementsIterator> si;
@@ -94,7 +96,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
     if (si->isValid()) {
 
       // each mention in the statement
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, (SEXP)si->current().hval());
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       ExpressionInfo::var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * annot = *mi;
@@ -104,7 +106,6 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 	if (elem.ptrEqual(NULL)) {
 	  rcc_error("Name of a mention not found in mNodeInSetMap");
 	}
-	LocalityType locality = elem->get_locality_type();
       
 	// DF problem only analyzes uses and may-defs. Locality flags of
 	// must-defs are already determined statically, so don't reset
@@ -112,7 +113,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 	if (annot->getMayMustType() == Var::Var_MAY
 	    || annot->getUseDefType() == Var::Var_USE)
 	{
-	  annot->setScopeType(locality);
+	  annot->setScopeType(elem->get_locality_type());
 	}
       } // end mention iteration
     }
@@ -176,17 +177,14 @@ void LocalityDFSolver::initialize_sets() {
   for ( ; ni->isValid(); ++*ni) {
 
     // each statement
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
-    si = ni->current()->getNodeStatementsIterator();
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si; si = ni->current()->getNodeStatementsIterator();
     for( ; si->isValid(); ++*si) {
-      SEXP stmt_r = (SEXP)si->current().hval();
-
       if (debug) {
-	Rf_PrintValue(stmt_r);
+	Rf_PrintValue(make_sexp(si->current()));
       }
 
       // getProperty will trigger lower-level analysis if necessary
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, stmt_r);
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
 
       // for this statement's annotation, iterate through its set of var mentions
       ExpressionInfo::const_var_iterator vi;
@@ -211,7 +209,7 @@ void LocalityDFSolver::initialize_sets() {
   } // CFG nodes
   
   // set all formals LOCAL instead of FREE on entry
-  SEXP arglist = CAR(fundef_args_c((SEXP)m_proc.hval()));
+  SEXP arglist = CAR(fundef_args_c(make_sexp(m_proc)));
   OA_ptr<R_VarRefSet> vs = R_VarRefSet::refs_from_arglist(arglist);
   m_all_top->insert_varset(vs, Locality_TOP);
   m_all_bottom->insert_varset(vs, Locality_BOTTOM);
@@ -235,8 +233,7 @@ void LocalityDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
   OA_ptr<DFSet> retval;
-  OA_ptr<DataFlow::DataFlowSet> set2clone = set2->clone();
-  retval = meet_use_set(set1.convert<DFSet>(), set2clone.convert<DFSet>());
+  retval = meet_use_set(set1.convert<DFSet>(), set2->clone().convert<DFSet>());
   return retval.convert<DataFlow::DataFlowSet>();
 }
 
@@ -246,17 +243,14 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
-  SEXP stmt = (SEXP)stmt_handle.hval();
-  ExpressionInfo * annot = getProperty(ExpressionInfo, stmt);
+  ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
     // if variable was found to be local during statement-level
     // analysis, add it in
-    LocalityType scope = (*var_iter)->getScopeType();
-    if (scope == Locality_LOCAL) {
+    if ((*var_iter)->getScopeType() == Locality_LOCAL) {
       OA_ptr<R_VarRef> var; var = make_var_ref_from_annotation(*var_iter);
-      LocalityType ltype = scope;
-      OA_ptr<DFSetElement> use; use = new DFSetElement(var, ltype);
+      OA_ptr<DFSetElement> use; use = new DFSetElement(var, (*var_iter)->getScopeType());
       in->replace(use);
     }
   }
@@ -285,15 +279,16 @@ LocalityType var_meet(LocalityType x, LocalityType y) {
 /// Meet function for two DFSets, using the single-variable meet
 /// operation when a use appears in both sets
 OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2) {
-  OA_ptr<Locality::DFSet> retval;
-  retval = set1->clone().convert<Locality::DFSet>();
-  OA_ptr<Locality::DFSetIterator> it2 = set2->get_iterator();
+  // return value begins as set 1
+  OA_ptr<Locality::DFSet> retval; retval = set1->clone().convert<Locality::DFSet>();
   OA_ptr<Locality::DFSetElement> use1;
-  for( ; it2->isValid(); ++*it2) {
+  // check each element of set 2
+  for(OA_ptr<Locality::DFSetIterator> it2 = set2->get_iterator(); it2->isValid(); ++*it2) {
+    // if not in set 1 also, add it to the final set. If in both sets, meet the two elements.
     use1 = set1->find(it2->current()->get_loc());
-    if (use1.ptrEqual(NULL)) {
+    if (use1.ptrEqual(NULL)) {          // in set 2 only
       retval->insert(it2->current());
-    } else {
+    } else {                            // in both sets
       LocalityType new_type = var_meet(use1->get_locality_type(), it2->current()->get_locality_type());
       retval->replace(use1->get_loc(), new_type);
     }
@@ -308,14 +303,12 @@ OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locali
 /// Creates and returns an R_VarRef element from the information
 /// contained in a Var annotation. The caller is responsible for
 /// managing the memory created. (Sticking it in an OA_ptr will do.)
+/// TODO: make polymorphic to remove awkward switch on derived type
 static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
-  DefVar * def_annot;
   if (dynamic_cast<UseVar *>(annot)) {
     return new R_BodyVarRef(annot->getMention_c());
-  } else if ((def_annot = dynamic_cast<DefVar *>(annot)) != 0) {
-    DefVar::SourceT source = def_annot->getSourceType();
-    R_VarRef * retval;
-    switch(source) {
+  } else if (DefVar * def_annot = dynamic_cast<DefVar *>(annot)) {
+    switch(def_annot->getSourceType()) {
     case DefVar::DefVar_ASSIGN:
       return new R_BodyVarRef(annot->getMention_c());
       break;

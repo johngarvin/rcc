@@ -32,7 +32,7 @@ using namespace OA;
 
 namespace Locality {
 
-DFSetIterator::DFSetIterator (OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > _set)
+DFSetIterator::DFSetIterator (OA_ptr<std::set<OA_ptr<DFSetElement> > > _set)
   : mSet(_set)
 {
   assert(!mSet.ptrEqual(NULL));

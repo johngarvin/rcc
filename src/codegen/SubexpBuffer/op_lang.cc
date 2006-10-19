@@ -63,7 +63,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     // see if call graph supplies a single definition
     CallGraphAnnotationMap * amap = CallGraphAnnotationMap::get_instance();
     // TODO: parametrize CallGraphAnnotationMap to avoid cast
-    CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(HandleInterface::make_mem_ref_h(e)));
+    CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(make_mem_ref_h(e)));
     const CallGraphNode * node = ann->get_singleton_if_exists();
     if (node) {
       // node is Fundef, Library, or UnknownValue node

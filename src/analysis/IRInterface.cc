@@ -28,6 +28,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/Var.h>
 #include <analysis/DefVar.h>
+#include <analysis/Utils.h>
 
 #include <support/RccError.h>
 
@@ -35,6 +36,7 @@
 
 using namespace OA;
 using namespace RAnnot;
+using namespace HandleInterface;
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -43,9 +45,8 @@ using namespace RAnnot;
 /// Given a ProcHandle, return an IRRegionStmtIterator for the
 /// procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
-  SEXP e = (SEXP)h.hval();
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(fundef_body_c(e)));
+  ptr = new R_RegionStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
   return ptr;
 }
 
@@ -92,8 +93,7 @@ CFG::IRStmtType getSexpCfgType(SEXP e) {
 
 /// Given a statement handle, return its IRStmtType.
 CFG::IRStmtType R_IRInterface::getCFGStmtType(StmtHandle h) {
-  SEXP cell = (SEXP)h.hval();
-  return getSexpCfgType(CAR(cell));
+  return getSexpCfgType(CAR(make_sexp(h)));
 }
 
 /// Given a statement, return a label (or NULL if there is no label
@@ -106,19 +106,19 @@ StmtLabel R_IRInterface::getLabel(StmtHandle h) {
 /// Given a compound statement (which contains a list of statements),
 /// return an IRRegionStmtIterator for the statements.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
-  SEXP cell = (SEXP)h.hval();
+  SEXP cell = make_sexp(h);
   SEXP e = CAR(cell);
   OA_ptr<IRRegionStmtIterator> ptr;
   if (is_curly_list(e)) {
     // use the iterator that doesn't take a cell
     ptr = new R_RegionStmtListIterator(curly_body(e));
   } else if (is_paren_exp(e)) {
-    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(paren_body_c(e)));
+    ptr = new R_RegionStmtIterator(make_stmt_h(paren_body_c(e)));
   } else if (is_fundef(e)) {
-    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(fundef_body_c(e)));
+    ptr = new R_RegionStmtIterator(make_stmt_h(fundef_body_c(e)));
 #if 0
   } else if (is_loop(e)) {
-    ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(loop_body_c(e)));
+    ptr = new R_RegionStmtIterator(make_stmt_h(loop_body_c(e)));
 #endif
   } else {
     rcc_error("getFirstInCompound: unrecognized statement type");
@@ -132,10 +132,8 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
 
 /// Given a loop statement, return an IRRegionStmtIterator for the loop body.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
-  SEXP e = CAR((SEXP)h.hval());
-  SEXP body_c = loop_body_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(body_c));
+  ptr = new R_RegionStmtIterator(make_stmt_h(loop_body_c(CAR(make_sexp(h)))));
   return ptr;
 }
 
@@ -180,10 +178,8 @@ bool R_IRInterface::loopIterationsDefinedAtEntry(StmtHandle h) {
 /// IRRegionStmtIterator for the "true" part (i.e., the statements
 /// under the "if" clause).
 OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
-  SEXP e = CAR((SEXP)h.hval());
-  SEXP truebody_c = if_truebody_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(truebody_c));
+  ptr = new R_RegionStmtIterator(make_stmt_h(if_truebody_c(CAR(make_sexp(h)))));
   return ptr;
 }
 
@@ -191,10 +187,8 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
 /// IRRegionStmtIterator for the "else" part (i.e., the statements
 /// under the "else" clause).
 OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
-  SEXP e = CAR((SEXP)h.hval());
-  SEXP falsebody_c = if_falsebody_c(e);
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(HandleInterface::make_stmt_h(falsebody_c));
+  ptr = new R_RegionStmtIterator(make_stmt_h(if_falsebody_c(CAR(make_sexp(h)))));
   return ptr;
 }
 
@@ -333,8 +327,7 @@ SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  SEXP stmt = (SEXP)h.hval();
-  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   // For each variable, insert only if it's a def
@@ -352,8 +345,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  SEXP stmt = (SEXP)h.hval();
-  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, stmt);
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info == 0);
 
   // For each variable, insert only if it's a def
@@ -371,9 +363,8 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 }
 
 void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
-  SEXP cell = (SEXP)h.hval();
-  Rf_PrintValue(CAR(cell));
-  ExpressionInfo * annot = getProperty(ExpressionInfo, cell);
+  Rf_PrintValue(CAR(make_sexp(h)));
+  ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(h));
   if (annot) {
     annot->dump(os);
   }
@@ -387,15 +378,15 @@ void R_IRInterface::currentProc(OA::ProcHandle p) {}
 //--------------------------------------------------------
 
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
-  return HandleInterface::make_sym_h(Rf_install("<procedure>"));
+  return make_sym_h(Rf_install("<procedure>"));
 }
 
 // FIXME: symbols in different scopes should be called
 // different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
-  SEXP e = (SEXP)h.hval();
+  SEXP e = make_sexp(h);
   assert(TYPEOF(e) == SYMSXP);
-  return HandleInterface::make_sym_h(e);
+  return make_sym_h(e);
 }
 
 std::string R_IRInterface::toString(OA::ProcHandle h) {
@@ -419,9 +410,7 @@ std::string R_IRInterface::toString(OA::MemRefHandle h) {
 }
 
 std::string R_IRInterface::toString(OA::SymHandle h) {
-  SEXP e = (SEXP)h.hval();
-  assert(TYPEOF(e) == SYMSXP);
-  return std::string(CHAR(PRINTNAME(e)));
+  return var_name(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(OA::ConstSymHandle h) {
@@ -437,7 +426,7 @@ std::string R_IRInterface::toString(OA::ConstValHandle h) {
 //--------------------------------------------------------------------
 
 OA::StmtHandle R_RegionStmtIterator::current() const {
-  return HandleInterface::make_stmt_h(stmt_iter_ptr->current());
+  return make_stmt_h(stmt_iter_ptr->current());
 }
 
 bool R_RegionStmtIterator::isValid() const { 
@@ -456,7 +445,7 @@ void R_RegionStmtIterator::reset() {
 /// compound statements. The given StmtHandle is a CONS cell whose CAR
 /// is the actual expression.
 void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
-  SEXP cell = (SEXP)stmt.hval();
+  SEXP cell = make_sexp(stmt);
   SEXP exp = CAR(cell);
   switch (getSexpCfgType(exp)) {
   case CFG::SIMPLE:
@@ -505,7 +494,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
 //--------------------------------------------------------------------
 
 OA::StmtHandle R_RegionStmtListIterator::current() const {
-  return HandleInterface::make_stmt_h(iter.current());
+  return make_stmt_h(iter.current());
 }
 
 bool R_RegionStmtListIterator::isValid() const {
@@ -525,7 +514,7 @@ void R_RegionStmtListIterator::reset() {
 //--------------------------------------------------------------------
 
 OA::LeafHandle R_IRUseDefIterator::current() const {
-  return OA::LeafHandle(HandleInterface::make_leaf_h(iter->current()->get_sexp()));
+  return OA::LeafHandle(make_leaf_h(iter->current()->get_sexp()));
 }
  
 bool R_IRUseDefIterator::isValid() {

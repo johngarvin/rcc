@@ -167,7 +167,7 @@ void R_Analyst::build_local_variable_info() {
       si = ni->current()->getNodeStatementsIterator();
       for( ; si->isValid(); ++*si) {
 	OA::StmtHandle stmt = si->current();
-	LocalVariableAnalysis lva((SEXP)stmt.hval());
+	LocalVariableAnalysis lva(make_sexp(stmt));
 	lva.perform_analysis();
       }
     }

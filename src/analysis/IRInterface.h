@@ -305,7 +305,7 @@ private:
   void build_callsites();
 public:
   R_IRCallsiteIterator(OA::StmtHandle _stmt)
-    : stmt((SEXP)_stmt), exp_iter(stmt) { build_callsites(); cs_iter = callsites.begin();}
+    : stmt(make_sexp(_stmt)), exp_iter(stmt) { build_callsites(); cs_iter = callsites.begin();}
   virtual ~R_IRCallsiteIterator() { }
 
   OA::ExprHandle current() const { return (OA::ExprHandle)*cs_iter; }
@@ -321,7 +321,7 @@ private:
   R_ListIterator args_iter;
 public:
   // CDR of the expression is the list of arguments
-  R_IRCallsiteParamIterator(OA::ExprHandle stmt) : args(CDR((SEXP)stmt)), args_iter(args) { }
+  R_IRCallsiteParamIterator(OA::ExprHandle stmt) : args(CDR(make_sexp(stmt))), args_iter(args) { }
   virtual ~R_IRCallsiteParamIterator() { }
 
   OA::ExprHandle current() const { return (OA::ExprHandle)args_iter.current(); }
