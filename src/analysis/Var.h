@@ -30,6 +30,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/LocalityType.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
@@ -51,13 +52,6 @@ public:
     Var_MUST 
   };
 
-  enum ScopeT {
-    Var_TOP,
-    Var_LOCAL,
-    Var_FREE,
-    Var_INDEFINITE
-  };
-
 public:
   Var();
   virtual ~Var();
@@ -77,9 +71,9 @@ public:
     { mMayMustType = x; }
 
   // scope type
-  ScopeT getScopeType() const
+  LocalityType getScopeType() const
     { return mScopeType; }
-  void setScopeType(ScopeT x)
+  void setScopeType(LocalityType x)
     { mScopeType = x; }
 
   // Mention (cons cell whose CAR is the name)
@@ -124,12 +118,11 @@ protected:
   SEXP mSEXP;
   UseDefT mUseDefType;
   MayMustT mMayMustType;
-  ScopeT mScopeType;
+  LocalityType mScopeType;
 };
 
 const std::string typeName(const Var::UseDefT x);
 const std::string typeName(const Var::MayMustT x);
-const std::string typeName(const Var::ScopeT x);
 
 }
 

@@ -20,7 +20,9 @@
 //
 // Enumerated type for locality data flow solver. These form a lattice:
 //       TOP
+//     /    \
 // LOCAL     FREE
+//     \    /
 //     BOTTOM
 //
 // Author: John Garvin (garvin@cs.rice.edu)
@@ -28,11 +30,16 @@
 #ifndef LOCALITY_TYPE_H
 #define LOCALITY_TYPE_H
 
+#include <string>
+
 enum LocalityType {
   Locality_TOP,
   Locality_LOCAL,
   Locality_FREE,
   Locality_BOTTOM
 };
+
+/// Return the name of the type as a string: "TOP", "LOCAL", etc.
+const std::string typeName(LocalityType x);
 
 #endif

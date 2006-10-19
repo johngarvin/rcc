@@ -85,6 +85,7 @@ rcc_bin_SOURCES =				\
   LocalityDFSetIterator.h			\
   LocalityDFSolver.cc				\
   LocalityDFSolver.h				\
+  LocalityType.cc                               \
   LocalityType.h				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\

@@ -53,8 +53,6 @@ using namespace RAnnot;
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2);
 static R_VarRef * make_var_ref_from_annotation(Var * annot);
-static Var::ScopeT to_scope_type(LocalityType lt);
-static LocalityType to_locality(Var::ScopeT st);
 
 // static variable for debugging
 
@@ -114,7 +112,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 	if (annot->getMayMustType() == Var::Var_MAY
 	    || annot->getUseDefType() == Var::Var_USE)
 	{
-	  annot->setScopeType(to_scope_type(locality));
+	  annot->setScopeType(locality);
 	}
       } // end mention iteration
     }
@@ -254,10 +252,10 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
     // if variable was found to be local during statement-level
     // analysis, add it in
-    Var::ScopeT scope = (*var_iter)->getScopeType();
-    if (scope == Var::Var_LOCAL) {
+    LocalityType scope = (*var_iter)->getScopeType();
+    if (scope == Locality_LOCAL) {
       OA_ptr<R_VarRef> var; var = make_var_ref_from_annotation(*var_iter);
-      LocalityType ltype = to_locality(scope);
+      LocalityType ltype = scope;
       OA_ptr<DFSetElement> use; use = new DFSetElement(var, ltype);
       in->replace(use);
     }
@@ -333,49 +331,4 @@ static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
   return 0;
 }
 
-/// transfer between our lattice-based LocalityType (TOP, LOCAL,
-/// FREE, BOTTOM) and the more full-featured ScopeT of the Var
-/// annotation
-static Var::ScopeT to_scope_type(LocalityType lt) {
-  Var::ScopeT t;
-  switch(lt) {
-  case Locality_TOP:
-    t = Var::Var_TOP;
-    break;
-  case Locality_LOCAL:
-    t = Var::Var_LOCAL;
-    break;
-  case Locality_FREE:
-    t = Var::Var_FREE;
-    break;
-  case Locality_BOTTOM:
-    t = Var::Var_INDEFINITE;
-    break;
-  }
-  return t; 
-}
-
-/// transfer between our lattice-based LocalityType (TOP, LOCAL,
-/// FREE, BOTTOM) and the more full-featured ScopeT of the Var
-/// annotation
-static LocalityType to_locality(Var::ScopeT st) {
-  LocalityType t;
-  switch(st) {
-  case Var::Var_TOP:
-    t = Locality_TOP;
-    break;
-  case Var::Var_LOCAL:
-    t = Locality_LOCAL;
-    break;
-  case Var::Var_FREE:
-    t = Locality_FREE;
-    break;
-  case Var::Var_INDEFINITE:
-    t = Locality_BOTTOM;
-    break;
-  default:
-    rcc_error("Non-lattice scope type in Var annotation");
-  }
-  return t;
-}
 

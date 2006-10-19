@@ -32,6 +32,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/Var.h>
 #include <analysis/DefVar.h>
+#include <analysis/LocalityType.h>
 
 #include "LocalFunctionAnalysis.h"
 
@@ -62,7 +63,7 @@ void LocalFunctionAnalysis::analyze_args() {
     annot->setMention_c(e);
     annot->setSourceType(DefVar::DefVar_FORMAL);
     annot->setMayMustType(Var::Var_MUST);
-    annot->setScopeType(Var::Var_LOCAL);
+    annot->setScopeType(Locality_LOCAL);
     annot->setRhs_c(0);
     putProperty(Var, e, annot, true);
     if (TAG(e) == ddd) {
