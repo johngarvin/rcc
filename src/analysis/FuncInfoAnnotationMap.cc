@@ -14,6 +14,8 @@
 
 #include "FuncInfoAnnotationMap.h"
 
+using namespace HandleInterface;
+
 namespace RAnnot {
 
 // type definitions for readability
@@ -116,7 +118,7 @@ void FuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {
   SEXP definition = CAR(assign_rhs_c(r_root));
   assert(is_fundef(definition));
   FuncInfo * a_root = new FuncInfo(0, name, definition); // root node has null parent
-  m_map[HandleInterface::make_proc_h(definition)] = a_root;
+  m_map[make_proc_h(definition)] = a_root;
   
   // Skip to the body of the function. Otherwise, the definition we
   // just recorded would be flagged as a duplicate "anonymous"
@@ -143,7 +145,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {                  // a variable bound to a function
 	FuncInfo * newfun = new FuncInfo(parent, var, rhs);
-	m_map[HandleInterface::make_proc_h(rhs)] = newfun;
+	m_map[make_proc_h(rhs)] = newfun;
 
 	// Skip to the body of the function. Otherwise, the definition we
 	// just recorded would be flagged as a duplicate "anonymous"

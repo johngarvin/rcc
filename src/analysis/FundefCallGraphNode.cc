@@ -32,6 +32,8 @@
 
 #include "FundefCallGraphNode.h"
 
+using namespace HandleInterface;
+
 namespace RAnnot {
 
   FundefCallGraphNode::FundefCallGraphNode(const SEXP fundef)
@@ -42,7 +44,7 @@ namespace RAnnot {
   {}
 
   const OA::IRHandle FundefCallGraphNode::get_handle() const {
-    return HandleInterface::make_proc_h(m_fundef);
+    return make_proc_h(m_fundef);
   }
 
   const SEXP FundefCallGraphNode::get_sexp() const {

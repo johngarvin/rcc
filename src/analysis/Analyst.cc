@@ -40,6 +40,7 @@
 
 using namespace RAnnot;
 using namespace RProp;
+using namespace HandleInterface;
 
 // ----- implement Singleton pattern -----
 
@@ -118,8 +119,7 @@ LexicalScope * R_Analyst::get_global_scope() {
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
   if (proc != R_NilValue) {
     FuncInfo *fi = getProperty(FuncInfo, proc);
-    OA::OA_ptr<OA::CFG::Interface> cfg;
-    cfg = fi->get_cfg();
+    OA::OA_ptr<OA::CFG::Interface> cfg; cfg = fi->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
@@ -128,8 +128,7 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
   FuncInfoIterator fii(m_scope_tree_root);
   for( ; fii.IsValid(); ++fii) {
     FuncInfo *finfo = fii.Current();
-    OA::OA_ptr<OA::CFG::Interface> cfg;
-    cfg = finfo->get_cfg();
+    OA::OA_ptr<OA::CFG::Interface> cfg; cfg = finfo->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
@@ -141,11 +140,9 @@ void R_Analyst::build_cfgs() {
   // preorder traversal of scope tree
   FuncInfoIterator fii(get_scope_tree_root());
   for( ; fii.IsValid(); ++fii) {
-    FuncInfo *fi = fii.Current();
-    SEXP fundef = fi->get_defn();
-    OA::ProcHandle ph = HandleInterface::make_proc_h(fundef);
+    OA::ProcHandle ph = make_proc_h(fii.Current()->get_defn());
     OA::OA_ptr<OA::CFG::CFGStandard> cfg_ptr; cfg_ptr = cfg_man.performAnalysis(ph);
-    fi->set_cfg(cfg_ptr);
+    fii.Current()->set_cfg(cfg_ptr);
   }
 }
 
@@ -194,7 +191,7 @@ void R_Analyst::build_locality_info() {
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     Locality::LocalityDFSolver uds(m_interface);
-    OA::ProcHandle ph = HandleInterface::make_proc_h(fi->get_defn());
+    OA::ProcHandle ph = make_proc_h(fi->get_defn());
     uds.perform_analysis(ph, fi->getCFG());
   }
 }

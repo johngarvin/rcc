@@ -36,6 +36,7 @@
 #include "SymbolTableAnnotationMap.h"
 
 using namespace OA;
+using namespace HandleInterface;
 
 namespace RAnnot {
   
@@ -133,7 +134,7 @@ void SymbolTableAnnotationMap::compute() {
   // create empty symbol table for each scope
   for( ; fii.IsValid(); ++fii) {
     SymbolTable * st = new SymbolTable();
-    m_map[HandleInterface::make_proc_h(fii.Current()->get_defn())] = st;
+    m_map[make_proc_h(fii.Current()->get_defn())] = st;
   }
 
   // for each def in each scope, add the appropriate info to the
@@ -152,7 +153,7 @@ void SymbolTableAnnotationMap::compute() {
       VarBinding::const_iterator vbi;
       for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {
 	if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*vbi)) {
-	  AnnotationBase * target_ab = m_map[HandleInterface::make_proc_h(scope->get_fundef())];
+	  AnnotationBase * target_ab = m_map[make_proc_h(scope->get_fundef())];
 	  SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
 	  assert(target_st != 0);
 	  SymbolTable::iterator it = target_st->find(name);

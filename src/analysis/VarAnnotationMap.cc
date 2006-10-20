@@ -37,6 +37,7 @@
 #include "VarAnnotationMap.h"
 
 using namespace OA;
+using namespace HandleInterface;
 
 namespace RAnnot {
   
@@ -155,7 +156,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
-	  SymHandle s = HandleInterface::make_sym_h(v->getMention_c());
+	  SymHandle s = make_sym_h(v->getMention_c());
 	  m_map[s] = v;
 	}
       }
@@ -171,7 +172,7 @@ void VarAnnotationMap::compute_all_locality_info() {
   FuncInfoIterator fii(root);
   for(FuncInfo * fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    ProcHandle ph = HandleInterface::make_proc_h(fi->get_defn());
+    ProcHandle ph = make_proc_h(fi->get_defn());
     OA_ptr<CFG> cfg = fi->get_cfg();
     compute_locality_info(interface, ph, cfg);
   }

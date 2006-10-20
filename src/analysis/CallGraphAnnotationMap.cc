@@ -50,6 +50,8 @@
 
 #include "CallGraphAnnotationMap.h"
 
+using namespace HandleInterface;
+
 namespace RAnnot {
 
 // ----- type definitions for readability -----
@@ -243,8 +245,7 @@ void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const 
 // ----- computation -----  
 
 MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
-  SEXP r_cs = HandleInterface::make_sexp(cs);
-  const CallSiteCallGraphNode * const cs_node = make_call_site_node(r_cs);
+  const CallSiteCallGraphNode * const cs_node = make_call_site_node(make_sexp(cs));
   
   // search graph, accumulate fundefs/library functions
   NodeListT worklist;

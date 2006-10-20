@@ -25,16 +25,18 @@
 #include <string>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
+#include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/CallGraphAnnotation.h>
 #include <analysis/CallGraphNode.h>
+#include <analysis/HandleInterface.h>
 #include <analysis/LibraryCallGraphNode.h>
 #include <analysis/FundefCallGraphNode.h>
 #include <analysis/UnknownValueCallGraphNode.h>
-#include <analysis/HandleInterface.h>
+#include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 #include <support/StringUtils.h>
 #include <support/RccError.h>
@@ -44,54 +46,42 @@
 
 using namespace std;
 using namespace RAnnot;
+using namespace HandleInterface;
+
+static Expression op_internal_call(SubexpBuffer * sb, const LibraryCallGraphNode * lib, SEXP e,
+				   string rho, Protection resultProtection, ResultStatus resultStatus);
 
 Expression SubexpBuffer::op_lang(SEXP e, string rho, 
 	   Protection resultProtection,
 	   ResultStatus resultStatus)
 {
-  SEXP op;
-  string out;
-  Expression exp;
-  SEXP lhs = CAR(e);
-  SEXP r_args = CDR(e);
-  if (TYPEOF(lhs) == SYMSXP) {
-    string r_sym = CHAR(PRINTNAME(lhs));
-    SEXP op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);
+  if (TYPEOF(call_lhs(e)) == SYMSXP) {
+    // check for SPECIALSXP type
+    // Redefinition of specials is forbidden, so no need to check call graph
+    SEXP op = Rf_findFunUnboundOK(call_lhs(e), R_GlobalEnv, TRUE);
     if (TYPEOF(op) == SPECIALSXP) {
       return op_special(e, op, rho, resultProtection, resultStatus);
     }
     // see if call graph supplies a single definition
-    CallGraphAnnotationMap * amap = CallGraphAnnotationMap::get_instance();
-    // TODO: parametrize CallGraphAnnotationMap to avoid cast
-    CallGraphAnnotation * ann = dynamic_cast<CallGraphAnnotation*>(amap->get(make_mem_ref_h(e)));
+    CallGraphAnnotation * ann = getProperty(CallGraphAnnotation, e);
     const CallGraphNode * node = ann->get_singleton_if_exists();
     if (node) {
       // node is Fundef, Library, or UnknownValue node
       if (const FundefCallGraphNode * cs = dynamic_cast<const FundefCallGraphNode *>(node)) {
 	string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
 	Expression closure_exp = Expression(closure, false, INVISIBLE, "");
-	return op_clos_app(closure_exp, r_args, rho, resultProtection);
+	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
-	// it's from the R environment
-	const SEXP op = lib->get_value();
-	if (TYPEOF(op) == CLOSXP) {
-	  Expression func = op_closure(op, rho, resultProtection);
-	  return op_clos_app(func, r_args, rho, resultProtection);
-	} else if (TYPEOF(op) == BUILTINSXP) {
-	  return op_builtin(e, op, rho, resultProtection);
-	} else {
-	  rcc_error("Internal error: LANGSXP encountered non-function op");
-	  return Expression::bogus_exp; // never reached
-	}
+	return op_internal_call(this, lib, e, rho, resultProtection, resultStatus);
       } else if (const UnknownValueCallGraphNode * uv = dynamic_cast<const UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
-	return op_clos_app(func, r_args, rho, resultProtection);
+	return op_clos_app(func, call_args(e), rho, resultProtection);
       } else {
 	rcc_error("Internal error: in call graph, didn't find expected Fundef, Library, or UnknownValue node");
       }
     } else { // more than one possible function value; let op_fun_use decide
       Expression func = op_fun_use(e, rho);
-      return op_clos_app(func, r_args, rho, resultProtection);
+      return op_clos_app(func, call_args(e), rho, resultProtection);
     }
   } else {  // left side is not a symbol
     // generate closure and application
@@ -99,5 +89,23 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
     return op_clos_app(op1, CDR(e), rho, resultProtection);
     // eval.c: 395
+  }
+}
+
+/// Output a call to a library or builtin bound in the R environment.
+static Expression op_internal_call(SubexpBuffer * sb, const LibraryCallGraphNode * lib, SEXP e,
+				   string rho, Protection resultProtection, ResultStatus resultStatus)
+{
+  Expression ret_val;
+  const SEXP op = lib->get_value();
+  if (TYPEOF(op) == CLOSXP) {
+    Expression func = sb->op_fun_use(e, rho, resultProtection, false);
+    // above: false as last argument for unevaluated result. Is this correct?
+    return sb->op_clos_app(func, CDR(e), rho, resultProtection);
+  } else if (TYPEOF(op) == BUILTINSXP) {
+    return sb->op_builtin(e, op, rho, resultProtection);
+  } else {
+    rcc_error("Internal error: LANGSXP encountered non-function op");
+    return Expression::bogus_exp;
   }
 }

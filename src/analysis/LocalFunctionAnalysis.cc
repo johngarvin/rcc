@@ -38,6 +38,7 @@
 
 using namespace OA;
 using namespace RAnnot;
+using namespace HandleInterface;
 
 LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
   : m_fundef(fundef)
@@ -90,7 +91,7 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
     si = ni->current()->getNodeStatementsIterator();
     for( ; si->isValid(); ++*si) {
       // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, HandleInterface::make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {

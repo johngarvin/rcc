@@ -30,6 +30,8 @@
 
 #include "ExpressionInfoAnnotationMap.h"
 
+using namespace HandleInterface;
+
 namespace RAnnot {
 
 // type definitions for readability
@@ -82,10 +84,9 @@ const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
 // ----- computation -----
 
 void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
-  SEXP e = HandleInterface::make_sexp(k);
   ExpressionInfo * annot = new ExpressionInfo();
-  annot->setDefn(e);
-  LocalVariableAnalysis lva(e);
+  annot->setDefn(make_sexp(k));
+  LocalVariableAnalysis lva(make_sexp(k));
   lva.perform_analysis();
   LocalVariableAnalysis::const_var_iterator v;
   for(v = lva.begin_vars(); v != lva.end_vars(); ++v) {
