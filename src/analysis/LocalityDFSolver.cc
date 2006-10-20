@@ -115,12 +115,11 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
 	{
 	  annot->setScopeType(elem->get_locality_type());
 	}
-      } // end mention iteration
+      } // next mention
+      // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
+      // FIXME: add back assertion. Why does this sometimes fail?
     }
-    // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
-    // FIXME: add back annotation
-    // why does this fail sometimes?
-  }  // end node iteration
+  }  // next CFG node
 }
 
 void LocalityDFSolver::dump_node_maps() {
