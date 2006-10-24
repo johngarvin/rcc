@@ -330,8 +330,12 @@ SEXP curly_body(const SEXP e) {
 // rcc_assert statements
 //--------------------------------------------------------------------
 
+bool is_rcc_assert_def(const SEXP e) {
+  return (is_simple_assign(e) && is_assert_sym(CAR(assign_lhs_c(e))));
+}
+
 bool is_rcc_assertion(const SEXP e) {
-  return is_rcc_assert(e) || is_rcc_assert_sym(e) || is_rcc_assert_exp(e);
+  return (is_call(e) && is_assert_sym(call_lhs(e)));
 }
 
 bool is_rcc_assert(const SEXP e) {
@@ -347,6 +351,13 @@ bool is_rcc_assert_sym(const SEXP e) {
 bool is_rcc_assert_exp(const SEXP e) {
   return (TYPEOF(e) == LANGSXP 
 	  && CAR(e) == Rf_install(".rcc.assert.exp"));
+}
+
+bool is_assert_sym(const SEXP e) {
+  return (TYPEOF(e) == SYMSXP &&
+	  (e == Rf_install(".rcc.assert") ||
+	   e == Rf_install(".rcc.assert.sym") ||
+	   e == Rf_install(".rcc.assert.exp")));
 }
 
 bool is_value_assert(const SEXP e) {

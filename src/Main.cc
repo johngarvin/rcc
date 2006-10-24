@@ -264,9 +264,14 @@ int main(int argc, char *argv[]) {
   exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
 #else  // we're using SubexpBuffer codegen
   // output top-level expressions (Expression version)
-  for(i=0; i<n_exprs; i++) {
+  for(i=0; i<n_exprs; i++, r_expressions = CDR(r_expressions)) {
     SubexpBuffer subexps;
     Expression exp;
+    if (is_rcc_assert_def(CAR(r_expressions)) || is_rcc_assertion(CAR(r_expressions))) {
+      // assertions are for the analysis phase;
+      // don't add them to generated code
+      continue;
+    }
     if (analysis_ok) {
       exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
     } else {
@@ -295,7 +300,6 @@ int main(int argc, char *argv[]) {
     if (!exp.del_text.empty())
       this_exp += "UNPROTECT(1);\n";
     exec_code += indent(emit_in_braces(this_exp));
-    r_expressions = CDR(r_expressions);
   }
 #endif
 
