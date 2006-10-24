@@ -54,6 +54,7 @@ bool is_const(const SEXP e);
 bool is_var(const SEXP e);
 std::string var_name(const SEXP e);
 bool is_library(const SEXP e);
+SEXP library_value(const SEXP e);
 bool is_cons(const SEXP e);
 bool is_string(const SEXP e);
 bool is_call(const SEXP e);

@@ -58,9 +58,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
     // Redefinition of specials is forbidden, so no need to check call graph
-    SEXP op = Rf_findFunUnboundOK(call_lhs(e), R_GlobalEnv, TRUE);
-    if (TYPEOF(op) == SPECIALSXP) {
-      return op_special(e, op, rho, resultProtection, resultStatus);
+    if (is_library(call_lhs(e)) && TYPEOF(library_value(call_lhs(e))) == SPECIALSXP) {
+      return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
     // see if call graph supplies a single definition
     CallGraphAnnotation * ann = getProperty(CallGraphAnnotation, e);

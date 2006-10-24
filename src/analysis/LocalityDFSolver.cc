@@ -157,7 +157,7 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeTop() {
   return m_all_top->clone();
 }
 
-/// Create a set of all variable set to BOTTOM
+/// Create a set of all variables set to BOTTOM
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
   if (m_all_bottom.ptrEqual(NULL)) {
     initialize_sets();

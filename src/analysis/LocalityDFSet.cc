@@ -77,13 +77,13 @@ int DFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
   return (mSet->erase(h)); 
 }
 
-//! Replace any DFSetElement in mSet with the same location as the given use
+/// Replace any DFSetElement in mSet with the same location as the given use
 void DFSet::replace(OA_ptr<DFSetElement> use) {
     replace(use->get_loc(), use->get_locality_type());
 }
 
-//! replace any DFSetElement in mSet with location loc 
-//! with DFSetElement(loc,type)
+/// replace any DFSetElement in mSet with location loc 
+/// with DFSetElement(loc,type)
 void DFSet::replace(OA_ptr<R_VarRef> loc, LocalityType type) {
   OA_ptr<DFSetElement> use;
   use = new DFSetElement(loc, Locality_TOP);
@@ -92,11 +92,11 @@ void DFSet::replace(OA_ptr<R_VarRef> loc, LocalityType type) {
   insert(use);
 }
 
-//! operator== for an DFSet cannot rely upon the == operator for
-//! the underlying sets, because the == operator of an element of a
-//! DFSet, namely an DFSetElement, only considers the contents of the
-//! location pointer and not any of the other fields.  So, need to use
-//! DFSetElement's equal() method here instead.
+/// operator== for an DFSet cannot rely upon the == operator for
+/// the underlying sets, because the == operator of an element of a
+/// DFSet, namely an DFSetElement, only considers the contents of the
+/// location pointer and not any of the other fields.  So, need to use
+/// DFSetElement's equal() method here instead.
 bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   // first dynamic cast to an DFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
@@ -127,8 +127,8 @@ bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   return(true);
 }
 
-//! find the DFSetElement in this DFSet with the given location (should
-//! be at most one) return a ptr to that DFSetElement
+/// find the DFSetElement in this DFSet with the given location (should
+/// be at most one) return a ptr to that DFSetElement
 OA_ptr<DFSetElement> DFSet::find(OA_ptr<R_VarRef> loc) const {
   OA_ptr<DFSetElement> retval; retval = NULL;
   
@@ -141,7 +141,7 @@ OA_ptr<DFSetElement> DFSet::find(OA_ptr<R_VarRef> loc) const {
   return retval;
 }
 
-//! Union in a set of variables associated with a given statement
+/// Union in a set of variables associated with a given statement
 void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars,
 			    LocalityType type)
 {
@@ -153,7 +153,7 @@ void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars,
 }
 
 
-//! Return a string representing the contents of an DFSet
+/// Return a string representing the contents of an DFSet
 std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   std::ostringstream oss;
   oss << "{";

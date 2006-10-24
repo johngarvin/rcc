@@ -156,6 +156,12 @@ bool is_library(const SEXP e) {
   return (fun != R_UnboundValue);
 }
 
+SEXP library_value(const SEXP e) {
+  SEXP value = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
+  assert(value != R_UnboundValue);
+  return value;
+}
+
 bool is_cons(const SEXP e) {
   return (TYPEOF(e) == LISTSXP || TYPEOF(e) == LANGSXP);
 }

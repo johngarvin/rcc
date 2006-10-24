@@ -29,8 +29,9 @@
 
 #include <include/R/R_Defn.h>
 
-#include <analysis/VarBinding.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Utils.h>
+#include <analysis/VarBinding.h>
 
 #include <support/StringUtils.h>
 #include <support/RccError.h>
@@ -99,7 +100,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       } else {
 	SEXP env_val;
 	if (lookup_type == FUNCTION_VAR) {
-	  env_val = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
+	  env_val = library_value(e);
 	} else {
 	  env_val = Rf_findVar(e, R_GlobalEnv);
 	}

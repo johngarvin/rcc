@@ -391,8 +391,8 @@ static void set_funcs(int argc, char *argv[]) {
 unsigned int SubexpBuffer::n = 0;
 unsigned int SubexpBuffer::global_temps = 0;
 
-//! Convert an Output into an Expression. Will go away as soon as
-//! everything uses Output instead of Expression.
+/// Convert an Output into an Expression. Will go away as soon as
+/// everything uses Output instead of Expression.
 const Expression SubexpBuffer::output_to_expression(const Output op) {
   append_decls(op.decls());
   append_defs(op.code());

@@ -66,9 +66,7 @@ namespace RAnnot {
     CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
 
     if (const InternalLexicalScope * scope = dynamic_cast<const InternalLexicalScope *>(m_scope)) {
-      SEXP value = Rf_findFunUnboundOK(m_name, R_GlobalEnv, TRUE);
-      assert(value != R_UnboundValue);
-      cg->add_edge(this, cg->make_library_node(m_name, value));
+      cg->add_edge(this, cg->make_library_node(m_name, library_value(m_name)));
       // but don't add library fun to worklist
     } else if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(m_scope)) {
       SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
