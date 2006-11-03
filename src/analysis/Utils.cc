@@ -109,11 +109,13 @@ SEXP struct_field_rhs_c(const SEXP e) {
   return CDDR(e);
 }
 
-// single-bracket subscript with one argument
+// single-bracket subscript expression where left side is a symbol and
+// there's only one subscript
 bool is_simple_subscript(const SEXP e) {
-  return (TYPEOF(e) == LANGSXP &&
+  return (is_call(e) &&
 	  CAR(e) == Rf_install("[") &&
-	  Rf_length(e) == 2);
+	  is_var(CADR(e)) &&
+	  Rf_length(e) == 3);
 }
 
 bool is_subscript(const SEXP e) {

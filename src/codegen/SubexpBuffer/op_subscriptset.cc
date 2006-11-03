@@ -24,6 +24,8 @@
 
 #include <string>
 
+#include <CodeGenUtils.h>
+
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include <include/R/R_RInternals.h>
@@ -37,43 +39,46 @@
 using namespace std;
 
 Expression SubexpBuffer::op_subscriptset(SEXP e, string rho, 
-					 Protection resultProtection) {
-  // CAR(e) = "<-", "=", etc.
-  // CADR(e) = LHS
-  //   CAR(CADR(e)) = "["
-  //   CADR(CADR(e)) = array
-  //   CADDR(CADR(e)) = subscript
-  // CADDR(e) = RHS
-#if 0
+					 Protection resultProtection)
+{
+  // The interpreter handles subscript assignments A[B] <- C in the
+  // following way:
+  //  - stores the current value of the array A in a temporary
+  // variable
+  //  - creates and executes a call to the subscript operator "[<-",
+  // which takes the array, subscript, and right side as arguments and
+  // returns the updated array. (R uses a trick with reference
+  // counting in the NAMED field to make sure the array is modified in
+  // place unless a copy is necessary.)
+  //  - assigns the result of the "[<-" call to the original array's name.
+  //
+  // In other words, the interpreter transforms this:
+  //
+  // A[B] <- C
+  //
+  // into this:
+  //
+  // *tmp* <- A
+  // A <- "[<-"(*tmp*, B, value=C)
+  //
+  // So in RCC we generate code similar to this: evaluate A, B, and C,
+  // call our version of the "[<-" operator (rcc_subassign), and
+  // assign the result to A.
+
   SEXP lhs = CAR(assign_lhs_c(e));
   SEXP array_c = subscript_lhs_c(lhs);
   SEXP sub_c = subscript_rhs_c(lhs);
   SEXP rhs_c = assign_rhs_c(e);
   Expression a_sym = op_literal(CAR(array_c), rho);
-  Expression a = op_exp(array_c, rho, Protected, true);
+  Expression a = op_exp(array_c, rho, Protected, true);  // fully evaluated; need to force promise
   Expression s = op_exp(sub_c, rho);
-  Expression r = op_exp(rhs_c, rho);
-  string assign = appl3("rcc_subassign", a.var, s.var, r.var);
-  string defs = "defineVar(" + a_sym.var + ", " + assign + ", " + rho + ");\n";
+  Expression r = op_exp(rhs_c, rho, resultProtection);
+  string subassign = appl3("rcc_subassign", a.var, s.var, r.var, Unprotected);
+  // unprotected because immediately followed by the defineVar
+  append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
   del(a_sym);
+  del(a);
   del(s);
-  del(r);
-  defs += unp(assign);
-  append_defs(defs);
-  if (resultProtection == Unprotected) {
-    del(a);
-    a.del_text = "";
-  }
-  a.is_visible = INVISIBLE;
-
-  return a;
-#else
-  Expression args = op_list(CDR(e), rho, false, Protected, true);
-  string assign = appl4("do_subassign", "R_NilValue", "R_NilValue",
-					 args.var, rho,
-					 resultProtection);
-  string deleteText;
-  if (resultProtection == Protected) deleteText = unp(assign);
-  return Expression(assign, TRUE, INVISIBLE, deleteText);
-#endif
+  r.is_visible = INVISIBLE;
+  return r;
 }

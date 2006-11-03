@@ -36,10 +36,11 @@
 
 using namespace std;
 
-//! Output an application of a closure to actual arguments.
+/// Output an application of a closure to actual arguments.
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 				     string rho,
-				     Protection resultProtection) {
+				     Protection resultProtection)
+{
   int unprotcnt = 0;
   string arglist;
 
