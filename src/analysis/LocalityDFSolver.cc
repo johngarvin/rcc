@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: LocalityDFSolver.h
+// File: LocalityDFSolver.cc
 //
 // Implements the OpenAnalysis CFG data flow problem interface for a
 // function to determine whether variable references refer to local or
@@ -122,6 +122,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   }  // next CFG node
 }
 
+/// Print out a representation of the in and out sets for each CFG node.
 void LocalityDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
