@@ -100,6 +100,10 @@ rcc_bin_SOURCES =				\
   RequiresContext.h				\
   SimpleIterators.cc				\
   SimpleIterators.h				\
+  StrictnessDFSet.h                             \
+  StrictnessDFSet.cc                            \
+  StrictnessDFSolver.h                          \
+  StrictnessDFSolver.cc                         \
   SymbolTable.cc                                \
   SymbolTable.h                                 \
   SymbolTableAnnotationMap.cc                   \

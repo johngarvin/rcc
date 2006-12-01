@@ -65,11 +65,10 @@ private:
   transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
   
 private:
-  void initialize_sets();
-
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::Interface> m_cfg;
   OA::ProcHandle m_proc;
+  OA::OA_ptr<DFSet> m_formal_args;
 };
 
 }

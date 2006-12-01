@@ -24,7 +24,6 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <analysis/VarRefSet.h>
-#include <analysis/StrictnessDFSetElement.h>
 #include <analysis/LocalityDFSetIterator.h>
 #include <analysis/LocalityType.h>
 
@@ -35,10 +34,8 @@ using namespace OA;
 namespace Strictness {
 
 DFSet::DFSet() {
-  mSet = new std::set<OA::OA_ptr<DFSetElement> >;
+  m_set = new std::set<OA::OA_ptr<DFSetElement> >;
 }
-
-DFSet::DFSet(const DFSet& other) : mSet(other.mSet) { }
 
 DFSet::~DFSet() { }
 
@@ -46,7 +43,7 @@ DFSet::~DFSet() { }
 // the same instances of DFSetElement's that the rhs points to.  Use clone
 // if you want separate instances of the DFSetElement's
 DFSet& DFSet::operator= (const DFSet& other) {
-  mSet = other.mSet; 
+  m_set = other.m_set;
   return *this;
 }
 
@@ -54,15 +51,15 @@ OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
   OA_ptr<DFSet> retval;
   retval = new DFSet(); 
   std::set<OA_ptr<DFSetElement> >::iterator defIter;
-  for (defIter=mSet->begin(); defIter!=mSet->end(); defIter++) {
+  for (defIter=m_set->begin(); defIter!=m_set->end(); defIter++) {
     OA_ptr<DFSetElement> def = *defIter;
-    retval->insert(def->clone());
+    retval->insert(def);
   }
   return retval;
 }
   
 void DFSet::insert(OA_ptr<DFSetElement> h) {
-  mSet->insert(h); 
+  m_set->insert(h); 
 }
   
 void DFSet::remove(OA_ptr<DFSetElement> h) {
@@ -70,54 +67,42 @@ void DFSet::remove(OA_ptr<DFSetElement> h) {
 }
 
 int DFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
-  return (int)((mSet->insert(h)).second); 
+  return (int)((m_set->insert(h)).second); 
 }
 
 int DFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
-  return (mSet->erase(h)); 
+  return (m_set->erase(h)); 
 }
 
-/// Replace any DFSetElement in mSet with the same location as the given use
+/// Replace any DFSetElement in m_set with the same location as the given use
 void DFSet::replace(OA_ptr<DFSetElement> use) {
-    replace(use->get_loc(), use->get_locality_type());
+  m_set->erase(use);
+  m_set->insert(use);
 }
-
-/// replace any DFSetElement in mSet with location loc 
-/// with DFSetElement(loc,type)
-void DFSet::replace(OA_ptr<R_VarRef> loc, LocalityType type) {
-  OA_ptr<DFSetElement> use;
-  use = new DFSetElement(loc, Locality_TOP);
-  remove(use);
-  use = new DFSetElement(loc,type);
-  insert(use);
-}
-
-/// operator== for an DFSet cannot rely upon the == operator for
-/// the underlying sets, because the == operator of an element of a
-/// DFSet, namely an DFSetElement, only considers the contents of the
-/// location pointer and not any of the other fields.  So, need to use
-/// DFSetElement's equal() method here instead.
+  
+/// equality: sets are equal if they are the same size and all
+/// elements are equal.
 bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   // first dynamic cast to an DFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
   DFSet& recastOther = dynamic_cast<DFSet&>(other);
 
-  if (mSet->size() != recastOther.mSet->size()) {
+  if (m_set->size() != recastOther.m_set->size()) {
     return false;
   }
 
-  // same size:  for every element in mSet, find the element in other.mSet
+  // same size:  for every element in m_set, find the element in other.m_set
   std::set<OA_ptr<DFSetElement> >::iterator set1Iter;
-  for (set1Iter = mSet->begin(); set1Iter!=mSet->end(); ++set1Iter) {
+  for (set1Iter = m_set->begin(); set1Iter!=m_set->end(); ++set1Iter) {
     OA_ptr<DFSetElement> cd1 = *set1Iter;
     std::set<OA_ptr<DFSetElement> >::iterator set2Iter;
-    set2Iter = recastOther.mSet->find(cd1);
+    set2Iter = recastOther.m_set->find(cd1);
 
-    if (set2Iter == recastOther.mSet->end()) {
+    if (set2Iter == recastOther.m_set->end()) {
       return (false); // cd1 not found
     } else {
       OA_ptr<DFSetElement> cd2 = *set2Iter;
-      if (!(cd1->equiv(*cd2))) { // use full equiv operator
+      if (!cd1->equiv(*cd2)) {
         return (false); // cd1 not equiv to cd2
       }
     }
@@ -127,28 +112,33 @@ bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   return(true);
 }
 
-/// find the DFSetElement in this DFSet with the given location (should
-/// be at most one) return a ptr to that DFSetElement
-OA_ptr<DFSetElement> DFSet::find(OA_ptr<R_VarRef> loc) const {
-  OA_ptr<DFSetElement> retval; retval = NULL;
-  
-  OA_ptr<DFSetElement> find_var; find_var = new DFSetElement(loc, Locality_TOP);
+/// Returns true if there is a VarRef in our set with the same name as
+/// the given VarRef. (They don't have to be equivalent VarRefs.)
+bool DFSet::includes_name(OA_ptr<R_VarRef> mention) {
+  // VarRef's '==' tests if the names are equal, not full equivalence,
+  // so 'find' will give us the right answer here.
+  return (m_set->find(mention) != m_set->end());
+}
 
-  std::set<OA_ptr<DFSetElement> >::iterator iter = mSet->find(find_var);
-  if (iter != mSet->end()) {
-    retval = *iter;
+/// Set intersection
+OA_ptr<DFSet> DFSet::intersect(OA_ptr<DFSet> other) {
+  OA_ptr<DFSet> result; result = new DFSet;
+  std::set<OA_ptr<R_VarRef> >::iterator it;
+  for(it = m_set->begin(); it != m_set->end(); ++it) {
+    if (other->member(*it)) {
+      result->insert(*it);
+    }
   }
-  return retval;
+  return result;
 }
 
 /// Union in a set of variables associated with a given statement
-void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars,
-			    LocalityType type)
+void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars)
 {
   OA_ptr<R_VarRefSetIterator> it = vars->get_iterator();
   OA_ptr<DFSetElement> use;
   for (; it->isValid(); ++*it) {
-    replace(it->current(),type);
+    m_set->insert(it->current());
   }
 }
 
@@ -159,20 +149,18 @@ std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   oss << "{";
   
   // iterate over DFSetElement's and have the IR print them out
-  OA_ptr<DFSetIterator> iter = get_iterator();
-  OA_ptr<DFSetElement> use;
-  
+  std::set<OA_ptr<R_VarRef> >::iterator iter;
+  iter = m_set->begin();
+
   // first one
-  if (iter->isValid()) {
-    use = iter->current();
-    oss << use->toString(pIR);
-    ++*iter;
+  if (iter != m_set->end()) {
+    oss << (*iter)->toString(pIR);
+    ++iter;
   }
   
   // rest
-  for (; iter->isValid(); ++*iter) {
-    use = iter->current();
-    oss << ", " << use->toString(pIR); 
+  for (; iter != m_set->end(); ++iter) {
+    oss << ", " << (*iter)->toString(pIR); 
   }
   
   oss << "}";
@@ -185,12 +173,6 @@ void DFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
 
 void DFSet::dump(std::ostream &os) {
   std::cout << "call dump(os,interface) instead";
-}
-
-OA_ptr<DFSetIterator> DFSet::get_iterator() const {
-  OA_ptr<DFSetIterator> it;
-  it = new DFSetIterator(mSet);
-  return it;
 }
 
 }  // namespace Strictness

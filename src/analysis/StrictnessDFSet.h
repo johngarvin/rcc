@@ -35,10 +35,9 @@
 class R_VarRef;
 class R_VarRefSet;
 
-namespace Strictness {
+typedef R_VarRef DFSetElement;
 
-class DFSetElement;
-class DFSetIterator;
+namespace Strictness {
 
 /// Set of StrictnessDFSetElement objects. Inherits from DataFlowSet for
 /// use in CFGDFProblem.
@@ -47,10 +46,8 @@ class DFSetIterator;
 class DFSet : public OA::DataFlow::DataFlowSet {
 public:
 
-  // methods inherited from DataFlowSet
   // construction
   DFSet();
-  DFSet(const DFSet& other);
   ~DFSet();
   
   // After the assignment operation, the lhs DFSet will point to the
@@ -64,17 +61,15 @@ public:
   int insert_and_tell(OA::OA_ptr<DFSetElement> h);
   int remove_and_tell(OA::OA_ptr<DFSetElement> h);
 
-  /// replace any DFSetElement in mSet with location locPtr 
+  /// replace any DFSetElement in m_set with location locPtr 
   /// with DFSetElement(locPtr,cdType)
   /// must use this instead of insert because std::set::insert will just see
   /// that the element with the same locptr is already in the set and then not
   /// insert the new element
-  void replace(OA::OA_ptr<R_VarRef> loc, LocalityType locality_type);
   void replace(OA::OA_ptr<DFSetElement> ru);
 
   // relationship
-  // param for these can't be const because will have to 
-  // dynamic cast to specific subclass
+  // these implement virtual methods from DataFlowSet.
   bool operator ==(OA::DataFlow::DataFlowSet &other) const;
   bool operator !=(OA::DataFlow::DataFlowSet &other) const
   { return (!(*this==other)); }
@@ -83,13 +78,16 @@ public:
   bool operator==(const DFSet& other) const 
   { return DFSet::operator==(const_cast<DFSet&>(other)); }
 
-  bool empty() const { return mSet->empty(); }
-  
-  /// Return pointer to a copy of a DFSetElement in this set with matching loc
-  /// NULL is returned if no DFSetElement in this set matches loc
-  OA::OA_ptr<DFSetElement> find(OA::OA_ptr<R_VarRef> locPtr) const;
+  bool member(const OA::OA_ptr<DFSetElement> element) const
+  { return (m_set->find(element) != m_set->end()); }
 
-  void insert_varset(OA::OA_ptr<R_VarRefSet> vars, LocalityType type);
+  bool includes_name(OA::OA_ptr<R_VarRef> mention);
+
+  bool empty() const { return m_set->empty(); }
+  
+  void insert_varset(OA::OA_ptr<R_VarRefSet> vars);
+
+  OA::OA_ptr<DFSet> intersect(OA::OA_ptr<DFSet> other);
 
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
@@ -97,13 +95,8 @@ public:
   void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   void dump(std::ostream &os);
 
-  // non-inherited method
-  OA::OA_ptr<DFSetIterator> get_iterator() const;
-  
-protected:
-  OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > mSet;
-
-  friend class DFSetIterator;
+private:
+  OA::OA_ptr<std::set<OA::OA_ptr<R_VarRef> > > m_set;
 };
 
 }  // namespace Strictness

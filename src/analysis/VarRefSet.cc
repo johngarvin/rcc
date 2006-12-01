@@ -28,11 +28,13 @@
 
 #include "VarRefSet.h"
 
+using namespace OA;
+
 //--------------------------------------------------------------------
 // R_VarRefSetIterator methods
 //--------------------------------------------------------------------
 
-OA::OA_ptr<R_VarRef> R_VarRefSetIterator::current() const {
+OA_ptr<R_VarRef> R_VarRefSetIterator::current() const {
   return *it;
 }
 
@@ -52,45 +54,45 @@ void R_VarRefSetIterator::reset() {
 // R_VarRefSet methods
 //--------------------------------------------------------------------
 
-void R_VarRefSet::insert_ref(OA::OA_ptr<R_BodyVarRef> var) {
-  OA::OA_ptr<R_VarRef> upcast_var;
+void R_VarRefSet::insert_ref(OA_ptr<R_BodyVarRef> var) {
+  OA_ptr<R_VarRef> upcast_var;
   upcast_var = var.convert<R_VarRef>();
   vars->insert(upcast_var);
 }
 
-void R_VarRefSet::insert_arg(OA::OA_ptr<R_ArgVarRef> var) {
-  OA::OA_ptr<R_VarRef> upcast_var;
+void R_VarRefSet::insert_arg(OA_ptr<R_ArgVarRef> var) {
+  OA_ptr<R_VarRef> upcast_var;
   upcast_var = var.convert<R_VarRef>();
   vars->insert(upcast_var);
 }
 
 void R_VarRefSet::set_union(const R_VarRefSet & set2) {
-  OA::OA_ptr<R_VarRefSetIterator> it; it = set2.get_iterator();
+  OA_ptr<R_VarRefSetIterator> it; it = set2.get_iterator();
   for ( ; it->isValid(); ++*it) {
     vars->insert(it->current());
   }
 }
 
-void R_VarRefSet::set_union(OA::OA_ptr<R_VarRefSet> set2) {
-  OA::OA_ptr<R_VarRefSetIterator> it; it = set2->get_iterator();
+void R_VarRefSet::set_union(OA_ptr<R_VarRefSet> set2) {
+  OA_ptr<R_VarRefSetIterator> it; it = set2->get_iterator();
   for ( ; it->isValid(); ++*it) {
     vars->insert(it->current());
   }
 }
 
-OA::OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
-  OA::OA_ptr<R_VarRefSetIterator> it;
+OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
+  OA_ptr<R_VarRefSetIterator> it;
   it = new R_VarRefSetIterator(vars);
   return it;
 }
 
 //! Given a list of formal arguments, construct and return a VarRefSet
 //! of corresponding ArgRefs
-OA::OA_ptr<R_VarRefSet> R_VarRefSet::refs_from_arglist(SEXP arglist) {
-  OA::OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
+OA_ptr<R_VarRefSet> R_VarRefSet::refs_from_arglist(SEXP arglist) {
+  OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
   R_ListIterator iter(arglist);
   for( ; iter.isValid(); ++iter) {
-    OA::OA_ptr<R_ArgVarRef> arg;
+    OA_ptr<R_ArgVarRef> arg;
     arg = new R_ArgVarRef(iter.current());
     refs->insert_arg(arg);
   }
