@@ -49,7 +49,7 @@ public:
   
   enum MayMustT {
     Var_MAY,
-    Var_MUST 
+    Var_MUST
   };
 
 public:

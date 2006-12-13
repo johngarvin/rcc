@@ -62,7 +62,7 @@ Var::handle() {
 const std::string typeName(const Var::MayMustT x)
 {
   switch(x) {
-  case Var::Var_MAY: return "MAY";
+  case Var::Var_MAY:  return "MAY";
   case Var::Var_MUST: return "MUST";
   }
 }

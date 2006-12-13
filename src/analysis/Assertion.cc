@@ -64,7 +64,7 @@ void process_assert(SEXP assertion, FuncInfo * fi) {
 	int position = fi->find_arg_position(vname);
 	SEXP arg = fi->get_arg(position);
 	FormalArgInfo* fargInfo = getProperty(FormalArgInfo, arg);
-	fargInfo->setIsValue(true);
+	fargInfo->set_is_value(true);
       }
     }
   } else if (is_rcc_assert_exp(assertion)) {

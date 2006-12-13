@@ -37,21 +37,38 @@ namespace RAnnot {
 // FormalArgInfo
 //****************************************************************************
 
-FormalArgInfo::FormalArgInfo() 
+FormalArgInfo::FormalArgInfo(SEXP cell)
+  : m_cell(cell), m_is_value(false), m_is_strict(false)
 {
-  isvalue = false;
 }
-
 
 FormalArgInfo::~FormalArgInfo()
 {
 }
 
+bool FormalArgInfo::is_value() {
+  return m_is_value;
+}
+
+void FormalArgInfo::set_is_value(bool x) {
+  m_is_value = x;
+}
+
+bool FormalArgInfo::is_strict() {
+  return m_is_strict;
+}
+
+void FormalArgInfo::set_is_strict(bool x) {
+  m_is_strict = x;
+}
 
 std::ostream& FormalArgInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FormalArgInfo);
-  // FIXME: add implementation
+  SEXP name = TAG(m_cell);
+  dumpSEXP(os, name);
+  dumpVar(os, m_is_value);
+  dumpVar(os, m_is_strict);
   endObjDump(os, FormalArgInfo);
 }
 

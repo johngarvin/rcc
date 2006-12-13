@@ -103,7 +103,7 @@ const_iterator  FormalArgInfoAnnotationMap::begin() const { return m_map.begin()
 iterator  FormalArgInfoAnnotationMap::end() { return m_map.end(); }
 const_iterator  FormalArgInfoAnnotationMap::end() const { return m_map.end(); }
 
-// FIXME: implement this
+// FIXME: implement this (move functionality that lives in FuncInfo here)
 void FormalArgInfoAnnotationMap::compute() {
 }
 

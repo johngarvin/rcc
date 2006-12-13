@@ -34,7 +34,7 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/StrictnessDFSet.h>
+#include <analysis/DefaultDFSet.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefSet.h>
 
@@ -45,6 +45,8 @@ using namespace HandleInterface;
 using namespace RAnnot;
 
 class OA::CFG::Interface;
+
+typedef DefaultDFSet DFSet;
 
 namespace Strictness {
 

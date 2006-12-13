@@ -101,15 +101,6 @@ void FuncInfoAnnotationMap::compute() {
   assert(is_simple_assign(r_root));
 
   build_scope_tree(r_root);
-
-  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
-#if 0
-  for( ; fii.IsValid(); ++fii) {
-    build_cfg(fii.Current());
-    analyze_args(fii.Current());
-    collect_mentions(fii.Current());
-  }
-#endif
 }
 
 void FuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {

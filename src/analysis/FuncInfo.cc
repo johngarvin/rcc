@@ -34,6 +34,8 @@
 #include <analysis/Analyst.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfoAnnotationMap.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/RequiresContext.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
@@ -60,11 +62,24 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name, SEXP defn) :
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
   m_requires_context = functionRequiresContext(defn);
+
+  // compute CFG
+  OA::CFG::ManagerStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
+  // pass 'true' as second arg to build statement-level CFG
+  m_cfg = cfg_man.performAnalysis(HandleInterface::make_proc_h(defn));
+
+  // perform local function analysis (grab uses, defs, etc.)
+  LocalFunctionAnalysis lfa(defn);
+  lfa.perform_analysis();
+
+  // make formal argument annotations
   SEXP args = get_args();
   for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
-    FormalArgInfo * formal_info = new FormalArgInfo();
+    FormalArgInfo * formal_info = new FormalArgInfo(e);
     putProperty(FormalArgInfo, e, formal_info, false);
   }
+
+  // this is a new lexical scope
   m_scope = new FundefLexicalScope(defn);
 }
 
@@ -106,7 +121,6 @@ void FuncInfo::set_requires_context(bool requires_context)
 { 
   m_requires_context = requires_context; 
 }
-
 
 bool FuncInfo::requires_context() 
 { 
@@ -154,7 +168,7 @@ SEXP FuncInfo::get_arg(int position)
 bool FuncInfo::is_arg_value(SEXP arg)
 {
   FormalArgInfo* formal_info = getProperty(FormalArgInfo, arg);
-  bool isvalue = formal_info->isValue();
+  bool isvalue = formal_info->is_value();
   return isvalue;
 }
 

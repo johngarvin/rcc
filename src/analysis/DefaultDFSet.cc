@@ -16,10 +16,10 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: StrictnessDFSet.cc
+// File: DefaultDFSet.cc
 //
-// Set of StrictnessDFSetElement objects. Inherits from DataFlowSet for
-// use in CFGDFProblem.
+// Set of DFSetElement objects. Inherits from DataFlowSet for use in
+// CFGDFProblem.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -27,29 +27,27 @@
 #include <analysis/LocalityDFSetIterator.h>
 #include <analysis/LocalityType.h>
 
-#include "StrictnessDFSet.h"
+#include "DefaultDFSet.h"
 
 using namespace OA;
 
-namespace Strictness {
-
-DFSet::DFSet() {
+DefaultDFSet::DefaultDFSet() {
   m_set = new std::set<OA::OA_ptr<DFSetElement> >;
 }
 
-DFSet::~DFSet() { }
+DefaultDFSet::~DefaultDFSet() { }
 
 // After the assignment operation, the lhs DFSet will point to
 // the same instances of DFSetElement's that the rhs points to.  Use clone
 // if you want separate instances of the DFSetElement's
-DFSet& DFSet::operator= (const DFSet& other) {
+DefaultDFSet& DefaultDFSet::operator= (const DefaultDFSet& other) {
   m_set = other.m_set;
   return *this;
 }
 
-OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
-  OA_ptr<DFSet> retval;
-  retval = new DFSet(); 
+OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() {
+  OA_ptr<DefaultDFSet> retval;
+  retval = new DefaultDFSet(); 
   std::set<OA_ptr<DFSetElement> >::iterator defIter;
   for (defIter=m_set->begin(); defIter!=m_set->end(); defIter++) {
     OA_ptr<DFSetElement> def = *defIter;
@@ -58,34 +56,34 @@ OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
   return retval;
 }
   
-void DFSet::insert(OA_ptr<DFSetElement> h) {
+void DefaultDFSet::insert(OA_ptr<DFSetElement> h) {
   m_set->insert(h); 
 }
   
-void DFSet::remove(OA_ptr<DFSetElement> h) {
+void DefaultDFSet::remove(OA_ptr<DFSetElement> h) {
   remove_and_tell(h); 
 }
 
-int DFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
+int DefaultDFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
   return (int)((m_set->insert(h)).second); 
 }
 
-int DFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
+int DefaultDFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
   return (m_set->erase(h)); 
 }
 
 /// Replace any DFSetElement in m_set with the same location as the given use
-void DFSet::replace(OA_ptr<DFSetElement> use) {
+void DefaultDFSet::replace(OA_ptr<DFSetElement> use) {
   m_set->erase(use);
   m_set->insert(use);
 }
   
 /// equality: sets are equal if they are the same size and all
 /// elements are equal.
-bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
-  // first dynamic cast to an DFSet, if that doesn't work then 
+bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
+  // first dynamic cast to an DefaultDFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
-  DFSet& recastOther = dynamic_cast<DFSet&>(other);
+  DefaultDFSet& recastOther = dynamic_cast<DefaultDFSet&>(other);
 
   if (m_set->size() != recastOther.m_set->size()) {
     return false;
@@ -114,15 +112,15 @@ bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
 
 /// Returns true if there is a VarRef in our set with the same name as
 /// the given VarRef. (They don't have to be equivalent VarRefs.)
-bool DFSet::includes_name(OA_ptr<R_VarRef> mention) {
+bool DefaultDFSet::includes_name(OA_ptr<R_VarRef> mention) {
   // VarRef's '==' tests if the names are equal, not full equivalence,
   // so 'find' will give us the right answer here.
   return (m_set->find(mention) != m_set->end());
 }
 
 /// Set intersection
-OA_ptr<DFSet> DFSet::intersect(OA_ptr<DFSet> other) {
-  OA_ptr<DFSet> result; result = new DFSet;
+OA_ptr<DefaultDFSet> DefaultDFSet::intersect(OA_ptr<DefaultDFSet> other) {
+  OA_ptr<DefaultDFSet> result; result = new DefaultDFSet;
   std::set<OA_ptr<R_VarRef> >::iterator it;
   for(it = m_set->begin(); it != m_set->end(); ++it) {
     if (other->member(*it)) {
@@ -133,7 +131,7 @@ OA_ptr<DFSet> DFSet::intersect(OA_ptr<DFSet> other) {
 }
 
 /// Union in a set of variables associated with a given statement
-void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars)
+void DefaultDFSet::insert_varset(OA_ptr<R_VarRefSet> vars)
 {
   OA_ptr<R_VarRefSetIterator> it = vars->get_iterator();
   OA_ptr<DFSetElement> use;
@@ -143,8 +141,8 @@ void DFSet::insert_varset(OA_ptr<R_VarRefSet> vars)
 }
 
 
-/// Return a string representing the contents of an DFSet
-std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
+/// Return a string representing the contents of an DefaultDFSet
+std::string DefaultDFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   std::ostringstream oss;
   oss << "{";
   
@@ -167,12 +165,11 @@ std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   return oss.str();
 }
 
-void DFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
+void DefaultDFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
   os << toString(pIR) << std::endl;
 }
 
-void DFSet::dump(std::ostream &os) {
+void DefaultDFSet::dump(std::ostream &os) {
   std::cout << "call dump(os,interface) instead";
 }
 
-}  // namespace Strictness

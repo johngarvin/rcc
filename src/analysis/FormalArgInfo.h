@@ -25,6 +25,8 @@
 #ifndef ANNOTATION_FORMAL_ARG_INFO_H
 #define ANNOTATION_FORMAL_ARG_INFO_H
 
+#include <include/R/R_RInternals.h>
+
 #include <analysis/AnnotationBase.h>
 #include <analysis/PropertyHndl.h>
 
@@ -37,7 +39,7 @@ class FormalArgInfo
   : public AnnotationBase
 {
 public:
-  FormalArgInfo();
+  FormalArgInfo(SEXP cell);
   virtual ~FormalArgInfo();
 
   static PropertyHndlT handle();
@@ -52,11 +54,17 @@ public:
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
   
-  bool isValue() { return isvalue; }
-  void setIsValue(bool _isvalue) { isvalue = _isvalue; }
+  bool is_value();
+  void set_is_value(bool x);
+
+  bool is_strict();
+  void set_is_strict(bool x);
 
 private:
-  bool isvalue; // value/promise
+  SEXP m_cell;     // TAG(m_cell) is the name of the argument
+  bool m_is_value; // value/promise
+  bool m_is_strict; // function always evaluates this argument
+  // (actually, a stronger condition: function diverges if this arg diverges)
 };
 
 

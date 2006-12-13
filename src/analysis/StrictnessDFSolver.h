@@ -32,10 +32,9 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <analysis/LocalityDFSet.h>
-
 class OA::CFG::Interface;
 class R_IRInterface;
+class DefaultDFSet;
 
 namespace Strictness {
 
@@ -68,7 +67,7 @@ private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::Interface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<DFSet> m_formal_args;
+  OA::OA_ptr<DefaultDFSet> m_formal_args;
 };
 
 }

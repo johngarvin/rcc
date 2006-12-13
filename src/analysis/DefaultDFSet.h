@@ -16,15 +16,15 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: StrictnessDFSet.h
+// File: DefaultDFSet.h
 //
-// Set of StrictnessDFSetElement objects. Inherits from DataFlowSet for
+// Set of DefaultDFSetElement objects. Inherits from DataFlowSet for
 // use in CFGDFProblem.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef STRICTNESS_DF_SET_H
-#define STRICTNESS_DF_SET_H
+#ifndef DEFAULT_DF_SET_H
+#define DEFAULT_DF_SET_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
@@ -37,23 +37,21 @@ class R_VarRefSet;
 
 typedef R_VarRef DFSetElement;
 
-namespace Strictness {
-
-/// Set of StrictnessDFSetElement objects. Inherits from DataFlowSet for
+/// Set of DFSetElement objects. Inherits from DataFlowSet for
 /// use in CFGDFProblem.
-// Removed "virtual": need clone() to be able to return an DFSet.
-//class DFSet : public virtual OA::DataFlow::DataFlowSet {
-class DFSet : public OA::DataFlow::DataFlowSet {
+// Removed "virtual": need clone() to be able to return a DefaultDFSet.
+//class DefaultDFSet : public virtual OA::DataFlow::DataFlowSet {
+class DefaultDFSet : public OA::DataFlow::DataFlowSet {
 public:
 
   // construction
-  DFSet();
-  ~DFSet();
+  DefaultDFSet();
+  ~DefaultDFSet();
   
-  // After the assignment operation, the lhs DFSet will point to the
+  // After the assignment operation, the lhs DefaultDFSet will point to the
   // same instances of DFSetElements that the rhs points to.  Use
   // clone if you want separate instances of the DFSetElements.
-  DFSet& operator= (const DFSet& other);
+  DefaultDFSet& operator= (const DefaultDFSet& other);
   OA::OA_ptr<OA::DataFlow::DataFlowSet> clone();
   
   void insert(OA::OA_ptr<DFSetElement> h);
@@ -75,8 +73,8 @@ public:
   { return (!(*this==other)); }
 
   /// need this one for stl containers
-  bool operator==(const DFSet& other) const 
-  { return DFSet::operator==(const_cast<DFSet&>(other)); }
+  bool operator==(const DefaultDFSet& other) const 
+  { return DefaultDFSet::operator==(const_cast<DefaultDFSet&>(other)); }
 
   bool member(const OA::OA_ptr<DFSetElement> element) const
   { return (m_set->find(element) != m_set->end()); }
@@ -87,7 +85,7 @@ public:
   
   void insert_varset(OA::OA_ptr<R_VarRefSet> vars);
 
-  OA::OA_ptr<DFSet> intersect(OA::OA_ptr<DFSet> other);
+  OA::OA_ptr<DefaultDFSet> intersect(OA::OA_ptr<DefaultDFSet> other);
 
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
@@ -98,7 +96,5 @@ public:
 private:
   OA::OA_ptr<std::set<OA::OA_ptr<R_VarRef> > > m_set;
 };
-
-}  // namespace Strictness
 
 #endif
