@@ -46,7 +46,7 @@ LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
 /// Traverse the given SEXP and set variable annotations with local
 /// syntactic information.
 void LocalVariableAnalysis::perform_analysis() {
-  build_ud_rhs(m_stmt);
+  build_ud_rhs(m_stmt, Var::Var_MUST);  // we're not in an actual arg to any function, so must-use
 }
 
 const_var_iterator LocalVariableAnalysis::begin_vars() const { return m_vars.begin(); }
@@ -57,7 +57,10 @@ const_call_site_iterator LocalVariableAnalysis::end_call_sites() const { return 
 /// Traverse the given SEXP (not an lvalue) and set variable
 /// annotations with local syntactic information.
 /// cell          = a cons cell whose CAR is the expression we're talking about
-void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
+/// may_must_type = whether var uses should be may-use or must-use
+///                 (usually must-use; may-use if we're looking at an actual argument
+///                 to a call-by-need function)
+void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must_type) {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
   if (is_const(e)) {
@@ -71,29 +74,29 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
     m_vars.push_back(var_annot);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
-    build_ud_rhs(assign_rhs_c(e));
+    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST);
   } else if (is_free_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_FREE_ASSIGN);
-    build_ud_rhs(assign_rhs_c(e));
+    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST);
   } else if (is_fundef(e)) {
     // ignore
   } else if (is_struct_field(e)) {
-    build_ud_rhs(CDR(e));
+    build_ud_rhs(CDR(e), Var::Var_MUST);
   } else if (is_subscript(e)) {
-    build_ud_rhs(subscript_lhs_c(e));
-    build_ud_rhs(subscript_rhs_c(e));
+    build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST);
+    build_ud_rhs(subscript_rhs_c(e), Var::Var_MUST);
   } else if (is_if(e)) {
-    build_ud_rhs(if_cond_c(e));
+    build_ud_rhs(if_cond_c(e), Var::Var_MUST);
   } else if (is_for(e)) {
     // defines the induction variable, uses the range
     build_ud_lhs(for_iv_c(e), for_range_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
-    build_ud_rhs(for_range_c(e));
+    build_ud_rhs(for_range_c(e), Var::Var_MUST);
   } else if (is_loop_header(e)) {
     // XXXXX
   } else if (is_loop_increment(e)) {
     // XXXXX
   } else if (is_while(e)) {
-    build_ud_rhs(while_cond_c(e));
+    build_ud_rhs(while_cond_c(e), Var::Var_MUST);
   } else if (is_repeat(e)) {
     // ignore
 
@@ -102,7 +105,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
 
   } else if (is_curly_list(e)) {
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
-      build_ud_rhs(stmt);
+      build_ud_rhs(stmt, Var::Var_MUST);
     }
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
     m_call_sites.push_back(e);
@@ -114,11 +117,19 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell) {
       var_annot->setScopeType(Locality_TOP);
       m_vars.push_back(var_annot);
     } else {
-      build_ud_rhs(e);
+      // TODO: what about the lhs?
+      build_ud_rhs(e, Var::Var_MUST);
     }
     // recur on args
+    // Because R functions are call-by-need, var uses that appear in
+    // args passed to them are MAY-use. BUILTINSXP functions are CBV,
+    // so vars passed as args should stay MUST.
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
-      build_ud_rhs(stmt);
+      if (is_var(CAR(e)) && TYPEOF(Rf_findFunUnboundOK(CAR(e), R_GlobalEnv, TRUE)) == BUILTINSXP) {
+	build_ud_rhs(stmt, Var::Var_MUST);
+      } else {
+	build_ud_rhs(stmt, Var::Var_MAY);
+      }
     }
   } else {
     assert(0);
@@ -166,14 +177,14 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
     build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {
     build_ud_lhs(subscript_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
-    build_ud_rhs(subscript_rhs_c(e));
+    build_ud_rhs(subscript_rhs_c(e), Var::Var_MUST);
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. For example: dim(x) <- foo
     //
     // FIXME: We should really be checking if the function is valid;
     // only some functions applied to arguments make a valid lvalue.
     assert(CDDR(e) == R_NilValue); // more than one argument is an error, right?
-    build_ud_rhs(e);
+    build_ud_rhs(e, Var::Var_MUST);
     build_ud_lhs(CDR(e), rhs_c, Var::Var_MAY, lhs_type);
   } else {
     assert(0);

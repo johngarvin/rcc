@@ -63,7 +63,7 @@ private:
     IN_LOCAL_ASSIGN,
     IN_FREE_ASSIGN
   };
-  void build_ud_rhs(const SEXP cell);
+  void build_ud_rhs(const SEXP cell, RAnnot::Var::MayMustT may_must_type);
   void build_ud_lhs(const SEXP cell, const SEXP rhs, RAnnot::Var::MayMustT may_must_type, LhsType lhs_type);
   const SEXP m_stmt;
   std::list<MyVarT> m_vars;
