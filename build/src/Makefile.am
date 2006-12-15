@@ -51,6 +51,8 @@ rcc_bin_SOURCES =				\
   CallSiteCallGraphNode.h                       \
   CoordinateCallGraphNode.cc                    \
   CoordinateCallGraphNode.h                     \
+  DefaultDFSet.cc                               \
+  DefaultDFSet.h                                \
   DefVar.cc                                     \
   DefVar.h                                      \
   ExpressionInfo.cc                             \
@@ -100,8 +102,6 @@ rcc_bin_SOURCES =				\
   RequiresContext.h				\
   SimpleIterators.cc				\
   SimpleIterators.h				\
-  StrictnessDFSet.h                             \
-  StrictnessDFSet.cc                            \
   StrictnessDFSolver.h                          \
   StrictnessDFSolver.cc                         \
   SymbolTable.cc                                \

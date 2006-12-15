@@ -110,8 +110,7 @@ bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
   return(true);
 }
 
-/// Returns true if there is a VarRef in our set with the same name as
-/// the given VarRef. (They don't have to be equivalent VarRefs.)
+/// Returns true if there is a VarRef in our set with the given name.
 bool DefaultDFSet::includes_name(OA_ptr<R_VarRef> mention) {
   // VarRef's '==' tests if the names are equal, not full equivalence,
   // so 'find' will give us the right answer here.
@@ -121,8 +120,8 @@ bool DefaultDFSet::includes_name(OA_ptr<R_VarRef> mention) {
 /// Set intersection
 OA_ptr<DefaultDFSet> DefaultDFSet::intersect(OA_ptr<DefaultDFSet> other) {
   OA_ptr<DefaultDFSet> result; result = new DefaultDFSet;
-  std::set<OA_ptr<R_VarRef> >::iterator it;
-  for(it = m_set->begin(); it != m_set->end(); ++it) {
+  std::set<OA_ptr<R_VarRef> >::const_iterator it;
+  for (it = m_set->begin(); it != m_set->end(); it++) {
     if (other->member(*it)) {
       result->insert(*it);
     }
@@ -140,9 +139,17 @@ void DefaultDFSet::insert_varset(OA_ptr<R_VarRefSet> vars)
   }
 }
 
+OA_ptr<std::set<SEXP> > DefaultDFSet::as_sexp_set() {
+  OA_ptr<std::set<SEXP> > retval; retval = new std::set<SEXP>;
+  std::set<OA_ptr<R_VarRef> >::const_iterator it;
+  for (it = m_set->begin(); it != m_set->end(); it++) {
+    retval->insert((*it)->get_sexp());
+  }
+  return retval;
+}
 
 /// Return a string representing the contents of an DefaultDFSet
-std::string DefaultDFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
+std::string DefaultDFSet::toString() {
   std::ostringstream oss;
   oss << "{";
   
@@ -152,13 +159,13 @@ std::string DefaultDFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
 
   // first one
   if (iter != m_set->end()) {
-    oss << (*iter)->toString(pIR);
+    oss << (*iter)->toString();
     ++iter;
   }
   
   // rest
   for (; iter != m_set->end(); ++iter) {
-    oss << ", " << (*iter)->toString(pIR); 
+    oss << ", " << (*iter)->toString(); 
   }
   
   oss << "}";
@@ -166,10 +173,10 @@ std::string DefaultDFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
 }
 
 void DefaultDFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
-  os << toString(pIR) << std::endl;
+  dump(os);
 }
 
 void DefaultDFSet::dump(std::ostream &os) {
-  std::cout << "call dump(os,interface) instead";
+  os << toString() << std::endl;
 }
 

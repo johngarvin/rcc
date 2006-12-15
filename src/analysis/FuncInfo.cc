@@ -32,16 +32,20 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/DefVar.h>
+#include <analysis/ExpressionInfo.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/RequiresContext.h>
+#include <analysis/StrictnessDFSolver.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 
 #include "FuncInfo.h"
 
+using namespace OA;
+using namespace HandleInterface;
 namespace RAnnot {
 
 //****************************************************************************
@@ -62,15 +66,6 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name, SEXP defn) :
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
   m_requires_context = functionRequiresContext(defn);
-
-  // compute CFG
-  OA::CFG::ManagerStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
-  // pass 'true' as second arg to build statement-level CFG
-  m_cfg = cfg_man.performAnalysis(HandleInterface::make_proc_h(defn));
-
-  // perform local function analysis (grab uses, defs, etc.)
-  LocalFunctionAnalysis lfa(defn);
-  lfa.perform_analysis();
 
   // make formal argument annotations
   SEXP args = get_args();
@@ -127,7 +122,7 @@ bool FuncInfo::requires_context()
   return m_requires_context;
 }
 
-SEXP FuncInfo::get_args() 
+SEXP FuncInfo::get_args() const
 { 
   return CAR(fundef_args_c(m_defn)); 
 }
@@ -203,12 +198,12 @@ const std::string& FuncInfo::get_closure()
   return m_closure;
 }
 
-OA::OA_ptr<OA::CFG::Interface> FuncInfo::get_cfg() const
+OA_ptr<CFG::Interface> FuncInfo::get_cfg() const
 {
   return m_cfg;
 }
 
-void FuncInfo::set_cfg(OA::OA_ptr<OA::CFG::Interface> x)
+void FuncInfo::set_cfg(OA_ptr<CFG::Interface> x)
 {
   m_cfg = x;
 }
@@ -272,6 +267,77 @@ FundefLexicalScope * FuncInfo::get_scope() const {
   return m_scope;
 }
 
+/// perform local function analysis (grabbing mentions and call sites) and strictness analysis
+void FuncInfo::perform_analysis() {
+  // compute CFG
+  // pass 'true' as second arg to build statement-level CFG
+  CFG::ManagerStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
+  m_cfg = cfg_man.performAnalysis(make_proc_h(m_defn));
+
+#if 0
+  // moved to Analyst (collect_... needs VarAnnotationMap filled in,
+  // which needs FuncInfos to traverse the scope tree) (ugh)
+
+  collect_mentions_and_call_sites();
+  analyze_args();
+
+  // perform strictness analysis
+  StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
+  strict_solver.perform_analysis(make_proc_h(m_defn), m_cfg);
+#endif
+}
+
+void FuncInfo::analyze_args() {
+  SEXP args = CAR(fundef_args_c(m_defn));
+  const SEXP ddd = Rf_install("...");
+  bool has_var_args = false;
+  int n_args = 0;
+  for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
+    ++n_args;
+    DefVar * annot = new DefVar();
+    annot->setMention_c(e);
+    annot->setSourceType(DefVar::DefVar_FORMAL);
+    annot->setMayMustType(Var::Var_MUST);
+    annot->setScopeType(Locality_LOCAL);
+    annot->setRhs_c(0);
+    putProperty(Var, e, annot, true);
+    if (TAG(e) == ddd) {
+      has_var_args = true;
+    }
+  }
+  set_num_args(n_args);
+  set_has_var_args(has_var_args);
+}
+
+void FuncInfo::collect_mentions_and_call_sites() {
+  assert(!m_cfg.ptrEqual(0));
+
+  // for each node
+  OA_ptr<CFG::Interface::NodesIterator> ni; ni = m_cfg->getNodesIterator();
+  for( ; ni->isValid(); ++*ni) {
+    // for each statement
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
+    si = ni->current()->getNodeStatementsIterator();
+    for( ; si->isValid(); ++*si) {
+      // for each mention
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      assert(stmt_annot != 0);
+      ExpressionInfo::const_var_iterator mi;
+      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
+	Var * v = getProperty(Var, (*mi)->getMention_c());
+	// FIXME: should make sure we always get the data-flow-solved
+	// version of the Var. Shouldn't have to loop through
+	// getProperty!
+	insert_mention(v);
+      }
+      ExpressionInfo::const_call_site_iterator cs;
+      for(cs = stmt_annot->begin_call_sites(); cs != stmt_annot->end_call_sites(); ++cs) {
+	insert_call_site(*cs);
+      }
+    }
+  }
+}
+
 std::ostream& FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
@@ -284,8 +350,13 @@ std::ostream& FuncInfo::dump(std::ostream& os) const
   R_Analyst::get_instance()->dump_cfg(os, m_defn); // can't call CFG::dump; it requires the IRInterface
   dumpSEXP(os, m_defn);
   dumpPtr(os, m_parent);
+  os << "Begin arguments:" << std::endl;
+  for (SEXP arg = get_args(); arg != R_NilValue; arg = CDR(arg)) {
+    FormalArgInfo * arg_annot = getProperty(FormalArgInfo, arg);
+    arg_annot->dump(os);
+  }
   os << "Begin mentions:" << std::endl;
-  for(const_mention_iterator i = begin_mentions(); i != end_mentions(); ++i) {
+  for (const_mention_iterator i = begin_mentions(); i != end_mentions(); ++i) {
     Var * v = *i;
     v->dump(os);
     VarBinding * vb = getProperty(VarBinding, (*i)->getMention_c());

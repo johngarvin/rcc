@@ -26,19 +26,27 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/CFG/Interface.hpp>
 
-#include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/ExpressionInfo.h>
-#include <analysis/HandleInterface.h>
-#include <analysis/Var.h>
+#include <analysis/Analyst.h>
+#include <analysis/DefaultDFSet.h>
 #include <analysis/DefVar.h>
+#include <analysis/ExpressionInfo.h>
+#include <analysis/FormalArgInfo.h>
+#include <analysis/HandleInterface.h>
 #include <analysis/LocalityType.h>
+#include <analysis/StrictnessDFSolver.h>
+#include <analysis/Utils.h>
+#include <analysis/Var.h>
 
 #include "LocalFunctionAnalysis.h"
 
 using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
+
+void collect_mentions_and_call_sites(OA_ptr<CFG::Interface> cfg);
+
+static const bool debug = false;
 
 LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
   : m_fundef(fundef)
@@ -51,6 +59,7 @@ LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
 void LocalFunctionAnalysis::perform_analysis() {
   analyze_args();
   collect_mentions_and_call_sites();
+  analyze_strictness();
 }
 
 void LocalFunctionAnalysis::analyze_args() {
@@ -80,9 +89,9 @@ void LocalFunctionAnalysis::analyze_args() {
 /// Find each mention (use or def) and call site in the function
 void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+  assert(fi != 0);
   OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
-
   // for each node
   OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
   for( ; ni->isValid(); ++*ni) {
@@ -106,5 +115,20 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
 	fi->insert_call_site(*cs);
       }
     }
+  }
+}
+
+void LocalFunctionAnalysis::analyze_strictness() {
+  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+  assert(fi != 0);
+  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
+  assert(!cfg.ptrEqual(0));
+  StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
+  OA_ptr<DefaultDFSet> strict_set = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
+  OA_ptr<std::set<SEXP> > arg_set = strict_set->as_sexp_set();
+  for (std::set<SEXP>::const_iterator it = arg_set->begin(); it != arg_set->end(); it++) {
+    FormalArgInfo * annot = getProperty(FormalArgInfo, *it);
+    annot->set_is_strict(true);
   }
 }

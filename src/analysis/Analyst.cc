@@ -29,11 +29,12 @@
 #include <support/RccError.h>
 
 #include <analysis/AnalysisException.h>
-#include <analysis/Utils.h>
-#include <analysis/SimpleIterators.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/HandleInterface.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/LocalFunctionAnalysis.h>
+#include <analysis/SimpleIterators.h>
+#include <analysis/Utils.h>
 
 #include "Analyst.h"
 
@@ -88,6 +89,7 @@ bool R_Analyst::perform_analysis() {
     {
       throw AnalysisException();
     }
+    build_local_function_info();
     return true;
   }
   catch (AnalysisException ae) {
@@ -96,6 +98,17 @@ bool R_Analyst::perform_analysis() {
     rcc_warn("analysis encountered difficulties; compiling trivially");
     clearProperties();
     return false;
+  }
+}
+
+/// Discovers local information on procedures: arguments, names
+/// mentioned, etc.
+void R_Analyst::build_local_function_info() {
+  FuncInfoIterator fii(m_scope_tree_root);
+  for(FuncInfo *fi; fii.IsValid(); fii++) {
+    fi = fii.Current();
+    LocalFunctionAnalysis lfa(fi->get_defn());
+    lfa.perform_analysis();
   }
 }
 

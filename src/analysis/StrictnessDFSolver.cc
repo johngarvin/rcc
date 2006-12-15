@@ -31,10 +31,10 @@
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/DefaultDFSet.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/DefaultDFSet.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefSet.h>
 
@@ -48,20 +48,26 @@ class OA::CFG::Interface;
 
 typedef DefaultDFSet DFSet;
 
-namespace Strictness {
+static const bool debug = false;
 
 /// Initialize as a forward data flow problem
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
   : DataFlow::CFGDFProblem(DataFlow::Forward), m_ir(ir)
 {}
 
+StrictnessDFSolver::~StrictnessDFSolver()
+{}
+
 /// Perform the data flow analysis.
-void StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
   SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals));
+  OA_ptr<DFSet> retval = DataFlow::CFGDFProblem::solve(cfg).convert<DFSet>();
+  if (debug) dump_node_maps();
+  return retval;
 }
 
 /// Print out a representation of the in and out sets for each CFG node.
@@ -91,11 +97,9 @@ void StrictnessDFSolver::dump_node_maps(ostream & os) {
 
   // ----- Implementing the callbacks for CFGDFProblem -----
 
-/// Initialize TOP as an empty set
+/// Initialize TOP as the set of formal arg names
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeTop() {
-  OA_ptr<DFSet> top;
-  top = new DFSet;
-  return top;
+  return m_formal_args->clone();
 }
 
 /// Not used.
@@ -107,9 +111,9 @@ OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeBottom() {
 /// mNodeOutSetMap.
 void StrictnessDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
-    mNodeInSetMap[n] = m_formal_args->clone();
-  } else {
     mNodeInSetMap[n] = new DFSet;
+  } else {
+    mNodeInSetMap[n] = m_formal_args->clone();
   }
   mNodeOutSetMap[n] = new DFSet;
 }
@@ -124,6 +128,11 @@ OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::
 meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2_orig) {
   OA_ptr<DFSet> set1; set1 = set1_orig.convert<DFSet>();
   OA_ptr<DFSet> set2; set2 = set2_orig.convert<DFSet>();
+  if (debug) {
+    std::cout << "Intersecting..." << std::endl;
+    set1->dump(std::cout);
+    set2->dump(std::cout);
+  }
   return set1->intersect(set2);
 }
 
@@ -148,5 +157,3 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   }
   return in;
 }
-
-}  // end namespace Strictness

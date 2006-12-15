@@ -87,6 +87,8 @@ public:
 
   OA::OA_ptr<DefaultDFSet> intersect(OA::OA_ptr<DefaultDFSet> other);
 
+  OA::OA_ptr<std::set<SEXP> > as_sexp_set();
+
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   std::string toString();

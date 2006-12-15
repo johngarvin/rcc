@@ -28,10 +28,8 @@
 
 #include <include/R/R_RInternals.h>
 
-//! LocalFunctionAnalysis
-//!
-//! Discovers local information about the given function
-//! definition. Adds annotations to the global AnalysisResults.
+/// Discovers local information about the given function
+/// definition. Adds annotations to the global AnalysisResults.
 class LocalFunctionAnalysis {
 public:
   LocalFunctionAnalysis(const SEXP fundef);
@@ -39,7 +37,8 @@ public:
 private:
   void analyze_args();
   void collect_mentions_and_call_sites();
-
+  void analyze_strictness();
+  
   const SEXP m_fundef;
 };
 

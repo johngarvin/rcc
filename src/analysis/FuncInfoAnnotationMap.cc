@@ -101,6 +101,10 @@ void FuncInfoAnnotationMap::compute() {
   assert(is_simple_assign(r_root));
 
   build_scope_tree(r_root);
+  for (const_iterator it = begin(); it != end(); ++it) {
+    FuncInfo * fn = dynamic_cast<FuncInfo *>(it->second);  // TODO: redo annotation maps to avoid casts
+    fn->perform_analysis();
+  }
 }
 
 void FuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {

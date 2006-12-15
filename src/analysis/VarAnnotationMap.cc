@@ -150,7 +150,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
       OA_ptr<CFG::NodeStatementsIterator> si; si = node->getNodeStatementsIterator();
       for(StmtHandle stmt; si->isValid(); ++*si) {
 	stmt = si->current();
-	ExpressionInfo * expr = getProperty(ExpressionInfo, reinterpret_cast<SEXP>(stmt.hval()));
+	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
 	// each variable in the expression
 	ExpressionInfo::const_var_iterator ei;
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {

@@ -36,13 +36,11 @@ class OA::CFG::Interface;
 class R_IRInterface;
 class DefaultDFSet;
 
-namespace Strictness {
-
 class StrictnessDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   StrictnessDFSolver(OA::OA_ptr<R_IRInterface> _rir);
-  ~StrictnessDFSolver() {}
-  void perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
+  ~StrictnessDFSolver();
+  OA::OA_ptr<DefaultDFSet> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
 
@@ -69,7 +67,5 @@ private:
   OA::ProcHandle m_proc;
   OA::OA_ptr<DefaultDFSet> m_formal_args;
 };
-
-}
 
 #endif // STRICTNESS_DF_SOLVER_H

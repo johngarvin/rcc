@@ -80,12 +80,13 @@ public:
   // arguments
   unsigned int get_num_args() const;
   void set_num_args(unsigned int x);
-  SEXP get_args(); 
+  SEXP get_args() const; 
   bool is_arg(SEXP sym);
   bool are_all_value();
   bool is_arg_value(SEXP arg);
   SEXP get_arg(int position);
   int find_arg_position(char* name);
+  void analyze_args();
 
   SEXP get_defn();
 
@@ -114,6 +115,9 @@ public:
   OA::OA_ptr<OA::CFG::Interface> get_cfg() const;
   void set_cfg(OA::OA_ptr<OA::CFG::Interface> x);
   
+  // mentions and call sites
+  void collect_mentions_and_call_sites();
+
   // mention iterators
   mention_iterator begin_mentions();
   const_mention_iterator begin_mentions() const;
@@ -128,6 +132,8 @@ public:
 
   // lexical scope
   FundefLexicalScope * get_scope() const;
+
+  void perform_analysis();
 
   // -------------------------------------------------------
   // debugging
