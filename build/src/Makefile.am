@@ -59,6 +59,8 @@ rcc_bin_SOURCES =				\
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
   ExpressionInfoAnnotationMap.h                 \
+  FirstMentionDFSolver.cc                       \
+  FirstMentionDFSolver.h                        \
   FormalArgInfo.cc                              \
   FormalArgInfo.h                               \
   FormalArgInfoAnnotationMap.cc                 \

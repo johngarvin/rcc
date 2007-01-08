@@ -118,6 +118,8 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   }
 }
 
+// solve the strictness data flow problem and update the information
+// in the formal argument annotations
 void LocalFunctionAnalysis::analyze_strictness() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);

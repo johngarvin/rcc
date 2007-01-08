@@ -110,6 +110,9 @@ OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeBottom() {
 /// Creates in and out DFSets and stores them in mNodeInSetMap and
 /// mNodeOutSetMap.
 void StrictnessDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
+  // On procedure entry, no variables are strict, so initialize with
+  // an empty set. On entry to all other nodes, initialize to the set
+  // of all formal args (TOP) so that meets will work correctly.
   if (n.ptrEqual(m_cfg->getEntry())) {
     mNodeInSetMap[n] = new DFSet;
   } else {

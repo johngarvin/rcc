@@ -26,6 +26,8 @@
 #ifndef DEFAULT_DF_SET_H
 #define DEFAULT_DF_SET_H
 
+#include <include/R/R_RInternals.h>
+
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>

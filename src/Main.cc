@@ -384,13 +384,6 @@ static void arg_err() {
   exit(1);
 }
 
-static void set_funcs(int argc, char *argv[]) {
-  int i;
-  for(i=0; i<argc; i++) {
-    ParseInfo::direct_funcs.insert(string(*argv++));
-  }
-}
-
 // initialize statics in SubexpBuffer
 unsigned int SubexpBuffer::n = 0;
 unsigned int SubexpBuffer::global_temps = 0;

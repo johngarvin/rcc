@@ -73,17 +73,16 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_cfg = cfg;
   m_proc = proc;
 
-  // Note: ReachConsts explicitly uses base class name:
-  //  DataFlow::CFGDFProblem::solve(cfg);
-  // Why?
-  solve(cfg);
+  DataFlow::CFGDFProblem::solve(cfg);
   // solve populates mNodeInSetMap and mNodeOutSetMap
 
   // For reference:
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeInSetMap;
   //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeOutSetMap;
 
-  // each node
+  // data flow problem solved; now traverse the function and set annotations appropriately
+
+  // for each node
   std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator mi;
   for(mi = mNodeInSetMap.begin(); mi != mNodeInSetMap.end(); ++mi) {
 
@@ -178,7 +177,7 @@ void LocalityDFSolver::initialize_sets() {
 
     // each statement
     OA_ptr<CFG::Interface::NodeStatementsIterator> si; si = ni->current()->getNodeStatementsIterator();
-    for( ; si->isValid(); ++*si) {
+    for ( ; si->isValid(); ++*si) {
       if (debug) {
 	Rf_PrintValue(make_sexp(si->current()));
       }
