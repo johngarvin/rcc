@@ -21,9 +21,10 @@
 // Implements the general OpenAnalysis CFG data flow problem. For each
 // variable, finds a set of mentions: a mention is in the set if and
 // only if it's the first mention of that variable on some path. It's
-// like the KILL data flow problem, except that both uses and defs
-// count, not just defs. For this problem, formal arguments do not
-// count as defs.
+// similar to the MUST-KILL data flow problem, except that a variable
+// can be "killed" by a use or a def, not just a def. Useful for
+// discovering where arguments (which are lazy in R) may be evaluated.
+// For this problem, formal arguments do not count as defs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -34,6 +35,8 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <analysis/NameStmtsMap.h>
+
 class OA::CFG::Interface;
 class R_IRInterface;
 class DefaultDFSet;
@@ -42,7 +45,7 @@ class FirstMentionDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   FirstMentionDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~FirstMentionDFSolver();
-  void perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
+  OA::OA_ptr<NameStmtsMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
 

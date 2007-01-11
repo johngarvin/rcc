@@ -93,6 +93,7 @@ rcc_bin_SOURCES =				\
   LocalityType.h				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
+  NameStmtsMap.h                                \
   Phi.cc                                        \
   Phi.h                                         \
   PropertyHndl.h				\

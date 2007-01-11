@@ -21,13 +21,16 @@
 // Implements the general OpenAnalysis CFG data flow problem. For each
 // variable, finds a set of mentions: a mention is in the set if and
 // only if it's the first mention of that variable on some path. It's
-// like the KILL data flow problem, except that both uses and defs
-// count, not just defs. For this problem, formal arguments do not
-// count as defs.
+// similar to the MUST-KILL data flow problem, except that a variable
+// can be "killed" by a use or a def, not just a def. Useful for
+// discovering where arguments (which are lazy in R) may be evaluated.
+// For this problem, formal arguments do not count as defs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <include/R/R_RInternals.h>
+
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/DefaultDFSet.h>
@@ -35,8 +38,10 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/IRInterface.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/NameStmtsMap.h>
 #include <analysis/PropertySet.h>
 #include <analysis/VarRef.h>
+#include <analysis/Var.h>
 
 #include "FirstMentionDFSolver.h"
 
@@ -55,21 +60,35 @@ FirstMentionDFSolver::~FirstMentionDFSolver()
 {}
 
 /// Perform the data flow analysis.
-void FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+OA_ptr<NameStmtsMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
   DataFlow::CFGDFProblem::solve(cfg);
 
   // now collect the first mentions for each variable
-  //for each CFG node {
-  //  for each statement {
-  //    for each mention {
-  //      if the pre-statement set includes the name of the mention {
-  //        add mention to the list;
-  //      }
-  //    }
-  //  }
-  //}
+  OA_ptr<NameStmtsMap> first_mention_map;
+  // for each CFG node
+  OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
+  for ( ; ni->isValid(); ++*ni) {
+    OA_ptr<DFSet> in_set = mNodeInSetMap[ni->current()].convert<DFSet>();
+    // for each statement
+    OA_ptr<CFG::Interface::NodeStatementsIterator> si; si = ni->current()->getNodeStatementsIterator();
+    for ( ; si->isValid(); ++*si) {
+      // for each mention
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      assert(stmt_annot != 0);
+      ExpressionInfo::const_var_iterator mi;
+      for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
+	OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef((*mi)->getMention_c());
+	if (in_set->member(ref)) {
+	  first_mention_map->insert(std::make_pair(ref->get_sexp(), si->current()));
+	}
+      }  // next mention
+    }  // next statement
+    in_set = transfer(in_set, si->current()).convert<DFSet>();
+  }  // next CFG node
+
+  return first_mention_map;
 }
 
 // ----- debugging -----

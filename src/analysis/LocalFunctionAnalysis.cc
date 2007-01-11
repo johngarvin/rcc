@@ -31,9 +31,11 @@
 #include <analysis/DefaultDFSet.h>
 #include <analysis/DefVar.h>
 #include <analysis/ExpressionInfo.h>
+#include <analysis/FirstMentionDFSolver.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityType.h>
+#include <analysis/NameStmtsMap.h>
 #include <analysis/StrictnessDFSolver.h>
 #include <analysis/Utils.h>
 #include <analysis/Var.h>
@@ -60,6 +62,7 @@ void LocalFunctionAnalysis::perform_analysis() {
   analyze_args();
   collect_mentions_and_call_sites();
   analyze_strictness();
+  analyze_first_mentions();
 }
 
 void LocalFunctionAnalysis::analyze_args() {
@@ -133,4 +136,18 @@ void LocalFunctionAnalysis::analyze_strictness() {
     FormalArgInfo * annot = getProperty(FormalArgInfo, *it);
     annot->set_is_strict(true);
   }
+}
+
+void LocalFunctionAnalysis::analyze_first_mentions() {
+  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+  assert(fi != 0);
+  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
+  assert(!cfg.ptrEqual(0));
+  FirstMentionDFSolver first_mention_solver(R_Analyst::get_instance()->get_interface());
+  OA_ptr<NameStmtsMap> first_mention_map = first_mention_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  // for each name in map {
+  //   for each "first mention" statement {
+  //     add to annotation
+  //   }
+  // }
 }

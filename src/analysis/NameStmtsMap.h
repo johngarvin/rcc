@@ -16,31 +16,23 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: LocalFunctionAnalysis.h
+// File: NameStmtsMap.h
 //
-// Discovers local information about the given function
-// definition. Adds annotations to the global AnalysisResults.
+// Defines a mapping from names (SEXPs of SYMSXP type) to a set of
+// statements (StmtHandles).
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef LOCAL_FUNCTION_ANALYSIS_H
-#define LOCAL_FUNCTION_ANALYSIS_H
+#ifndef NAME_STMTS_MAP_H
+#define NAME_STMTS_MAP_H
+
+#include <map>
 
 #include <include/R/R_RInternals.h>
 
-/// Discovers local information about the given function
-/// definition. Adds annotations to the global AnalysisResults.
-class LocalFunctionAnalysis {
-public:
-  LocalFunctionAnalysis(const SEXP fundef);
-  void perform_analysis();
-private:
-  void analyze_args();
-  void collect_mentions_and_call_sites();
-  void analyze_strictness();
-  void analyze_first_mentions();
-  
-  const SEXP m_fundef;
-};
+class OA::StmtHandle;
 
-#endif
+typedef SEXP Name;
+typedef std::multimap<Name, OA::StmtHandle> NameStmtsMap;
+
+#endif 
