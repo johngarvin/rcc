@@ -66,7 +66,7 @@ OA_ptr<NameStmtsMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_
   DataFlow::CFGDFProblem::solve(cfg);
 
   // now collect the first mentions for each variable
-  OA_ptr<NameStmtsMap> first_mention_map;
+  OA_ptr<NameStmtsMap> first_mention_map; first_mention_map = new NameStmtsMap();
   // for each CFG node
   OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
@@ -84,8 +84,8 @@ OA_ptr<NameStmtsMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_
 	  first_mention_map->insert(std::make_pair(ref->get_sexp(), si->current()));
 	}
       }  // next mention
+      in_set = transfer(in_set, si->current()).convert<DFSet>();
     }  // next statement
-    in_set = transfer(in_set, si->current()).convert<DFSet>();
   }  // next CFG node
 
   return first_mention_map;
@@ -121,6 +121,7 @@ void FirstMentionDFSolver::dump_node_maps(ostream &os) {
 /// Initialize TOP as the set of all variables mentioned
 OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeTop() {
   if (m_top.ptrEqual(NULL)) {
+    m_top = new DFSet();
     FuncInfo * func = getProperty(FuncInfo, make_sexp(m_proc));
     FuncInfo::mention_iterator mi;
     for (mi = func->begin_mentions(); mi != func->end_mentions(); mi++) {

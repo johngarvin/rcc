@@ -1,6 +1,7 @@
 #!/bin/csh 
 # @configure_input@
 setenv PATH @RCC_BIN_PATH@:${PATH}
+setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the R interpreter ..."
