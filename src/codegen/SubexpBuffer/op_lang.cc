@@ -57,7 +57,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 {
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
-    // Redefinition of specials is forbidden, so no need to check call graph
+    // the value is conveniently stored in the symbol, so we can just grab it
+    // redefinition of specials is forbidden, so no need to check call graph
     if (is_library(call_lhs(e)) && TYPEOF(library_value(call_lhs(e))) == SPECIALSXP) {
       return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
@@ -67,8 +68,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     if (node) {
       // node is Fundef, Library, or UnknownValue node
       if (const FundefCallGraphNode * cs = dynamic_cast<const FundefCallGraphNode *>(node)) {
-	string closure = getProperty(FuncInfo, cs->get_sexp())->get_closure();
-	Expression closure_exp = Expression(closure, false, INVISIBLE, "");
+	FuncInfo * fi = getProperty(FuncInfo, cs->get_sexp());
+	Expression closure_exp = Expression(fi->get_closure(), false, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
 	return op_internal_call(this, lib, e, rho, resultProtection, resultStatus);
@@ -86,7 +87,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     // generate closure and application
     Expression op1;
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
-    return op_clos_app(op1, CDR(e), rho, resultProtection);
+    return op_clos_app(op1, call_args(e), rho, resultProtection);
     // eval.c: 395
   }
 }
