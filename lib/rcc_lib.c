@@ -129,8 +129,60 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   return x;
 }
 
-#if 0
-/* construct promises out of an argument list to be passed to applyClosure */
-SEXP rcc_promise_args( ... ) {
+/* constructs evaluated promises out of an argument list to be passed
+ * to applyClosure based on promiseArgs in eval.c; altered to deal
+ * specially with arguments that are determined to be call-by-value by
+ * assertion or analysis
+ */
+SEXP rcc_promise_args(SEXP el, SEXP rho) {
+    SEXP ans, h, tail;
+
+    PROTECT(ans = tail = CONS(R_NilValue, R_NilValue));
+
+    while(el != R_NilValue) {
+
+	/* If we have a ... symbol, we look to see what it is bound to.
+	 * If its binding is Null (i.e. zero length)
+	 * we just ignore it and return the cdr with all its
+	 * expressions promised; if it is bound to a ... list
+	 * of promises, we repromise all the promises and then splice
+	 * the list of resulting values into the return value.
+	 * Anything else bound to a ... symbol is an error
+	 */
+
+	/* Is this double promise mechanism really needed? */
+
+	if (CAR(el) == R_DotsSymbol) {
+	    h = findVar(CAR(el), rho);
+	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
+		while (h != R_NilValue) {
+		    SETCDR(tail, CONS(mkPROMISE(CAR(h), rho), R_NilValue));
+		    SET_TAG(CDR(tail), CreateTag(TAG(h)));
+		    tail = CDR(tail);
+		    h = CDR(h);
+		}
+	    }
+	    else if (h != R_MissingArg)
+		error(_("... used in an incorrect context"));
+	}
+	else if (CAR(el) == R_MissingArg) {
+	    SETCDR(tail, CONS(R_MissingArg, R_NilValue));
+	    tail = CDR(tail);
+	    SET_TAG(tail, CreateTag(TAG(el)));
+	}
+	else {
+	  /* create already-evaluated promise */
+	    SEXP promise = mkPROMISE(CAR(el), rho);
+	    SET_PRVALUE(promise, CAR(el));
+	    SET_PRSEEN(promise, TRUE);
+	    SET_PRCODE(promise, R_NilValue);
+	    SETCDR(tail, CONS(promise, R_NilValue));
+	    tail = CDR(tail);
+	    SET_TAG(tail, CreateTag(TAG(el)));
+	}
+	el = CDR(el);
+    }
+    UNPROTECT(1);
+    return CDR(ans);  
 }
-#endif
+

@@ -1,12 +1,13 @@
 #!/bin/csh 
 # @configure_input@
+setenv R /local/software/other-R/R-2.4.0-nan-optimization/bin/R
 setenv PATH @RCC_BIN_PATH@:${PATH}
 setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the R interpreter ..."
-	R --slave < $f >  `basename $f .r`.interpreted
-	R CMD Rprof Rprof.out | grep "^Total run time"
+	${R} --slave < $f >  `basename $f .r`.interpreted
+	${R} CMD Rprof Rprof.out | grep "^Total run time"
     echo "  compiling $f with rcc ..."
 	rcc $f
     echo "  compiling " `basename $f .r`.c "with rcc-cc ..."

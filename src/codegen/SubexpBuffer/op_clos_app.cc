@@ -37,7 +37,8 @@
 
 using namespace std;
 
-static Expression op_args(SubexpBuffer * sb, string args1var, SEXP args, int * unprotcnt, string rho);
+static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
+				  int * unprotcnt, string rho);
 
 /// Output an application of a closure to actual arguments.
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
@@ -52,11 +53,11 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 #ifdef USE_OUTPUT_CODEGEN
   Expression args1 = output_to_expression(CodeGen::op_list(args, rho, true));
 #else
-  Expression args1 = op_list(args, rho, true, Protected);
+  Expression args1 = op_list(args, rho, true, Protected); // true: output literal list
 #endif
   string call_str = appl2("lcons", op1.var, args1.var);
   unprotcnt++;  // call_str
-  Expression arglist = op_args(this, args1.var, args, &unprotcnt, rho);
+  Expression arglist = op_promise_args(this, args1.var, args, &unprotcnt, rho);
   string out = appl5("applyClosure ",
 		     call_str,
 		     op1.var,
@@ -80,26 +81,23 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 }
 
 /// Output the actual argument list as a list of promises to be passed to applyClosure
-static Expression op_args(SubexpBuffer * sb, string args1var, SEXP args, int * unprotcnt, string rho) {
+static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
+				  int * unprotcnt, string rho) {
   string arglist;
   string cleanup;
   if (args == R_NilValue) {
     arglist = "R_NilValue";
   } else {
+    // for now, try compiling all code as call-by-value (CBV).
+    Expression arg_value = sb->op_list(args, rho, false, Protected);  // false: output as non-literal
+    if (!arg_value.del_text.empty()) (*unprotcnt)++;
+    // could be applyClosure already performs the promiseArgs call
 #if 0
-    // some of the args might be annotated as call-by-value (CBV). If so, then
-    // (a) evaluate the CBV arguments before the function call
-    // (b) in the argument list, in place of the CBV argument put an evaluated promise containing the value
-    for( ; args != R_NilValue; args = CDR(args)) {
-      if (is_value_assert(CAR(args))) {
-	Expression value = sb->op_exp(call_args(CAR(args)), rho);
-        string promise = sb->appl2("mkPROMISE", value.var, rho);
-      }
-    }
-   
-#endif
-    arglist = sb->appl2("promiseArgs", args1var, rho);
+    arglist = sb->appl2("rcc_promise_args", arg_value.var, rho);
     (*unprotcnt)++;
+#else
+    arglist = arg_value.var;
+#endif
   }
   return Expression(arglist, true, INVISIBLE, "");
 }

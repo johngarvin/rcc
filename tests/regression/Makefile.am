@@ -19,6 +19,6 @@ compiled:
 	./run-compiled $(MYTESTFILES) | tee compiled.log
 
 diffs:
-	diff compiled.log interpreted.log
+	diff --context compiled.log interpreted.log | tee diff.log
 
 runtests: compiled interpreted diffs

@@ -101,7 +101,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const LibraryCallGraphNode
   if (TYPEOF(op) == CLOSXP) {
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     // above: false as last argument for unevaluated result. Is this correct?
-    return sb->op_clos_app(func, CDR(e), rho, resultProtection);
+    return sb->op_clos_app(func, call_args(e), rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
     return sb->op_builtin(e, op, rho, resultProtection);
   } else {

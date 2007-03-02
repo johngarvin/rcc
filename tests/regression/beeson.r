@@ -1,5 +1,8 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
+real <- 0
+raw <- 0
+
 set.seed(3)  # initialize RNG for reproducible results
 
 TWOPI <<- 2*pi

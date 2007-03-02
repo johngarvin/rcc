@@ -7,3 +7,4 @@ SEXP R_binary(SEXP call, SEXP op, SEXP x, SEXP y);
 SEXP R_unary(SEXP call, SEXP op, SEXP x);
 SEXP rcc_do_arith(SEXP call, SEXP op, SEXP args, SEXP env);
 SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y);
+SEXP rcc_promise_args(SEXP args, SEXP rho);
