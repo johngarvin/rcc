@@ -72,13 +72,14 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   Expression a_sym = op_literal(CAR(array_c), rho);
   Expression a = op_exp(array_c, rho, Protected, true);  // fully evaluated; need to force promise
   Expression s = op_exp(sub_c, rho);
-  Expression r = op_exp(rhs_c, rho, resultProtection);
+  Expression r = op_exp(rhs_c, rho);
   string subassign = appl3("rcc_subassign", a.var, s.var, r.var, Unprotected);
   // unprotected because immediately followed by the defineVar
   append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
   del(a_sym);
   del(a);
   del(s);
+  del(r);
   r.visibility = INVISIBLE;
   return r;
 }
