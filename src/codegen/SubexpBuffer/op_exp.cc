@@ -74,7 +74,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
     break;
   case VECSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unimplemented vector>>", TRUE, INVISIBLE, "");
+    return Expression("<<unimplemented vector>>", DEPENDENT, INVISIBLE, "");
     break;
   case SYMSXP:
 #ifdef USE_OUTPUT_CODEGEN
@@ -99,11 +99,11 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
     break;
   case ENVSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unexpected environment>>", TRUE, INVISIBLE, "");
+    return Expression("<<unexpected environment>>", DEPENDENT, INVISIBLE, "");
     break;
   case PROMSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
+    return Expression("<<unexpected promise>>", DEPENDENT, INVISIBLE, "");
     break;
   case LANGSXP:
     out = op_lang(e, rho, resultProtection, resultStatus);
@@ -112,7 +112,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
   case CHARSXP:
     return Expression(appl1("mkChar",
 			    quote(string(CHAR(e))), Unprotected),
-		      FALSE, VISIBLE, "");
+		      CONST, VISIBLE, "");
     break;
   case SPECIALSXP:
   case BUILTINSXP:
@@ -127,7 +127,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
   case WEAKREFSXP:
     ParseInfo::flag_problem();
     return Expression("<<unimplemented type " + i_to_s(TYPEOF(e)) + ">>",
-		      TRUE, INVISIBLE, "");
+		      DEPENDENT, INVISIBLE, "");
     break;
   default:
     rcc_error("Internal error: op_exp encountered bad type");

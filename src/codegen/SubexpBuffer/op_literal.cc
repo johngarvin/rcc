@@ -60,10 +60,10 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case VECSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unimplemented vector>>", TRUE, INVISIBLE, "");
+    return Expression("<<unimplemented vector>>", DEPENDENT, INVISIBLE, "");
     break;
   case SYMSXP:
-    return Expression(make_symbol(e), FALSE, VISIBLE, "");
+    return Expression(make_symbol(e), CONST, VISIBLE, "");
     break;
   case LISTSXP:
   case LANGSXP:
@@ -82,15 +82,15 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     break;
   case ENVSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unexpected environment>>", TRUE, INVISIBLE, "");
+    return Expression("<<unexpected environment>>", DEPENDENT, INVISIBLE, "");
     break;
   case PROMSXP:
     ParseInfo::flag_problem();
-    return Expression("<<unexpected promise>>", TRUE, INVISIBLE, "");
+    return Expression("<<unexpected promise>>", DEPENDENT, INVISIBLE, "");
     break;
   case CHARSXP:
     v = appl1("mkChar", quote(string(CHAR(e))), Unprotected);
-    return Expression(v, TRUE, VISIBLE, "");
+    return Expression(v, DEPENDENT, VISIBLE, "");
     break;
   case SPECIALSXP:
   case BUILTINSXP:
@@ -105,7 +105,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
   case WEAKREFSXP:
     ParseInfo::flag_problem();
     return Expression("<<unimplemented type " + i_to_s(TYPEOF(e)) + ">>",
-		      TRUE, INVISIBLE, "");
+		      DEPENDENT, INVISIBLE, "");
     break;
   default:
     rcc_error("Internal error: op_literal encountered bad type");

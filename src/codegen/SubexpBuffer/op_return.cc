@@ -31,6 +31,7 @@
 #include <analysis/AnalysisResults.h>
 
 #include <ParseInfo.h>
+#include <Dependence.h>
 #include <Visibility.h>
 #include <CodeGen.h>
 
@@ -53,7 +54,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
     // pass true as fourth argument to yield fully evaluated result
     value = op_exp(e, rho, Unprotected, true);
 #if 0
-    if (value.is_dep) {
+    if (value.dependence == DEPENDENT) {
       append_defs("PROTECT(" + value.var + ");\n");
       v = appl2("eval", value.var, rho, Unprotected);
       append_defs("UNPROTECT_PTR(" + value.var + ");\n");
@@ -102,8 +103,8 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   // set visibility
   //---------------------------
-  if (value.is_visible == VISIBLE) append_defs("R_Visible = 1;");
-  if (value.is_visible == INVISIBLE) append_defs("R_Visible = 0;");
+  if (value.visibility == VISIBLE) append_defs("R_Visible = 1;");
+  if (value.visibility == INVISIBLE) append_defs("R_Visible = 0;");
   // if CHECK_VISIBILITY, then don't change anything
 
   //---------------------------
@@ -111,5 +112,5 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   append_defs("return " + v + ";\n");
 
-  return Expression("R_NilValue", TRUE, INVISIBLE, "");
+  return Expression("R_NilValue", DEPENDENT, INVISIBLE, "");
 }

@@ -65,7 +65,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     if (ParseInfo::func_map.find(opt_R_name) != ParseInfo::func_map.end()) { // defined already
       string closure_name = ParseInfo::func_map.find(opt_R_name)->second;
       lexicalContext.Pop();
-      return Expression(closure_name, FALSE, INVISIBLE, "");
+      return Expression(closure_name, CONST, INVISIBLE, "");
     } else { // not yet defined
       // direct version
       if (rho != "R_GlobalEnv") {
@@ -93,7 +93,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     ParseInfo::global_constants->del(formals);
     if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, closure));
     lexicalContext.Pop();
-    return Expression(closure, false, INVISIBLE, "");
+    return Expression(closure, CONST, INVISIBLE, "");
   } else {   // not the global environment
     Expression r_args = op_literal(CAR(e), rho);
     Expression r_code = op_literal(CADR(e), rho);
@@ -103,7 +103,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     del(r_code);
     lexicalContext.Pop();
     string cleanup = (resultProtection == Protected ? unp(closure) : "");
-    return Expression(closure, true, CHECK_VISIBLE, cleanup);
+    return Expression(closure, DEPENDENT, CHECK_VISIBLE, cleanup);
   }
 }
 
@@ -157,7 +157,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 					   ResultNeeded);
   f += indent(indent("{\n"));
   f += indent(indent(indent(out_subexps.output() +
-			    Visibility::emit_set(outblock.is_visible))));
+			    Visibility::emit_set(outblock.visibility))));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
@@ -204,7 +204,7 @@ string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef)
 					   "newenv", Unprotected);
   f += indent("{\n");
   f += indent(indent(out_subexps.output()));
-  f += Visibility::emit_set(outblock.is_visible);
+  f += Visibility::emit_set(outblock.visibility);
   f += indent(indent("out = " + outblock.var + ";\n"));
   f += indent("}\n");
   f += indent(formals.del_text);

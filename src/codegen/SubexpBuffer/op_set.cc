@@ -98,10 +98,10 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     if (resultProtection == Protected) cleanup = unp(out);
     del(func);
     del(args);
-    return Expression(out, true, INVISIBLE, cleanup);
+    return Expression(out, DEPENDENT, INVISIBLE, cleanup);
   } else {
     ParseInfo::flag_problem();
     return Expression("<<assignment with unrecognized LHS>>",
-		      TRUE, INVISIBLE, "");
+		      DEPENDENT, INVISIBLE, "");
   }
 }

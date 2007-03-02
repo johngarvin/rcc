@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2007 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,28 +16,16 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: op_promise.cc
+// File: Dependence.h
 //
-// Output a promise.
+// Whether an R expression is dependent on the current environment or
+// not. If not, it can be hoisted out of function bodies.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <string>
+#ifndef DEPENDENCE_H
+#define DEPENDENCE_H
 
-#include <codegen/SubexpBuffer/SubexpBuffer.h>
+typedef enum {DEPENDENT, CONST} DependenceType;
 
-#include <include/R/R_RInternals.h>
-
-#include <analysis/AnalysisResults.h>
-
-#include <Visibility.h>
-
-using namespace std;
-
-Expression SubexpBuffer::op_promise(SEXP e) {
-  Expression args; 
-  string defs = args.var + " = forcePromise(" + args.var + ");\n" + "SET_NAMED(" + args.var + ", 2);\n";
-  append_defs(defs);
-  return Expression(args.var, DEPENDENT, INVISIBLE, "");
-}
-
+#endif

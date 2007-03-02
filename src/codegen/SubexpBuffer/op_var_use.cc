@@ -96,7 +96,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       map<string, string>::iterator value;
       value = ParseInfo::binding_map.find(name);
       if (value != ParseInfo::binding_map.end()) {       // in binding map
-	return Expression(value->second, false, VISIBLE, "");
+	return Expression(value->second, CONST, VISIBLE, "");
       } else {
 	SEXP env_val;
 	if (lookup_type == FUNCTION_VAR) {
@@ -117,7 +117,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       } else {
 	string location = annot->get_location(e, sb);
 	string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
-	return Expression(h, true, VISIBLE, "");
+	return Expression(h, DEPENDENT, VISIBLE, "");
       }
     } else {
       rcc_error("Unknown derived type of LexicalScope found");
@@ -141,7 +141,7 @@ static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
     vis = CHECK_VISIBLE;
     if (resultProtection == Protected) del_text = unp(value);
   }
-  return Expression(value, true, vis, del_text);
+  return Expression(value, DEPENDENT, vis, del_text);
 }
 
 
@@ -170,6 +170,6 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
     }
   }
   ParseInfo::binding_map.insert(pair<string,string>(name, h));
-  return Expression(h, false, VISIBLE, "");
+  return Expression(h, CONST, VISIBLE, "");
 }
 

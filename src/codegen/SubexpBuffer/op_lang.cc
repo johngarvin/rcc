@@ -69,7 +69,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       // node is Fundef, Library, or UnknownValue node
       if (const FundefCallGraphNode * cs = dynamic_cast<const FundefCallGraphNode *>(node)) {
 	FuncInfo * fi = getProperty(FuncInfo, cs->get_sexp());
-	Expression closure_exp = Expression(fi->get_closure(), false, INVISIBLE, "");
+	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
 	return op_internal_call(this, lib, e, rho, resultProtection, resultStatus);

@@ -282,16 +282,16 @@ int main(int argc, char *argv[]) {
     }
     string this_exp;
     this_exp += subexps.output_decls();
-    this_exp += Visibility::emit_set_if_visible(exp.is_visible);
+    this_exp += Visibility::emit_set_if_visible(exp.visibility);
     this_exp += subexps.output_defs();
-    if (exp.is_visible != INVISIBLE) {
+    if (exp.visibility != INVISIBLE) {
       string evar = "e" + i_to_s(i);
       exec_decls += "SEXP " + evar + ";\n";
       string pval = emit_call2("PrintValueEnv", evar, "R_GlobalEnv") + ";\n";
       string printexpn = emit_assign(evar, exp.var);
-      if (exp.is_visible == VISIBLE) {
+      if (exp.visibility == VISIBLE) {
 	printexpn += pval;
-      } else if (exp.is_visible == CHECK_VISIBLE) {
+      } else if (exp.visibility == CHECK_VISIBLE) {
 	string check = Visibility::emit_check_expn();
 	printexpn += emit_logical_if_stmt(check, pval);
       }
@@ -396,7 +396,7 @@ const Expression SubexpBuffer::output_to_expression(const Output op) {
   ParseInfo::global_constants->append_decls(op.g_decls());
   ParseInfo::global_constants->append_defs(op.g_code());
   return Expression(op.handle(),
-		    (op.dependence() == DEPENDENT),
+		    op.dependence(),
 		    op.visibility(),
 		    op.del_text());
 }

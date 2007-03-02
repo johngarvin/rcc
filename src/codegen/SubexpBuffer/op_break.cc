@@ -41,5 +41,5 @@ Expression SubexpBuffer::op_break(SEXP e, string rho) {
     append_defs("continue;\n");
   else
     append_defs(loop->doBreak() + ";\n");
-  return Expression("R_NilValue", TRUE, INVISIBLE, "");
+  return Expression("R_NilValue", DEPENDENT, INVISIBLE, "");
 }

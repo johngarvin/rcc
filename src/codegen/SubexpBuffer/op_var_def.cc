@@ -56,10 +56,10 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     string location = annot->get_location(CAR(cell), this);
     assert(location != "");
     append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
-    return Expression(rhs, true, INVISIBLE, "");
+    return Expression(rhs, DEPENDENT, INVISIBLE, "");
   } else {   // no unique location; emit lookup
     append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
-    return Expression(rhs, true, INVISIBLE, "");
+    return Expression(rhs, DEPENDENT, INVISIBLE, "");
   }
 }
 

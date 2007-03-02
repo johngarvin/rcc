@@ -25,6 +25,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
+#include <Dependence.h>
 #include <Visibility.h>
 
 class SubexpBuffer;
@@ -79,8 +80,6 @@ class DelText {
  private:
   const std::string m_str;
 };
-
-typedef enum {DEPENDENT, CONST} DependenceType;
 
 class Output {
 public:

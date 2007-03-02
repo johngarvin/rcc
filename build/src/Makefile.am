@@ -55,6 +55,7 @@ rcc_bin_SOURCES =				\
   DefaultDFSet.h                                \
   DefVar.cc                                     \
   DefVar.h                                      \
+  Dependence.h                                  \
   ExpressionInfo.cc                             \
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \

@@ -33,6 +33,7 @@
 #include <support/StringUtils.h>
 #include <CodeGenUtils.h>
 #include <ParseInfo.h>
+#include <Dependence.h>
 #include <Visibility.h>
 
 using namespace std;
@@ -96,7 +97,8 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
     //------------------------------------------------------------------
     // result is non-constant if either head or rest are non-constant 
     //------------------------------------------------------------------
-    bool resultNonConstant = (headExp.is_dep || restExp.is_dep);
+    bool resultNonConstant = (headExp.dependence == DEPENDENT ||
+			      restExp.dependence == DEPENDENT);
 
     //------------------------------------------------------------------
     // if result is constant, assemble it in the constant pool
@@ -133,7 +135,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
       deleteText = unp(out);
     }
     
-    return Expression(out, resultNonConstant, VISIBLE, deleteText);
+    return Expression(out, resultNonConstant ? DEPENDENT : CONST, VISIBLE, deleteText);
   } 
 }
 
@@ -159,7 +161,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
 		      op_exp(e, rho, Protected, 
 			     fullyEvaluatedResult));
     string out;
-    if (car.is_dep) {
+    if (car.dependence == DEPENDENT) {
       if (TAG(e) == R_NilValue) {
 	out = appl2(my_cons, car.var, "R_NilValue");
 	del(car);
@@ -169,7 +171,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
 	del(car);
 	del(tag);
       }
-      return Expression(out, TRUE, VISIBLE, unp(out));
+      return Expression(out, DEPENDENT, VISIBLE, unp(out));
     } else {  // not dep
       if (TAG(e) == R_NilValue) {
 	out = ParseInfo::global_constants->appl2(my_cons, car.var, "R_NilValue");
@@ -180,7 +182,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
 	ParseInfo::global_constants->del(car);
 	ParseInfo::global_constants->del(tag);
       }
-      return Expression(out, FALSE, VISIBLE, "");
+      return Expression(out, CONST, VISIBLE, "");
     }
   } else {  // length >= 2
     string unp_cars = "";
@@ -203,8 +205,8 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
       }
       exps[i] = (literal? op_literal(CAR(tmp_e), rho) : 
 		 op_exp(tmp_e, rho, Protected, fullyEvaluatedResult));
-      tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", FALSE, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
-      if (exps[i].is_dep) list_dep = TRUE;
+      tags[i] = (TAG(tmp_e) == R_NilValue ? Expression("", CONST, INVISIBLE, "") : op_literal(TAG(tmp_e), rho));
+      if (exps[i].dependence == DEPENDENT) list_dep = TRUE;
       tmp_e = CDR(tmp_e);
     }
     SubexpBuffer tmp_buf = new_sb("tmp_list");
@@ -229,7 +231,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
       defs += "PROTECT(" + handle + " = " + cdr + ");\n";
       defs += unp_cars;
       append_defs(emit_in_braces(defs));
-      return Expression(handle, list_dep, VISIBLE, unp(handle));
+      return Expression(handle, list_dep ? DEPENDENT : CONST, VISIBLE, unp(handle));
     } else {
       string handle = ParseInfo::global_constants->new_sexp();
       string defs;
@@ -237,7 +239,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
       defs += "PROTECT(" + handle + " = " + cdr + ");\n";
       defs += unp_cars;
       ParseInfo::global_constants->append_defs(emit_in_braces(defs));
-      return Expression(handle, list_dep, VISIBLE, "");
+      return Expression(handle, list_dep ? DEPENDENT : CONST, VISIBLE, "");
     }
   }
 }

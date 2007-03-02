@@ -66,7 +66,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     if (resultStatus == ResultNeeded) {
       out = new_sexp();
       append_defs(indent(out + " = " + te.var + ";\n"));
-      append_defs(indent(Visibility::emit_set(te.is_visible)));
+      append_defs(indent(Visibility::emit_set(te.visibility)));
     }
     append_defs("} else {\n");
     del(cond);
@@ -83,10 +83,10 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     if (resultStatus == ResultNeeded) {
       append_defs(indent(out + " = " + fe.var + ";\n"));
 
-      append_defs(indent(Visibility::emit_set(fe.is_visible)));
+      append_defs(indent(Visibility::emit_set(fe.visibility)));
     }
     append_defs("}\n");
-    return Expression(out, FALSE, CHECK_VISIBLE, "");
+    return Expression(out, CONST, CHECK_VISIBLE, "");
 #else
     // Macro version. Waiting on better code generation.
     Expression cond = op_exp(if_cond_c(e), rho);
@@ -113,14 +113,14 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
       out = new_sexp();
       append_defs(indent(out + " = " + te.var +";\n"));
       del(te);
-      append_defs(indent(Visibility::emit_set(te.is_visible)));
+      append_defs(indent(Visibility::emit_set(te.visibility)));
       append_defs("} else {\n");
       del(cond);
       append_defs(indent(Visibility::emit_set(INVISIBLE)));
       append_defs(indent(out + " = R_NilValue;\n"));
     }
     append_defs("}\n");
-    return Expression(out, FALSE, CHECK_VISIBLE, "");
+    return Expression(out, CONST, CHECK_VISIBLE, "");
   } else {
     rcc_error("Badly formed if expression");
     return Expression::bogus_exp;

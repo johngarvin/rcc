@@ -31,8 +31,6 @@
 #include <analysis/AnalysisResults.h>
 #include <support/StringUtils.h>
 #include <CodeGenUtils.h>
-#include <Visibility.h>
-
 
 using namespace std;
 
@@ -78,6 +76,6 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho,
     append_defs(emit_in_braces(code, resultProtection == Unprotected));
     exp = next;
   }
-  return Expression(var, e.is_dep, e.is_visible, cleanup);
+  return Expression(var, e.dependence, e.visibility, cleanup);
 }
   

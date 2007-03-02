@@ -77,7 +77,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
     }
     cleanup = unp(out);
   }
-  return Expression(out, TRUE, CHECK_VISIBLE, cleanup);
+  return Expression(out, DEPENDENT, CHECK_VISIBLE, cleanup);
 }
 
 /// Output the actual argument list as a list of promises to be passed to applyClosure
@@ -99,5 +99,5 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
     arglist = arg_value.var;
 #endif
   }
-  return Expression(arglist, true, INVISIBLE, "");
+  return Expression(arglist, DEPENDENT, INVISIBLE, "");
 }

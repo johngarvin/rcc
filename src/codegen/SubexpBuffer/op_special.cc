@@ -74,7 +74,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
 		"R_NilValue", func.var, args.var, rho);
     del(func);
     del(args);
-    return Expression(out, TRUE, INVISIBLE, unp(out));
+    return Expression(out, DEPENDENT, INVISIBLE, unp(out));
   } else if (PRIMFUN(op) == (CCODE)do_function) {
     return op_fundef(e, rho, resultProtection);
   } else if (PRIMFUN(op) == (CCODE)do_begin) {
@@ -105,7 +105,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     Expression args1 = op_list(CDR(e), rho, true, Protected, true);
 #endif
     string call_str = appl2("lcons", op1.var, args1.var);
-    Expression call = Expression(call_str, FALSE, VISIBLE, unp(call_str));
+    Expression call = Expression(call_str, CONST, VISIBLE, unp(call_str));
     out = appl4(get_name(PRIMOFFSET(op)),
 		call.var,
 		op1.var,
@@ -116,7 +116,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     del(call);
     del(op1);
     del(args1);
-    return Expression(out, TRUE, 
+    return Expression(out, DEPENDENT, 
 		      1 - PRIMPRINT(op) ? VISIBLE : INVISIBLE, 
 		      cleanup);
   }

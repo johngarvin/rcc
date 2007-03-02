@@ -56,13 +56,13 @@ Expression SubexpBuffer::op_primsxp(SEXP e, string rho) {
   int value = 2 * PRIMOFFSET(e) + is_builtin;
   map<int,string>::iterator pr = ParseInfo::primsxp_map.find(value);
   if (pr != ParseInfo::primsxp_map.end()) {  // primsxp already defined
-    return Expression(pr->second, TRUE, INVISIBLE, "");
+    return Expression(pr->second, DEPENDENT, INVISIBLE, "");
   } else {
     string var = new_sexp();
     const string args[] = {var, i_to_s(PRIMOFFSET(e)),
 			   i_to_s(is_builtin), string(PRIMNAME(e))};
     append_defs(mac_primsxp.call(4, args));
     ParseInfo::primsxp_map.insert(pair<int,string>(value, var));
-    return Expression(var, TRUE, INVISIBLE, "");
+    return Expression(var, DEPENDENT, INVISIBLE, "");
   }
 }

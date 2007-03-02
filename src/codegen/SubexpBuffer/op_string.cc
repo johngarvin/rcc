@@ -45,5 +45,5 @@ Expression SubexpBuffer::op_string(SEXP s) {
   }
   string out = ParseInfo::global_constants->appl1("mkString", 
 						  quote(escape(str)));
-  return Expression(out, FALSE, VISIBLE, "");
+  return Expression(out, CONST, VISIBLE, "");
 }

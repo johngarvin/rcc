@@ -128,5 +128,5 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
   }
   append_defs("UNPROTECT_PTR(v);\n");
   del(range);
-  return Expression(ans.var, TRUE, INVISIBLE, "");
+  return Expression(ans.var, DEPENDENT, INVISIBLE, "");
 }

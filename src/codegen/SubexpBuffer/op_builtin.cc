@@ -149,6 +149,8 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
   if (resultProtection == Protected) cleanup = unp(out);
 
   del(op1);
-  return Expression(out, TRUE, 1 - PRIMPRINT(op) ? VISIBLE : INVISIBLE, 
+  return Expression(out,
+		    DEPENDENT,
+		    1 - PRIMPRINT(op) ? VISIBLE : INVISIBLE, 
 		    cleanup);
 }

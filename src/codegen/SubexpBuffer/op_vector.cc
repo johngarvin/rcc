@@ -49,14 +49,14 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	string var = ParseInfo::global_constants->appl1("ScalarLogical",
 					    i_to_s(value));
 	ParseInfo::sc_logical_map.insert(pair<int,string>(value, var));
-	return Expression(var, FALSE, VISIBLE, "");
+	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, FALSE, VISIBLE, "");
+	return Expression(pr->second, CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();
       return Expression("<<unimplemented logical vector>>",
-			FALSE, INVISIBLE, "");
+			CONST, INVISIBLE, "");
     }
     break;
   case INTSXP:
@@ -67,14 +67,14 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	string var = ParseInfo::global_constants->appl1("ScalarInteger",
 					    i_to_s(value));
 	ParseInfo::sc_integer_map.insert(pair<int,string>(value, var));
-	return Expression(var, FALSE, VISIBLE, "");
+	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, FALSE, VISIBLE, "");
+	return Expression(pr->second, CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();
       return Expression("<<unimplemented integer vector>>",
-			FALSE, INVISIBLE, "");
+			CONST, INVISIBLE, "");
     }
     break;
   case REALSXP:
@@ -85,14 +85,14 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
 	string var = ParseInfo::global_constants->appl1("ScalarReal",
 					    d_to_s(value));
 	ParseInfo::sc_real_map.insert(pair<double,string>(value, var));
-	return Expression(var, FALSE, VISIBLE, "");
+	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, FALSE, VISIBLE, "");
+	return Expression(pr->second, CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();
       return Expression("<<unimplemented real vector>>",
-			FALSE, INVISIBLE, "");
+			CONST, INVISIBLE, "");
     }
     break;
   case CPLXSXP:
@@ -100,11 +100,11 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
       Rcomplex value = COMPLEX(vec)[0];
       string var = ParseInfo::global_constants->appl1("ScalarComplex",
 					  c_to_s(value));
-      return Expression(var, FALSE, VISIBLE, "");
+      return Expression(var, CONST, VISIBLE, "");
     } else {
       ParseInfo::flag_problem();
       return Expression("<<unimplemented complex vector>>",
-			FALSE, INVISIBLE, "");
+			CONST, INVISIBLE, "");
     }
     break;
   default:
