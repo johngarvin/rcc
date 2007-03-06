@@ -218,9 +218,8 @@ Output CodeGen::op_primsxp(SEXP e, string rho) {
   
   // unique combination of offset and is_builtin for memoization
   int value = 2 * PRIMOFFSET(e) + is_builtin;
-  map<int,string>::iterator pr = ParseInfo::primsxp_map.find(value);
-  if (pr != ParseInfo::primsxp_map.end()) {  // primsxp already defined
-    return Output::invisible_const(Handle(pr->second));
+  if (ParseInfo::primsxp_constant_exists(value)) {  // primsxp already defined
+    return Output::invisible_const(Handle(ParseInfo::get_primsxp_constant(value)));
   } else {
     string var = ParseInfo::global_constants->new_var();
     const string args[] = {var,
@@ -228,7 +227,7 @@ Output CodeGen::op_primsxp(SEXP e, string rho) {
 			   i_to_s(is_builtin),
 			   string(PRIMNAME(e))};
     string primsxp_def = mac_primsxp.call(4, args);
-    ParseInfo::primsxp_map.insert(pair<int,string>(value, var));
+    ParseInfo::insert_primsxp_constant(value, var);
     return Output::global(GDecls(emit_static_decl(var)),
 			  GCode(primsxp_def),
 			  Handle(var),
@@ -823,10 +822,9 @@ Output CodeGen::op_vector(SEXP vec) {
   case LGLSXP:
     {
       int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = ParseInfo::sc_logical_map.find(value);
-      if (pr == ParseInfo::sc_logical_map.end()) {  // not found
+      if (!ParseInfo::logical_constant_exists(value)) {
 	string var = ParseInfo::global_constants->new_var();
-	ParseInfo::sc_logical_map.insert(pair<int,string>(value, var));
+	ParseInfo::insert_logical_constant(value, var);
 	Output op = Output::global(GDecls(emit_static_decl(var)),
 				   GCode(emit_prot_assign(var, emit_call1("ScalarLogical", i_to_s(value)))),
 				   Handle(var), VISIBLE);
@@ -834,7 +832,7 @@ Output CodeGen::op_vector(SEXP vec) {
       } else {
 	Output op(Decls(""), Code(""),
 		  GDecls(""), GCode(""),
-		  Handle(pr->second), DelText(""), CONST, VISIBLE);
+		  Handle(ParseInfo::get_logical_constant(value)), DelText(""), CONST, VISIBLE);
 	return op;
       }
     }
@@ -842,10 +840,9 @@ Output CodeGen::op_vector(SEXP vec) {
   case REALSXP:
     {
       double value = REAL(vec)[0];
-      map<double,string>::iterator pr = ParseInfo::sc_real_map.find(value);
-      if (pr == ParseInfo::sc_real_map.end()) {  // not found
+      if (!ParseInfo::real_constant_exists(value)) {
 	string var = ParseInfo::global_constants->new_var();
-	ParseInfo::sc_real_map.insert(pair<double,string>(value, var));
+	ParseInfo::insert_real_constant(value, var);
 	Output op(Decls(""), Code(""),
 		  GDecls(emit_static_decl(var)),
 		  GCode(emit_prot_assign(var, emit_call1("ScalarReal", d_to_s(value)))),
@@ -854,7 +851,7 @@ Output CodeGen::op_vector(SEXP vec) {
       } else {
 	Output op(Decls(""), Code(""),
 		  GDecls(""), GCode(""),
-		  Handle(pr->second), DelText(""), CONST, VISIBLE);
+		  Handle(ParseInfo::get_real_constant(value)), DelText(""), CONST, VISIBLE);
 	return op;
       }
     }

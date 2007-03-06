@@ -44,15 +44,14 @@ string make_symbol(SEXP e) {
     return "R_UnboundValue";
   } else {
     string name = string(CHAR(PRINTNAME(e)));
-    map<string,string>::iterator pr = ParseInfo::symbol_map.find(name);
-    if (pr == ParseInfo::symbol_map.end()) {  // not found
+    if (!ParseInfo::symbol_exists(name)) {
       string var = ParseInfo::global_constants->new_sexp_unp_name(name);
       string qname = quote(name);
       ParseInfo::global_constants->appl(var, Unprotected, "Rf_install", 1, &qname);
-      ParseInfo::symbol_map.insert(pair<string,string>(name, var));
+      ParseInfo::insert_symbol(name, var);
       return var;
     } else {
-      return pr->second;
+      return ParseInfo::get_symbol(name);
     }
   }
 }

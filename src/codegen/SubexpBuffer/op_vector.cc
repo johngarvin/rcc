@@ -44,14 +44,13 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case LGLSXP:
     if (len == 1) {
       int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = ParseInfo::sc_logical_map.find(value);
-      if (pr == ParseInfo::sc_logical_map.end()) {  // not found
+      if ( ! ParseInfo::logical_constant_exists(value)) {
 	string var = ParseInfo::global_constants->appl1("ScalarLogical",
-					    i_to_s(value));
-	ParseInfo::sc_logical_map.insert(pair<int,string>(value, var));
+							i_to_s(value));
+	ParseInfo::insert_logical_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, CONST, VISIBLE, "");
+	return Expression(ParseInfo::get_logical_constant(value), CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();
@@ -62,14 +61,13 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case INTSXP:
     if (len == 1) {
       int value = INTEGER(vec)[0];
-      map<int,string>::iterator pr = ParseInfo::sc_integer_map.find(value);
-      if (pr == ParseInfo::sc_integer_map.end()) {  // not found
+      if (!ParseInfo::integer_constant_exists(value)) {
 	string var = ParseInfo::global_constants->appl1("ScalarInteger",
-					    i_to_s(value));
-	ParseInfo::sc_integer_map.insert(pair<int,string>(value, var));
+							i_to_s(value));
+	ParseInfo::insert_integer_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, CONST, VISIBLE, "");
+	return Expression(ParseInfo::get_integer_constant(value), CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();
@@ -80,14 +78,13 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case REALSXP:
     if (len == 1) {
       double value = REAL(vec)[0];
-      map<double,string>::iterator pr = ParseInfo::sc_real_map.find(value);
-      if (pr == ParseInfo::sc_real_map.end()) {  // not found
+      if (!ParseInfo::real_constant_exists(value)) {  // not found
 	string var = ParseInfo::global_constants->appl1("ScalarReal",
-					    d_to_s(value));
-	ParseInfo::sc_real_map.insert(pair<double,string>(value, var));
+							d_to_s(value));
+	ParseInfo::insert_real_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
       } else {
-	return Expression(pr->second, CONST, VISIBLE, "");
+	return Expression(ParseInfo::get_real_constant(value), CONST, VISIBLE, "");
       }
     } else {
       ParseInfo::flag_problem();

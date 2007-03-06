@@ -62,8 +62,8 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
   if (!opt_R_name.empty() && ParseInfo::is_direct(opt_R_name)) {
     direct = TRUE;
     // make function to be called directly
-    if (ParseInfo::func_map.find(opt_R_name) != ParseInfo::func_map.end()) { // defined already
-      string closure_name = ParseInfo::func_map.find(opt_R_name)->second;
+    if (ParseInfo::func_constant_exists(opt_R_name)) {
+      string closure_name = ParseInfo::get_func_constant(opt_R_name);
       lexicalContext.Pop();
       return Expression(closure_name, CONST, INVISIBLE, "");
     } else { // not yet defined
@@ -91,7 +91,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     string closure = fi->get_closure();
     ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     ParseInfo::global_constants->del(formals);
-    if (direct) ParseInfo::func_map.insert(pair<string,string>(opt_R_name, closure));
+    if (direct) ParseInfo::insert_func_constant(opt_R_name, closure);
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
   } else {   // not the global environment

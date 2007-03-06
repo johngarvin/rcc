@@ -91,12 +91,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   if (annot->is_single()) {
     if (InternalLexicalScope * scope = dynamic_cast<InternalLexicalScope *>(*(annot->begin()))) {
       // check for global constants
-      // binding_map is used for global variables with
+      // binding map in ParseInfo is used for global variables with
       // constant values; it records the constant value of each name.
-      map<string, string>::iterator value;
-      value = ParseInfo::binding_map.find(name);
-      if (value != ParseInfo::binding_map.end()) {       // in binding map
-	return Expression(value->second, CONST, VISIBLE, "");
+      if (ParseInfo::binding_exists(name)) {
+	return Expression(ParseInfo::get_binding(name), CONST, VISIBLE, "");
       } else {
 	SEXP env_val;
 	if (lookup_type == FUNCTION_VAR) {
@@ -169,7 +167,7 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
       h = ParseInfo::global_constants->appl1("SYMVALUE", make_symbol(e), Unprotected);
     }
   }
-  ParseInfo::binding_map.insert(pair<string,string>(name, h));
+  ParseInfo::insert_binding(name, h);
   return Expression(h, CONST, VISIBLE, "");
 }
 

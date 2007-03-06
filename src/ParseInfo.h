@@ -62,31 +62,64 @@ public:
   
   // map constants to the code representing them
 
-  static std::map<std::string, std::string> func_map;
-  static std::map<std::string, std::string> symbol_map;
+  static bool func_constant_exists(std::string func);
+  static std::string get_func_constant(std::string func);
+  static void insert_func_constant(std::string func, std::string value);
 
-  // constant strings
-  static std::map<std::string, std::string> string_map;
+  static bool symbol_exists(std::string symbol);
+  static std::string get_symbol(std::string symbol);
+  static void insert_symbol(std::string symbol, std::string value);
 
-  // floating-point
-  static std::map<double, std::string> sc_real_map;
+  static bool string_constant_exists(std::string s);
+  static std::string get_string_constant(std::string s);
+  static void insert_string_constant(std::string s, std::string value);
 
-  // Boolean
-  static std::map<int, std::string> sc_logical_map;
+  static bool real_constant_exists(double r);
+  static std::string get_real_constant(double r);
+  static void insert_real_constant(double r, std::string value);
 
-  // integers
-  static std::map<int, std::string> sc_integer_map;
+  // Why not?
+  static bool logical_constant_exists(int b);
+  static std::string get_logical_constant(int b);
+  static void insert_logical_constant(int b, std::string value);
 
-  // primitive functions (PRIMSXP)
-  static std::map<int, std::string> primsxp_map;
+  static bool integer_constant_exists(int i);
+  static std::string get_integer_constant(int i);
+  static void insert_integer_constant(int i, std::string value);
 
-  // bindings of global library functions/variables
-  static std::map<std::string, std::string> binding_map;
+  static bool primsxp_constant_exists(int primsxp);
+  static std::string get_primsxp_constant(int primsxp);
+  static void insert_primsxp_constant(int primsxp, std::string value);
+
+  static bool binding_exists(std::string binding);
+  static std::string get_binding(std::string binding);
+  static void insert_binding(std::string binding, std::string value);
 
   // functions called directly
   static std::set<std::string> direct_funcs;
 
 private:
+  static std::map<std::string, std::string> m_func_map;
+  static std::map<std::string, std::string> m_symbol_map;
+
+  // constant strings
+  static std::map<std::string, std::string> m_string_map;
+
+  // floating-point
+  static std::map<double, std::string> m_real_map;
+
+  // Boolean
+  static std::map<int, std::string> m_logical_map;
+
+  // integers
+  static std::map<int, std::string> m_integer_map;
+
+  // primitive functions (PRIMSXP)
+  static std::map<int, std::string> m_primsxp_map;
+
+  // bindings of global library functions/variables
+  static std::map<std::string, std::string> m_binding_map;
+
   static bool m_problem_flag;
   static bool m_allow_oo;
   static bool m_allow_envir_manip;
