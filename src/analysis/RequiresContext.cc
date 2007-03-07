@@ -146,11 +146,10 @@ static bool expressionRequiresContext(SEXP e)
   case PROMSXP:
     return expressionRequiresContext(PREXPR(e));
   case LANGSXP:
-    if (TYPEOF(CAR(e)) == SYMSXP) {
-      return expressionRequiresContext(Rf_findFunUnboundOK(CAR(e), 
-							   R_GlobalEnv, TRUE));
+    if (TYPEOF(call_lhs(e)) == SYMSXP) {
+      return expressionRequiresContext(library_value(call_lhs(e)));
     } else {
-      return expressionRequiresContext(CAR(e));
+      return expressionRequiresContext(call_lhs(e));
     }
   case SPECIALSXP:
   case BUILTINSXP:

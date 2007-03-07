@@ -255,8 +255,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 		    CONST, 
 		    VISIBLE);
     } else {                   // not direct; call via closure
-      SEXP op = Rf_findFunUnboundOK(lhs, R_GlobalEnv, TRUE);
-      if (op == R_UnboundValue) {
+      if (!is_library(lhs)) {
 	// not in global env; presumably, user-defined function
 	string func = m_scope.new_label();
 	string code = emit_prot_assign(func, emit_call2("findFun",
@@ -272,6 +271,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 		      DEPENDENT,
 		      VISIBLE);
       } else {        // builtin function, special function, or library closure
+	SEXP op = library_value(lhs);
 	if (TYPEOF(op) == SPECIALSXP) {
 	  return op_special(e, op, rho);
 	} else if (TYPEOF(op) == BUILTINSXP) {

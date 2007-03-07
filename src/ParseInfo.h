@@ -99,7 +99,13 @@ public:
   static std::set<std::string> direct_funcs;
 
 private:
+
+  // ----- maps of constants to their code representations -----
+
+  // functions
   static std::map<std::string, std::string> m_func_map;
+
+  // R identifiers
   static std::map<std::string, std::string> m_symbol_map;
 
   // constant strings
@@ -119,6 +125,9 @@ private:
 
   // bindings of global library functions/variables
   static std::map<std::string, std::string> m_binding_map;
+
+
+  // ----- flags -----
 
   static bool m_problem_flag;
   static bool m_allow_oo;
