@@ -29,8 +29,11 @@
 
 #include <include/R/R_Defn.h>
 #include <support/StringUtils.h>
+
 #include <analysis/AnalysisResults.h>
+#include <analysis/DefVar.h>
 #include <analysis/Utils.h>
+#include <analysis/Var.h>
 #include <analysis/VarBinding.h>
 
 #include <CodeGen.h>
@@ -42,21 +45,30 @@
 using namespace std;
 using namespace RAnnot;
 
-// forward declaration for file-static function
-
-static Expression op_caching_lookup(SubexpBuffer * sb, string name, string symbol, string rhs, string rho);
-
-// interface function
-
 Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
-  string name = CHAR(PRINTNAME(CAR(cell)));
   string symbol = make_symbol(CAR(cell));
-  VarBinding * annot = getProperty(VarBinding, cell);
-  if (annot->is_single()) {
-    string location = annot->get_location(CAR(cell), this);
-    assert(location != "");
-    append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
-    return Expression(rhs, DEPENDENT, INVISIBLE, "");
+  VarBinding * binding = getProperty(VarBinding, cell);
+  if (binding->is_single()) {
+    string location = binding->get_location(CAR(cell), this);
+    assert(!location.empty());
+    DefVar * var = dynamic_cast<DefVar *>(getProperty(Var, cell));
+    assert(var != 0);
+    FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()));
+    assert(scope != 0);
+    FuncInfo * fi = getProperty(FuncInfo, scope->get_fundef());
+    // if redefining a parameter, we don't have a location, so emit a defineVar.
+    if (fi->is_arg(CAR(cell))) {
+      // TODO: be able to cache redefinitions of formal args
+      append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
+      return Expression(rhs, DEPENDENT, INVISIBLE, "");
+    } else if (var->is_first_on_some_path()) {
+      append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
+      return Expression(rhs, DEPENDENT, INVISIBLE, "");
+    } else {
+      // name has been defined previously
+      append_defs(emit_call2("R_SetVarLocValue", location, rhs) + ";\n");
+      return Expression(rhs, DEPENDENT, INVISIBLE, "");
+    }
   } else {   // no unique location; emit lookup
     append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
     return Expression(rhs, DEPENDENT, INVISIBLE, "");

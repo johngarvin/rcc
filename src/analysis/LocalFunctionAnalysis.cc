@@ -144,10 +144,14 @@ void LocalFunctionAnalysis::analyze_first_mentions() {
   OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
   FirstMentionDFSolver first_mention_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameStmtsMap> first_mention_map = first_mention_solver.perform_analysis(make_proc_h(m_fundef), cfg);
-  // for each name in map {
-  //   for each "first mention" statement {
-  //     add to annotation
-  //   }
-  // }
+  OA_ptr<NameMentionMultiMap> first_mention_map = first_mention_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  typedef NameMentionMultiMap::const_iterator Iterator;
+  for (Iterator name = first_mention_map->begin(); name != first_mention_map->end(); name++) {
+    Iterator start = first_mention_map->lower_bound(name->first);
+    Iterator end = first_mention_map->upper_bound(name->first);
+    for(Iterator mi = start; mi != end; mi++) {
+      Var * annot = getProperty(Var, name->first);
+      annot->set_first_on_some_path(true);
+    }
+  }
 }

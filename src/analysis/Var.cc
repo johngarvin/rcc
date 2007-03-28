@@ -37,7 +37,7 @@ namespace RAnnot {
 // Var
 //****************************************************************************
 
-Var::Var()
+  Var::Var() : m_first_on_some_path(false)
 {
 }
 

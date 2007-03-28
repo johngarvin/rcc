@@ -35,7 +35,7 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <analysis/NameStmtsMap.h>
+#include <analysis/NameMentionMultiMap.h>
 
 class OA::CFG::Interface;
 class R_IRInterface;
@@ -45,7 +45,7 @@ class FirstMentionDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   FirstMentionDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~FirstMentionDFSolver();
-  OA::OA_ptr<NameStmtsMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
+  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
 

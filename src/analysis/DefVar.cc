@@ -55,11 +55,12 @@ DefVar::dump(std::ostream& os) const
   beginObjDump(os,DefVar);
   //dumpSEXP(os,mSEXP);
   SEXP name = getName();
-  dumpSEXP(os,name);
-  dumpName(os,mUseDefType);
-  dumpName(os,mMayMustType);
-  dumpName(os,mScopeType);
-  dumpName(os,mSourceType);
+  dumpSEXP(os, name);
+  dumpName(os, mUseDefType);
+  dumpName(os, mMayMustType);
+  dumpName(os, mScopeType);
+  dumpName(os, mSourceType);
+  dumpVar(os, m_first_on_some_path);
   endObjDump(os,DefVar);
 }
 

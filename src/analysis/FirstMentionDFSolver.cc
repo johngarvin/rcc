@@ -38,7 +38,7 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/IRInterface.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/NameStmtsMap.h>
+#include <analysis/NameMentionMultiMap.h>
 #include <analysis/PropertySet.h>
 #include <analysis/VarRef.h>
 #include <analysis/Var.h>
@@ -59,14 +59,18 @@ FirstMentionDFSolver::FirstMentionDFSolver(OA_ptr<R_IRInterface> ir)
 FirstMentionDFSolver::~FirstMentionDFSolver()
 {}
 
-/// Perform the data flow analysis.
-OA_ptr<NameStmtsMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+/// Perform the data flow analysis. The main data flow analysis really
+/// solves the "must have been mentioned" problem. In a post-pass, use
+/// this information to find the first mentions. If a name is
+/// mentioned in the current statement and does not appear in the
+/// has-been-mentioned set, then it's a first mention.
+OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
   DataFlow::CFGDFProblem::solve(cfg);
 
-  // now collect the first mentions for each variable
-  OA_ptr<NameStmtsMap> first_mention_map; first_mention_map = new NameStmtsMap();
+  // now find the first mentions for each variable
+  OA_ptr<NameMentionMultiMap> first_mention_map; first_mention_map = new NameMentionMultiMap();
   // for each CFG node
   OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
@@ -80,8 +84,8 @@ OA_ptr<NameStmtsMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef((*mi)->getMention_c());
-	if (in_set->member(ref)) {
-	  first_mention_map->insert(std::make_pair(ref->get_sexp(), si->current()));
+	if (! in_set->member(ref)) {
+	  first_mention_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
 	}
       }  // next mention
       in_set = transfer(in_set, si->current()).convert<DFSet>();
@@ -137,12 +141,12 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeBottom() {
   assert(0);
 }
 
-/// Initializes mNodeInSetMap and mNodeOutSetMap with DFSets.
+/// Initializes mNodeInSetMap and mNodeOutSetMap with DFSets. On
+/// procedure entry, no variables have been mentioned, so initialize
+/// with the empty set. On entry to all other procedures, initialize
+/// to TOP (the set of all variables) so that meets (intersections)
+/// will not erase other sets.
 void FirstMentionDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
-  // On procedure entry, no variables have been mentioned, so
-  // initialize with the empty set. On entry to all other procedures,
-  // initialize to TOP (the set of all variables) so that meets will
-  // work correctly.
   if (n.ptrEqual(m_cfg->getEntry())) {
     mNodeInSetMap[n] = new DFSet;
   } else {
@@ -151,20 +155,26 @@ void FirstMentionDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
   mNodeOutSetMap[n] = m_top->clone();
 }
 
-/// Meet function.
-// Note: CFGDFProblem says: OK to modify set1 and return it as result,
-// because solver only passes a tempSet in as set1
+/// Meet function. Intersect the sets; a variable is in the
+/// must-have-been-mentioned set only if it has been mentioned on all
+/// incoming paths.
+///
+/// Note: base class CFGDFProblem says: OK to modify set1 and return
+/// it as result, because solver only passes a tempSet in as set1
 OA_ptr<DataFlow::DataFlowSet>
 FirstMentionDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2_orig) {
+  // downcast sets from interface DataFlowSet to concrete class DFSet
   OA_ptr<DFSet> set1; set1 = set1_orig.convert<DFSet>();
   OA_ptr<DFSet> set2; set2 = set2_orig.convert<DFSet>();
+  // perform the intersection
   return set1->intersect(set2);
 }
 
 /// Transfer function; the effect of a statement
-/// Add each mention to the set
-// Note: CFGDFProblem says: OK to modify in set and return it again as
-// result because solver clones the BB in sets
+/// Union each mention into the set
+///
+/// Note: base class CFGDFProblem says: OK to modify in set and return
+/// it again as result because solver clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> 
 FirstMentionDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();

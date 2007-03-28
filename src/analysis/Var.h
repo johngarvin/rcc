@@ -82,6 +82,11 @@ public:
   void setMention_c(SEXP x)
     { mSEXP = x; }
 
+  bool is_first_on_some_path() const
+    { return m_first_on_some_path; }
+  void set_first_on_some_path(bool x)
+    { m_first_on_some_path = x; }
+
   virtual SEXP getName() const = 0;
 
   static PropertyHndlT handle();
@@ -119,6 +124,7 @@ protected:
   UseDefT mUseDefType;
   MayMustT mMayMustType;
   LocalityType mScopeType;
+  bool m_first_on_some_path;
 };
 
 const std::string typeName(const Var::UseDefT x);

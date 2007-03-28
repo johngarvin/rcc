@@ -87,11 +87,13 @@ VarBinding::VarBinding()
 
   std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {
     FundefLexicalScope * scope;
-    if (is_single() && (scope = dynamic_cast<FundefLexicalScope *>(*begin()))) {
+    // If there's only one binding and it's in a fundef, then look up
+    // the var in the symbol table and get a location for it.
+    if (is_single() && (scope = dynamic_cast<FundefLexicalScope *>(*begin())) != 0) {
       SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
       VarInfo * vi = (*st)[name];
       assert(vi);
-      return vi->get_location(sb);
+      return vi->get_location(sb); // gets a location; creates it if necessary
     } else {
       return "";
     }
