@@ -88,15 +88,14 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
   if (args == R_NilValue) {
     arglist = "R_NilValue";
   } else {
-    // for now, try compiling all code as call-by-value (CBV).
+#ifdef CALL_BY_VALUE
     Expression arg_value = sb->op_list(args, rho, false, Protected);  // false: output as non-literal
     if (!arg_value.del_text.empty()) (*unprotcnt)++;
-    // could be applyClosure already performs the promiseArgs call
-#if 0
-    arglist = sb->appl2("rcc_promise_args", arg_value.var, rho);
-    (*unprotcnt)++;
-#else
     arglist = arg_value.var;
+#else  // call by need, the usual R semantics
+    // TODO: doesn't applyClosure already perform the promiseArgs call?
+    arglist = sb->appl2("promiseArgs", args1var, rho);
+    (*unprotcnt)++;
 #endif
   }
   return Expression(arglist, DEPENDENT, INVISIBLE, "");

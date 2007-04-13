@@ -46,7 +46,7 @@
 //-----------------------------------------------------------------------------
 // R IR representation
 
-//! OpenAnalysis interface to the R AST
+/// OpenAnalysis interface to the R AST
 class R_IRInterface : public OA::CFG::CFGIRInterfaceDefault,
 		      public OA::CallGraph::CallGraphIRInterface,
 		      public OA::SSA::SSAIRInterface

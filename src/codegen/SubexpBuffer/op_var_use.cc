@@ -86,10 +86,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   SEXP e = CAR(cell);
   string name = var_name(e);
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
-  VarBinding * annot = getProperty(VarBinding, cell);
+  VarBinding * binding = getProperty(VarBinding, cell);
 
-  if (annot->is_single()) {
-    if (InternalLexicalScope * scope = dynamic_cast<InternalLexicalScope *>(*(annot->begin()))) {
+  if (binding->is_single()) {
+    if (InternalLexicalScope * scope = dynamic_cast<InternalLexicalScope *>(*(binding->begin()))) {
       // check for global constants
       // binding map in ParseInfo is used for global variables with
       // constant values; it records the constant value of each name.
@@ -105,7 +105,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	assert(env_val != R_UnboundValue);
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
-    } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(annot->begin()))) {
+    } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
       FuncInfo* fi = getProperty(FuncInfo, scope->get_fundef());
       if (fi->is_arg(e)) {
 	// have to produce a lookup here; we don't know whether we need to evalaute a promise
@@ -113,7 +113,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	return op_lookup(sb, lookup_function, make_symbol(e), rho,
 			 resultProtection, fullyEvaluatedResult);
       } else {
-	string location = annot->get_location(e, sb);
+	string location = binding->get_location(e, sb);
 	string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
 	return Expression(h, DEPENDENT, VISIBLE, "");
       }

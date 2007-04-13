@@ -22,7 +22,7 @@
 // (InternalLexicalScope) (e.g. the scope where R internal names are
 // bound) or created by a function definition (FundefLexicalScope). The
 // global scope, because it contains code, is represented as a
-// UserLexicalScope.
+// FundefLexicalScope.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 

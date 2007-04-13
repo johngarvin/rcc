@@ -138,6 +138,8 @@ void LocalFunctionAnalysis::analyze_strictness() {
   }
 }
 
+// find the set of first mentions of each name (those that are the
+// first mention of that name on some path)
 void LocalFunctionAnalysis::analyze_first_mentions() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
