@@ -29,7 +29,7 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-#include <analysis/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/CallGraphAnnotationMap.h>
 
 namespace RAnnot {
 

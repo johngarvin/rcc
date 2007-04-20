@@ -26,8 +26,9 @@
 #include <support/DumpMacros.h>
 #include <support/RccError.h>
 
-#include <analysis/CallGraphAnnotation.h>
 #include <analysis/HandleInterface.h>
+
+#include <analysis/call-graph/CallGraphAnnotation.h>
 
 #include "LibraryCallGraphNode.h"
 

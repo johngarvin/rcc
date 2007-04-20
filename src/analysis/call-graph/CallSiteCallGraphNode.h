@@ -16,32 +16,42 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallGraphEdge.h
+// File: CallSiteCallGraphNode.h
 //
-// An edge between two CallGraphNodes in the call graph.
+// Call graph node representing a call site. Can be a builtin or library function call.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_GRAPH_EDGE_H
-#define CALL_GRAPH_EDGE_H
+#ifndef CALL_SITE_CALL_GRAPH_NODE_H
+#define CALL_SITE_CALL_GRAPH_NODE_H
 
-#include <analysis/CallGraphAnnotationMap.h>
-#include <analysis/CallGraphNode.h>
+#include <ostream>
+
+#include <include/R/R_RInternals.h>
+
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-class CallGraphEdge {
+class CallSiteCallGraphNode : public CallGraphNode {
 public:
-  explicit CallGraphEdge(const CallGraphNode * const source,
-			 const CallGraphNode * const sink);
-  virtual ~CallGraphEdge();
+  explicit CallSiteCallGraphNode(const SEXP def);
+  virtual ~CallSiteCallGraphNode();
 
-  const CallGraphNode * const get_source() const;
-  const CallGraphNode * const get_sink() const;
+  const OA::IRHandle get_handle() const;
+  const SEXP get_sexp() const;
 
+  void compute(CallGraphAnnotationMap::NodeListT & worklist,
+	       CallGraphAnnotationMap::NodeSetT & visited) const;
+
+  void get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
+			 CallGraphAnnotationMap::NodeSetT & visited,
+			 CallGraphAnnotation * ann) const;
+
+  void dump(std::ostream & os) const;
+  void dump_string(std::ostream & os) const;
 private:
-  const CallGraphNode * const m_source;
-  const CallGraphNode * const m_sink;
+  const SEXP m_cs;
 };
 
 } // end namespace RAnnot

@@ -16,30 +16,34 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallSiteCallGraphNode.h
+// File: CoordinateCallGraphNode.h
 //
-// Call graph node representing a call site. Can be a builtin or library function call.
+// Call graph node representing a coordinate (name + scope).
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_SITE_CALL_GRAPH_NODE_H
-#define CALL_SITE_CALL_GRAPH_NODE_H
+#ifndef COORDINATE_CALL_GRAPH_NODE_H
+#define COORDINATE_CALL_GRAPH_NODE_H
 
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/CallGraphNode.h>
+#include <analysis/LexicalScope.h>
+
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-class CallSiteCallGraphNode : public CallGraphNode {
+class CoordinateCallGraphNode : public CallGraphNode {
 public:
-  explicit CallSiteCallGraphNode(const SEXP def);
-  virtual ~CallSiteCallGraphNode();
+  explicit CoordinateCallGraphNode(const SEXP name, const LexicalScope * scope);
+  virtual ~CoordinateCallGraphNode();
 
   const OA::IRHandle get_handle() const;
-  const SEXP get_sexp() const;
+
+  const SEXP get_name() const;
+  const LexicalScope * get_scope() const;
 
   void compute(CallGraphAnnotationMap::NodeListT & worklist,
 	       CallGraphAnnotationMap::NodeSetT & visited) const;
@@ -51,7 +55,8 @@ public:
   void dump(std::ostream & os) const;
   void dump_string(std::ostream & os) const;
 private:
-  const SEXP m_cs;
+  const SEXP m_name;
+  const LexicalScope * m_scope;
 };
 
 } // end namespace RAnnot

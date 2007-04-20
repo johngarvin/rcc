@@ -26,9 +26,10 @@
 #include <support/RccError.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphAnnotation.h>
-#include <analysis/CallGraphInfo.h>
 #include <analysis/Utils.h>
+
+#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/CallGraphInfo.h>
 
 #include "UnknownValueCallGraphNode.h"
 

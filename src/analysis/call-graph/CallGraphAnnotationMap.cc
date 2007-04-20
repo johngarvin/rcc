@@ -34,19 +34,20 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/AnnotationBase.h>
-#include <analysis/CallGraphAnnotation.h>
-#include <analysis/CallGraphEdge.h>
-#include <analysis/CallGraphNode.h>
-#include <analysis/CallGraphInfo.h>
-#include <analysis/FundefCallGraphNode.h>
-#include <analysis/LibraryCallGraphNode.h>
-#include <analysis/CoordinateCallGraphNode.h>
-#include <analysis/CallSiteCallGraphNode.h>
-#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/VarBinding.h>
 #include <analysis/VarInfo.h>
+
+#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/CallGraphEdge.h>
+#include <analysis/call-graph/CallGraphNode.h>
+#include <analysis/call-graph/CallGraphInfo.h>
+#include <analysis/call-graph/FundefCallGraphNode.h>
+#include <analysis/call-graph/LibraryCallGraphNode.h>
+#include <analysis/call-graph/CoordinateCallGraphNode.h>
+#include <analysis/call-graph/CallSiteCallGraphNode.h>
+#include <analysis/call-graph/UnknownValueCallGraphNode.h>
 
 #include "CallGraphAnnotationMap.h"
 
@@ -283,7 +284,7 @@ void CallGraphAnnotationMap::compute() {
   while(!worklist.empty()) {
     const CallGraphNode * c = worklist.front();
     worklist.pop_front();
-    if (visited.find(c) == visited.end()) {
+    if (visited.find(c) == visited.end()) {   // if not visited
       visited.insert(c);
       c->compute(worklist, visited);
     }

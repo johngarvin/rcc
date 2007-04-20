@@ -30,14 +30,14 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphAnnotation.h>
-#include <analysis/CallGraphNode.h>
-#include <analysis/HandleInterface.h>
-#include <analysis/LibraryCallGraphNode.h>
-#include <analysis/FundefCallGraphNode.h>
-#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/CallGraphNode.h>
+#include <analysis/call-graph/LibraryCallGraphNode.h>
+#include <analysis/call-graph/FundefCallGraphNode.h>
+#include <analysis/call-graph/UnknownValueCallGraphNode.h>
 #include <support/StringUtils.h>
 #include <support/RccError.h>
 #include <Visibility.h>

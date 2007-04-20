@@ -31,8 +31,9 @@
 #include <set>
 
 #include <analysis/AnnotationBase.h>
-#include <analysis/CallGraphEdge.h>
 #include <analysis/PropertyHndl.h>
+
+#include <analysis/call-graph/CallGraphEdge.h>
 
 namespace RAnnot {
 

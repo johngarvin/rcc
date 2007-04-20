@@ -16,43 +16,32 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallGraphInfo.h
+// File: CallGraphEdge.h
 //
-// Contains links to in and out edges for each call graph node.
+// An edge between two CallGraphNodes in the call graph.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_GRAPH_INFO_H
-#define CALL_GRAPH_INFO_H
+#ifndef CALL_GRAPH_EDGE_H
+#define CALL_GRAPH_EDGE_H
 
-#include <set>
-
-#include <analysis/CallGraphEdge.h>
-#include <analysis/PropertyHndl.h>
+#include <analysis/call-graph/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-class CallGraphInfo {
+class CallGraphEdge {
 public:
-  typedef std::set<const CallGraphEdge *> MySetT;
-  typedef MySetT::const_iterator const_iterator;
+  explicit CallGraphEdge(const CallGraphNode * const source,
+			 const CallGraphNode * const sink);
+  virtual ~CallGraphEdge();
 
-  explicit CallGraphInfo();
-  virtual ~CallGraphInfo();
-
-  void insert_call_in(const CallGraphEdge * const edge);
-  void insert_call_out(const CallGraphEdge * const edge);
-
-  const_iterator begin_calls_in() const;
-  const_iterator end_calls_in() const;
-  const_iterator begin_calls_out() const;
-  const_iterator end_calls_out() const;
-
-  std::ostream & dump(std::ostream & stream) const;
+  const CallGraphNode * const get_source() const;
+  const CallGraphNode * const get_sink() const;
 
 private:
-  MySetT m_calls_in;
-  MySetT m_calls_out;
+  const CallGraphNode * const m_source;
+  const CallGraphNode * const m_sink;
 };
 
 } // end namespace RAnnot

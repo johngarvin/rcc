@@ -16,30 +16,32 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: FundefCallGraphNode.h
+// File: UnknownValueCallGraphNode.h
 //
-// Call graph node representing a fundef (function definition).
+// Call graph node representing an unknown value.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef FUNDEF_CALL_GRAPH_NODE_H
-#define FUNDEF_CALL_GRAPH_NODE_H
+#ifndef UNKNOWN_VALUE_CALL_GRAPH_NODE_H
+#define UNKNOWN_VALUE_CALL_GRAPH_NODE_H
 
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/CallGraphNode.h>
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-class FundefCallGraphNode : public CallGraphNode {
+/// UnknownValueCallGraphNode represents an unknown function value in
+/// the call graph. Incoming edges come from Coordinate nodes; no
+/// edges go out. This class is a singleton because there's no reason
+/// to distinguish different instances.
+class UnknownValueCallGraphNode : public CallGraphNode {
 public:
-  explicit FundefCallGraphNode(const SEXP fundef);
-  virtual ~FundefCallGraphNode();
+  virtual ~UnknownValueCallGraphNode();
 
   const OA::IRHandle get_handle() const;
-  const SEXP get_sexp() const;
 
   void compute(CallGraphAnnotationMap::NodeListT & worklist,
 	       CallGraphAnnotationMap::NodeSetT & visited) const;
@@ -48,13 +50,14 @@ public:
 			 CallGraphAnnotationMap::NodeSetT & visited,
 			 CallGraphAnnotation * ann) const;
 
-  /// dump the node contents to os using R printing
   void dump(std::ostream & os) const;
-
-  /// dump the node contents to os as a pure string
   void dump_string(std::ostream & os) const;
+
+  static UnknownValueCallGraphNode * get_instance();
+
 private:
-  const SEXP m_fundef;
+  explicit UnknownValueCallGraphNode();
+  static UnknownValueCallGraphNode * m_instance;
 };
 
 } // end namespace RAnnot

@@ -30,11 +30,12 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphAnnotationMap.h>
-#include <analysis/CallGraphAnnotation.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SymbolTable.h>
 #include <support/RccError.h>
+
+#include <analysis/call-graph/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/CallGraphAnnotation.h>
 
 #include <CodeGenUtils.h>
 #include <CodeGen.h>

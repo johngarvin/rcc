@@ -28,12 +28,13 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphInfo.h>
-#include <analysis/CoordinateCallGraphNode.h>
-#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
+
+#include <analysis/call-graph/CallGraphInfo.h>
+#include <analysis/call-graph/CoordinateCallGraphNode.h>
+#include <analysis/call-graph/UnknownValueCallGraphNode.h>
 
 namespace RAnnot {
 

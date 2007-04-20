@@ -16,32 +16,30 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File:
+// File: FundefCallGraphNode.h
 //
-// A call graph node representing an R internal value such as a
-// library function.
+// Call graph node representing a fundef (function definition).
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef LIBRARY_CALL_GRAPH_NODE_H
-#define LIBRARY_CALL_GRAPH_NODE_H
+#ifndef FUNDEF_CALL_GRAPH_NODE_H
+#define FUNDEF_CALL_GRAPH_NODE_H
 
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/CallGraphNode.h>
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-class LibraryCallGraphNode : public CallGraphNode {
+class FundefCallGraphNode : public CallGraphNode {
 public:
-  explicit LibraryCallGraphNode(const SEXP name, const SEXP value);
-  virtual ~LibraryCallGraphNode();
+  explicit FundefCallGraphNode(const SEXP fundef);
+  virtual ~FundefCallGraphNode();
 
   const OA::IRHandle get_handle() const;
-  const SEXP get_name() const;
-  const SEXP get_value() const;
+  const SEXP get_sexp() const;
 
   void compute(CallGraphAnnotationMap::NodeListT & worklist,
 	       CallGraphAnnotationMap::NodeSetT & visited) const;
@@ -50,11 +48,13 @@ public:
 			 CallGraphAnnotationMap::NodeSetT & visited,
 			 CallGraphAnnotation * ann) const;
 
+  /// dump the node contents to os using R printing
   void dump(std::ostream & os) const;
+
+  /// dump the node contents to os as a pure string
   void dump_string(std::ostream & os) const;
 private:
-  const SEXP m_name;
-  const SEXP m_value;
+  const SEXP m_fundef;
 };
 
 } // end namespace RAnnot

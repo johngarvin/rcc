@@ -25,10 +25,11 @@
 #include <support/DumpMacros.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphAnnotation.h>
-#include <analysis/CallSiteCallGraphNode.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
+
+#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/CallSiteCallGraphNode.h>
 
 #include "FundefCallGraphNode.h"
 

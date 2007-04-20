@@ -27,14 +27,15 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/CallGraphInfo.h>
 #include <analysis/DefVar.h>
-#include <analysis/FundefCallGraphNode.h>
-#include <analysis/LibraryCallGraphNode.h>
-#include <analysis/UnknownValueCallGraphNode.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/Utils.h>
 #include <analysis/VarInfo.h>
+
+#include <analysis/call-graph/CallGraphInfo.h>
+#include <analysis/call-graph/FundefCallGraphNode.h>
+#include <analysis/call-graph/LibraryCallGraphNode.h>
+#include <analysis/call-graph/UnknownValueCallGraphNode.h>
 
 #include "CoordinateCallGraphNode.h"
 

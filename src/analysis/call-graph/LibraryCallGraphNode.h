@@ -16,32 +16,32 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: UnknownValueCallGraphNode.h
+// File:
 //
-// Call graph node representing an unknown value.
+// A call graph node representing an R internal value such as a
+// library function.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef UNKNOWN_VALUE_CALL_GRAPH_NODE_H
-#define UNKNOWN_VALUE_CALL_GRAPH_NODE_H
+#ifndef LIBRARY_CALL_GRAPH_NODE_H
+#define LIBRARY_CALL_GRAPH_NODE_H
 
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/CallGraphNode.h>
+#include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
 
-/// UnknownValueCallGraphNode represents an unknown function value in
-/// the call graph. Incoming edges come from Coordinate nodes; no
-/// edges go out. This class is a singleton because there's no reason
-/// to distinguish different instances.
-class UnknownValueCallGraphNode : public CallGraphNode {
+class LibraryCallGraphNode : public CallGraphNode {
 public:
-  virtual ~UnknownValueCallGraphNode();
+  explicit LibraryCallGraphNode(const SEXP name, const SEXP value);
+  virtual ~LibraryCallGraphNode();
 
   const OA::IRHandle get_handle() const;
+  const SEXP get_name() const;
+  const SEXP get_value() const;
 
   void compute(CallGraphAnnotationMap::NodeListT & worklist,
 	       CallGraphAnnotationMap::NodeSetT & visited) const;
@@ -52,12 +52,9 @@ public:
 
   void dump(std::ostream & os) const;
   void dump_string(std::ostream & os) const;
-
-  static UnknownValueCallGraphNode * get_instance();
-
 private:
-  explicit UnknownValueCallGraphNode();
-  static UnknownValueCallGraphNode * m_instance;
+  const SEXP m_name;
+  const SEXP m_value;
 };
 
 } // end namespace RAnnot

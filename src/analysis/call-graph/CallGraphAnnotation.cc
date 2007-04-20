@@ -25,9 +25,9 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "CallGraphAnnotation.h"
+#include <analysis/call-graph/CallGraphAnnotationMap.h>
 
-#include <analysis/CallGraphAnnotationMap.h>
+#include "CallGraphAnnotation.h"
 
 namespace RAnnot {
 

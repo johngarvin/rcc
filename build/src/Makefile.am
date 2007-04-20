@@ -4,6 +4,7 @@ bin_PROGRAMS = rcc.bin
 VPATH =						\
   @top_srcdir@/src				\
   @top_srcdir@/src/analysis			\
+  @top_srcdir@/src/analysis/call-graph          \
   @top_srcdir@/src/codegen			\
   @top_srcdir@/src/codegen/SubexpBuffer		\
   @top_srcdir@/src/matmul			\
