@@ -134,6 +134,7 @@ rcc_bin_SOURCES =				\
   VarRef.h					\
   VarRefSet.cc					\
   VarRefSet.h					\
+  VarVisitor.h                                  \
 						\
   SplitSubexpBuffer.cc SplitSubexpBuffer.h	\
   SubexpBuffer.cc SubexpBuffer.h		\

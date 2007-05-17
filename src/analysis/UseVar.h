@@ -28,6 +28,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/Var.h>
+#include <analysis/VarVisitor.h>
 
 namespace RAnnot {
 
@@ -52,6 +53,8 @@ public:
     { mPositionType = x; }
 
   virtual SEXP getName() const;
+
+  void accept(VarVisitor* v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

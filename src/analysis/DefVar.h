@@ -28,6 +28,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/Var.h>
+#include <analysis/VarVisitor.h>
 
 namespace RAnnot {
 
@@ -59,6 +60,8 @@ public:
     { return mRhs_c; }
   void setRhs_c(SEXP x)
     { mRhs_c = x; }
+
+  void accept(VarVisitor* v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

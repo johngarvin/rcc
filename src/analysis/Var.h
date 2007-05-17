@@ -32,6 +32,7 @@
 #include <analysis/AnnotationBase.h>
 #include <analysis/LocalityType.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/VarVisitor.h>
 
 namespace RAnnot {
 
@@ -90,6 +91,8 @@ public:
   virtual SEXP getName() const = 0;
 
   static PropertyHndlT handle();
+
+  virtual void accept(VarVisitor* v) = 0;
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

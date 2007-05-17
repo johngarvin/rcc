@@ -48,6 +48,10 @@ SEXP UseVar::getName() const
   return CAR(mSEXP);
 }
 
+void UseVar::accept(VarVisitor* v) {
+  v->visitUseVar(this);
+}
+
 std::ostream&
 UseVar::dump(std::ostream& os) const
 {

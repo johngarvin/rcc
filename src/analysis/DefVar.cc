@@ -49,6 +49,10 @@ SEXP DefVar::getName() const
   }
 }
 
+void DefVar::accept(VarVisitor* v) {
+  v->visitDefVar(this);
+}
+
 std::ostream&
 DefVar::dump(std::ostream& os) const
 {

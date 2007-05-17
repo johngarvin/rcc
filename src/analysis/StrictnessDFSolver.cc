@@ -151,6 +151,7 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
     OA_ptr<R_VarRef> mention; mention = new R_BodyVarRef((*var_iter)->getMention_c());
+    
     if (m_formal_args->includes_name(mention) &&
 	(*var_iter)->getUseDefType() == Var::Var_USE &&
 	(*var_iter)->getMayMustType() == Var::Var_MUST)
