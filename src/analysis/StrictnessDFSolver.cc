@@ -26,7 +26,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
@@ -44,28 +44,28 @@ using namespace OA;
 using namespace HandleInterface;
 using namespace RAnnot;
 
-class OA::CFG::Interface;
+class OA::CFG::CFGInterface;
 
 typedef DefaultDFSet DFSet;
 
 static const bool debug = false;
 
-/// Initialize as a forward data flow problem
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
-  : DataFlow::CFGDFProblem(DataFlow::Forward), m_ir(ir)
+  : m_ir(ir)
 {}
 
 StrictnessDFSolver::~StrictnessDFSolver()
 {}
 
 /// Perform the data flow analysis.
-OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
   SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals));
-  OA_ptr<DFSet> retval = DataFlow::CFGDFProblem::solve(cfg).convert<DFSet>();
+  OA_ptr<DFSet> retval = m_solver->solve(cfg).convert<DFSet>();
   if (debug) dump_node_maps();
   return retval;
 }
@@ -79,12 +79,12 @@ void StrictnessDFSolver::dump_node_maps() {
 void StrictnessDFSolver::dump_node_maps(ostream & os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
-  OA_ptr<CFG::Interface::NodesIterator> ni = m_cfg->getNodesIterator();
-  
+
+  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::Interface::Node> n = ni->current();
-    df_in_set = mNodeInSetMap[n];
-    df_out_set = mNodeOutSetMap[n];
+    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+    df_in_set = m_solver->getInSet(n);
+    df_out_set = m_solver->getOutSet(n);
     in_set = df_in_set.convert<DFSet>();
     out_set = df_out_set.convert<DFSet>();
     os << "CFG NODE #" << n->getId() << ":\n";
@@ -107,18 +107,21 @@ OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeBottom() {
   assert(0);
 }
 
-/// Creates in and out DFSets and stores them in mNodeInSetMap and
-/// mNodeOutSetMap.
-void StrictnessDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
-  // On procedure entry, no variables are strict, so initialize with
-  // an empty set. On entry to all other nodes, initialize to the set
-  // of all formal args (TOP) so that meets will work correctly.
+/// On procedure entry, no variables are strict, so initialize with
+/// an empty set. On entry to all other nodes, initialize to the set
+/// of all formal args (TOP) so that meets will work correctly.
+OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
-    mNodeInSetMap[n] = new DFSet;
+    OA_ptr<DFSet> dfset; dfset = new DFSet;
+    return dfset.convert<DataFlow::DataFlowSet>();
   } else {
-    mNodeInSetMap[n] = m_formal_args->clone();
+    return m_formal_args->clone();
   }
-  mNodeOutSetMap[n] = new DFSet;
+}
+
+OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+  OA_ptr<DFSet> dfset; dfset = new DFSet;
+  return dfset.convert<DataFlow::DataFlowSet>();
 }
 
 /// Meet function merges info from predecessors. CFGDFProblem says: OK

@@ -24,6 +24,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/CFG/CFG.hpp>
+
 #include <support/RccError.h>
 
 #include <analysis/Analyst.h>
@@ -39,6 +41,8 @@
 using namespace OA;
 using namespace HandleInterface;
 
+typedef CFG::CFGInterface MyCFG;
+
 namespace RAnnot {
   
 // ----- type definitions for readability -----
@@ -47,8 +51,6 @@ typedef VarAnnotationMap::MyKeyT MyKeyT;
 typedef VarAnnotationMap::MyMappedT MyMappedT;
 typedef VarAnnotationMap::iterator iterator;
 typedef VarAnnotationMap::const_iterator const_iterator;
-
-typedef CFG::Interface CFG;
 
 //  ----- constructor/destructor ----- 
   
@@ -143,11 +145,11 @@ void VarAnnotationMap::compute_all_syntactic_info() {
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     // for each CFG node (basic block)
-    OA_ptr<CFG::NodesIterator> ni = fi->get_cfg()->getNodesIterator();
+    OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
     for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
-      node = ni->current();
+      node = ni->current().convert<CFG::Node>();
       // each statement in basic block
-      OA_ptr<CFG::NodeStatementsIterator> si; si = node->getNodeStatementsIterator();
+      OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
       for(StmtHandle stmt; si->isValid(); ++*si) {
 	stmt = si->current();
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
@@ -173,7 +175,7 @@ void VarAnnotationMap::compute_all_locality_info() {
   for(FuncInfo * fi; fii.IsValid(); fii++) {
     fi = fii.Current();
     ProcHandle ph = make_proc_h(fi->get_defn());
-    OA_ptr<CFG> cfg = fi->get_cfg();
+    OA_ptr<MyCFG> cfg = fi->get_cfg();
     compute_locality_info(interface, ph, cfg);
   }
 }
@@ -182,7 +184,7 @@ void VarAnnotationMap::compute_all_locality_info() {
 /// the info in m_map.
 void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
 					     ProcHandle proc,
-					     OA_ptr<CFG> cfg)
+					     OA_ptr<MyCFG> cfg)
 {
   Locality::LocalityDFSolver solver(interface);
   solver.perform_analysis(proc, cfg);

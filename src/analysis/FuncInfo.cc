@@ -24,6 +24,8 @@
 
 #include <include/R/R_RInternals.h>
 
+#include <OpenAnalysis/CFG/ManagerCFG.hpp>
+
 #include <ParseInfo.h>
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
@@ -198,12 +200,12 @@ const std::string& FuncInfo::get_closure()
   return m_closure;
 }
 
-OA_ptr<CFG::Interface> FuncInfo::get_cfg() const
+OA_ptr<CFG::CFG> FuncInfo::get_cfg() const
 {
   return m_cfg;
 }
 
-void FuncInfo::set_cfg(OA_ptr<CFG::Interface> x)
+void FuncInfo::set_cfg(OA_ptr<CFG::CFG> x)
 {
   m_cfg = x;
 }
@@ -271,7 +273,7 @@ FundefLexicalScope * FuncInfo::get_scope() const {
 void FuncInfo::perform_analysis() {
   // compute CFG
   // pass 'true' as second arg to build statement-level CFG
-  CFG::ManagerStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
+  CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
   m_cfg = cfg_man.performAnalysis(make_proc_h(m_defn));
 
 #if 0
@@ -313,11 +315,11 @@ void FuncInfo::collect_mentions_and_call_sites() {
   assert(!m_cfg.ptrEqual(0));
 
   // for each node
-  OA_ptr<CFG::Interface::NodesIterator> ni; ni = m_cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
   for( ; ni->isValid(); ++*ni) {
     // for each statement
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
-    si = ni->current()->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
+    si = ni->current().convert<CFG::Node>()->getNodeStatementsIterator();
     for( ; si->isValid(); ++*si) {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));

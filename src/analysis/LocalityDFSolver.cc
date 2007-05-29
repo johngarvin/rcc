@@ -25,7 +25,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
@@ -53,7 +53,6 @@ using namespace HandleInterface;
 
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2);
-static R_VarRef * make_var_ref_from_annotation(Var * annot);
 
 // static variable for debugging
 
@@ -61,36 +60,66 @@ static const bool debug = false;
 
 namespace Locality {
 
-/// Initialize as a forward data flow problem.
+/// visitor that returns an R_VarRef of the appropriate type when
+/// applied to Var annotation
+class MakeVarRefVisitor : private VarVisitor {
+private:
+  R_VarRef * m_output;
+
+public:
+  MakeVarRefVisitor() : m_output(0) {}
+      
+private:
+  void visitUseVar(UseVar * uv) {
+    m_output = new R_BodyVarRef(uv->getMention_c());
+  }
+  
+  void visitDefVar(DefVar * dv) {
+    switch(dv->getSourceType()) {
+    case DefVar::DefVar_ASSIGN:
+      m_output = new R_BodyVarRef(dv->getMention_c());
+      break;
+    case DefVar::DefVar_FORMAL:
+      m_output = new R_ArgVarRef(dv->getMention_c());
+      break;
+    default:
+      rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
+    }
+  }
+
+public:
+  R_VarRef * visit(Var * host) {
+    host->accept(this);
+    return m_output;
+  }
+};
+
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
-  : DataFlow::CFGDFProblem( DataFlow::Forward ), rir(_rir)
+  : m_ir(_rir)
   {}
 
 /// Perform the data flow analysis. Sets each variable reference's Var
 /// annotation with its locality information.
 void LocalityDFSolver::
-perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_cfg = cfg;
   m_proc = proc;
 
-  DataFlow::CFGDFProblem::solve(cfg);
-  // solve populates mNodeInSetMap and mNodeOutSetMap
+  // solve as a forward data flow problem
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
+  m_solver->solve(cfg);
 
-  // For reference:
-  //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeInSetMap;
-  //std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlowSet> > mNodeOutSetMap;
-
-  // data flow problem solved; now traverse the function and set annotations appropriately
+  // data flow problem solved; now traverse the function and fill in annotations
 
   // for each node
-  std::map<OA_ptr<CFG::Interface::Node>,OA_ptr<DataFlow::DataFlowSet> >::iterator mi;
-  for(mi = mNodeInSetMap.begin(); mi != mNodeInSetMap.end(); ++mi) {
+  OA_ptr<CFG::NodesIteratorInterface> ni = cfg->getCFGNodesIterator();
+  for( ; ni->isValid(); ++*ni) {
+    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
 
-    // map contains ptrs to base class DataFlowSet; convert to ptr to derived class DFSet
-    OA_ptr<DFSet> in_set = mi->second.convert<DFSet>();
+    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
 
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
-    si = mi->first->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
+    si = n->getNodeStatementsIterator();
     // statement-level CFG; there should be no more than one statement
     if (si->isValid()) {
 
@@ -100,10 +129,11 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * annot = *mi;
 	// look up the mention's name in in_set to get lattice type
-	OA_ptr<R_VarRef> ref; ref = make_var_ref_from_annotation(annot);
+	MakeVarRefVisitor visitor;
+	OA_ptr<R_VarRef> ref; ref = visitor.visit(annot);
 	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
 	if (elem.ptrEqual(NULL)) {
-	  rcc_error("Name of a mention not found in mNodeInSetMap");
+	  rcc_error("LocalityDFSolver: name of a mention not found in mNodeInSetMap");
 	}
       
 	// DF problem only analyzes uses and may-defs. Locality flags of
@@ -130,18 +160,18 @@ void LocalityDFSolver::dump_node_maps() {
 void LocalityDFSolver::dump_node_maps(ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
-  OA_ptr<CFG::Interface::NodesIterator> ni = m_cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::Interface::Node> n = ni->current();
-    df_in_set = mNodeInSetMap[n];
-    df_out_set = mNodeOutSetMap[n];
+    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+    df_in_set = m_solver->getInSet(n);
+    df_out_set = m_solver->getOutSet(n);
     in_set = df_in_set.convert<DFSet>();
     out_set = df_out_set.convert<DFSet>();
     os << "CFG NODE #" << n->getId() << ":\n";
     os << "IN SET:\n";
-    in_set->dump(os, rir);
+    in_set->dump(os, m_ir);
     os << "OUT SET:\n";
-    out_set->dump(os, rir);
+    out_set->dump(os, m_ir);
   }
 }
 
@@ -171,12 +201,12 @@ void LocalityDFSolver::initialize_sets() {
   m_entry_values = new DFSet;
 
   // each CFG node
-  OA_ptr<CFG::Interface::NodesIterator> ni;
-  ni = m_cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
 
     // each statement
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si; si = ni->current()->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
+    si = ni->current().convert<CFG::NodeInterface>()->getNodeStatementsIterator();
     for ( ; si->isValid(); ++*si) {
       if (debug) {
 	Rf_PrintValue(make_sexp(si->current()));
@@ -215,15 +245,20 @@ void LocalityDFSolver::initialize_sets() {
   m_entry_values->insert_varset(vs, Locality_LOCAL);
 }
 
-/// Creates in and out DFSets and stores them in mNodeInSetMap and
-/// mNodeOutSetMap.
-void LocalityDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
+/// The in set for the entry node gets the set of entry values (all
+/// names FREE except formals, which are LOCAL). All other in sets are
+/// initialized as TOP.
+OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
-    mNodeInSetMap[n] = m_entry_values->clone();
+    return m_entry_values->clone();
   } else {
-    mNodeInSetMap[n] = m_all_top->clone();
+    return m_all_top->clone();
   }
-  mNodeOutSetMap[n] = m_all_top->clone();
+}
+
+/// All out sets are initialized as TOP.
+OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+  return m_all_top->clone();
 }
 
 /// Meet function merges info from predecessors. CFGDFProblem says: OK
@@ -248,7 +283,8 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
     // if variable was found to be local during statement-level
     // analysis, add it in
     if ((*var_iter)->getScopeType() == Locality_LOCAL) {
-      OA_ptr<R_VarRef> var; var = make_var_ref_from_annotation(*var_iter);
+      MakeVarRefVisitor visitor;
+      OA_ptr<R_VarRef> var; var = visitor.visit(*var_iter);
       OA_ptr<DFSetElement> use; use = new DFSetElement(var, (*var_iter)->getScopeType());
       in->replace(use);
     }
@@ -294,33 +330,3 @@ OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locali
   }
   return retval;
 }
-
-//------------------------------------------------------------
-// Other static functions
-//------------------------------------------------------------
-
-/// Creates and returns an R_VarRef element from the information
-/// contained in a Var annotation. The caller is responsible for
-/// managing the memory created. (Sticking it in an OA_ptr will do.)
-/// TODO: make polymorphic to remove awkward switch on derived type
-static R_VarRef * make_var_ref_from_annotation(RAnnot::Var * annot) {
-  if (dynamic_cast<UseVar *>(annot)) {
-    return new R_BodyVarRef(annot->getMention_c());
-  } else if (DefVar * def_annot = dynamic_cast<DefVar *>(annot)) {
-    switch(def_annot->getSourceType()) {
-    case DefVar::DefVar_ASSIGN:
-      return new R_BodyVarRef(annot->getMention_c());
-      break;
-    case DefVar::DefVar_FORMAL:
-      return new R_ArgVarRef(annot->getMention_c());
-      break;
-    default:
-      rcc_error("make_var_ref_from_annotation: unrecognized DefVar::SourceT");
-    }
-  } else {
-    rcc_error("make_var_ref_from_annotation: unknown annotation type");
-  }
-  return 0;
-}
-
-

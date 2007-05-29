@@ -29,7 +29,7 @@
 
 #include <map>
 
-#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/CFG/CFGInterface.hpp>
 
 #include <analysis/AnnotationMap.h>
 #include <analysis/PropertyHndl.h>
@@ -71,7 +71,7 @@ private:
   void compute_all_locality_info();
   void compute_locality_info(OA::OA_ptr<R_IRInterface> interface,
 			     OA::ProcHandle proc,
-			     OA::OA_ptr<OA::CFG::Interface> cfg);
+			     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
 
   bool m_computed; // has our information been computed yet?
   std::map<MyKeyT, MyMappedT> m_map;

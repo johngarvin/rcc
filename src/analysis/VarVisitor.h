@@ -36,6 +36,28 @@ public:
   virtual void visitDefVar(DefVar * dv) = 0;
 };
 
+#if 0 
+template<class R> class VarVisitor {
+public:
+  virtual R visitUseVar(UseVar * uv) = 0;
+  virtual R visitDefVar(DefVar * dv) = 0;
+};
+
+template<class R> class VarVisitorAdapter : public VarVisitor<void *> {
+private:
+  VarVisitor<R> * m_visitor;
+public:
+  explicit VarVisitorAdapter(VarVisitor<R> * visitor) : m_visitor(visitor) {}
+
+  void * visitUseVar(UseVar * uv) {
+    return static_cast<void *>(m_visitor->visitUseVar(uv));
+  }
+  void * visitDefVar(DefVar * dv) {
+    return static_cast<void *>(m_visitor->visitDefVar(dv));
+  }
+};
+#endif
+
 }
 
 #endif

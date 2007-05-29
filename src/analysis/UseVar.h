@@ -54,7 +54,7 @@ public:
 
   virtual SEXP getName() const;
 
-  void accept(VarVisitor* v);
+  void accept(VarVisitor * v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

@@ -129,7 +129,7 @@ LexicalScope * R_Analyst::get_global_scope() {
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
   if (proc != R_NilValue) {
     FuncInfo *fi = getProperty(FuncInfo, proc);
-    OA::OA_ptr<OA::CFG::Interface> cfg; cfg = fi->get_cfg();
+    OA::OA_ptr<OA::CFG::CFG> cfg; cfg = fi->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
@@ -138,7 +138,7 @@ void R_Analyst::dump_all_cfgs(std::ostream &os) {
   FuncInfoIterator fii(m_scope_tree_root);
   for( ; fii.IsValid(); ++fii) {
     FuncInfo *finfo = fii.Current();
-    OA::OA_ptr<OA::CFG::Interface> cfg; cfg = finfo->get_cfg();
+    OA::OA_ptr<OA::CFG::CFG> cfg; cfg = finfo->get_cfg();
     cfg->dump(os, m_interface);
   }
 }

@@ -24,7 +24,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/CFG/CFGInterface.hpp>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
@@ -46,7 +46,7 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-void collect_mentions_and_call_sites(OA_ptr<CFG::Interface> cfg);
+void collect_mentions_and_call_sites(OA_ptr<CFG::CFGInterface> cfg);
 
 static const bool debug = false;
 
@@ -93,14 +93,14 @@ void LocalFunctionAnalysis::analyze_args() {
 void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
-  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
+  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
   // for each node
-  OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
   for( ; ni->isValid(); ++*ni) {
     // for each statement
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si;
-    si = ni->current()->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
+    si = ni->current().convert<CFG::NodeInterface>()->getNodeStatementsIterator();
     for( ; si->isValid(); ++*si) {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
@@ -126,7 +126,7 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
 void LocalFunctionAnalysis::analyze_strictness() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
-  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
+  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
   StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
   OA_ptr<DefaultDFSet> strict_set = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
@@ -143,7 +143,7 @@ void LocalFunctionAnalysis::analyze_strictness() {
 void LocalFunctionAnalysis::analyze_first_mentions() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
-  OA_ptr<CFG::Interface> cfg; cfg = fi->get_cfg();
+  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
   FirstMentionDFSolver first_mention_solver(R_Analyst::get_instance()->get_interface());
   OA_ptr<NameMentionMultiMap> first_mention_map = first_mention_solver.perform_analysis(make_proc_h(m_fundef), cfg);

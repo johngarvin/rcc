@@ -49,7 +49,7 @@ SEXP DefVar::getName() const
   }
 }
 
-void DefVar::accept(VarVisitor* v) {
+void DefVar::accept(VarVisitor * v) {
   v->visitDefVar(this);
 }
 

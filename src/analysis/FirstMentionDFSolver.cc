@@ -31,6 +31,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/DefaultDFSet.h>
@@ -51,9 +52,8 @@ using namespace HandleInterface;
 
 typedef DefaultDFSet DFSet;
 
-/// Initialize as a forward data flow problem.
 FirstMentionDFSolver::FirstMentionDFSolver(OA_ptr<R_IRInterface> ir)
-  : DataFlow::CFGDFProblem(DataFlow::Forward), m_ir(ir)
+  : m_ir(ir)
 {}
 
 FirstMentionDFSolver::~FirstMentionDFSolver()
@@ -64,19 +64,23 @@ FirstMentionDFSolver::~FirstMentionDFSolver()
 /// this information to find the first mentions. If a name is
 /// mentioned in the current statement and does not appear in the
 /// has-been-mentioned set, then it's a first mention.
-OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::Interface> cfg) {
+OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
-  DataFlow::CFGDFProblem::solve(cfg);
+
+  // solve as a forward data flow problem
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
+  m_solver->solve(cfg);
 
   // now find the first mentions for each variable
   OA_ptr<NameMentionMultiMap> first_mention_map; first_mention_map = new NameMentionMultiMap();
   // for each CFG node
-  OA_ptr<CFG::Interface::NodesIterator> ni; ni = cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<DFSet> in_set = mNodeInSetMap[ni->current()].convert<DFSet>();
+    OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
+    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
     // for each statement
-    OA_ptr<CFG::Interface::NodeStatementsIterator> si; si = ni->current()->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
     for ( ; si->isValid(); ++*si) {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
@@ -104,12 +108,12 @@ void FirstMentionDFSolver::dump_node_maps() {
 void FirstMentionDFSolver::dump_node_maps(ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
-  OA_ptr<CFG::Interface::NodesIterator> ni = m_cfg->getNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
   
   for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::Interface::Node> n = ni->current();
-    df_in_set = mNodeInSetMap[n];
-    df_out_set = mNodeOutSetMap[n];
+    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+    df_in_set = m_solver->getInSet(n);
+    df_out_set = m_solver->getOutSet(n);
     in_set = df_in_set.convert<DFSet>();
     out_set = df_out_set.convert<DFSet>();
     os << "CFG NODE #" << n->getId() << ":\n";
@@ -141,18 +145,22 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeBottom() {
   assert(0);
 }
 
-/// Initializes mNodeInSetMap and mNodeOutSetMap with DFSets. On
+/// Initializes in and out sets for each node with DFSets. On
 /// procedure entry, no variables have been mentioned, so initialize
 /// with the empty set. On entry to all other procedures, initialize
 /// to TOP (the set of all variables) so that meets (intersections)
 /// will not erase other sets.
-void FirstMentionDFSolver::initializeNode(OA_ptr<CFG::Interface::Node> n) {
+OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
-    mNodeInSetMap[n] = new DFSet;
+    OA_ptr<DFSet> dfset; dfset = new DFSet;
+    return dfset.convert<DataFlow::DataFlowSet>();  // upcast
   } else {
-    mNodeInSetMap[n] = m_top->clone();
+    return m_top->clone();
   }
-  mNodeOutSetMap[n] = m_top->clone();
+}
+
+OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+  return m_top->clone();
 }
 
 /// Meet function. Intersect the sets; a variable is in the

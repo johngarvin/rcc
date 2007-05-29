@@ -33,11 +33,12 @@
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/NameMentionMultiMap.h>
 
-class OA::CFG::Interface;
+class OA::CFG::CFGInterface;
 class R_IRInterface;
 class DefaultDFSet;
 
@@ -45,7 +46,7 @@ class FirstMentionDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   FirstMentionDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~FirstMentionDFSolver();
-  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::Interface> cfg);
+  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
 
@@ -54,7 +55,8 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeTop();
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeBottom();
 
-  void initializeNode(OA::OA_ptr<OA::CFG::Interface::Node> n);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeIN(OA::OA_ptr<OA::CFG::NodeInterface> n);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeOUT(OA::OA_ptr<OA::CFG::NodeInterface> n);
 
   // CFGDFProblem says: OK to modify set1 and return it as result, because solver
   // only passes a tempSet in as set1
@@ -68,9 +70,10 @@ private:
   
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
-  OA::OA_ptr<OA::CFG::Interface> m_cfg;
+  OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
   OA::OA_ptr<DefaultDFSet> m_top;
+  OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
 };
 
 #endif // FIRST_MENTION_DF_SOLVER_H

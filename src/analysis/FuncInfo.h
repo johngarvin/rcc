@@ -29,7 +29,7 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <OpenAnalysis/CFG/Interface.hpp>
+#include <OpenAnalysis/CFG/CFG.hpp>
 
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
 
@@ -112,8 +112,8 @@ public:
   void insert_call_site(CallSiteT e);
 
   // CFG
-  OA::OA_ptr<OA::CFG::Interface> get_cfg() const;
-  void set_cfg(OA::OA_ptr<OA::CFG::Interface> x);
+  OA::OA_ptr<OA::CFG::CFG> get_cfg() const;
+  void set_cfg(OA::OA_ptr<OA::CFG::CFG> x);
   
   // mentions and call sites
   void collect_mentions_and_call_sites();
@@ -141,13 +141,13 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  unsigned int m_num_args;    // number of known arguments
-  bool m_has_var_args;        // variable number of arguments
-  std::string m_c_name;       // C linkage name
-  std::string m_closure;      // C closure (CLOSXP) name
-  bool m_requires_context;    // is an R context object needed for the function?
-  FundefLexicalScope * m_scope;  // lexical scope
-  OA::OA_ptr<OA::CFG::Interface> m_cfg; // control flow graph
+  unsigned int m_num_args;        // number of known arguments
+  bool m_has_var_args;            // variable number of arguments
+  std::string m_c_name;           // C linkage name
+  std::string m_closure;          // C closure (CLOSXP) name
+  bool m_requires_context;        // is an R context object needed for the function?
+  FundefLexicalScope * m_scope;   // lexical scope
+  OA::OA_ptr<OA::CFG::CFG> m_cfg; // control flow graph
 
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)
   CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)

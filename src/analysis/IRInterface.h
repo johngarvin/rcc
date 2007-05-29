@@ -35,7 +35,7 @@
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
-#include <OpenAnalysis/CFG/ManagerCFGStandard.hpp>
+#include <OpenAnalysis/CFG/ManagerCFG.hpp>
 
 #include <include/R/R_RInternals.h>
 
@@ -59,148 +59,149 @@ public:
   // Procedures and call sites
   //--------------------------------------------------------
 
-  //! Given a ProcHandle, return an IRRegionStmtIterator for the
-  //! procedure.
+  /// Given a ProcHandle, return an IRRegionStmtIterator for the
+  /// procedure.
   OA::OA_ptr<OA::IRRegionStmtIterator> procBody(OA::ProcHandle h);
   
   //--------------------------------------------------------
   // Statements: General
   //--------------------------------------------------------
 
-  //! Are return statements allowed?
+  /// Are return statements allowed?
   bool returnStatementsAllowed();
 
-  //! Given a statement, return its CFG::IRStmtType.
+  /// Given a statement, return its CFG::IRStmtType.
   OA::CFG::IRStmtType getCFGStmtType(OA::StmtHandle h);
 
-  //! Given a statement, return a label (or NULL if
-  //! there is no label associated with the statement).
+  /// Given a statement, return a label (or NULL if
+  /// there is no label associated with the statement).
   OA::StmtLabel getLabel(OA::StmtHandle h);
 
-  //! Given a compound statement, return an IRRegionStmtIterator for
-  //! the statements.  A compound is a list of statements.
+  /// Given a compound statement, return an IRRegionStmtIterator for
+  /// the statements.  A compound is a list of statements.
   OA::OA_ptr<OA::IRRegionStmtIterator> getFirstInCompound(OA::StmtHandle h);
   
   //--------------------------------------------------------
   // Loops
   //--------------------------------------------------------
 
-  //! Given a loop statement, return an IRRegionStmtIterator pointer
-  //! for the loop body.
+  /// Given a loop statement, return an IRRegionStmtIterator pointer
+  /// for the loop body.
   OA::OA_ptr<OA::IRRegionStmtIterator> loopBody(OA::StmtHandle h);
 
-  //! Given a loop statement, return the loop header statement.  This 
-  //! would be the initialization statement in a C 'for' loop, for example.
+  /// Given a loop statement, return the loop header statement.  This 
+  /// would be the initialization statement in a C 'for' loop, for example.
   OA::StmtHandle loopHeader(OA::StmtHandle h);
 
-  //! Given a loop statement, return the increment statement. 
+  /// Given a loop statement, return the increment statement. 
   OA::StmtHandle getLoopIncrement(OA::StmtHandle h);
 
-  //! Given a loop statement, return:
-  //! 
-  //! True: If the number of loop iterations is defined
-  //! at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
-  //! to add the loop statement representative to the header node so that
-  //! definitions from inside the loop don't reach the condition and increment
-  //! specifications in the loop statement.
-  //!
-  //! False: If the number of iterations is not defined at
-  //! entry (i.e. C semantics), we add the loop statement to a node that
-  //! is inside the loop in the CFG so definitions inside the loop will 
-  //! reach uses in the conditional test. For C style semantics, the 
-  //! increment itself may be a separate statement. if so, it will appear
-  //! explicitly at the bottom of the loop. 
+  /// Given a loop statement, return:
+  /// 
+  /// True: If the number of loop iterations is defined
+  /// at loop entry (i.e. Fortran semantics).  This causes the CFG builder 
+  /// to add the loop statement representative to the header node so that
+  /// definitions from inside the loop don't reach the condition and increment
+  /// specifications in the loop statement.
+  ///
+  /// False: If the number of iterations is not defined at
+  /// entry (i.e. C semantics), we add the loop statement to a node that
+  /// is inside the loop in the CFG so definitions inside the loop will 
+  /// reach uses in the conditional test. For C style semantics, the 
+  /// increment itself may be a separate statement. if so, it will appear
+  /// explicitly at the bottom of the loop. 
   bool loopIterationsDefinedAtEntry(OA::StmtHandle h);
 
-  //! Given a structured two-way conditional statement, return an
-  //! IRRegionStmtIterator for the "true" part (i.e., the statements
-  //! under the "if" clause).
+  /// Given a structured two-way conditional statement, return an
+  /// IRRegionStmtIterator for the "true" part (i.e., the statements
+  /// under the "if" clause).
   OA::OA_ptr<OA::IRRegionStmtIterator> trueBody(OA::StmtHandle h);
 
-  //! Given a structured two-way conditional statement, return an
-  //! IRRegionStmtIterator for the "else" part (i.e., the statements
-  //! under the "else" clause).
+  /// Given a structured two-way conditional statement, return an
+  /// IRRegionStmtIterator for the "else" part (i.e., the statements
+  /// under the "else" clause).
   OA::OA_ptr<OA::IRRegionStmtIterator> elseBody(OA::StmtHandle h);
 
   //--------------------------------------------------------
   // Structured multiway conditionals
   //--------------------------------------------------------
 
-  //! Given a structured multi-way branch, return the number of cases.
-  //! The count does not include the default/catchall case.
+  /// Given a structured multi-way branch, return the number of cases.
+  /// The count does not include the default/catchall case.
   int numMultiCases(OA::StmtHandle h);
 
-  //! Given a structured multi-way branch, return an IRRegionStmtIterator* for
-  //! the body corresponding to target 'bodyIndex'. The n targets are 
-  //! indexed [0..n-1].
+  /// Given a structured multi-way branch, return an IRRegionStmtIterator* for
+  /// the body corresponding to target 'bodyIndex'. The n targets are 
+  /// indexed [0..n-1].
   OA::OA_ptr<OA::IRRegionStmtIterator> multiBody(OA::StmtHandle h, int bodyIndex);
 
-  //! Given a structured multi-way branch, return true if the cases have
-  //! implied break semantics.  For example, this method would return false
-  //! for C since one case will fall-through to the next if there is no
-  //! explicit break statement.  Matlab, on the other hand, implicitly exits
-  //! the switch statement once a particular case has executed, so this
-  //! method would return true.
+  /// Given a structured multi-way branch, return true if the cases have
+  /// implied break semantics.  For example, this method would return false
+  /// for C since one case will fall-through to the next if there is no
+  /// explicit break statement.  Matlab, on the other hand, implicitly exits
+  /// the switch statement once a particular case has executed, so this
+  /// method would return true.
   bool isBreakImplied(OA::StmtHandle multicond);
 
-  //! Given a structured multi-way branch, return true if the body 
-  //! corresponding to target 'bodyIndex' is the default/catchall/ case.
+  /// Given a structured multi-way branch, return true if the body 
+  /// corresponding to target 'bodyIndex' is the default/catchall/ case.
   bool isCatchAll(OA::StmtHandle h, int bodyIndex);
 
-  //! Given a structured multi-way branch, return an IRRegionStmtIterator*
-  //! for the body corresponding to default/catchall case.
+  /// Given a structured multi-way branch, return an IRRegionStmtIterator*
+  /// for the body corresponding to default/catchall case.
   OA::OA_ptr<OA::IRRegionStmtIterator> getMultiCatchall (OA::StmtHandle h);
 
-  //!! Given a structured multi-way branch, return the condition
-  //! expression corresponding to target 'bodyIndex'. The n targets are
-  //! indexed [0..n-1].
+  /// Given a structured multi-way branch, return the condition
+  /// expression corresponding to target 'bodyIndex'. The n targets are
+  /// indexed [0..n-1].
   OA::ExprHandle getSMultiCondition(OA::StmtHandle h, int bodyIndex);
 
   //--------------------------------------------------------
   // Unstructured two-way conditionals: 
   //--------------------------------------------------------
 
-  //! Given an unstructured two-way branch, return the label of the
-  //! target statement.  The second parameter is currently unused.
+  /// Given an unstructured two-way branch, return the label of the
+  /// target statement.  The second parameter is currently unused.
   OA::StmtLabel getTargetLabel(OA::StmtHandle h, int n);
 
-  //! Given an unstructured multi-way branch, return the number of targets.
-  //! The count does not include the optional default/catchall case.
+  /// Given an unstructured multi-way branch, return the number of targets.
+  /// The count does not include the optional default/catchall case.
   int numUMultiTargets(OA::StmtHandle h);
 
-  //! Given an unstructured multi-way branch, return the label of the target
-  //! statement at 'targetIndex'. The n targets are indexed [0..n-1]. 
+  /// Given an unstructured multi-way branch, return the label of the target
+  /// statement at 'targetIndex'. The n targets are indexed [0..n-1]. 
   OA::StmtLabel getUMultiTargetLabel(OA::StmtHandle h, int targetIndex);
 
-  //! Given an unstructured multi-way branch, return label of the target
-  //! corresponding to the optional default/catchall case.  Return 0
-  //! if there is no default target.
+  /// Given an unstructured multi-way branch, return label of the target
+  /// corresponding to the optional default/catchall case.  Return 0
+  /// if there is no default target.
   OA::StmtLabel getUMultiCatchallLabel(OA::StmtHandle h);
 
-  //! Given an unstructured multi-way branch, return the condition
-  //! expression corresponding to target 'targetIndex'. The n targets
-  //! are indexed [0..n-1].
-  //! multiway target condition 
+  /// Given an unstructured multi-way branch, return the condition
+  /// expression corresponding to target 'targetIndex'. The n targets
+  /// are indexed [0..n-1].
+  /// multiway target condition 
   OA::ExprHandle getUMultiCondition(OA::StmtHandle h, int targetIndex);
 
   //----------------------------------------------------------------------
   // Information for building call graphs
   //----------------------------------------------------------------------
 
-  //! Given a subprogram return an IRStmtIterator for the entire
-  //! subprogram
+  /// Given a subprogram return an IRStmtIterator for the entire
+  /// subprogram
   OA::OA_ptr<OA::IRStmtIterator> getStmtIterator(OA::ProcHandle h);
 
-  //! Return an iterator over all of the callsites in a given stmt
+  /// Return an iterator over all of the callsites in a given stmt
   OA::OA_ptr<OA::IRCallsiteIterator> getCallsites(OA::StmtHandle h);
 
-  //! Given a ProcHandle, return its SymHandle
+  /// Given a ProcHandle, return its SymHandle
   // OA::SymHandle getProcSymHandle(OA::ProcHandle h);
   // already defined for implementing CFG interface
 
-  //! Given a callsite as an ExprHandle, return the SymHandle of the
-  //! procedure being called
-  OA::SymHandle getSymHandle(OA::ExprHandle expr);
+  /// Given a procedure call create a memory reference expression
+  /// to describe that call.  For example, a normal call is
+  /// a NamedRef.  A call involving a function ptr is a Deref.  
+  OA::OA_ptr<OA::MemRefExpr> getCallMemRefExpr(OA::CallHandle call);
 
   //--------------------------------------------------------
   // Def/use info for SSA
@@ -224,6 +225,7 @@ public:
   std::string toString(OA::ExprHandle h);
   std::string toString(OA::OpHandle h);
   std::string toString(OA::MemRefHandle h);
+  std::string toString(OA::CallHandle h);
   std::string toString(OA::SymHandle h);
   std::string toString(OA::ConstSymHandle h);
   std::string toString(OA::ConstValHandle h);
@@ -232,15 +234,15 @@ public:
 
 };
 
-//! Get the statement type of an R expression.
+/// Get the statement type of an R expression.
 OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 
 //--------------------------------------------------------------------
 // Iterators
 //--------------------------------------------------------------------
 
-//! Enumerate all the statements in a program region, e.g. all the statements
-//! in a procedure or a loop. Does not descend into compound statements.
+/// Enumerate all the statements in a program region, e.g. all the statements
+/// in a procedure or a loop. Does not descend into compound statements.
 class R_RegionStmtIterator : public OA::IRRegionStmtIterator {
 public:
   R_RegionStmtIterator(OA::StmtHandle stmt) { build_stmt_list(stmt); }  // stmt_iter_ptr = new ...
@@ -256,9 +258,9 @@ private:
   void build_stmt_list(OA::StmtHandle stmt);
 };
 
-//! Special-case version of R_RegionStmtListIterator: iterates through
-//! each of a list of statements. Each element is returned as a cell.
-//! Useful when you can't pass a cell to R_RegionStmtIterator.
+/// Special-case version of R_RegionStmtListIterator: iterates through
+/// each of a list of statements. Each element is returned as a cell.
+/// Useful when you can't pass a cell to R_RegionStmtIterator.
 class R_RegionStmtListIterator : public OA::IRRegionStmtIterator {
 public:
   R_RegionStmtListIterator(SEXP ls) : iter(ls) { }
@@ -273,9 +275,9 @@ private:
   R_ListIterator iter;
 };
 
-//! Enumerate all the variable uses or variable definitions in a statement.
-//! This is useful for analyses that require information about variable
-//! references or definitions, such as SSA construction.
+/// Enumerate all the variable uses or variable definitions in a statement.
+/// This is useful for analyses that require information about variable
+/// references or definitions, such as SSA construction.
 class R_IRUseDefIterator : public OA::SSA::IRUseDefIterator {
 public:
   R_IRUseDefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter) : iter(_iter) { }
@@ -314,7 +316,7 @@ public:
   void reset() { cs_iter = callsites.begin(); }
 };
 
-//! Enumerate all (actual) parameters within a callsite
+/// Enumerate all (actual) parameters within a callsite
 class R_IRCallsiteParamIterator : public IRCallsiteParamIterator {
 private:
   const SEXP args;

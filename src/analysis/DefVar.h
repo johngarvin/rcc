@@ -61,7 +61,7 @@ public:
   void setRhs_c(SEXP x)
     { mRhs_c = x; }
 
-  void accept(VarVisitor* v);
+  void accept(VarVisitor * v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

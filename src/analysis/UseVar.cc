@@ -48,7 +48,7 @@ SEXP UseVar::getName() const
   return CAR(mSEXP);
 }
 
-void UseVar::accept(VarVisitor* v) {
+void UseVar::accept(VarVisitor * v) {
   v->visitUseVar(this);
 }
 

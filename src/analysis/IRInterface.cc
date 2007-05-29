@@ -96,9 +96,9 @@ CFG::IRStmtType R_IRInterface::getCFGStmtType(StmtHandle h) {
   return getSexpCfgType(CAR(make_sexp(h)));
 }
 
-/// Given a statement, return a label (or NULL if there is no label
-/// associated with the statement).
-/// Note that no statements have labels in R.
+/// Given a statement, return a label (or StmtHandle(0) if there is no
+/// label associated with the statement). No statements have labels in
+/// R.
 StmtLabel R_IRInterface::getLabel(StmtHandle h) {
   return 0;
 }
@@ -143,7 +143,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::loopBody(StmtHandle h) {
 /// This doesn't exactly exist in R. Currently just returning the whole
 /// compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
-  // XXXXX: signal that this is a header for use/def analysis
+  // TODO: signal that this is a header for use/def analysis
   return h;
 }
 
@@ -152,7 +152,7 @@ StmtHandle R_IRInterface::loopHeader(StmtHandle h) {
 /// This doesn't exactly exist in R. Currently just returning the whole
 /// compound statement pointer so later analyses can parse it.
 StmtHandle R_IRInterface::getLoopIncrement(StmtHandle h) {
-  // XXXXX: signal that this is the increment for use/def analysis
+  // TODO: signal that this is the increment for use/def analysis
   return h;
 }
 
@@ -262,7 +262,7 @@ StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
 
 //--------------------------------------------------------
 // Unstructured multi-way conditionals
-// FIXME: Review all of the multi-way stuff.
+// TODO: Review all of the multi-way stuff.
 //--------------------------------------------------------
 
 // Given an unstructured multi-way branch, return the number of targets.
@@ -303,27 +303,24 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 /// Given a subprogram return an IRStmtIterator for the entire
 /// subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
-  // FIXME
+  // TODO
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
 /// Return an iterator over all of the callsites in a given stmt
 OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
-  // FIXME
+  // TODO
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
-/// Given a callsite as an ExprHandle, return the SymHandle of the
-/// procedure being called
-SymHandle R_IRInterface::getSymHandle(ExprHandle expr) {
-  // FIXME
+OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
+  // TODO
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
-
 
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
-// FIXME: Currently doesn't handle uses/defs via procedure calls
+// TODO: Currently doesn't handle uses/defs via procedure calls
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
@@ -334,7 +331,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   OA_ptr<R_VarRefSet> defs;
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
-    if (dynamic_cast<DefVar *>(*var_iter)) {
+    if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
       OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
@@ -352,7 +349,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   OA_ptr<R_VarRefSet> defs;
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
-    if (dynamic_cast<DefVar *>(*var_iter)) {
+    if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
       OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
@@ -381,7 +378,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   return make_sym_h(Rf_install("<procedure>"));
 }
 
-// FIXME: symbols in different scopes should be called
+// TODO: symbols in different scopes should be called
 // different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   SEXP e = make_sexp(h);
@@ -389,6 +386,7 @@ SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   return make_sym_h(e);
 }
 
+// TODO: fill these in
 std::string R_IRInterface::toString(OA::ProcHandle h) {
   return "";
 }
@@ -418,6 +416,10 @@ std::string R_IRInterface::toString(OA::ConstSymHandle h) {
 }
 
 std::string R_IRInterface::toString(OA::ConstValHandle h) {
+  return "";
+}
+
+std::string R_IRInterface::toString(OA::CallHandle h) {
   return "";
 }
 

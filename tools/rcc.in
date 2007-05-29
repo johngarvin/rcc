@@ -11,7 +11,7 @@ setenv CMD "$BINDIR/rcc.bin"
 if (${?DEBUG}) then
         setenv TMPFILE `mktemp /tmp/rcc.XXXXXX`
         echo "set args $*" > ${TMPFILE}
-	gdb ${CMD} -x ${TMPFILE};
+	/usr/bin/gdb ${CMD} -x ${TMPFILE};
 else
 	exec $BINDIR/rcc.bin $*;
 endif

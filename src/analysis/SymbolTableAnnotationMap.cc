@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: SymbolTableAnnotationMap.h
+// File: SymbolTableAnnotationMap.cc
 //
 // Maps each procedure to a symbol table annotation.
 //
@@ -26,7 +26,6 @@
 
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/DefVar.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
 #include <analysis/SymbolTable.h>
@@ -47,7 +46,7 @@ typedef SymbolTableAnnotationMap::MyMappedT MyMappedT;
 typedef SymbolTableAnnotationMap::iterator iterator;
 typedef SymbolTableAnnotationMap::const_iterator const_iterator;
 
-typedef CFG::Interface CFG;
+typedef CFG::CFGInterface CFG;
 
 //  ----- constructor/destructor ----- 
   
@@ -127,6 +126,24 @@ const_iterator SymbolTableAnnotationMap::end() const { return m_map.end(); }
 
 // ----- computation -----
 
+/// Add an entry to the symbol table
+void SymbolTableAnnotationMap::add_def(MyKeyT func, DefVar * def) {
+  SymbolTable * table = dynamic_cast<SymbolTable *>(m_map[func]);
+  assert(table != 0);
+  SEXP name = CAR(def->getMention_c());
+  // add VarInfo if not there already
+  // TODO: it might be better to construct all the VarInfos when the SymbolTable is made.
+  SymbolTable::iterator it = table->find(name);
+  VarInfo * vi;
+  if (it == table->end()) {
+    vi = new VarInfo();
+    (*table)[name] = vi;
+  } else {
+    vi = it->second;
+  }
+  vi->insertDef(def);
+}
+
 /// Create the symbol table of each procedure.
 void SymbolTableAnnotationMap::compute() {
   FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
@@ -137,38 +154,42 @@ void SymbolTableAnnotationMap::compute() {
     m_map[make_proc_h(fii.Current()->get_defn())] = st;
   }
 
+  // visitor that, for each def, adds appropriate info to scopes where
+  // the variable might live
+  // 
+  // TODO: better with a visitor, but this is still ugly. Maybe it
+  // would be better to have separate containers, one for uses and one
+  // for defs.
+  class ScopeAddVisitor : public VarVisitor {
+  private:
+    SymbolTableAnnotationMap * m_host;
+  public:
+    ScopeAddVisitor(SymbolTableAnnotationMap * host) : m_host(host) {}
+    void visitUseVar(UseVar * use) {
+      // no-op
+    }
+    void visitDefVar(DefVar * def) {
+      SEXP name = CAR(def->getMention_c());
+      VarBinding * vb = getProperty(VarBinding, def->getMention_c());
+      // for each scope in which the variable might be defined
+      for(VarBinding::const_iterator vbi(vb->begin()); vbi != vb->end(); ++vbi) {
+	if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*vbi)) {
+	  m_host->add_def(make_proc_h(scope->get_fundef()), def);
+	}
+      }    
+    }
+  };
+  ScopeAddVisitor visitor(this);
+
   // for each def in each scope, add the appropriate info to the
   // scopes where the variable might live.
   for(fii.Reset(); fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
-
     FuncInfo::mention_iterator mi;
     for(mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
-      // count only defs, not uses
-      DefVar * def = dynamic_cast<DefVar *>(*mi);
-      if (def == 0) continue;
-      SEXP name = CAR(def->getMention_c());
-      VarBinding * vb = getProperty(VarBinding, def->getMention_c());
-      // for each scope in which the variable might be defined
-      VarBinding::const_iterator vbi;
-      for(vbi = vb->begin(); vbi != vb->end(); ++vbi) {
-	if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*vbi)) {
-	  AnnotationBase * target_ab = m_map[make_proc_h(scope->get_fundef())];
-	  SymbolTable * target_st = dynamic_cast<SymbolTable *>(target_ab);
-	  assert(target_st != 0);
-	  SymbolTable::iterator it = target_st->find(name);
-	  VarInfo * vi;
-	  if (it == target_st->end()) {
-	    vi = new VarInfo();
-	    (*target_st)[name] = vi;
-	  } else {
-	    vi = it->second;
-	  }
-	  vi->insertDef(def);
-	}
-      }
+      (*mi)->accept(&visitor);
     }
   }  
 }
 
-}
+} // end namespace RAnnot

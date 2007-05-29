@@ -92,7 +92,20 @@ public:
 
   static PropertyHndlT handle();
 
-  virtual void accept(VarVisitor* v) = 0;
+  virtual void accept(VarVisitor * v) = 0;
+
+#if 0
+  // This was an attempt to implement a generic visitor pattern
+  // parametrized by the return value. Didn't quite work for a variety
+  // of reasons.
+
+  /// generic method for visitor pattern; allows visitors of any
+  /// return type
+  template<class R> R accept(VarVisitor<R> * v);
+
+  /// general version of accept to be implemented by derived classes
+  virtual void * v_accept(VarVisitor<void *>* v) = 0;
+#endif
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 

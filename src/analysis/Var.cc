@@ -59,6 +59,21 @@ Var::handle() {
   return VarAnnotationMap::handle();
 }
 
+#if 0 
+R_VarRef * Var::accept(VarVisitor<R_VarRef *> * v)
+{
+  VarVisitor<void *> * adapter = new VarVisitorAdapter<R_VarRef *>(v);
+  return reinterpret_cast<R_VarRef *>(v_accept(adapter));
+}
+
+/// generic accept method: call the generalized, virtual version
+template<class R> R Var::accept(VarVisitor<R> * v)
+{
+  VarVisitor<void *> adapter = new VarVisitorAdapter<R>(v);
+  return dynamic_cast<R>(v_accept(adapter));
+}
+#endif
+
 const std::string typeName(const Var::MayMustT x)
 {
   switch(x) {
