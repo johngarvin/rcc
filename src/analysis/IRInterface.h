@@ -41,6 +41,7 @@
 
 #include <include/R/R_RInternals.h>
 
+#include <analysis/ExpressionInfo.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefSet.h>
@@ -318,31 +319,35 @@ private:
 };
 
 
-#endif // #ifndef IR_INTERFACE_H
-
-#if 0
+//--------------------------------------------------------------------
+// R_IRCallsiteIterator
+//
 // Enumerate all the procedure calls in a statement.
-// Not yet implemented.
+//--------------------------------------------------------------------
 
-class R_IRCallsiteIterator : public IRCallsiteIterator {
-private:
-  const SEXP stmt;
-  R_PreorderIterator exp_iter;
-  std::list<SEXP> callsites;
-  std::list<SEXP>::iterator cs_iter;
-  void build_callsites();
+class R_IRCallsiteIterator : public OA::IRCallsiteIterator {
 public:
-  R_IRCallsiteIterator(OA::StmtHandle _stmt)
-    : stmt(make_sexp(_stmt)), exp_iter(stmt) { build_callsites(); cs_iter = callsites.begin();}
-  virtual ~R_IRCallsiteIterator() { }
+  R_IRCallsiteIterator(OA::StmtHandle _h);
+  virtual ~R_IRCallsiteIterator();
 
-  OA::ExprHandle current() const { return (OA::ExprHandle)*cs_iter; }
-  bool isValid() const { return (cs_iter != callsites.end()); }
-  void operator++() { ++cs_iter; }
-  void reset() { cs_iter = callsites.begin(); }
+  OA::CallHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  RAnnot::ExpressionInfo * const m_annot;
+  RAnnot::ExpressionInfo::const_call_site_iterator m_begin;
+  RAnnot::ExpressionInfo::const_call_site_iterator m_end;
+  RAnnot::ExpressionInfo::const_call_site_iterator m_current;
 };
 
+#if 0
+
 /// Enumerate all (actual) parameters within a callsite
+
+// TODO: implement
+
 class R_IRCallsiteParamIterator : public IRCallsiteParamIterator {
 private:
   const SEXP args;
@@ -359,3 +364,5 @@ public:
 };
 
 #endif
+
+#endif // #ifndef IR_INTERFACE_H

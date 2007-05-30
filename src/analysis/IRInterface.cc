@@ -303,14 +303,13 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 /// Given a subprogram return an IRStmtIterator for the entire
 /// subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  return procBody(h);
 }
 
 /// Return an iterator over all of the callsites in a given stmt
 OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  OA_ptr<IRCallsiteIterator> iter; iter = new R_IRCallsiteIterator(h);
+  return iter;
 }
 
 OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
@@ -408,9 +407,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
 // TODO: symbols in different scopes should be called
 // different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
-  SEXP e = make_sexp(h);
-  assert(TYPEOF(e) == SYMSXP);
-  return make_sym_h(e);
+  return make_sym_h(make_sexp(h));
 }
 
 // TODO: fill these in
@@ -453,6 +450,8 @@ std::string R_IRInterface::toString(OA::CallHandle h) {
 //--------------------------------------------------------------------
 // R_RegionStmtIterator
 //--------------------------------------------------------------------
+
+// TODO: rename
 
 OA::StmtHandle R_RegionStmtIterator::current() const {
   return make_stmt_h(stmt_iter_ptr->current());
@@ -556,4 +555,35 @@ void R_IRUseDefIterator::operator++() {
 
 void R_IRUseDefIterator::reset() {
   iter->reset();
+}
+
+//--------------------------------------------------------------------
+// R_IRCallsiteIterator
+//--------------------------------------------------------------------
+
+R_IRCallsiteIterator::R_IRCallsiteIterator(OA::StmtHandle _h)
+  : m_annot(getProperty(ExpressionInfo, make_sexp(_h))),
+    m_begin(m_annot->begin_call_sites()),
+    m_end(m_annot->end_call_sites()),
+    m_current(m_begin)
+{
+}
+
+R_IRCallsiteIterator::~R_IRCallsiteIterator() {
+}
+
+OA::CallHandle R_IRCallsiteIterator::current() const {
+  return make_call_h(*m_current);
+}
+
+bool R_IRCallsiteIterator::isValid() const {
+  return (m_current != m_end);
+}
+
+void R_IRCallsiteIterator::operator++() {
+  ++m_current;
+}
+
+void R_IRCallsiteIterator::reset() {
+  m_current = m_begin;
 }

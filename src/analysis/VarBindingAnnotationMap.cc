@@ -183,7 +183,7 @@ void VarBindingAnnotationMap::compute() {
 	break;
       }
       // whether global or not...
-      m_map[make_sym_h(v->getMention_c())] = scopes;
+      m_map[make_mem_ref_h(v->getMention_c())] = scopes;
     }
   }
 }

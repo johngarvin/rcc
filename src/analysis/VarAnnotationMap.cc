@@ -19,8 +19,8 @@
 // File: VarAnnotationMap.cc
 //
 // Set of Var annotations, representing basic variable information,
-// including the methods for computing the information. This should
-// probably be split up into the different analyses at some point.
+// including the methods for computing the information. Maps a cons
+// cell containing a SYMSXP to a Var annotation.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -158,7 +158,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
-	  SymHandle s = make_sym_h(v->getMention_c());
+	  MemRefHandle s = make_mem_ref_h(v->getMention_c());
 	  m_map[s] = v;
 	}
       }

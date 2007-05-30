@@ -40,6 +40,7 @@ OA::MemRefHandle make_mem_ref_h(SEXP e);
 OA::StmtHandle make_stmt_h(SEXP e);
 OA::LeafHandle make_leaf_h(SEXP e);
 OA::SymHandle make_sym_h(SEXP e);
+OA::CallHandle make_call_h(SEXP e);
  
 SEXP make_sexp(OA::IRHandle h);
 SEXP make_sexp(OA::ProcHandle h);

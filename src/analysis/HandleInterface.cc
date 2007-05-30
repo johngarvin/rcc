@@ -58,7 +58,13 @@ OA::LeafHandle make_leaf_h(SEXP e) {
 }
 
 OA::SymHandle make_sym_h(SEXP e) {
+  assert(is_var(e));
   return OA::SymHandle(as_handle(e));
+}
+
+OA::CallHandle make_call_h(SEXP e) {
+  assert(is_call(e));
+  return OA::CallHandle(as_handle(e));
 }
 
 SEXP make_sexp(OA::IRHandle h)     { return as_sexp(h.hval()); }
@@ -67,6 +73,7 @@ SEXP make_sexp(OA::MemRefHandle h) { return as_sexp(h.hval()); }
 SEXP make_sexp(OA::StmtHandle h)   { return as_sexp(h.hval()); }
 SEXP make_sexp(OA::LeafHandle h)   { return as_sexp(h.hval()); }
 SEXP make_sexp(OA::SymHandle h)    { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::CallHandle h)   { return as_sexp(h.hval()); }
 
 // ----- local conversion functions -----
 

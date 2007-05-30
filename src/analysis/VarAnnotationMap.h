@@ -19,7 +19,10 @@
 // File: VarAnnotationMap.h
 //
 // Set of Var annotations, representing basic variable information,
-// including the methods for computing the information. This should
+// including the methods for computing the information. Maps a cons
+// cell containing a SYMSXP to a Var annotation.
+//
+// TODO: This should
 // probably be split up into the different analyses at some point.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
