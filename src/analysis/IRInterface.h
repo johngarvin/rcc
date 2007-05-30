@@ -31,11 +31,13 @@
 #include <ostream>
 #include <assert.h>
 
+#include <OpenAnalysis/CFG/ManagerCFG.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
+#include <OpenAnalysis/IRInterface/CallGraphDFProblemIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
-#include <OpenAnalysis/CFG/ManagerCFG.hpp>
+#include <OpenAnalysis/Location/Location.hpp>
 
 #include <include/R/R_RInternals.h>
 
@@ -46,9 +48,12 @@
 //-----------------------------------------------------------------------------
 // R IR representation
 
+// TODO: make this a singleton
+// TODO: split this into separate singleton classes
 /// OpenAnalysis interface to the R AST
 class R_IRInterface : public OA::CFG::CFGIRInterfaceDefault,
 		      public OA::CallGraph::CallGraphIRInterface,
+		      public OA::DataFlow::CallGraphDFProblemIRInterface,
 		      public OA::SSA::SSAIRInterface
 {
 public:
@@ -202,6 +207,27 @@ public:
   /// to describe that call.  For example, a normal call is
   /// a NamedRef.  A call involving a function ptr is a Deref.  
   OA::OA_ptr<OA::MemRefExpr> getCallMemRefExpr(OA::CallHandle call);
+
+  //--------------------------------------------------------
+  // Information for solving call graph data flow problems
+  //--------------------------------------------------------
+
+  /// Get IRCallsiteParamIterator for a callsite.
+  /// Iterator visits actual parameters in called order.
+  virtual OA::OA_ptr<OA::IRCallsiteParamIterator> getCallsiteParams(OA::CallHandle h);
+
+  /// return the formal parameter that an actual parameter is associated with 
+  virtual OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
+					   OA::ProcHandle callee, OA::ExprHandle param);
+ 
+  /// For the given symbol create a Location that indicates statically
+  /// overlapping locations and information about whether the location
+  /// is local or not for the given procedure, local means only visible
+  /// in this procedure
+  virtual OA::OA_ptr<OA::Location> getLocation(OA::ProcHandle p, OA::SymHandle s);
+
+  /// Given an ExprHandle, return an ExprTree 
+  virtual OA::OA_ptr<OA::ExprTree> getExprTree(OA::ExprHandle h);
 
   //--------------------------------------------------------
   // Def/use info for SSA

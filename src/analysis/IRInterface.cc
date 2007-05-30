@@ -318,6 +318,33 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
   rcc_error("OpenAnalysis call graph interface not yet implemented");
 }
 
+//----------------------------------------------------------------------
+// Information for solving call graph data flow problems
+//----------------------------------------------------------------------
+
+OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
+  // TODO
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
+}
+
+SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
+					    ProcHandle callee, ExprHandle param)
+{
+  // TODO
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
+}
+
+OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
+  // TODO
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
+}
+
+OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
+  // TODO
+  rcc_error("OpenAnalysis call graph interface not yet implemented");
+}
+  
+
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
 // TODO: Currently doesn't handle uses/defs via procedure calls
