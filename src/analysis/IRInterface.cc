@@ -23,6 +23,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
@@ -312,9 +314,19 @@ OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
   return iter;
 }
 
+/// Given a procedure call create a memory reference expression
+/// to describe that call.  For example, a normal call is
+/// a NamedRef.  A call involving a function ptr is a Deref.
 OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  SEXP e = make_sexp(h);
+  if (is_var(call_lhs(e))) {
+    SymHandle sym = make_sym_h(call_lhs(e));
+    OA_ptr<MemRefExpr> named_ref; named_ref = new NamedRef(MemRefExpr::USE, sym);
+    OA_ptr<MemRefExpr> deref; deref = new Deref(MemRefExpr::USE, named_ref);
+    return deref;
+  } else {
+    rcc_error("Call graph interface for calls with non-symbol LHS not yet implemented");
+  }
 }
 
 //----------------------------------------------------------------------
@@ -587,3 +599,34 @@ void R_IRCallsiteIterator::operator++() {
 void R_IRCallsiteIterator::reset() {
   m_current = m_begin;
 }
+
+
+//----------------------------------------------------------------------
+// R_ProcHandleIterator
+//----------------------------------------------------------------------
+
+// Basically a wrapper around FuncInfoIterator that fits the OA ProcHandleIterator interface
+
+R_ProcHandleIterator::R_ProcHandleIterator(FuncInfo * fi) : m_fii(new FuncInfoIterator(fi)) {
+}
+
+R_ProcHandleIterator::~R_ProcHandleIterator() {
+  delete m_fii;
+}
+
+ProcHandle R_ProcHandleIterator::current() const {
+  return make_proc_h(m_fii->Current()->get_defn());
+}
+
+bool R_ProcHandleIterator::isValid() const {
+  return m_fii->IsValid();
+}
+
+void R_ProcHandleIterator::operator++() {
+  return ++(*m_fii);
+}
+
+void R_ProcHandleIterator::reset() {
+  m_fii->Reset();
+}
+

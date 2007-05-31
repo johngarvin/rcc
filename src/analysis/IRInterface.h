@@ -42,6 +42,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/ExpressionInfo.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefSet.h>
@@ -364,5 +365,18 @@ public:
 };
 
 #endif
+
+class R_ProcHandleIterator : public OA::ProcHandleIterator {
+public:
+  R_ProcHandleIterator(RAnnot::FuncInfo * fi);
+  ~R_ProcHandleIterator();
+  OA::ProcHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  RAnnot::FuncInfoIterator * m_fii;
+};
 
 #endif // #ifndef IR_INTERFACE_H

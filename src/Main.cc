@@ -25,6 +25,9 @@
 
 #include <iostream>
 
+#include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>  // TODO: remove after testing
+#include <OpenAnalysis/Alias/InterAliasMap.hpp>  // TODO: remove after testing
+
 #include <CheckProtect.h>
 #include <include/R/R_Internal.h>
 
@@ -214,6 +217,13 @@ int main(int argc, char *argv[]) {
     clearProperties();
     analysis_ok = false;
   }
+
+  // temporary: test our IRInterface by building OA call graph
+  // TODO: remove
+  OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
+  OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
+  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = new OA::Alias::InterAliasMap();
+  man.performAnalysis(proc_iter, alias);
 
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment
