@@ -55,7 +55,7 @@
 /// OpenAnalysis interface to the R AST
 class R_IRInterface : public virtual OA::CFG::CFGIRInterfaceDefault,
 		      public virtual OA::CallGraph::CallGraphIRInterface,
-	     //		      public virtual OA::SideEffect::InterSideEffectIRInterface,
+	              public virtual OA::SideEffect::InterSideEffectIRInterface,
 		      public virtual OA::SSA::SSAIRInterface
 {
 public:
@@ -216,20 +216,44 @@ public:
 
   /// Get IRCallsiteParamIterator for a callsite.
   /// Iterator visits actual parameters in called order.
-  virtual OA::OA_ptr<OA::IRCallsiteParamIterator> getCallsiteParams(OA::CallHandle h);
+  OA::OA_ptr<OA::IRCallsiteParamIterator> getCallsiteParams(OA::CallHandle h);
 
   /// return the formal parameter that an actual parameter is associated with 
-  virtual OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
+  OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
 					   OA::ProcHandle callee, OA::ExprHandle param);
  
   /// For the given symbol create a Location that indicates statically
   /// overlapping locations and information about whether the location
   /// is local or not for the given procedure, local means only visible
   /// in this procedure
-  virtual OA::OA_ptr<OA::Location> getLocation(OA::ProcHandle p, OA::SymHandle s);
+  OA::OA_ptr<OA::Location> getLocation(OA::ProcHandle p, OA::SymHandle s);
 
   /// Given an ExprHandle, return an ExprTree 
-  virtual OA::OA_ptr<OA::ExprTree> getExprTree(OA::ExprHandle h);
+  OA::OA_ptr<OA::ExprTree> getExprTree(OA::ExprHandle h);
+
+  /// implementing abstract method from CalleeToCallerVisitorIRInterface
+  /// Given a MemRefHandle return an iterator over
+  /// MemRefExprs that describe this memory reference
+  OA::OA_ptr<OA::MemRefExprIterator> getMemRefExprIterator(OA::MemRefHandle);
+
+  /// implementing abstract method from SideEffectIRInterface
+  /// Return a list of all the target memory reference handles that appear
+  /// in the given statement.
+  OA::OA_ptr<OA::MemRefHandleIterator> getDefMemRefs(OA::StmtHandle);
+
+  /// implementing abstract method from SideEffectIRInterface
+  /// Return a list of all the source memory reference handles that appear
+  /// in the given statement.
+  OA::OA_ptr<OA::MemRefHandleIterator> getUseMemRefs(OA::StmtHandle);
+
+  /// implementing abstract method from InterSideEffectIRInterface
+  /// For the given callee subprocedure symbol return side-effect results
+  /// Can only indicate that the procedure has no side effects, has
+  /// side effects on unknown locations, or on global locations.
+  /// Can't indicate subprocedure has sideeffects on parameters because
+  /// don't have a way to get mapping of formal parameters to actuals
+  /// in caller.
+  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
 
   //--------------------------------------------------------
   // Def/use info for SSA

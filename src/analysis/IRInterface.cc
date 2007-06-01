@@ -320,7 +320,7 @@ OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
 /// Given a procedure call create a memory reference expression
 /// to describe that call.  For example, a normal call is
 /// a NamedRef.  A call involving a function ptr is a Deref.
-OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
+OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   SEXP e = make_sexp(h);
   if (is_var(call_lhs(e))) {
     SymHandle sym = make_sym_h(call_lhs(e));
@@ -408,6 +408,30 @@ OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
   return ExprTreeBuilder::get_instance()->build(make_sexp(h));
 }
   
+/// from CalleeToCallerVisitorIRInterface
+OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle) {
+  // TODO
+  rcc_error("call graph interface not yet implemented");
+}
+
+/// from SideEffectIRInterface
+OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle) {
+  // TODO
+  rcc_error("call graph interface not yet implemented");
+}
+
+/// from SideEffectIRInterface
+OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle) {
+  // TODO
+  rcc_error("call graph interface not yet implemented");
+}
+
+/// from InterSideEffectIRInterface
+OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
+  // TODO
+  rcc_error("call graph interface not yet implemented");
+}
+
 
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
@@ -423,7 +447,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
-      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
+      OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
   }
@@ -441,7 +465,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
     if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
-      OA::OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
+      OA_ptr<R_BodyVarRef> bvr; bvr = new R_BodyVarRef((*var_iter)->getMention_c());
       defs->insert_ref(bvr);
     }
   }
@@ -450,7 +474,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   return retval;
 }
 
-void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
+void R_IRInterface::dump(StmtHandle h, ostream &os) {
   Rf_PrintValue(CAR(make_sexp(h)));
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(h));
   if (annot) {
@@ -458,8 +482,8 @@ void R_IRInterface::dump(OA::StmtHandle h, ostream &os) {
   }
 }
 
-void R_IRInterface::dump(OA::MemRefHandle h, ostream &stream) {}
-void R_IRInterface::currentProc(OA::ProcHandle p) {}
+void R_IRInterface::dump(MemRefHandle h, ostream &stream) {}
+void R_IRInterface::currentProc(ProcHandle p) {}
 
 //--------------------------------------------------------
 // Symbol Handles
@@ -476,39 +500,39 @@ SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
 }
 
 // TODO: fill these in
-std::string R_IRInterface::toString(OA::ProcHandle h) {
+std::string R_IRInterface::toString(ProcHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::StmtHandle h) {
+std::string R_IRInterface::toString(StmtHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::ExprHandle h) {
+std::string R_IRInterface::toString(ExprHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::OpHandle h) {
+std::string R_IRInterface::toString(OpHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::MemRefHandle h) {
+std::string R_IRInterface::toString(MemRefHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::SymHandle h) {
+std::string R_IRInterface::toString(SymHandle h) {
   return var_name(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(OA::ConstSymHandle h) {
+std::string R_IRInterface::toString(ConstSymHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::ConstValHandle h) {
+std::string R_IRInterface::toString(ConstValHandle h) {
   return "";
 }
 
-std::string R_IRInterface::toString(OA::CallHandle h) {
+std::string R_IRInterface::toString(CallHandle h) {
   return "";
 }
 
@@ -518,7 +542,7 @@ std::string R_IRInterface::toString(OA::CallHandle h) {
 
 // TODO: rename
 
-OA::StmtHandle R_RegionStmtIterator::current() const {
+StmtHandle R_RegionStmtIterator::current() const {
   return make_stmt_h(stmt_iter_ptr->current());
 }
 
@@ -586,7 +610,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
 // R_RegionStmtListIterator
 //--------------------------------------------------------------------
 
-OA::StmtHandle R_RegionStmtListIterator::current() const {
+StmtHandle R_RegionStmtListIterator::current() const {
   return make_stmt_h(iter.current());
 }
 
@@ -606,8 +630,8 @@ void R_RegionStmtListIterator::reset() {
 // R_IRUseDefIterator
 //--------------------------------------------------------------------
 
-OA::LeafHandle R_IRUseDefIterator::current() const {
-  return OA::LeafHandle(make_leaf_h(iter->current()->get_sexp()));
+LeafHandle R_IRUseDefIterator::current() const {
+  return LeafHandle(make_leaf_h(iter->current()->get_sexp()));
 }
  
 bool R_IRUseDefIterator::isValid() {
@@ -626,7 +650,7 @@ void R_IRUseDefIterator::reset() {
 // R_IRCallsiteIterator
 //--------------------------------------------------------------------
 
-R_IRCallsiteIterator::R_IRCallsiteIterator(OA::StmtHandle _h)
+R_IRCallsiteIterator::R_IRCallsiteIterator(StmtHandle _h)
   : m_annot(getProperty(ExpressionInfo, make_sexp(_h))),
     m_begin(m_annot->begin_call_sites()),
     m_end(m_annot->end_call_sites()),
@@ -637,7 +661,7 @@ R_IRCallsiteIterator::R_IRCallsiteIterator(OA::StmtHandle _h)
 R_IRCallsiteIterator::~R_IRCallsiteIterator() {
 }
 
-OA::CallHandle R_IRCallsiteIterator::current() const {
+CallHandle R_IRCallsiteIterator::current() const {
   return make_call_h(*m_current);
 }
 
