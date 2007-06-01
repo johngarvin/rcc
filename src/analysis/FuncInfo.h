@@ -84,8 +84,13 @@ public:
   bool is_arg(SEXP sym);
   bool are_all_value();
   bool is_arg_value(SEXP arg);
+  
+  /// get the cell containing the formal arg at the given position. Indexed from 1.
   SEXP get_arg(int position);
+
+  // find the numerical position of the formal with the given name. Indexed from 1.
   int find_arg_position(char* name);
+
   void analyze_args();
 
   SEXP get_defn();

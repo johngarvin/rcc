@@ -92,9 +92,9 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     build_ud_lhs(for_iv_c(e), for_range_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(for_range_c(e), Var::Var_MUST);
   } else if (is_loop_header(e)) {
-    // XXXXX
+    // TODO
   } else if (is_loop_increment(e)) {
-    // XXXXX
+    // TODO
   } else if (is_while(e)) {
     build_ud_rhs(while_cond_c(e), Var::Var_MUST);
   } else if (is_repeat(e)) {

@@ -26,10 +26,13 @@
 #include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/ExpressionInfo.h>
-#include <analysis/HandleInterface.h>
-#include <analysis/Var.h>
 #include <analysis/DefVar.h>
+#include <analysis/ExpressionInfo.h>
+#include <analysis/ExprTreeBuilder.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/SimpleIterators.h>
+#include <analysis/SymbolTable.h>
+#include <analysis/Var.h>
 #include <analysis/Utils.h>
 
 #include <support/RccError.h>
@@ -334,25 +337,75 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(OA::CallHandle h) {
 //----------------------------------------------------------------------
 
 OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  SEXP args = call_args(make_sexp(h));
+  
+  // create wrapper around R_ListIterator that iterates through the
+  // params, returning ExprHandles instead of SEXPs
+  class R_ParamIterator : public IRCallsiteParamIterator {
+  public:
+    R_ParamIterator(SEXP _exp) : m_list_iter(_exp) {
+    }
+
+    ExprHandle current() const {
+      return make_expr_h(m_list_iter.current());
+    }
+
+    bool isValid() const {
+      return m_list_iter.isValid();
+    }
+
+    void operator++() {
+      ++m_list_iter;
+    }
+
+    void reset() {
+      m_list_iter.reset();
+    }
+    
+  private:
+    R_ListIterator m_list_iter;
+  };
+
+  OA_ptr<IRCallsiteParamIterator> iter; iter = new R_ParamIterator(args);
+  return iter;
 }
 
 SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
 					    ProcHandle callee, ExprHandle param)
 {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  // TODO: handle named arguments
+
+  // param is the nth actual arg of call: find n
+  SEXP actual = make_sexp(param);
+  SEXP args = call_args(make_sexp(call));
+  int n = 1;
+  R_ListIterator li(args);
+  for( ; li.isValid(); ++li) {
+    if (li.current() == actual) break;
+    n++;
+  }
+  if (!li.isValid()) {
+    rcc_error("getFormalForActual: param not found");
+  }
+    
+  // get nth formal of callee
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(callee));
+  return make_sym_h(TAG(fi->get_arg(n)));
 }
 
 OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  SymbolTable * table = getProperty(SymbolTable, make_sexp(p));
+  VarInfo * vi = (*table)[make_sexp(s)];
+
+  OA_ptr<OA::Location> loc;
+  // create a NamedLoc with true as second argument, indicating local, not global
+  loc = new NamedLoc(s, true);
+  // TODO: need to give information about possible overlap
+  return loc;
 }
 
 OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
-  // TODO
-  rcc_error("OpenAnalysis call graph interface not yet implemented");
+  return ExprTreeBuilder::get_instance()->build(make_sexp(h));
 }
   
 

@@ -45,8 +45,36 @@ OA::ProcHandle make_proc_h(SEXP e) {
   return OA::ProcHandle(as_handle(e));
 }
 
+OA::SymHandle make_sym_h(SEXP e) {
+  assert(is_var(e));
+  return OA::SymHandle(as_handle(e));
+}
+
+OA::ExprHandle make_expr_h(SEXP e) {
+  return OA::ExprHandle(as_handle(e));
+}
+
 OA::MemRefHandle make_mem_ref_h(SEXP e) {
   return OA::MemRefHandle(as_handle(e));
+}
+
+OA::CallHandle make_call_h(SEXP e) {
+  assert(is_call(e));
+  return OA::CallHandle(as_handle(e));
+}
+
+OA::OpHandle make_op_h(SEXP e) {
+  return OA::OpHandle(as_handle(e));
+}
+  
+OA::ConstSymHandle make_const_sym_h(SEXP e) {
+  assert(is_var(e));
+  return OA::ConstSymHandle(as_handle(e));
+}
+
+OA::ConstValHandle make_const_val_h(SEXP e) {
+  assert(is_const(e));
+  return OA::ConstValHandle(as_handle(e));
 }
 
 OA::StmtHandle make_stmt_h(SEXP e) {
@@ -57,23 +85,17 @@ OA::LeafHandle make_leaf_h(SEXP e) {
   return OA::LeafHandle(as_handle(e));
 }
 
-OA::SymHandle make_sym_h(SEXP e) {
-  assert(is_var(e));
-  return OA::SymHandle(as_handle(e));
-}
-
-OA::CallHandle make_call_h(SEXP e) {
-  assert(is_call(e));
-  return OA::CallHandle(as_handle(e));
-}
-
-SEXP make_sexp(OA::IRHandle h)     { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::ProcHandle h)   { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::MemRefHandle h) { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::StmtHandle h)   { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::LeafHandle h)   { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::SymHandle h)    { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::CallHandle h)   { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::IRHandle h)       { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::ProcHandle h)     { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::SymHandle h)      { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::ExprHandle h)     { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::MemRefHandle h)   { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::CallHandle h)     { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::OpHandle h)       { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::ConstSymHandle h) { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::ConstValHandle h) { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::StmtHandle h)     { return as_sexp(h.hval()); }
+SEXP make_sexp(OA::LeafHandle h)     { return as_sexp(h.hval()); }
 
 // ----- local conversion functions -----
 

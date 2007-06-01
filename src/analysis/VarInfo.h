@@ -18,7 +18,11 @@
 
 // File: VarInfo.h
 //
-// Location info about a variable.
+// In each SymbolTable, a name maps to a VarInfo. A VarInfo is
+// associated with a coordinate (a name in a scope) and contains a
+// list of defs that define the name in that scope. (The defs are not
+// necessarily in the variable's scope; they may be local ("<-") in
+// the variable's scope or free ("<<-") in child scopes.)
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -41,7 +45,7 @@ class VarInfo
   : public AnnotationBase
 {
 public:
-  typedef DefVar*                                           key_type;
+  typedef DefVar *                                          key_type;
 
   typedef std::list<key_type>                               MySet_t;
   typedef key_type                                          value_type;
@@ -56,7 +60,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual VarInfo* clone() { return new VarInfo(*this); }
+  virtual VarInfo * clone() { return new VarInfo(*this); }
 
   // defs iterators:
   iterator beginDefs()

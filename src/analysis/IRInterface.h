@@ -35,7 +35,7 @@
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
-#include <OpenAnalysis/IRInterface/CallGraphDFProblemIRInterface.hpp>
+#include <OpenAnalysis/IRInterface/InterSideEffectIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/Location/Location.hpp>
 
@@ -53,10 +53,10 @@
 // TODO: make this a singleton
 // TODO: split this into separate singleton classes
 /// OpenAnalysis interface to the R AST
-class R_IRInterface : public OA::CFG::CFGIRInterfaceDefault,
-		      public OA::CallGraph::CallGraphIRInterface,
-		      public OA::DataFlow::CallGraphDFProblemIRInterface,
-		      public OA::SSA::SSAIRInterface
+class R_IRInterface : public virtual OA::CFG::CFGIRInterfaceDefault,
+		      public virtual OA::CallGraph::CallGraphIRInterface,
+	     //		      public virtual OA::SideEffect::InterSideEffectIRInterface,
+		      public virtual OA::SSA::SSAIRInterface
 {
 public:
   R_IRInterface() {}

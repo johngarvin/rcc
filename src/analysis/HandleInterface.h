@@ -36,18 +36,27 @@
 namespace HandleInterface {
 
 OA::ProcHandle make_proc_h(SEXP e);
+OA::SymHandle make_sym_h(SEXP e);
+OA::ExprHandle make_expr_h(SEXP e);
 OA::MemRefHandle make_mem_ref_h(SEXP e);
+OA::CallHandle make_call_h(SEXP e);
+OA::OpHandle make_op_h(SEXP e);
+OA::ConstSymHandle make_const_sym_h(SEXP e);
+  OA::ConstValHandle make_const_val_h(SEXP e);
 OA::StmtHandle make_stmt_h(SEXP e);
 OA::LeafHandle make_leaf_h(SEXP e);
-OA::SymHandle make_sym_h(SEXP e);
-OA::CallHandle make_call_h(SEXP e);
  
 SEXP make_sexp(OA::IRHandle h);
 SEXP make_sexp(OA::ProcHandle h);
+SEXP make_sexp(OA::SymHandle h);
+SEXP make_sexp(OA::ExprHandle h);
 SEXP make_sexp(OA::MemRefHandle h);
+SEXP make_sexp(OA::CallHandle h);
+SEXP make_sexp(OA::OpHandle h);
+SEXP make_sexp(OA::ConstSymHandle h);
+SEXP make_sexp(OA::ConstValHandle h);
 SEXP make_sexp(OA::StmtHandle h);
 SEXP make_sexp(OA::LeafHandle h);
-SEXP make_sexp(OA::SymHandle h);
 
 }
 

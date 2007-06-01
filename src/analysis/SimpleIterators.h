@@ -73,7 +73,8 @@ public:
   
   SEXP current() const;
   bool isValid() const;
-  void operator++();
+  void operator++();                  // prefix
+  void operator++(int) { ++*this; }   // postfix
   void reset();
 };
 
