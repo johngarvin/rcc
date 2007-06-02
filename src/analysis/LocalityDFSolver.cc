@@ -36,6 +36,7 @@
 #include <analysis/Var.h>
 #include <analysis/UseVar.h>
 #include <analysis/DefVar.h>
+#include <analysis/VarRefFactory.h>
 
 #include <analysis/LocalityDFSet.h>
 #include <analysis/LocalityDFSetElement.h>
@@ -63,24 +64,21 @@ namespace Locality {
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
 class MakeVarRefVisitor : private VarVisitor {
-private:
-  R_VarRef * m_output;
-
 public:
-  MakeVarRefVisitor() : m_output(0) {}
+  MakeVarRefVisitor() : m_output(), m_fact(VarRefFactory::get_instance()) {}
       
 private:
   void visitUseVar(UseVar * uv) {
-    m_output = new R_BodyVarRef(uv->getMention_c());
+    m_output = m_fact->make_body_var_ref(uv->getMention_c());
   }
   
   void visitDefVar(DefVar * dv) {
     switch(dv->getSourceType()) {
     case DefVar::DefVar_ASSIGN:
-      m_output = new R_BodyVarRef(dv->getMention_c());
+      m_output = m_fact->make_body_var_ref(dv->getMention_c());
       break;
     case DefVar::DefVar_FORMAL:
-      m_output = new R_ArgVarRef(dv->getMention_c());
+      m_output = m_fact->make_arg_var_ref(dv->getMention_c());
       break;
     default:
       rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
@@ -88,10 +86,14 @@ private:
   }
 
 public:
-  R_VarRef * visit(Var * host) {
+  OA_ptr<R_VarRef> visit(Var * host) {
     host->accept(this);
     return m_output;
   }
+
+private:
+  OA_ptr<R_VarRef> m_output;
+  VarRefFactory * m_fact;
 };
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
@@ -104,6 +106,8 @@ void LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_cfg = cfg;
   m_proc = proc;
+
+  MakeVarRefVisitor visitor;
 
   // solve as a forward data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
@@ -129,8 +133,8 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * annot = *mi;
 	// look up the mention's name in in_set to get lattice type
-	MakeVarRefVisitor visitor;
-	OA_ptr<R_VarRef> ref; ref = visitor.visit(annot);
+	OA_ptr<R_VarRef> ref = visitor.visit(annot);
+	assert(!ref.ptrEqual(0));
 	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
 	if (elem.ptrEqual(NULL)) {
 	  rcc_error("LocalityDFSolver: name of a mention not found in mNodeInSetMap");
@@ -200,6 +204,8 @@ void LocalityDFSolver::initialize_sets() {
   m_all_bottom = new DFSet;
   m_entry_values = new DFSet;
 
+  VarRefFactory * fact = VarRefFactory::get_instance();
+
   // each CFG node
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
@@ -218,7 +224,7 @@ void LocalityDFSolver::initialize_sets() {
       // for this statement's annotation, iterate through its set of var mentions
       ExpressionInfo::const_var_iterator vi;
       for(vi = stmt_annot->begin_vars(); vi != stmt_annot->end_vars(); ++vi) {
-	OA_ptr<R_VarRef> ref; ref = new R_BodyVarRef((*vi)->getMention_c());
+	OA_ptr<R_VarRef> ref; ref = fact->make_body_var_ref((*vi)->getMention_c());
 
 	// all_top and all_bottom: all variables set to TOP/BOTTOM,
 	// must be initialized for OA data flow analysis

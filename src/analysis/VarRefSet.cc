@@ -25,6 +25,7 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 
 #include <analysis/SimpleIterators.h>
+#include <analysis/VarRefFactory.h>
 
 #include "VarRefSet.h"
 
@@ -86,14 +87,15 @@ OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
   return it;
 }
 
-//! Given a list of formal arguments, construct and return a VarRefSet
-//! of corresponding ArgRefs
+/// Given a list of formal arguments, construct and return a VarRefSet
+/// of corresponding ArgRefs
 OA_ptr<R_VarRefSet> R_VarRefSet::refs_from_arglist(SEXP arglist) {
+  VarRefFactory * fact = VarRefFactory::get_instance();
   OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
   R_ListIterator iter(arglist);
   for( ; iter.isValid(); ++iter) {
     OA_ptr<R_ArgVarRef> arg;
-    arg = new R_ArgVarRef(iter.current());
+    arg = fact->make_arg_var_ref(iter.current());
     refs->insert_arg(arg);
   }
   return refs;

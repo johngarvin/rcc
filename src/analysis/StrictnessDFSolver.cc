@@ -36,6 +36,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/Utils.h>
+#include <analysis/VarRefFactory.h>
 #include <analysis/VarRefSet.h>
 
 #include "StrictnessDFSolver.h"
@@ -149,11 +150,12 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2
 /// For strictness analysis, we add must-uses of formal arguments.
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
+  VarRefFactory * fact = VarRefFactory::get_instance();
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = new R_BodyVarRef((*var_iter)->getMention_c());
+    OA_ptr<R_VarRef> mention; mention = fact->make_body_var_ref((*var_iter)->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
 	(*var_iter)->getUseDefType() == Var::Var_USE &&

@@ -53,7 +53,7 @@ using namespace HandleInterface;
 typedef DefaultDFSet DFSet;
 
 FirstMentionDFSolver::FirstMentionDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir)
+  : m_ir(ir), m_fact(VarRefFactory::get_instance())
 {}
 
 FirstMentionDFSolver::~FirstMentionDFSolver()
@@ -87,7 +87,7 @@ OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle pr
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	OA_ptr<R_BodyVarRef> ref; ref = new R_BodyVarRef((*mi)->getMention_c());
+	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref((*mi)->getMention_c());
 	if (! in_set->member(ref)) {
 	  first_mention_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
 	}
@@ -133,7 +133,7 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeTop() {
     FuncInfo * func = getProperty(FuncInfo, make_sexp(m_proc));
     FuncInfo::mention_iterator mi;
     for (mi = func->begin_mentions(); mi != func->end_mentions(); mi++) {
-      OA_ptr<DFSetElement> mention; mention = new R_BodyVarRef((*mi)->getMention_c());
+      OA_ptr<DFSetElement> mention; mention = m_fact->make_body_var_ref((*mi)->getMention_c());
       m_top->insert(mention);
     }
   }
@@ -189,7 +189,7 @@ FirstMentionDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle 
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = new R_BodyVarRef((*var_iter)->getMention_c());
+    OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref((*var_iter)->getMention_c());
     in->insert(mention);
   }
   return in;  

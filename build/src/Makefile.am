@@ -134,6 +134,8 @@ rcc_bin_SOURCES =				\
   VarBindingAnnotationMap.h                     \
   VarRef.cc					\
   VarRef.h					\
+  VarRefFactory.cc                              \
+  VarRefFactory.h                               \
   VarRefSet.cc					\
   VarRefSet.h					\
   VarVisitor.h                                  \

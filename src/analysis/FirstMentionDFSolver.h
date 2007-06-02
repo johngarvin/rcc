@@ -37,6 +37,7 @@
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/NameMentionMultiMap.h>
+#include <analysis/VarRefFactory.h>
 
 class OA::CFG::CFGInterface;
 class R_IRInterface;
@@ -74,6 +75,7 @@ private:
   OA::ProcHandle m_proc;
   OA::OA_ptr<DefaultDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
+  VarRefFactory * m_fact;
 };
 
 #endif // FIRST_MENTION_DF_SOLVER_H
