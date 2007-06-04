@@ -32,6 +32,7 @@
 #include <assert.h>
 
 #include <OpenAnalysis/CFG/ManagerCFG.hpp>
+#include <OpenAnalysis/IRInterface/AliasIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
@@ -53,7 +54,8 @@
 // TODO: make this a singleton
 // TODO: split this into separate singleton classes
 /// OpenAnalysis interface to the R AST
-class R_IRInterface : public virtual OA::CFG::CFGIRInterfaceDefault,
+class R_IRInterface : public virtual OA::Alias::AliasIRInterfaceDefault,
+		      public virtual OA::CFG::CFGIRInterfaceDefault,
 		      public virtual OA::CallGraph::CallGraphIRInterface,
 	              public virtual OA::SideEffect::InterSideEffectIRInterface,
 		      public virtual OA::SSA::SSAIRInterface
@@ -255,7 +257,42 @@ public:
   /// in caller.
   OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
 
-  //--------------------------------------------------------
+  //------------------------------------------------------------------
+  // Alias information
+  //------------------------------------------------------------------
+
+  /// Return an iterator over all the memory reference handles that appear
+  /// in the given statement.  Order that memory references are iterated
+  /// over can be arbitrary.
+  OA::OA_ptr<OA::MemRefHandleIterator> getAllMemRefs(OA::StmtHandle stmt);
+
+  /// Given a statement, return its Alias::IRStmtType
+  OA::Alias::IRStmtType getAliasStmtType(OA::StmtHandle h);
+
+  /// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
+  /// pairs where there is a source and target such that target
+  OA::OA_ptr<OA::Alias::PtrAssignPairStmtIterator> getPtrAssignStmtPairIterator(OA::StmtHandle stmt);
+
+  /// Return an iterator over <int, MemRefExpr> pairs
+  /// where the integer represents which formal parameter 
+  /// and the MemRefExpr describes the corresponding actual argument. 
+  OA::OA_ptr<OA::Alias::ParamBindPtrAssignIterator> getParamBindPtrAssignIterator(OA::CallHandle call);
+
+  /// Return the symbol handle for the nth formal parameter to proc
+  /// Number starts at 0 and implicit parameters should be given
+  /// a number in the order as well.  This number should correspond
+  /// to the number provided in getParamBindPtrAssign pairs
+  /// Should return SymHandle(0) if there is no formal parameter for 
+  /// given num
+  OA::SymHandle getFormalSym(OA::ProcHandle,int);
+
+  /// Given the callee symbol returns the callee proc handle
+  OA::ProcHandle getProcHandle(OA::SymHandle sym);
+
+  /// Given a procedure return associated SymHandle
+  OA::SymHandle getSymHandle(OA::ProcHandle h);
+
+ //--------------------------------------------------------
   // Def/use info for SSA
   //--------------------------------------------------------
 

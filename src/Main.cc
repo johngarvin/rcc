@@ -27,6 +27,7 @@
 
 #include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>  // TODO: remove after testing
 #include <OpenAnalysis/Alias/InterAliasMap.hpp>  // TODO: remove after testing
+#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp> // TODO: remove after testing
 #include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp> // TODO: remove after testing
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp> // TODO: remove after testing
 
@@ -225,8 +226,9 @@ int main(int argc, char *argv[]) {
   // first build call graph
   OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
   OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
-  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = new OA::Alias::InterAliasMap();  // TODO: fix this; empty alias map not usable
-  //  OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
+  OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
+  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+  OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
   // now perform call graph data flow analysis
   //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
 //   solver.performAnalysis(call_graph,

@@ -433,6 +433,61 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, 
   rcc_error("call graph interface not yet implemented");
 }
 
+//------------------------------------------------------------
+// Alias information
+//------------------------------------------------------------
+
+/// Return an iterator over all the memory reference handles that appear
+/// in the given statement.  Order that memory references are iterated
+/// over can be arbitrary.
+OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}  
+
+/// Given a statement, return its Alias::IRStmtType
+Alias::IRStmtType R_IRInterface::getAliasStmtType(StmtHandle h) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
+
+/// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
+/// pairs where there is a source and target such that target
+OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIterator(StmtHandle stmt) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
+
+/// Return an iterator over <int, MemRefExpr> pairs
+/// where the integer represents which formal parameter 
+/// and the MemRefExpr describes the corresponding actual argument. 
+OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
+
+/// Return the symbol handle for the nth formal parameter to proc
+/// Number starts at 0 and implicit parameters should be given
+/// a number in the order as well.  This number should correspond
+/// to the number provided in getParamBindPtrAssign pairs
+/// Should return SymHandle(0) if there is no formal parameter for 
+/// given num
+SymHandle R_IRInterface::getFormalSym(ProcHandle,int) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
+
+/// Given the callee symbol returns the callee proc handle
+ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
+
+/// Given a procedure return associated SymHandle
+SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
+  // TODO
+  rcc_error("Alias interface not yet implemented");
+}
 
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
