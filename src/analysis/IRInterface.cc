@@ -323,14 +323,15 @@ OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
 /// a NamedRef.  A call involving a function ptr is a Deref.
 OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   SEXP e = make_sexp(h);
+  OA_ptr<MemRefExpr> mre;
   if (is_var(call_lhs(e))) {
     SymHandle sym = make_sym_h(call_lhs(e));
-    OA_ptr<MemRefExpr> named_ref; named_ref = new NamedRef(MemRefExpr::USE, sym);
-    OA_ptr<MemRefExpr> deref; deref = new Deref(MemRefExpr::USE, named_ref);
-    return deref;
+    mre = new NamedRef(MemRefExpr::USE, sym);
+    //    mre = new Deref(MemRefExpr::USE, mre);
   } else {
     rcc_error("getCallMemRefExpr: Call graph interface for calls with non-symbol LHS not yet implemented");
   }
+  return mre;
 }
 
 //----------------------------------------------------------------------
@@ -412,11 +413,16 @@ OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
 /// from CalleeToCallerVisitorIRInterface
 /// Given a MemRefHandle return an iterator over
 /// MemRefExprs that describe this memory reference
+///
+/// Michelle says there's only one MemRefExpr per MemRefHandle in
+/// almost all cases. Here, just return a singleton iterator
+/// containing the MemRefExpr.
 OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) {
   OA_ptr<MemRefExprIterator> iter;
   SEXP cell = make_sexp(h);
   if (is_var(CAR(cell))) {
     OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(CAR(cell)));
+    //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
   } else {
     // TODO
@@ -451,8 +457,6 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, 
 /// in the given statement.  Order that memory references are iterated
 /// over can be arbitrary.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
-  // For now, we want to give trivial alias information, so just
-  // provide a NamedLoc for the callee of each call site
   ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
   OA_ptr<MemRefHandleIterator> iter; iter = new R_MemRefHandleIterator(ei);
   return iter;
@@ -554,6 +558,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   return retval;
 }
 
+/// from IRHandlesIRInterface
 void R_IRInterface::dump(StmtHandle h, ostream &os) {
   Rf_PrintValue(CAR(make_sexp(h)));
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(h));
@@ -562,15 +567,32 @@ void R_IRInterface::dump(StmtHandle h, ostream &os) {
   }
 }
 
-void R_IRInterface::dump(MemRefHandle h, ostream &stream) {}
-void R_IRInterface::currentProc(ProcHandle p) {}
+/// from IRHandlesIRInterface
+void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
+  Rf_PrintValue(make_sexp(h));
+}
 
 //--------------------------------------------------------
 // Symbol Handles
 //--------------------------------------------------------
 
+/// To build call graphs, we may need different procedures to return
+/// different names here.
+///
+/// TODO: R procedures are first class. We need different procedures
+/// to have different "names" even if they happen to be bound to the
+/// same symbol. For now we're just giving the first name assigned.
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
-  return make_sym_h(Rf_install("<procedure>"));
+  // TODO: make it easier to do this
+  RProp::PropertySet::iterator iter = analysisResults.find(FuncInfo::handle());
+  if (iter != analysisResults.end() && iter->second->is_computed()) {
+    // if FuncInfo already exists, then use it
+    // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
+    FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+    return make_sym_h(fi->get_first_name());
+  } else {
+    return make_sym_h(Rf_install("<procedure>"));
+  }
 }
 
 // TODO: symbols in different scopes should be called
@@ -580,6 +602,9 @@ SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
 }
 
 // TODO: fill these in
+//
+// We need some way to convince the R system to give us a string for
+// output instead of just spitting it out.
 std::string R_IRInterface::toString(ProcHandle h) {
   return "";
 }

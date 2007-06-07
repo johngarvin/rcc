@@ -193,7 +193,7 @@ public:
   OA::ExprHandle getUMultiCondition(OA::StmtHandle h, int targetIndex);
 
   //----------------------------------------------------------------------
-  // Information for building call graphs
+  // Information for building call graphs (CallGraphIRInterface)
   //----------------------------------------------------------------------
 
   /// Given a subprogram return an IRStmtIterator for the entire
@@ -203,10 +203,6 @@ public:
   /// Return an iterator over all of the callsites in a given stmt
   OA::OA_ptr<OA::IRCallsiteIterator> getCallsites(OA::StmtHandle h);
 
-  /// Given a ProcHandle, return its SymHandle
-  // OA::SymHandle getProcSymHandle(OA::ProcHandle h);
-  // already defined for implementing CFG interface
-
   /// Given a procedure call create a memory reference expression
   /// to describe that call.  For example, a normal call is
   /// a NamedRef.  A call involving a function ptr is a Deref.  
@@ -214,6 +210,7 @@ public:
 
   //--------------------------------------------------------
   // Information for solving call graph data flow problems
+  // (CallGraphDFProblemIRInterface)
   //--------------------------------------------------------
 
   /// Get IRCallsiteParamIterator for a callsite.
@@ -292,22 +289,28 @@ public:
   /// Given a procedure return associated SymHandle
   OA::SymHandle getSymHandle(OA::ProcHandle h);
 
- //--------------------------------------------------------
-  // Def/use info for SSA
+  //--------------------------------------------------------
+  // Def/use info for SSA (SSAIRInterface)
   //--------------------------------------------------------
 
   OA::OA_ptr<OA::SSA::IRUseDefIterator> getDefs(OA::StmtHandle h);
   OA::OA_ptr<OA::SSA::IRUseDefIterator> getUses(OA::StmtHandle h);
 
-  void dump(OA::StmtHandle h, ostream &os);
-  void dump(OA::MemRefHandle h, ostream &stream);
+  OA::SymHandle getSymHandle(OA::LeafHandle h);
 
   //--------------------------------------------------------
-  // Symbol Handles
+  // getProcSymHandle: implementing virtual method from CFGIRInterface,
+  // CallGraphIRInterface, and SideEffectIRInterface
   //--------------------------------------------------------
 
   OA::SymHandle getProcSymHandle(OA::ProcHandle h);
-  OA::SymHandle getSymHandle(OA::LeafHandle h);
+
+  //------------------------------------------------------------
+  // Pretty printing methods from IRHandlesIRInterface
+  //------------------------------------------------------------
+
+  void dump(OA::StmtHandle h, ostream &os);
+  void dump(OA::MemRefHandle h, ostream &stream);
 
   std::string toString(OA::ProcHandle h);
   std::string toString(OA::StmtHandle h);
@@ -318,9 +321,6 @@ public:
   std::string toString(OA::SymHandle h);
   std::string toString(OA::ConstSymHandle h);
   std::string toString(OA::ConstValHandle h);
-
-  void currentProc(OA::ProcHandle p);
-
 };
 
 /// Get the statement type of an R expression.

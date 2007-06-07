@@ -242,10 +242,10 @@ int main(int argc, char *argv[]) {
 
   // now perform call graph data flow analysis
   //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
-//   solver.performAnalysis(call_graph,
-// 			 param_bindings,
-// 			 alias,
-// 			 intra_man);
+  //   solver.performAnalysis(call_graph,
+  // 	         	      param_bindings,
+  // 			      alias,
+  // 			      intra_man);
 
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment
