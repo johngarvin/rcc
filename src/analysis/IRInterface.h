@@ -343,7 +343,7 @@ public:
   void reset();
 
 private:
-  R_ExpIterator *stmt_iter_ptr;
+  R_SEXPIterator * stmt_iter_ptr;
   void build_stmt_list(OA::StmtHandle stmt);
 };
 
@@ -438,6 +438,30 @@ public:
 
 private:
   RAnnot::FuncInfoIterator * m_fii;
+};
+
+class R_MemRefHandleIterator : public OA::MemRefHandleIterator {
+public:
+  R_MemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
+  OA::MemRefHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+  
+private:
+  RAnnot::ExpressionInfo * m_stmt;
+  RAnnot::ExpressionInfo::const_call_site_iterator m_iter;
+};
+
+class R_SingletonMemRefExprIterator : public virtual OA::MemRefExprIterator,
+				      private virtual R_SingletonIterator<OA::OA_ptr<OA::MemRefExpr> >
+{
+public:
+  R_SingletonMemRefExprIterator(OA::OA_ptr<OA::MemRefExpr> mre);
+  OA::OA_ptr<OA::MemRefExpr> current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
 };
 
 #endif // #ifndef IR_INTERFACE_H

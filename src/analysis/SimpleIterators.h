@@ -30,36 +30,40 @@
 
 #include <include/R/R_RInternals.h>
 
-//! Abstract class to enumerate a set of R expressions.
-class R_ExpIterator {
+/// Abstract class to enumerate a set of R expressions.
+template<class T> class R_Iterator {
 public:
-  virtual ~R_ExpIterator() { }
+  virtual ~R_Iterator() { }
   
-  virtual SEXP current() const = 0;
+  virtual T current() const = 0;
   virtual bool isValid() const = 0;
   virtual void operator++() = 0;
   void operator++(int) { ++*this; }
   virtual void reset() = 0;
 };
 
-//! Singleton iterator for a single statement.
-class R_SingletonIterator : public R_ExpIterator {
-protected:
-  const SEXP exp;
-  bool valid;
-public:
-  R_SingletonIterator(SEXP _exp) : exp(_exp) { valid = true; }
+typedef R_Iterator<SEXP> R_SEXPIterator;
 
-  SEXP current() const;
-  bool isValid() const;
-  void operator++();
-  void reset();
+/// Singleton iterator for a single statement.
+template<class T> class R_SingletonIterator : public R_Iterator<T> {
+public:
+  R_SingletonIterator(T t);
+
+  virtual T current() const;
+  virtual bool isValid() const;
+  virtual void operator++();
+  virtual void reset();
+private:
+  const T m_t;
+  bool m_valid;
 };
 
-//! Enumerate the elements of a list (in R, a chain of CONS cells).
-//! To make sure all locations are unique, the iterator gives you the
-//! cons cell; take the CAR to get the data you want.
-class R_ListIterator : public R_ExpIterator {
+typedef R_SingletonIterator<SEXP> R_SingletonSEXPIterator;
+
+/// Enumerate the elements of a list (in R, a chain of CONS cells).
+/// To make sure all locations are unique, the iterator gives you the
+/// cons cell; take the CAR to get the data you want.
+class R_ListIterator : public R_SEXPIterator {
 protected:
   const SEXP exp;
   SEXP curr;
@@ -78,7 +82,7 @@ public:
   void reset();
 };
 
-//! preorder traversal of an R object through CARs and CDRs
+/// preorder traversal of an R object through CARs and CDRs
 class R_PreorderIterator {
 private:
   std::list<SEXP> preorder;

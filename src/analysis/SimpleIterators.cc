@@ -22,26 +22,32 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
+
 #include "SimpleIterators.h"
 
 //--------------------------------------------------------------------
 // R_SingletonIterator methods
 //--------------------------------------------------------------------
 
-SEXP R_SingletonIterator::current() const {
-  return exp;
+template<class T> R_SingletonIterator<T>::R_SingletonIterator(T t) : m_t(t), m_valid(true)
+{
 }
 
-bool R_SingletonIterator::isValid() const {
-  return valid;
+template<class T> T R_SingletonIterator<T>::current() const {
+  return m_t;
 }
 
-void R_SingletonIterator::operator++() { 
-  valid = false;
+template<class T> bool R_SingletonIterator<T>::isValid() const {
+  return m_valid;
 }
 
-void R_SingletonIterator::reset() { 
-  valid = true;
+template<class T> void R_SingletonIterator<T>::operator++() { 
+  m_valid = false;
+}
+
+template<class T> void R_SingletonIterator<T>::reset() { 
+  m_valid = true;
 }
 
 //--------------------------------------------------------------------
@@ -104,3 +110,10 @@ void R_PreorderIterator::build_pre(SEXP e) {
     break;
   }
 }
+
+//------------------------------------------------------------
+// template instantiation
+//------------------------------------------------------------
+
+template class R_SingletonIterator<SEXP>;
+template class R_SingletonIterator<OA::OA_ptr<OA::MemRefExpr> >;

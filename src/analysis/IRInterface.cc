@@ -205,7 +205,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
 // Given a structured multi-way branch, return the number of cases.
 // The count does not include the default/catchall case.
 int R_IRInterface::numMultiCases(StmtHandle h) {
-  rcc_error("multicase branches don't exist in R");
+  rcc_error("numMultiCases: multicase branches don't exist in R");
   return -1;
 }
 
@@ -214,7 +214,7 @@ int R_IRInterface::numMultiCases(StmtHandle h) {
 // 'bodyIndex'. The n targets are indexed [0..n-1].  The user must
 // free the iterator's memory via delete.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::multiBody(StmtHandle h, int bodyIndex) {
-  rcc_error("multicase branches don't exist in R");
+  rcc_error("multiBody: multicase branches don't exist in R");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
 }
@@ -226,14 +226,14 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::multiBody(StmtHandle h, int bodyInde
 // the switch statement once a particular case has executed, so this
 // method would return true.
 bool R_IRInterface::isBreakImplied(StmtHandle multicond) {
-  rcc_error("multicase branches don't exist in R");
+  rcc_error("isBreakImplied: multicase branches don't exist in R");
   return false;
 }
 
 // Given a structured multi-way branch, return true if the body 
 // corresponding to target 'bodyIndex' is the default/catchall/ case.
 bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
-  rcc_error("multicase branches don't exist in R");
+  rcc_error("isCatchAll: multicase branches don't exist in R");
   return false;
 }
 
@@ -241,7 +241,7 @@ bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
 // for the body corresponding to default/catchall case.  The user
 // must free the iterator's memory via delete.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
-  rcc_error("multicase branches don't exist R");
+  rcc_error("getMultiCatchall: multicase branches don't exist R");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
 }
@@ -250,7 +250,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
 /// expression corresponding to target 'bodyIndex'. The n targets are
 /// indexed [0..n-1].
 ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
-  rcc_error("multicase branches don't exist R");
+  rcc_error("getSMultiCondition: multicase branches don't exist R");
   return 0;
 }
 
@@ -262,7 +262,7 @@ ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
 // Given an unstructured two-way branch, return the label of the
 // target statement.  The second parameter is currently unused.
 StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
-  rcc_error("unstructured two-way branches don't exist in R");
+  rcc_error("getTargetLabel: unstructured two-way branches don't exist in R");
   return 0;
 }
 
@@ -274,14 +274,14 @@ StmtLabel R_IRInterface::getTargetLabel(StmtHandle h, int n) {
 // Given an unstructured multi-way branch, return the number of targets.
 // The count does not include the optional default/catchall case.
 int R_IRInterface::numUMultiTargets(StmtHandle h) {
-  rcc_error("unstructured multi-way branches don't exist in R");
+  rcc_error("numUMultiTargets: unstructured multi-way branches don't exist in R");
   return -1;
 }
 
 // Given an unstructured multi-way branch, return the label of the target
 // statement at 'targetIndex'. The n targets are indexed [0..n-1]. 
 StmtLabel R_IRInterface::getUMultiTargetLabel(StmtHandle h, int targetIndex) {
-  rcc_error("unstructured multi-way branches don't exist in R");
+  rcc_error("getUMultiTargetLabel: unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -289,7 +289,7 @@ StmtLabel R_IRInterface::getUMultiTargetLabel(StmtHandle h, int targetIndex) {
 // corresponding to the optional default/catchall case.  Return 0
 // if there is no default target.
 StmtLabel R_IRInterface::getUMultiCatchallLabel(StmtHandle h) {
-  rcc_error("unstructured multi-way branches don't exist in R");
+  rcc_error("getUMultiCatchallLabel: unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -298,7 +298,7 @@ StmtLabel R_IRInterface::getUMultiCatchallLabel(StmtHandle h) {
 // are indexed [0..n-1].
 // multiway target condition 
 ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
-  rcc_error("unstructured multi-way branches don't exist in R");
+  rcc_error("getUMultiCondition: unstructured multi-way branches don't exist in R");
   return 0;
 }
 
@@ -329,7 +329,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
     OA_ptr<MemRefExpr> deref; deref = new Deref(MemRefExpr::USE, named_ref);
     return deref;
   } else {
-    rcc_error("Call graph interface for calls with non-symbol LHS not yet implemented");
+    rcc_error("getCallMemRefExpr: Call graph interface for calls with non-symbol LHS not yet implemented");
   }
 }
 
@@ -410,27 +410,37 @@ OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
 }
   
 /// from CalleeToCallerVisitorIRInterface
-OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle) {
-  // TODO
-  rcc_error("call graph interface not yet implemented");
+/// Given a MemRefHandle return an iterator over
+/// MemRefExprs that describe this memory reference
+OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) {
+  OA_ptr<MemRefExprIterator> iter;
+  SEXP cell = make_sexp(h);
+  if (is_var(CAR(cell))) {
+    OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(CAR(cell)));
+    iter = new R_SingletonMemRefExprIterator(mre);
+  } else {
+    // TODO
+    rcc_error("getMemRefExprIterator: call graph interface not yet implemented for non-symbol callees");
+  }
+  return iter;
 }
 
 /// from SideEffectIRInterface
 OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle) {
   // TODO
-  rcc_error("call graph interface not yet implemented");
+  rcc_error("getDefMemRefs: call graph interface not yet implemented");
 }
 
 /// from SideEffectIRInterface
 OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle) {
   // TODO
-  rcc_error("call graph interface not yet implemented");
+  rcc_error("getUseMemRefs: call graph interface not yet implemented");
 }
 
 /// from InterSideEffectIRInterface
 OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
   // TODO
-  rcc_error("call graph interface not yet implemented");
+  rcc_error("getSideEffect: call graph interface not yet implemented");
 }
 
 //------------------------------------------------------------
@@ -441,21 +451,24 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, 
 /// in the given statement.  Order that memory references are iterated
 /// over can be arbitrary.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
-  // TODO
-  rcc_error("Alias interface not yet implemented");
-}  
+  // For now, we want to give trivial alias information, so just
+  // provide a NamedLoc for the callee of each call site
+  ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
+  OA_ptr<MemRefHandleIterator> iter; iter = new R_MemRefHandleIterator(ei);
+  return iter;
+}
 
 /// Given a statement, return its Alias::IRStmtType
 Alias::IRStmtType R_IRInterface::getAliasStmtType(StmtHandle h) {
-  // TODO
-  rcc_error("Alias interface not yet implemented");
+  return Alias::ANY_STMT;  // not a pointer assignment (R doesn't have pointers)
 }
 
 /// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
 /// pairs where there is a source and target such that target
 OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIterator(StmtHandle stmt) {
-  // TODO
-  rcc_error("Alias interface not yet implemented");
+  // we have no PTR_ASSIGN_STMTs, so return null
+  OA_ptr<Alias::PtrAssignPairStmtIterator> empty;
+  return empty;
 }
 
 /// Return an iterator over <int, MemRefExpr> pairs
@@ -463,7 +476,9 @@ OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIter
 /// and the MemRefExpr describes the corresponding actual argument. 
 OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
   // TODO
-  rcc_error("Alias interface not yet implemented");
+  rcc_error("getParamBindPtrAssignIterator: Alias interface not yet implemented");
+  OA_ptr<Alias::ParamBindPtrAssignIterator> dummy;
+  return dummy;
 }
 
 /// Return the symbol handle for the nth formal parameter to proc
@@ -472,21 +487,28 @@ OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIt
 /// to the number provided in getParamBindPtrAssign pairs
 /// Should return SymHandle(0) if there is no formal parameter for 
 /// given num
-SymHandle R_IRInterface::getFormalSym(ProcHandle,int) {
-  // TODO
-  rcc_error("Alias interface not yet implemented");
+SymHandle R_IRInterface::getFormalSym(ProcHandle h, int n) {
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+  if (n >= fi->get_num_args()) {
+    return SymHandle(0);
+  } else {
+    SEXP sym = TAG(fi->get_arg(n + 1));  // FuncInfo gives 1-based params
+    return make_sym_h(sym);
+  }
 }
 
 /// Given the callee symbol returns the callee proc handle
 ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   // TODO
-  rcc_error("Alias interface not yet implemented");
+  rcc_error("getProcHandle: Alias interface not yet implemented");
+  return ProcHandle(0);
 }
 
 /// Given a procedure return associated SymHandle
 SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
   // TODO
-  rcc_error("Alias interface not yet implemented");
+  rcc_error("getSymHandle: Alias interface not yet implemented");
+  return SymHandle(0);
 }
 
 //--------------------------------------------------------
@@ -627,7 +649,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
     if (exp == R_NilValue) {
       stmt_iter_ptr = new R_ListIterator(exp);  // empty iterator
     } else {
-      stmt_iter_ptr = new R_SingletonIterator(cell);
+      stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     }
     break;
   case CFG::COMPOUND:
@@ -638,7 +660,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       // that doesn't take a cell.
       stmt_iter_ptr = new R_ListIterator(CDR(exp));
     } else if (is_loop(exp)) {
-      stmt_iter_ptr = new R_SingletonIterator(cell);
+      stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     } else {
       // We have a non-loop compound statement with a body. (body_c is
       // the cell containing the body.) This body might be a list for
@@ -654,12 +676,12 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       if (TYPEOF(CAR(body_c)) == NILSXP || TYPEOF(CAR(body_c)) == LISTSXP) {
 	stmt_iter_ptr = new R_ListIterator(CAR(body_c));
       } else {
-	stmt_iter_ptr = new R_SingletonIterator(body_c);
+	stmt_iter_ptr = new R_SingletonSEXPIterator(body_c);
       }
     }
     break;
   default:
-    stmt_iter_ptr = new R_SingletonIterator(cell);
+    stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     break;
   }
 }
@@ -765,3 +787,52 @@ void R_ProcHandleIterator::reset() {
   m_fii->Reset();
 }
 
+//------------------------------------------------------------
+// R_MemRefHandleIterator
+//------------------------------------------------------------
+
+R_MemRefHandleIterator::R_MemRefHandleIterator(ExpressionInfo * stmt)
+  : m_stmt(stmt), m_iter(stmt->begin_call_sites())
+{
+}
+
+MemRefHandle R_MemRefHandleIterator::current() const {
+  return make_mem_ref_h(*m_iter);
+}
+
+bool R_MemRefHandleIterator::isValid() const {
+  return (m_iter != m_stmt->end_call_sites());
+}
+
+void R_MemRefHandleIterator::operator++() {
+  ++m_iter;
+}
+
+void R_MemRefHandleIterator::reset() {
+  m_iter = m_stmt->begin_call_sites();
+}
+
+//------------------------------------------------------------
+// R_SingletonMemRefExprIterator
+//------------------------------------------------------------
+
+R_SingletonMemRefExprIterator::R_SingletonMemRefExprIterator(OA_ptr<MemRefExpr> mre)
+  : R_SingletonIterator<OA_ptr<MemRefExpr> >(mre)
+{
+}
+
+OA_ptr<MemRefExpr> R_SingletonMemRefExprIterator::current() const {
+  return R_SingletonIterator<OA_ptr<MemRefExpr> >::current();
+}
+
+bool R_SingletonMemRefExprIterator::isValid() const {
+  return R_SingletonIterator<OA_ptr<MemRefExpr> >::isValid();  
+}
+
+void R_SingletonMemRefExprIterator::operator++() {
+  R_SingletonIterator<OA_ptr<MemRefExpr> >::operator++();
+}
+
+void R_SingletonMemRefExprIterator::reset() {
+  R_SingletonIterator<OA_ptr<MemRefExpr> >::reset();
+}

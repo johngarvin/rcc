@@ -25,11 +25,13 @@
 
 #include <iostream>
 
-#include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>  // TODO: remove after testing
-#include <OpenAnalysis/Alias/InterAliasMap.hpp>  // TODO: remove after testing
-#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp> // TODO: remove after testing
-#include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp> // TODO: remove after testing
-#include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp> // TODO: remove after testing
+// TODO: remove these OpenAnalysis includes after call graph testing is done
+#include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>
+#include <OpenAnalysis/Alias/InterAliasMap.hpp>
+#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
+#include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
+#include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
+#include <OpenAnalysis/Utils/OutputBuilderDOT.hpp>
 
 #include <CheckProtect.h>
 #include <include/R/R_Internal.h>
@@ -229,6 +231,15 @@ int main(int argc, char *argv[]) {
   OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
   OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
   OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
+  // output call graph
+  call_graph->output(*an->get_interface());
+
+  //   output graph in DOT form
+  //   OA::OA_ptr<OA::OutputBuilder> dot_builder;
+  //   dot_builder = new OA::OutputBuilderDOT;
+  //   call_graph->configOutput(dot_builder);
+  //   call_graph->output(*an->get_interface());
+
   // now perform call graph data flow analysis
   //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
 //   solver.performAnalysis(call_graph,
