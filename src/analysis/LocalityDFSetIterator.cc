@@ -43,18 +43,18 @@ void DFSetIterator::operator++() {
   if (isValid()) mIter++;
 }
 
-//! is the iterator at the end
+/// is the iterator at the end
 bool DFSetIterator::isValid() {
   return (mIter != mSet->end());
 }
 
-//! return copy of current node in iterator
+/// return copy of current node in iterator
 OA_ptr<DFSetElement> DFSetIterator::current() {
   assert(isValid());
   return (*mIter);
 }
 
-//! reset iterator to beginning of set
+/// reset iterator to beginning of set
 void DFSetIterator::reset() {
   mIter = mSet->begin();
 }

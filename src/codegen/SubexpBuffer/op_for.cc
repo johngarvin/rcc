@@ -39,7 +39,7 @@
 
 using namespace std;
 
-//! Output a for loop
+/// Output a for loop
 Expression SubexpBuffer::op_for(SEXP e, string rho,
 				ResultStatus resultStatus) {
   SEXP sym_c, sym, body, val;

@@ -132,9 +132,10 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       ExpressionInfo::var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * annot = *mi;
-	// look up the mention's name in in_set to get lattice type
+	// get a VarRef
 	OA_ptr<R_VarRef> ref = visitor.visit(annot);
 	assert(!ref.ptrEqual(0));
+	// look up the mention's name in in_set to get lattice type
 	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
 	if (elem.ptrEqual(NULL)) {
 	  rcc_error("LocalityDFSolver: name of a mention not found in mNodeInSetMap");

@@ -46,39 +46,39 @@ OA_ptr<R_VarRef> DFSetElement::get_loc() const { return m_loc; }
 LocalityType DFSetElement::get_locality_type() const { return m_type; }
 
 
-//! not doing a deep copy
+/// not doing a deep copy
 OA_ptr<DFSetElement> DFSetElement::clone() { 
   OA_ptr<DFSetElement> retval;
   retval = new DFSetElement(*this);
   return retval;
 }
   
-//! copy an DFSetElement, not a deep copy, will refer to same Location
-//! as other
+/// copy an DFSetElement, not a deep copy, will refer to same Location
+/// as other
 DFSetElement& DFSetElement::operator=(const DFSetElement& other) {
   m_loc = other.get_loc();
   m_type = other.get_locality_type();
   return *this;
 }
 
-//! Equality operator for DFSetElement.  Just inspects location contents.
+/// Equality operator for DFSetElement.  Just inspects location contents.
 bool DFSetElement::operator== (const DFSetElement &other) const {
   return (m_loc==other.get_loc());
 }
 
-//! Inequality operator.
+/// Inequality operator.
 bool DFSetElement::operator!= (const DFSetElement &other) const {
   return !(*this==other);
 }
 
 
-//! Just based on location, this way when insert a new DFSetElement it can
-//! override the existing DFSetElement with same location
+/// Just based on location, this way when insert a new DFSetElement it can
+/// override the existing DFSetElement with same location
 bool DFSetElement::operator< (const DFSetElement &other) const { 
   return (m_loc < other.get_loc());
 }
 
-//! Equality method for DFSetElement.
+/// Equality method for DFSetElement.
 bool DFSetElement::equiv(const DFSetElement& other) {
   return (m_loc == other.get_loc() && m_type == other.get_locality_type());
 }
@@ -91,8 +91,8 @@ std::string DFSetElement::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   return toString();
 }
 
-//! Return a string that contains a character representation of
-//! an DFSetElement.
+/// Return a string that contains a character representation of
+/// an DFSetElement.
 std::string DFSetElement::toString() {
   std::ostringstream oss;
   oss << "<";

@@ -45,12 +45,12 @@ bool R_BodyVarRef::operator<(const R_VarRef & loc2) const {
   return (get_name() < loc2.get_name());
 }
 
-//! Do the locations refer to the same name?
+/// Do the locations refer to the same name?
 bool R_BodyVarRef::operator==(R_VarRef & loc2) const {
   return (get_name() == loc2.get_name());
 }
 
-//! Are they the same location?
+/// Are they the same location?
 bool R_BodyVarRef::equiv(R_VarRef & loc2) const {
   return (m_loc == loc2.get_sexp());
 }
@@ -85,12 +85,12 @@ bool R_ArgVarRef::operator<(const R_VarRef & loc2) const {
   return (get_name() < loc2.get_name());
 }
 
-//! Do the locations refer to the same name?
+/// Do the locations refer to the same name?
 bool R_ArgVarRef::operator==(R_VarRef & loc2) const {
   return (get_name() == loc2.get_name());
 }
 
-//! Are they the same location?
+/// Are they the same location?
 bool R_ArgVarRef::equiv(R_VarRef & loc2) const {
   return (m_loc == loc2.get_sexp());
 }

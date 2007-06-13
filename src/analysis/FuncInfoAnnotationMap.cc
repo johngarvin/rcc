@@ -150,7 +150,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
 	build_scope_tree_rec(rhs, parent);
       }
     } else if (is_fundef(e)) {  // anonymous function
-      FuncInfo * newfun = new FuncInfo(parent, R_NilValue, e);
+      FuncInfo * newfun = new FuncInfo(parent, Rf_install("<unknown function>"), e);
       m_map[HandleInterface::make_proc_h(e)] = newfun;
       build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
     } else if (is_rcc_assertion(e)) { // rcc_assert call
@@ -162,7 +162,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
 	build_scope_tree_rec(body, parent);
 	if (is_simple_assign(body)) {
 	  SEXP rhs = CAR(assign_rhs_c(body));
-	  if (is_fundef(rhs)) fi = getProperty(FuncInfo, rhs); // ?????
+	  if (is_fundef(rhs)) fi = getProperty(FuncInfo, rhs); // TODO: is this right?
 	}
       } else if (is_rcc_assert(e)) {
 	fi = parent;

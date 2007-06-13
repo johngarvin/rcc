@@ -29,9 +29,9 @@
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
-//! Huge functions are hard on compilers like gcc. To generate code
-//! that goes down easy, we split up the constant initialization into
-//! several functions.
+/// Huge functions are hard on compilers like gcc. To generate code
+/// that goes down easy, we split up the constant initialization into
+/// several functions.
 class SplitSubexpBuffer : public SubexpBuffer {
 public:
   SplitSubexpBuffer(std::string pref = "v", bool is_c = false, int thr = 300, std::string is = "init");

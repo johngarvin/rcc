@@ -47,7 +47,7 @@ private:
 };
 
 
-//! A set of R_VarRefs.
+/// A set of R_VarRefs.
 class R_VarRefSet {
  public:
   R_VarRefSet() { vars = new std::set<OA::OA_ptr<R_VarRef> >; }
@@ -58,7 +58,7 @@ class R_VarRefSet {
   OA::OA_ptr<R_VarRefSetIterator> get_iterator() const;
   void dump();
 
-  //! construct a VarRefSet from a list of formal arguments
+  /// construct a VarRefSet from a list of formal arguments
   static OA::OA_ptr<R_VarRefSet> refs_from_arglist(SEXP arglist);
 
 protected:

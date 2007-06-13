@@ -77,7 +77,7 @@ public:
   void setScopeType(LocalityType x)
     { mScopeType = x; }
 
-  // Mention (cons cell whose CAR is the name)
+  // Mention (cons cell that contains the name)
   SEXP getMention_c() const
     { return mSEXP; }
   void setMention_c(SEXP x)

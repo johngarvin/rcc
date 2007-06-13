@@ -210,6 +210,30 @@ int main(int argc, char *argv[]) {
       }
       cout << "Dumping call graph:" << endl;
       CallGraphAnnotationMap::get_instance()->dump(cout);
+
+      cout << "Dumping OA call graph (not yet used):" << endl;
+      // TODO: remove
+      // first build call graph
+      OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
+      OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
+      OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
+      OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+      OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
+      // output call graph
+      call_graph->output(*an->get_interface());
+      
+      //   output graph in DOT form
+      //   OA::OA_ptr<OA::OutputBuilder> dot_builder;
+      //   dot_builder = new OA::OutputBuilderDOT;
+      //   call_graph->configOutput(dot_builder);
+      //   call_graph->output(*an->get_interface());
+      
+      // now perform call graph data flow analysis
+      //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
+      //   solver.performAnalysis(call_graph,
+      // 	         	      param_bindings,
+      // 			      alias,
+      // 			      intra_man);
     }
     if (cfg_dot_dump) {
       CallGraphAnnotationMap::get_instance()->dumpdot(cout);
@@ -222,30 +246,6 @@ int main(int argc, char *argv[]) {
     clearProperties();
     analysis_ok = false;
   }
-
-  // temporary: test our IRInterface by building OA call graph
-  // TODO: remove
-  // first build call graph
-  OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
-  OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
-  OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
-  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
-  OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
-  // output call graph
-  call_graph->output(*an->get_interface());
-
-  //   output graph in DOT form
-  //   OA::OA_ptr<OA::OutputBuilder> dot_builder;
-  //   dot_builder = new OA::OutputBuilderDOT;
-  //   call_graph->configOutput(dot_builder);
-  //   call_graph->output(*an->get_interface());
-
-  // now perform call graph data flow analysis
-  //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
-  //   solver.performAnalysis(call_graph,
-  // 	         	      param_bindings,
-  // 			      alias,
-  // 			      intra_man);
 
   // We had to make our program one big function to use
   // OpenAnalysis. Now forget the function definition and assignment

@@ -19,12 +19,13 @@
 // File: FirstMentionDFSolver.cc
 //
 // Implements the general OpenAnalysis CFG data flow problem. For each
-// variable, finds a set of mentions: a mention is in the set if and
-// only if it's the first mention of that variable on some path. It's
-// similar to the MUST-KILL data flow problem, except that a variable
-// can be "killed" by a use or a def, not just a def. Useful for
-// discovering where arguments (which are lazy in R) may be evaluated.
-// For this problem, formal arguments do not count as defs.
+// local variable in a given procedure, finds a set of mentions: a
+// mention is in the set if and only if it's the first mention of that
+// variable on some path. It's similar to the MUST-KILL data flow
+// problem, except that a variable can be "killed" by a use or a def,
+// not just a def. Useful for discovering where arguments (which are
+// lazy in R) may be evaluated. For this problem, formal arguments do
+// not count as defs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -189,8 +190,15 @@ FirstMentionDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle 
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref((*var_iter)->getMention_c());
-    in->insert(mention);
+    // only local variables can be first mentions
+    //
+    // What about TOP? Since we are solving the
+    // must-have-been-mentioned problem, if it might be local or free
+    // we conservatively say it hasn't been mentioned.
+    if ((*var_iter)->getScopeType() == Locality_LOCAL) {
+      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref((*var_iter)->getMention_c());
+      in->insert(mention);
+    }
   }
   return in;  
 }

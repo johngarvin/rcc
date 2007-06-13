@@ -43,12 +43,12 @@ void init_R() {
   Rf_initEmbeddedR(4, myargs);
 }
 
-//! Reads 'in_file' and parses it as R code. Sets 'exps' as a
-//! NULL-terminated array of SEXPs representing the list of
-//! expressions. The caller must free p_exps.
-//!
-//! If the parser encounters a call to 'source' at top level with one
-//! non-named argument, it parses the named file at compile time.
+/// Reads 'in_file' and parses it as R code. Sets 'exps' as a
+/// NULL-terminated array of SEXPs representing the list of
+/// expressions. The caller must free p_exps.
+///
+/// If the parser encounters a call to 'source' at top level with one
+/// non-named argument, it parses the named file at compile time.
 void parse_R(FILE *in_file, SEXP *p_exps[]) {
   int n = 0;
   SEXP e;
@@ -105,24 +105,24 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
   *p_exps = exps;
 }
 
-//!  Parse R code into a sequence of R AST expressions, then makes and
-//!  returns the sequence as a big function with no arguments. If the
-//!  input file containts expressions e1,e2,...en, then the output is
-//!  the SEXP representation of something like this:
-//!  
-//!  `<toplevel>` <- function()
-//!  {
-//!    e1
-//!    e2
-//!    ...
-//!    en
-//!  }
-//!  
-//!  FIXME: This is done because OpenAnalysis assumes that, as in C or
-//!  Fortran, all code is within some function--an assumption that's
-//!  invalid for languages like R. Beware of altering the semantics:
-//!  naively using the result will cause global variables to be treated
-//!  as local to the newly created function.
+///  Parse R code into a sequence of R AST expressions, then makes and
+///  returns the sequence as a big function with no arguments. If the
+///  input file containts expressions e1,e2,...en, then the output is
+///  the SEXP representation of something like this:
+///  
+///  `<toplevel>` <- function()
+///  {
+///    e1
+///    e2
+///    ...
+///    en
+///  }
+///  
+///  FIXME: This is done because OpenAnalysis assumes that, as in C or
+///  Fortran, all code is within some function--an assumption that's
+///  invalid for languages like R. Beware of altering the semantics:
+///  naively using the result will cause global variables to be treated
+///  as local to the newly created function.
 
 SEXP parse_R_as_function(FILE *in_file) {
   SEXP *exps, *e;

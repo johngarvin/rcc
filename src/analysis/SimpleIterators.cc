@@ -92,7 +92,7 @@ void R_PreorderIterator::reset() {
   iter = preorder.begin();
 }
 
-//! Preorder iterator: building the preorder list of nodes
+/// Preorder iterator: building the preorder list of nodes
 void R_PreorderIterator::build_pre(SEXP e) {
   assert(e != NULL);
   switch(TYPEOF(e)) {

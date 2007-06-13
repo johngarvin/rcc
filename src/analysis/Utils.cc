@@ -261,19 +261,19 @@ bool is_for(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("for"));
 }
 
-//! Returns the CONS containing the induction variable of a for loop.
+/// Returns the CONS containing the induction variable of a for loop.
 SEXP for_iv_c(const SEXP e) {
   assert(is_for(e));
   return CDR(e);
 }
 
-//! Returns the CONS containing the range of the loop.
+/// Returns the CONS containing the range of the loop.
 SEXP for_range_c(const SEXP e) {
   assert(is_for(e));
   return CDDR(e);
 }
 
-//! Returns the CONS containing the body of the given for loop.
+/// Returns the CONS containing the body of the given for loop.
 SEXP for_body_c(const SEXP e) {
   assert(is_for(e));
   return CDR(CDDR(e));
@@ -283,13 +283,13 @@ bool is_while(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("while"));
 }
 
-//! Returns the CONS containing the conditional of a while loop.
+/// Returns the CONS containing the conditional of a while loop.
 SEXP while_cond_c(const SEXP e) {
   assert(is_while(e));
   return CDR(e);
 }
 
-//! Returns the CONS containing the body of a while loop.
+/// Returns the CONS containing the body of a while loop.
 SEXP while_body_c(const SEXP e) {
   assert(is_while(e));
   return CDDR(e);
@@ -299,7 +299,7 @@ bool is_repeat(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("repeat"));
 }
 
-//! Returns the CONS containing the body of a repeat loop.
+/// Returns the CONS containing the body of a repeat loop.
 SEXP repeat_body_c(const SEXP e) {
   assert(is_repeat(e));
   return CDR(e);

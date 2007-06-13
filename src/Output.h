@@ -30,8 +30,8 @@
 
 class SubexpBuffer;
 
-//! Basic wrappers around strings. Helps a lot in getting types right
-//! in the Output constructor.
+/// Basic wrappers around strings. Helps a lot in getting types right
+/// in the Output constructor.
 
 class Decls {
  public:

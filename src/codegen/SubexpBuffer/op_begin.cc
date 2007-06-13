@@ -34,7 +34,7 @@
 
 using namespace std;
 
-//! Output a sequence of statements
+/// Output a sequence of statements
 Expression SubexpBuffer::op_begin(SEXP exp, string rho,
 				  Protection resultProtection,
 				  ResultStatus resultStatus)

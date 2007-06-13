@@ -25,6 +25,7 @@
 
 #include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
 
+#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/DefVar.h>
 #include <analysis/ExpressionInfo.h>
@@ -329,7 +330,8 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
     mre = new NamedRef(MemRefExpr::USE, sym);
     //    mre = new Deref(MemRefExpr::USE, mre);
   } else {
-    rcc_error("getCallMemRefExpr: Call graph interface for calls with non-symbol LHS not yet implemented");
+    rcc_warn("getCallMemRefExpr: Call graph interface for calls with non-symbol LHS not yet implemented");
+    throw AnalysisException();
   }
   return mre;
 }
@@ -426,7 +428,8 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
     iter = new R_SingletonMemRefExprIterator(mre);
   } else {
     // TODO
-    rcc_error("getMemRefExprIterator: call graph interface not yet implemented for non-symbol callees");
+    rcc_warn("getMemRefExprIterator: call graph interface not yet implemented for non-symbol callees");
+    throw AnalysisException();
   }
   return iter;
 }
@@ -434,19 +437,22 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
 /// from SideEffectIRInterface
 OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle) {
   // TODO
-  rcc_error("getDefMemRefs: call graph interface not yet implemented");
+  rcc_warn("getDefMemRefs: call graph interface not yet implemented");
+  throw AnalysisException();
 }
 
 /// from SideEffectIRInterface
 OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle) {
   // TODO
-  rcc_error("getUseMemRefs: call graph interface not yet implemented");
+  rcc_warn("getUseMemRefs: call graph interface not yet implemented");
+  throw AnalysisException();
 }
 
 /// from InterSideEffectIRInterface
 OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
   // TODO
-  rcc_error("getSideEffect: call graph interface not yet implemented");
+  rcc_warn("getSideEffect: call graph interface not yet implemented");
+  throw AnalysisException();
 }
 
 //------------------------------------------------------------
@@ -480,7 +486,8 @@ OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIter
 /// and the MemRefExpr describes the corresponding actual argument. 
 OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
   // TODO
-  rcc_error("getParamBindPtrAssignIterator: Alias interface not yet implemented");
+  rcc_warn("getParamBindPtrAssignIterator: Alias interface not yet implemented");
+  throw AnalysisException();
   OA_ptr<Alias::ParamBindPtrAssignIterator> dummy;
   return dummy;
 }
@@ -504,14 +511,16 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle h, int n) {
 /// Given the callee symbol returns the callee proc handle
 ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   // TODO
-  rcc_error("getProcHandle: Alias interface not yet implemented");
+  rcc_warn("getProcHandle: Alias interface not yet implemented");
+  throw AnalysisException();
   return ProcHandle(0);
 }
 
 /// Given a procedure return associated SymHandle
 SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
   // TODO
-  rcc_error("getSymHandle: Alias interface not yet implemented");
+  rcc_warn("getSymHandle: Alias interface not yet implemented");
+  throw AnalysisException();
   return SymHandle(0);
 }
 

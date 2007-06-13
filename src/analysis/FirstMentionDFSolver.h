@@ -19,12 +19,13 @@
 // File: FirstMentionDFSolver.h
 //
 // Implements the general OpenAnalysis CFG data flow problem. For each
-// variable, finds a set of mentions: a mention is in the set if and
-// only if it's the first mention of that variable on some path. It's
-// similar to the MUST-KILL data flow problem, except that a variable
-// can be "killed" by a use or a def, not just a def. Useful for
-// discovering where arguments (which are lazy in R) may be evaluated.
-// For this problem, formal arguments do not count as defs.
+// local variable in the given procedure, finds a set of mentions: a
+// mention is in the set if and only if it's the first mention of that
+// variable on some path. It's similar to the MUST-KILL data flow
+// problem, except that a variable can be "killed" by a use or a def,
+// not just a def. Useful for discovering where arguments (which are
+// lazy in R) may be evaluated. For this problem, formal arguments do
+// not count as defs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
