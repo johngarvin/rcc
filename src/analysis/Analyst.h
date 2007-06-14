@@ -49,8 +49,8 @@ public:
   static R_Analyst * get_instance();  // only get the existing instance; error if not instantiated
 
 public:
-  /// Perform analysis. Return true if analysis was successful, false otherwise.
-  bool perform_analysis();
+  /// Perform analysis.
+  void perform_analysis();
 
   OA::OA_ptr<R_IRInterface> get_interface() { return m_interface; }
 

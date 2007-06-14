@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   int i;
   char *fullname_c;
   string fullname, libname, out_filename, path, exec_decls, exec_code;
-  bool in_file_exists, out_file_exists = FALSE;
+  bool in_file_exists, out_file_exists = false;
   FILE *in_file;
   int n_exprs;
 
@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
       string::size_type slash = program.rfind ("/",program.length());
       if (slash != 0) program = program.substr(slash+1,program.length());
 
+      // TODO: use rcc_error instead
       cerr << program << ": unable to open input file \"" << fullname_c << "\"" << endl;
       exit(-1);
     }
@@ -190,12 +191,13 @@ int main(int argc, char *argv[]) {
 
   // parse
   SEXP program = parse_R_as_function(in_file);
-
-  // perform analysis
-  R_Analyst * an = R_Analyst::get_instance(program);
-  bool analysis_ok = an->perform_analysis();
+  bool analysis_ok;
 
   try {
+    // perform analysis
+    R_Analyst * an = R_Analyst::get_instance(program);
+    an->perform_analysis();
+
     if (analysis_debug) {
       FuncInfo * scope_tree = an->get_scope_tree_root();
       FuncInfoIterator fii(scope_tree);
@@ -238,11 +240,12 @@ int main(int argc, char *argv[]) {
     if (cfg_dot_dump) {
       CallGraphAnnotationMap::get_instance()->dumpdot(cout);
     }
+    analysis_ok = true;
   }
   catch (AnalysisException ae) {
     // One phase of analysis rejected a program. Get rid of the
     // information in preparation to compile trivially.
-    rcc_warn("analysis encountered problems; compiling trivially");
+    rcc_warn("analysis encountered difficulties; compiling trivially");
     clearProperties();
     analysis_ok = false;
   }
@@ -272,7 +275,7 @@ int main(int argc, char *argv[]) {
     } else {
       // compile trivially
       exp = CodeGen::op_literal(CAR(r_expressions), "R_GlobalEnv");
-    }      
+    }
     string this_exp = exp.decls()
       + Visibility::emit_set_if_visible(exp.visibility())
       + exp.code();

@@ -76,29 +76,19 @@ R_Analyst::R_Analyst(SEXP _program)
 
 // ----- analysis -----
 
-bool R_Analyst::perform_analysis() {
-  try {
-    // initialize what's not initialized by the constructor
-    m_interface = new R_IRInterface();
-    m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
-    m_global_scope = m_scope_tree_root->get_scope();
-    m_library_scope = new InternalLexicalScope();
-
-    if (ParseInfo::allow_oo()           ||
-	ParseInfo::allow_envir_manip())
+void R_Analyst::perform_analysis() {
+  // initialize what's not initialized by the constructor
+  m_interface = new R_IRInterface();
+  m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
+  m_global_scope = m_scope_tree_root->get_scope();
+  m_library_scope = new InternalLexicalScope();
+  
+  if (ParseInfo::allow_oo()           ||
+      ParseInfo::allow_envir_manip())
     {
       throw AnalysisException();
     }
-    build_local_function_info();
-    return true;
-  }
-  catch (AnalysisException ae) {
-    // One phase of analysis rejected a program. Get rid of the
-    // information in preparation to compile trivially.
-    rcc_warn("analysis encountered difficulties; compiling trivially");
-    clearProperties();
-    return false;
-  }
+  build_local_function_info();
 }
 
 /// Discovers local information on procedures: arguments, names
