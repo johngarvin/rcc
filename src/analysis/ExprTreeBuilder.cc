@@ -20,6 +20,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/AnalysisException.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>
 
@@ -38,7 +39,7 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP cell) {
     tree->addNode(n);
   } else if (is_var(e)) {
     // use the cell to create the handle
-    OA_ptr<ExprTree::ConstSymNode> n; n = new ExprTree::ConstSymNode(make_const_sym_h(cell));
+    OA_ptr<ExprTree::ConstSymNode> n; n = new ExprTree::ConstSymNode(make_const_sym_h(e));
     tree->addNode(n);
   } else if (is_assign(e)) {
     OA_ptr<ExprTree::OpNode> assign; assign = new ExprTree::OpNode(make_op_h(e));
@@ -49,22 +50,31 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP cell) {
     tree->copyAndConnectSubTree(assign, rhs);
   } else if (is_fundef(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_struct_field(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_subscript(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_if(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_for(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_while(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_repeat(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_curly_list(e)) {
     // TODO
+    throw AnalysisException();
   } else if (is_call(e)) {  // regular function call
     // TODO
+    throw AnalysisException();
   } else {
     assert(0);
   }

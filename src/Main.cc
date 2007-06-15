@@ -30,6 +30,7 @@
 #include <OpenAnalysis/Alias/InterAliasMap.hpp>
 #include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
 #include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
+#include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
 #include <OpenAnalysis/Utils/OutputBuilderDOT.hpp>
 
@@ -220,7 +221,7 @@ int main(int argc, char *argv[]) {
       OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
       OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
       OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
-      OA::OA_ptr<OA::CallGraph::CallGraph> call_graph = man.performAnalysis(proc_iter, alias);
+      OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph = man.performAnalysis(proc_iter, alias);
       // output call graph
       call_graph->output(*an->get_interface());
       
@@ -231,11 +232,14 @@ int main(int argc, char *argv[]) {
       //   call_graph->output(*an->get_interface());
       
       // now perform call graph data flow analysis
-      //  OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
-      //   solver.performAnalysis(call_graph,
-      // 	         	      param_bindings,
-      // 			      alias,
-      // 			      intra_man);
+      OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
+      OA::DataFlow::ManagerParamBindings pb_man(an->get_interface());
+      OA::OA_ptr<OA::DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(call_graph);
+      OA::OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
+      intra_man = new OA::SideEffect::ManagerSideEffectStandard(an->get_interface());
+      OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> df_info;
+      df_info = solver.performAnalysis(call_graph, param_bindings, alias, intra_man);
+      df_info->dump(cout, an->get_interface());
     }
     if (cfg_dot_dump) {
       CallGraphAnnotationMap::get_instance()->dumpdot(cout);

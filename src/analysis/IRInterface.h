@@ -33,10 +33,11 @@
 
 #include <OpenAnalysis/CFG/ManagerCFG.hpp>
 #include <OpenAnalysis/IRInterface/AliasIRInterfaceDefault.hpp>
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
-#include <OpenAnalysis/IRInterface/InterSideEffectIRInterface.hpp>
+#include <OpenAnalysis/IRInterface/InterSideEffectIRInterfaceDefault.hpp>
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
+#include <OpenAnalysis/IRInterface/ParamBindingsIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 #include <OpenAnalysis/Location/Location.hpp>
 
@@ -57,7 +58,8 @@
 class R_IRInterface : public virtual OA::Alias::AliasIRInterfaceDefault,
 		      public virtual OA::CFG::CFGIRInterfaceDefault,
 		      public virtual OA::CallGraph::CallGraphIRInterface,
-	              public virtual OA::SideEffect::InterSideEffectIRInterface,
+	              public virtual OA::DataFlow::ParamBindingsIRInterface,
+	              public virtual OA::SideEffect::InterSideEffectIRInterfaceDefault,
 		      public virtual OA::SSA::SSAIRInterface
 {
 public:
@@ -205,7 +207,7 @@ public:
 
   /// Given a procedure call create a memory reference expression
   /// to describe that call.  For example, a normal call is
-  /// a NamedRef.  A call involving a function ptr is a Deref.  
+  /// a NamedRef.  A call involving a function ptr is a Deref.
   OA::OA_ptr<OA::MemRefExpr> getCallMemRefExpr(OA::CallHandle call);
 
   //--------------------------------------------------------
@@ -219,7 +221,7 @@ public:
 
   /// return the formal parameter that an actual parameter is associated with 
   OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
-					   OA::ProcHandle callee, OA::ExprHandle param);
+				   OA::ProcHandle callee, OA::ExprHandle param);
  
   /// For the given symbol create a Location that indicates statically
   /// overlapping locations and information about whether the location
@@ -252,7 +254,8 @@ public:
   /// Can't indicate subprocedure has sideeffects on parameters because
   /// don't have a way to get mapping of formal parameters to actuals
   /// in caller.
-  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
+  // for now, using conservative approximation in InterSideEffectIRInterfaceDefault
+  //  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
 
   //------------------------------------------------------------------
   // Alias information
@@ -304,6 +307,12 @@ public:
   //--------------------------------------------------------
 
   OA::SymHandle getProcSymHandle(OA::ProcHandle h);
+
+  //------------------------------------------------------------
+  // Param bindings (ParamBindingsIRInterface)
+  //------------------------------------------------------------
+  
+  bool isParam(OA::SymHandle h);
 
   //------------------------------------------------------------
   // Pretty printing methods from IRHandlesIRInterface
@@ -367,19 +376,34 @@ private:
 /// Enumerate all the variable uses or variable definitions in a statement.
 /// This is useful for analyses that require information about variable
 /// references or definitions, such as SSA construction.
-class R_IRUseDefIterator : public OA::SSA::IRUseDefIterator {
+class R_UseDefAsLeafIterator : public OA::SSA::IRUseDefIterator {
 public:
-  R_IRUseDefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter) : iter(_iter) { }
-  virtual ~R_IRUseDefIterator() { }
+  R_UseDefAsLeafIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
+  virtual ~R_UseDefAsLeafIterator();
   
   OA::LeafHandle current() const;
-  bool isValid();
+  bool isValid();    // why is this not const in IRUseDefIterator?
   void operator++();
   void reset();
 private:
-  OA::OA_ptr<R_VarRefSetIterator> iter;
+  OA::OA_ptr<R_VarRefSetIterator> m_iter;
 };
 
+/// Enumerate all the variable uses or variable definitions in a statement.
+/// This is useful for analyses that require information about variable
+/// references or definitions, such as SSA construction.
+class R_UseDefAsMemRefIterator : public OA::MemRefHandleIterator {
+public:
+  R_UseDefAsMemRefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
+  virtual ~R_UseDefAsMemRefIterator();
+  
+  OA::MemRefHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+private:
+  OA::OA_ptr<R_VarRefSetIterator> m_iter;
+};
 
 //--------------------------------------------------------------------
 // R_IRCallsiteIterator
@@ -440,9 +464,9 @@ private:
   RAnnot::FuncInfoIterator * m_fii;
 };
 
-class R_MemRefHandleIterator : public OA::MemRefHandleIterator {
+class R_CallMemRefHandleIterator : public OA::MemRefHandleIterator {
 public:
-  R_MemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
+  R_CallMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
   OA::MemRefHandle current() const;
   bool isValid() const;
   void operator++();

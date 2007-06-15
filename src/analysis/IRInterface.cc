@@ -402,8 +402,11 @@ OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
   VarInfo * vi = (*table)[make_sexp(s)];
 
   OA_ptr<OA::Location> loc;
-  // create a NamedLoc with true as second argument, indicating local, not global
-  loc = new NamedLoc(s, true);
+  // NamedLoc constructor's second argument: true = local, false = global
+  //
+  // we conservatively say global here because we don't know if it
+  // might be referenced in a child scope
+  loc = new NamedLoc(s, false);
   // TODO: need to give information about possible overlap
   return loc;
 }
@@ -435,25 +438,62 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
 }
 
 /// from SideEffectIRInterface
-OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle) {
-  // TODO
-  rcc_warn("getDefMemRefs: call graph interface not yet implemented");
-  throw AnalysisException();
+/// Return a list of all the target memory reference handles that appear
+/// in the given statement.
+OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
+  assert(stmt_info != 0);
+
+  // For each variable, insert only if it's a def
+  OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
+  VarRefFactory * fact = VarRefFactory::get_instance();
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
+    if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
+      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
+      defs->insert_ref(bvr);
+    }
+  }
+  OA_ptr<MemRefHandleIterator> retval;
+  retval = new R_UseDefAsMemRefIterator(defs->get_iterator());
+  return retval;
 }
 
 /// from SideEffectIRInterface
-OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle) {
-  // TODO
-  rcc_warn("getUseMemRefs: call graph interface not yet implemented");
-  throw AnalysisException();
+/// Return a list of all the source memory reference handles that appear
+/// in the given statement.
+OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
+  assert(stmt_info != 0);
+
+  // For each variable, insert only if it's a use
+  OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
+  VarRefFactory * fact = VarRefFactory::get_instance();
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
+    if ((*var_iter)->getUseDefType() == Var::Var_USE) {
+      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
+      uses->insert_ref(bvr);
+    }
+  }
+  OA_ptr<MemRefHandleIterator> retval;
+  retval = new R_UseDefAsMemRefIterator(uses->get_iterator());
+  return retval;
 }
 
 /// from InterSideEffectIRInterface
-OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
-  // TODO
-  rcc_warn("getSideEffect: call graph interface not yet implemented");
-  throw AnalysisException();
-}
+/// For the given callee subprocedure symbol return side-effect results
+/// Can only indicate that the procedure has no side effects, has
+/// side effects on unknown locations, or on global locations.
+/// Can't indicate subprocedure has sideeffects on parameters because
+/// don't have a way to get mapping of formal parameters to actuals
+/// in caller.
+// Right now, using the default conservative approximation from InterSideEffectIRInterfaceDefault
+//OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
+//  // TODO
+//  rcc_warn("getSideEffect: call graph interface not yet implemented");
+//  throw AnalysisException();
+//}
 
 //------------------------------------------------------------
 // Alias information
@@ -464,7 +504,7 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, 
 /// over can be arbitrary.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
   ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
-  OA_ptr<MemRefHandleIterator> iter; iter = new R_MemRefHandleIterator(ei);
+  OA_ptr<MemRefHandleIterator> iter; iter = new R_CallMemRefHandleIterator(ei);
   return iter;
 }
 
@@ -526,45 +566,22 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
 
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
-// TODO: Currently doesn't handle uses/defs via procedure calls
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
-  assert(stmt_info != 0);
-
-  // For each variable, insert only if it's a def
-  OA_ptr<R_VarRefSet> defs;
-  VarRefFactory * fact = VarRefFactory::get_instance();
-  ExpressionInfo::const_var_iterator var_iter;
-  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
-    if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
-      defs->insert_ref(bvr);
-    }
-  }
-  OA_ptr<SSA::IRUseDefIterator> retval;
-  retval = new R_IRUseDefIterator(defs->get_iterator());
-  return retval;
+  // TODO
+  rcc_warn("getDefs: SSA interface not yet implemented");
+  throw AnalysisException();
+  OA_ptr<SSA::IRUseDefIterator> dummy;
+  return dummy;
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
-  assert(stmt_info == 0);
-
-  // For each variable, insert only if it's a use
-  OA_ptr<R_VarRefSet> uses;
-  VarRefFactory * fact = VarRefFactory::get_instance();
-  ExpressionInfo::const_var_iterator var_iter;
-  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
-    if ((*var_iter)->getUseDefType() == Var::Var_USE) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
-      uses->insert_ref(bvr);
-    }
-  }
-  OA_ptr<SSA::IRUseDefIterator> retval;
-  retval = new R_IRUseDefIterator(uses->get_iterator());
-  return retval;
+  // TODO
+  rcc_warn("getUses: SSA interface not yet implemented");
+  throw AnalysisException();
+  OA_ptr<SSA::IRUseDefIterator> dummy;
+  return dummy;
 }
 
 /// from IRHandlesIRInterface
@@ -592,6 +609,10 @@ void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
 /// to have different "names" even if they happen to be bound to the
 /// same symbol. For now we're just giving the first name assigned.
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
+  // TODO: remove the zero check; shouldn't be zero
+  if (h == ProcHandle(0)) {
+    return make_sym_h(Rf_install("<null procedure: bug in OA>"));
+  }
   // TODO: make it easier to do this
   RProp::PropertySet::iterator iter = analysisResults.find(FuncInfo::handle());
   if (iter != analysisResults.end() && iter->second->is_computed()) {
@@ -609,6 +630,16 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   return make_sym_h(make_sexp(h));
 }
+
+//------------------------------------------------------------
+// Param bindings (ParamBindingsIRInterface)
+//------------------------------------------------------------
+
+// TODO: not enough information!
+bool R_IRInterface::isParam(OA::SymHandle h) {
+  return false;
+}
+
 
 // TODO: fill these in
 //
@@ -741,23 +772,59 @@ void R_RegionStmtListIterator::reset() {
 }
 
 //--------------------------------------------------------------------
-// R_IRUseDefIterator
+// R_UseDefAsLeafIterator
 //--------------------------------------------------------------------
 
-LeafHandle R_IRUseDefIterator::current() const {
-  return LeafHandle(make_leaf_h(iter->current()->get_sexp()));
+R_UseDefAsLeafIterator::R_UseDefAsLeafIterator(OA_ptr<R_VarRefSetIterator> iter)
+  : m_iter(iter)
+{
+}
+
+R_UseDefAsLeafIterator::~R_UseDefAsLeafIterator() {
+}
+
+LeafHandle R_UseDefAsLeafIterator::current() const {
+  return make_leaf_h(m_iter->current()->get_sexp());
 }
  
-bool R_IRUseDefIterator::isValid() {
-  return iter->isValid();
+bool R_UseDefAsLeafIterator::isValid() {
+  return m_iter->isValid();
 }
 
-void R_IRUseDefIterator::operator++() {
-  ++*iter;
+void R_UseDefAsLeafIterator::operator++() {
+  ++*m_iter;
 }
 
-void R_IRUseDefIterator::reset() {
-  iter->reset();
+void R_UseDefAsLeafIterator::reset() {
+  m_iter->reset();
+}
+
+//------------------------------------------------------------
+// R_UseDefAsMemRefIterator
+//------------------------------------------------------------
+
+R_UseDefAsMemRefIterator::R_UseDefAsMemRefIterator(OA_ptr<R_VarRefSetIterator> iter)
+  : m_iter(iter)
+{
+}
+
+R_UseDefAsMemRefIterator::~R_UseDefAsMemRefIterator() {
+}
+
+MemRefHandle R_UseDefAsMemRefIterator::current() const {
+  return make_mem_ref_h(m_iter->current()->get_sexp());
+}
+ 
+bool R_UseDefAsMemRefIterator::isValid() const {
+  return m_iter->isValid();
+}
+
+void R_UseDefAsMemRefIterator::operator++() {
+  ++*m_iter;
+}
+
+void R_UseDefAsMemRefIterator::reset() {
+  m_iter->reset();
 }
 
 //--------------------------------------------------------------------
@@ -822,27 +889,27 @@ void R_ProcHandleIterator::reset() {
 }
 
 //------------------------------------------------------------
-// R_MemRefHandleIterator
+// R_CallMemRefHandleIterator
 //------------------------------------------------------------
 
-R_MemRefHandleIterator::R_MemRefHandleIterator(ExpressionInfo * stmt)
+R_CallMemRefHandleIterator::R_CallMemRefHandleIterator(ExpressionInfo * stmt)
   : m_stmt(stmt), m_iter(stmt->begin_call_sites())
 {
 }
 
-MemRefHandle R_MemRefHandleIterator::current() const {
+MemRefHandle R_CallMemRefHandleIterator::current() const {
   return make_mem_ref_h(*m_iter);
 }
 
-bool R_MemRefHandleIterator::isValid() const {
+bool R_CallMemRefHandleIterator::isValid() const {
   return (m_iter != m_stmt->end_call_sites());
 }
 
-void R_MemRefHandleIterator::operator++() {
+void R_CallMemRefHandleIterator::operator++() {
   ++m_iter;
 }
 
-void R_MemRefHandleIterator::reset() {
+void R_CallMemRefHandleIterator::reset() {
   m_iter = m_stmt->begin_call_sites();
 }
 
