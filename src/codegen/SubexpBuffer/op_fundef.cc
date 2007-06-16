@@ -50,39 +50,15 @@ std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name,
 
 /// Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
-				   Protection resultProtection,
-				   string opt_R_name /* = "" */)
+				   Protection resultProtection)
 {
   FuncInfo *fi = getProperty(FuncInfo, fndef);
   lexicalContext.Push(fi);
   SEXP e = CDR(fndef); // skip over "function" symbol
   string c_name = fi->get_c_name();
 
-  bool direct = FALSE;
-  if (!opt_R_name.empty() && ParseInfo::is_direct(opt_R_name)) {
-    direct = TRUE;
-    // make function to be called directly
-    if (ParseInfo::func_constant_exists(opt_R_name)) {
-      string closure_name = ParseInfo::get_func_constant(opt_R_name);
-      lexicalContext.Pop();
-      return Expression(closure_name, CONST, INVISIBLE, "");
-    } else { // not yet defined
-      // direct version
-      if (rho != "R_GlobalEnv") {
-	rcc_warn("function " + opt_R_name + " is not in global scope; unable to make direct function call");
-      } else {
-	ParseInfo::global_fundefs->append_defs(
-	  make_fundef_c(this,
-			c_name + "_direct",
-			fndef));
-      }
-      // in any case, continue to closure version
-    }
-  }
   // closure version
-  ParseInfo::global_fundefs->append_defs(make_fundef(this,
-						     c_name,
-						     fndef));
+  ParseInfo::global_fundefs->append_defs(make_fundef(this, c_name, fndef));
   Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
@@ -91,7 +67,6 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     string closure = fi->get_closure();
     ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
     ParseInfo::global_constants->del(formals);
-    if (direct) ParseInfo::insert_func_constant(opt_R_name, closure);
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
   } else {   // not the global environment

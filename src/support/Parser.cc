@@ -118,7 +118,7 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
 ///    en
 ///  }
 ///  
-///  FIXME: This is done because OpenAnalysis assumes that, as in C or
+///  Note: This is done because OpenAnalysis assumes that, as in C or
 ///  Fortran, all code is within some function--an assumption that's
 ///  invalid for languages like R. Beware of altering the semantics:
 ///  naively using the result will cause global variables to be treated

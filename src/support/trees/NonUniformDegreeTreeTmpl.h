@@ -1,4 +1,4 @@
-/* $Id: NonUniformDegreeTreeTmpl.h,v 1.1 2005/08/31 05:15:38 johnmc Exp $ */
+/* $Id: NonUniformDegreeTreeTmpl.h,v 1.2 2007/06/16 00:21:10 garvin Exp $ */
 //**************************************************************************
 //                 Copyright (c) 1990-1999 Rice University
 //                          All Rights Reserved
@@ -34,7 +34,7 @@ template <class T>
 class NonUniformDegreeTreeNodeTmpl : public NonUniformDegreeTreeNode {
 public:
   NonUniformDegreeTreeNodeTmpl(T* tparent = 0) :
-  NonUniformDegreeTreeNode(tparent) { };
+    NonUniformDegreeTreeNode(tparent) { };
   
   T* NextSibling() const { 
     return (T*) NonUniformDegreeTreeNode::NextSibling();

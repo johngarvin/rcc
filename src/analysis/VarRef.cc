@@ -41,7 +41,6 @@ bool R_BodyVarRef::operator<(R_VarRef & loc2) const {
 }
 
 bool R_BodyVarRef::operator<(const R_VarRef & loc2) const {
-  // FIXME: find that chapter on how to const cast to get rid of repeated code
   return (get_name() < loc2.get_name());
 }
 

@@ -1,8 +1,10 @@
-# not well behaved: redefinition of library function
+source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
-outer <- function(a){
+# anonymous function call with return value
+
+f <- function(a) {
 x <- a 
 z <- (function() { x+1})()
 z
 }
-outer(6)
+f(6)

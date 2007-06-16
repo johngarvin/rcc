@@ -38,7 +38,7 @@ typedef FormalArgInfoAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor -----
 
-FormalArgInfoAnnotationMap::FormalArgInfoAnnotationMap(bool ownsAnnotations /* = true */)
+FormalArgInfoAnnotationMap::FormalArgInfoAnnotationMap()
 : m_computed(false),
   m_map()
   {}
@@ -70,7 +70,7 @@ void FormalArgInfoAnnotationMap::create() {
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
+// TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & FormalArgInfoAnnotationMap::operator[](const MyKeyT & k) {
   return m_map[k];
 }
@@ -103,7 +103,7 @@ const_iterator  FormalArgInfoAnnotationMap::begin() const { return m_map.begin()
 iterator  FormalArgInfoAnnotationMap::end() { return m_map.end(); }
 const_iterator  FormalArgInfoAnnotationMap::end() const { return m_map.end(); }
 
-// FIXME: implement this (move functionality that lives in FuncInfo here)
+// TODO: implement this (move functionality that lives in FuncInfo here)
 void FormalArgInfoAnnotationMap::compute() {
 }
 

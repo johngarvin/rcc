@@ -49,7 +49,7 @@ public:
   virtual ~VarAnnotationMap();
 
   // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
+  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
   MyMappedT get(const MyKeyT & k);
   bool is_computed();
 
@@ -67,7 +67,7 @@ public:
 
 private:
   // private constructor for singleton pattern
-  VarAnnotationMap(bool ownsAnnotations = true);
+  VarAnnotationMap();
 
   void compute();
   void compute_all_syntactic_info();

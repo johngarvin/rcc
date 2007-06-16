@@ -59,7 +59,7 @@ PropertySet::~PropertySet()
 
 
 void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
-			 AnnotationBase *annot, bool ownsAnnotations) 
+			 AnnotationBase *annot)
 {
   AnnotationMap *annotations = (*this)[propertyName];
   if (annotations == 0) {

@@ -38,7 +38,6 @@ map<int, string> ParseInfo::m_logical_map;
 map<int, string> ParseInfo::m_integer_map;
 map<int, string> ParseInfo::m_primsxp_map;
 map<string, string> ParseInfo::m_binding_map;
-set<string> ParseInfo::direct_funcs;
 SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
@@ -57,12 +56,6 @@ void ParseInfo::flag_problem() {
 
 bool ParseInfo::get_problem_flag() {
   return m_problem_flag;
-}
-
-// Returns true if the given string represents a function specified
-// for direct calling.
-bool ParseInfo::is_direct(string func) {
-  return (direct_funcs.find(func) != direct_funcs.end());
 }
 
 // whether we have to account for object-oriented programming

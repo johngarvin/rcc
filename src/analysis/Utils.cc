@@ -234,12 +234,12 @@ bool is_loop(const SEXP e) {
 }
 
 bool is_loop_header(const SEXP e) {
-  // XXXXX
+  // TODO: is this right?
   return false;
 }
 
 bool is_loop_increment(const SEXP e) {
-  // XXXXX
+  // TODO: is this right?
   return false;
 }
 

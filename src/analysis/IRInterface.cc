@@ -614,7 +614,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
     return make_sym_h(Rf_install("<null procedure: bug in OA>"));
   }
   // TODO: make it easier to do this
-  RProp::PropertySet::iterator iter = analysisResults.find(FuncInfo::handle());
+  RProp::PropertySet::const_iterator iter = analysisResults.find(FuncInfo::handle());
   if (iter != analysisResults.end() && iter->second->is_computed()) {
     // if FuncInfo already exists, then use it
     // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)

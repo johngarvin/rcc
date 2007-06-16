@@ -61,7 +61,7 @@ public:
   // function type for annotation-computation functions
   typedef RAnnot::AnnotationMap* (*AnnotationComputationFn_t)(SEXP);
 
-  // FIXME: need some way of registering property names and
+  // TODO: need some way of registering property names and
   // computation routines.
   
 public:

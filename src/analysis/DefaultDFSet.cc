@@ -48,7 +48,7 @@ DefaultDFSet& DefaultDFSet::operator= (const DefaultDFSet& other) {
 OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() {
   OA_ptr<DefaultDFSet> retval;
   retval = new DefaultDFSet(); 
-  std::set<OA_ptr<DFSetElement> >::iterator defIter;
+  std::set<OA_ptr<DFSetElement> >::const_iterator defIter;
   for (defIter=m_set->begin(); defIter!=m_set->end(); defIter++) {
     OA_ptr<DFSetElement> def = *defIter;
     retval->insert(def);
@@ -90,10 +90,10 @@ bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
   }
 
   // same size:  for every element in m_set, find the element in other.m_set
-  std::set<OA_ptr<DFSetElement> >::iterator set1Iter;
+  std::set<OA_ptr<DFSetElement> >::const_iterator set1Iter;
   for (set1Iter = m_set->begin(); set1Iter!=m_set->end(); ++set1Iter) {
     OA_ptr<DFSetElement> cd1 = *set1Iter;
-    std::set<OA_ptr<DFSetElement> >::iterator set2Iter;
+    std::set<OA_ptr<DFSetElement> >::const_iterator set2Iter;
     set2Iter = recastOther.m_set->find(cd1);
 
     if (set2Iter == recastOther.m_set->end()) {
@@ -154,7 +154,7 @@ std::string DefaultDFSet::toString() {
   oss << "{";
   
   // iterate over DFSetElement's and have the IR print them out
-  std::set<OA_ptr<R_VarRef> >::iterator iter;
+  std::set<OA_ptr<R_VarRef> >::const_iterator iter;
   iter = m_set->begin();
 
   // first one

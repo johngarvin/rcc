@@ -127,7 +127,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #else
     Expression args1 = op_list(args, rho, false, Protected, true);
 #endif
-    // FIXME:
+    // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?
     out = appl4(get_name(PRIMOFFSET(op)),
 		"R_NilValue ",

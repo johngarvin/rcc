@@ -40,13 +40,13 @@ public:
   ~DFSetIterator () {}
   
   void operator++();
-  bool isValid();
-  OA::OA_ptr<DFSetElement> current();
+  bool isValid() const;
+  OA::OA_ptr<DFSetElement> current() const;
   void reset();
 
 private:
   OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > mSet;
-  std::set<OA::OA_ptr<DFSetElement> >::iterator mIter;
+  std::set<OA::OA_ptr<DFSetElement> >::const_iterator mIter;
 };
 
 }  // namespace Locality

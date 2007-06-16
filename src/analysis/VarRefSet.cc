@@ -35,55 +35,66 @@ using namespace OA;
 // R_VarRefSetIterator methods
 //--------------------------------------------------------------------
 
+R_VarRefSetIterator::R_VarRefSetIterator(OA_ptr<MySetT> vars)
+  : m_vars(vars)
+{
+  assert(!m_vars.ptrEqual(0));
+  m_iter = m_vars->begin();
+}
+
 OA_ptr<R_VarRef> R_VarRefSetIterator::current() const {
-  return *it;
+  return *m_iter;
 }
 
 bool R_VarRefSetIterator::isValid() const {
-  return (it != vars->end());
+  return (m_iter != m_vars->end());
 }
 
 void R_VarRefSetIterator::operator++() {
-  ++it;
+  ++m_iter;
 }
 
 void R_VarRefSetIterator::reset() {
-  it = vars->begin();
+  m_iter = m_vars->begin();
 }
 
 //--------------------------------------------------------------------
 // R_VarRefSet methods
 //--------------------------------------------------------------------
 
+R_VarRefSet::R_VarRefSet() {
+  m_vars = new MySetT;
+}
+
 void R_VarRefSet::insert_ref(OA_ptr<R_BodyVarRef> var) {
   OA_ptr<R_VarRef> upcast_var;
   upcast_var = var.convert<R_VarRef>();
-  vars->insert(upcast_var);
+  m_vars->insert(upcast_var);
 }
 
 void R_VarRefSet::insert_arg(OA_ptr<R_ArgVarRef> var) {
   OA_ptr<R_VarRef> upcast_var;
   upcast_var = var.convert<R_VarRef>();
-  vars->insert(upcast_var);
+  m_vars->insert(upcast_var);
 }
 
 void R_VarRefSet::set_union(const R_VarRefSet & set2) {
   OA_ptr<R_VarRefSetIterator> it; it = set2.get_iterator();
   for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
+    m_vars->insert(it->current());
   }
 }
 
 void R_VarRefSet::set_union(OA_ptr<R_VarRefSet> set2) {
   OA_ptr<R_VarRefSetIterator> it; it = set2->get_iterator();
   for ( ; it->isValid(); ++*it) {
-    vars->insert(it->current());
+    m_vars->insert(it->current());
   }
 }
 
 OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
   OA_ptr<R_VarRefSetIterator> it;
-  it = new R_VarRefSetIterator(vars);
+  it = new R_VarRefSetIterator(m_vars);
   return it;
 }
 

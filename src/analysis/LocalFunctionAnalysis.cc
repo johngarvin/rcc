@@ -78,7 +78,7 @@ void LocalFunctionAnalysis::analyze_args() {
     annot->setMayMustType(Var::Var_MUST);
     annot->setScopeType(Locality_LOCAL);
     annot->setRhs_c(0);
-    putProperty(Var, e, annot, true);
+    putProperty(Var, e, annot);
     if (TAG(e) == ddd) {
       has_var_args = true;
     }
@@ -108,7 +108,7 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
       ExpressionInfo::const_var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * v = getProperty(Var, (*mi)->getMention_c());
-	// FIXME: should make sure we always get the data-flow-solved
+	// TODO: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
 	fi->insert_mention(v);

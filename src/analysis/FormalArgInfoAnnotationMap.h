@@ -37,11 +37,11 @@ namespace RAnnot {
 class FormalArgInfoAnnotationMap : public AnnotationMap {
 public:
   // constructor/deconstructor
-  FormalArgInfoAnnotationMap(bool ownsAnnotations = true);
+  FormalArgInfoAnnotationMap();
   virtual ~FormalArgInfoAnnotationMap();
 
   // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
+  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
   MyMappedT get(const MyKeyT & k);
   bool is_computed();
 

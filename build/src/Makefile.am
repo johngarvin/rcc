@@ -38,20 +38,6 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
-  CallGraphAnnotation.cc                        \
-  CallGraphAnnotation.h                         \
-  CallGraphAnnotationMap.cc                     \
-  CallGraphAnnotationMap.h                      \
-  CallGraphEdge.cc                              \
-  CallGraphEdge.h                               \
-  CallGraphInfo.cc                              \
-  CallGraphInfo.h                               \
-  CallGraphNode.cc                              \
-  CallGraphNode.h                               \
-  CallSiteCallGraphNode.cc                      \
-  CallSiteCallGraphNode.h                       \
-  CoordinateCallGraphNode.cc                    \
-  CoordinateCallGraphNode.h                     \
   DefaultDFSet.cc                               \
   DefaultDFSet.h                                \
   DefVar.cc                                     \
@@ -73,16 +59,12 @@ rcc_bin_SOURCES =				\
   FuncInfo.h                                    \
   FuncInfoAnnotationMap.cc                      \
   FuncInfoAnnotationMap.h                       \
-  FundefCallGraphNode.cc                        \
-  FundefCallGraphNode.h                         \
   HandleInterface.cc				\
   HandleInterface.h				\
   IRInterface.cc				\
   IRInterface.h					\
   LexicalScope.cc                               \
   LexicalScope.h                                \
-  LibraryCallGraphNode.cc                       \
-  LibraryCallGraphNode.h                        \
   LocalFunctionAnalysis.cc			\
   LocalFunctionAnalysis.h			\
   LocalityDFSet.cc				\
@@ -116,8 +98,6 @@ rcc_bin_SOURCES =				\
   SymbolTableAnnotationMap.cc                   \
   SymbolTableAnnotationMap.h                    \
   TypeInference.h				\
-  UnknownValueCallGraphNode.cc                  \
-  UnknownValueCallGraphNode.h                   \
   UseVar.cc                                     \
   UseVar.h                                      \
   Utils.cc					\
@@ -139,6 +119,27 @@ rcc_bin_SOURCES =				\
   VarRefSet.cc					\
   VarRefSet.h					\
   VarVisitor.h                                  \
+                                                \
+  CallGraphAnnotation.cc                        \
+  CallGraphAnnotation.h                         \
+  CallGraphAnnotationMap.cc                     \
+  CallGraphAnnotationMap.h                      \
+  CallGraphEdge.cc                              \
+  CallGraphEdge.h                               \
+  CallGraphInfo.cc                              \
+  CallGraphInfo.h                               \
+  CallGraphNode.cc                              \
+  CallGraphNode.h                               \
+  CallSiteCallGraphNode.cc                      \
+  CallSiteCallGraphNode.h                       \
+  CoordinateCallGraphNode.cc                    \
+  CoordinateCallGraphNode.h                     \
+  FundefCallGraphNode.cc                        \
+  FundefCallGraphNode.h                         \
+  LibraryCallGraphNode.cc                       \
+  LibraryCallGraphNode.h                        \
+  UnknownValueCallGraphNode.cc                  \
+  UnknownValueCallGraphNode.h                   \
 						\
   SplitSubexpBuffer.cc SplitSubexpBuffer.h	\
   SubexpBuffer.cc SubexpBuffer.h		\

@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.cc,v 1.2 2006/10/17 22:09:49 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.cc,v 1.3 2007/06/16 00:21:07 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // Copyright (c) 2006 Rice University
@@ -43,18 +43,12 @@
 
 namespace RAnnot {
 
-AnnotationMap::AnnotationMap() {}
+AnnotationMap::AnnotationMap()
+{
+}
 
 AnnotationMap::~AnnotationMap()
 {
-  /*
-  if (mOwnsAnnotations) {
-    for (iterator it = this->begin(); it != this->end(); ++it) {
-      delete it->second;
-    }
-  }
-  this->clear();
-  */
 }
 
 std::ostream&

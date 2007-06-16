@@ -81,36 +81,36 @@ public:
   unsigned int get_num_args() const;
   void set_num_args(unsigned int x);
   SEXP get_args() const; 
-  bool is_arg(SEXP sym);
-  bool are_all_value();
-  bool is_arg_value(SEXP arg);
+  bool is_arg(SEXP sym) const;
+  bool are_all_value() const;
+  bool is_arg_value(SEXP arg) const;
   
   /// get the cell containing the formal arg at the given position. Indexed from 1.
-  SEXP get_arg(int position);
+  SEXP get_arg(int position) const;
 
   // find the numerical position of the formal with the given name. Indexed from 1.
-  int find_arg_position(char* name);
+  int find_arg_position(char* name) const;
 
   void analyze_args();
 
-  SEXP get_defn();
+  SEXP get_defn() const;
 
   /// first R name assigned
-  SEXP get_first_name();
+  SEXP get_first_name() const;
 
   // has variable arguments
   bool get_has_var_args() const;
   void set_has_var_args(bool x);
 
   /// name of C function
-  const std::string& get_c_name();
+  const std::string& get_c_name(); // not const: fills in m_c_name if empty
 
   /// name of C variable storing the closure (CLOSXP)
-  const std::string& get_closure();
+  const std::string& get_closure();  // not const: fills in m_closure if empty
 
   // context
   void set_requires_context(bool requires_context); 
-  bool requires_context();
+  bool requires_context() const;
 
   // add information about mentions and call sites
   void insert_mention(MentionT v);

@@ -53,7 +53,7 @@ Expression SubexpBuffer::op_begin(SEXP exp, string rho,
 
     // To be safe, if the expression is a symbol (which might be bound
     // to a promise), evaluate at the end to force the promise.
-    // FIXME: This causes unnecessary calls to eval when the
+    // TODO: This causes unnecessary calls to eval when the
     // expression is not a promise, which we should eventually
     // eliminate.
     bool possible_promise = (TYPEOF(CAR(exp)) == SYMSXP);

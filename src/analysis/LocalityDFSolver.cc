@@ -151,7 +151,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
 	}
       } // next mention
       // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
-      // FIXME: add back assertion. Why does this sometimes fail?
+      // TODO: add back assertion. Why does this sometimes fail?
     }
   }  // next CFG node
 }

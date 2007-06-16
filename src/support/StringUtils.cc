@@ -89,9 +89,9 @@ string indent(string str) {
   const string IND_STR = "  ";
   if (str.empty()) return "";
   string newstr = IND_STR;   // Add indentation to beginning
-  string::iterator it;
 
   // Indent after every newline (unless there's one at the end)
+  string::const_iterator it;
   for(it = str.begin(); it != str.end() - 1; ++it) {
     if (*it == '\n') {
       newstr += '\n' + IND_STR;

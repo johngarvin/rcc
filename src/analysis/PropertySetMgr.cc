@@ -66,8 +66,6 @@ PropertySetMgr::getAnnot(PropertyHndlT prop)
 
   PropertySet::iterator it = mSet->find(prop);
   if (it == mSet->end()) {
-    // Property has not been computed.  Do so and insert into PropertySet.
-    // x = ComputeTheProperty(); // FIXME: who should I call?
     std::pair<PropertySet::iterator, bool> res = 
       mSet->insert(make_pair(prop, x));
     assert(!res.second && "insert() must be successful after find()");

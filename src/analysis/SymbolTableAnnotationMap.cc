@@ -50,12 +50,17 @@ typedef CFG::CFGInterface CFG;
 
 //  ----- constructor/destructor ----- 
   
-SymbolTableAnnotationMap::SymbolTableAnnotationMap(bool ownsAnnotations /* = true */)
+SymbolTableAnnotationMap::SymbolTableAnnotationMap()
   : m_computed(false),
     m_map()
   {}
   
-SymbolTableAnnotationMap::~SymbolTableAnnotationMap() {}
+SymbolTableAnnotationMap::~SymbolTableAnnotationMap() {
+  map<MyKeyT, MyMappedT>::const_iterator iter;
+  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    delete(iter->second);
+  }
+}
 
 // ----- singleton pattern -----
 
@@ -85,7 +90,7 @@ PropertyHndlT SymbolTableAnnotationMap::m_handle = "SymbolTable";
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
+// TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & SymbolTableAnnotationMap::operator[](const MyKeyT & k) {
   if (!is_computed()) {
     compute();
@@ -133,7 +138,7 @@ void SymbolTableAnnotationMap::add_def(MyKeyT func, DefVar * def) {
   SEXP name = CAR(def->getMention_c());
   // add VarInfo if not there already
   // TODO: it might be better to construct all the VarInfos when the SymbolTable is made.
-  SymbolTable::iterator it = table->find(name);
+  SymbolTable::const_iterator it = table->find(name);
   VarInfo * vi;
   if (it == table->end()) {
     vi = new VarInfo();

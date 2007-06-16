@@ -42,17 +42,22 @@ typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor ----- 
 
-ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap(bool ownsAnnotations /* = true */)
+ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
   : m_map()
   {}
 
-ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {}
+ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
+  map<MyKeyT, MyMappedT>::const_iterator iter;
+  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    delete(iter->second);
+  }
+}
 
 // ----- demand-driven analysis ----- 
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
+// TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & ExpressionInfoAnnotationMap::operator[](const MyKeyT & k) {
   std::map<MyKeyT, MyMappedT>::iterator annot = m_map.find(k);
   if (annot == m_map.end()) {
@@ -119,7 +124,7 @@ PropertyHndlT ExpressionInfoAnnotationMap::handle() {
 // Create the singleton instance and register the map in PropertySet
 // for getProperty
 void ExpressionInfoAnnotationMap::create() {
-  m_instance = new ExpressionInfoAnnotationMap(true);
+  m_instance = new ExpressionInfoAnnotationMap();
   analysisResults.add(m_handle, m_instance);
 }
 

@@ -58,7 +58,6 @@ using namespace std;
 using namespace RAnnot;
 
 // Settings to change how rcc works
-static bool global_self_allocate = false;
 static bool output_main_program = true;
 static bool output_default_args = true;
 static bool analysis_debug = false;
@@ -84,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   // get options
   while(1) {
-    c = getopt(argc, argv, "acdf:lmo:");
+    c = getopt(argc, argv, "acdmo:");
     if (c == -1) {
       break;
     }
@@ -99,14 +98,6 @@ int main(int argc, char *argv[]) {
     case 'd':
       // print debugging information
       analysis_debug = true;
-      break;
-    case 'f':
-      // argument is the name of a function that can be called directly
-      ParseInfo::direct_funcs.insert(string(optarg));
-      break;
-    case 'l':
-      // use local allocation
-      global_self_allocate = true;
       break;
     case 'm':
       // don't output a main program
@@ -186,9 +177,6 @@ int main(int argc, char *argv[]) {
 
   ParseInfo::global_constants->decls += "static void exec();\n";
   ParseInfo::global_constants->decls += "static void finish();\n";
-
-  // FIXME: load standard assertions here (before parsing)
-  // I don't think we have any except those in the code...
 
   // parse
   SEXP program = parse_R_as_function(in_file);
@@ -301,7 +289,7 @@ int main(int argc, char *argv[]) {
     r_expressions = CDR(r_expressions);
   }
   exprs = g_decls + g_code + code;
-  exprs += emit_call1("UNPROTECT", "1") + "/* FIXME */";
+  exprs += emit_call1("UNPROTECT", "1");
 #else  // we're using SubexpBuffer codegen
   // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++, r_expressions = CDR(r_expressions)) {
@@ -420,7 +408,7 @@ int main(int argc, char *argv[]) {
 }
 
 static void arg_err() {
-  cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file] [-f function-name]*\n";
+  cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file]\n";
   exit(1);
 }
 

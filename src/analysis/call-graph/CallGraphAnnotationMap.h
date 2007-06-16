@@ -63,7 +63,7 @@ public:
 
   // ----- demand-driven analysis -----
 
-  MyMappedT & operator[](const MyKeyT & k); // FIXME: remove this when refactoring is done
+  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
 
   /// given a call site, return the list of fundef/library nodes reachable; compute if necessary
   MyMappedT get(const MyKeyT & k);

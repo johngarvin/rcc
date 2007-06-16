@@ -35,7 +35,7 @@ using namespace OA;
 namespace Locality {
 
 DFSet::DFSet() {
-  mSet = new std::set<OA::OA_ptr<DFSetElement> >;
+  mSet = new MySetT;
 }
 
 DFSet::DFSet(const DFSet& other) : mSet(other.mSet) { }
@@ -53,7 +53,7 @@ DFSet& DFSet::operator= (const DFSet& other) {
 OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
   OA_ptr<DFSet> retval;
   retval = new DFSet(); 
-  std::set<OA_ptr<DFSetElement> >::iterator defIter;
+  MySetT::const_iterator defIter;
   for (defIter=mSet->begin(); defIter!=mSet->end(); defIter++) {
     OA_ptr<DFSetElement> def = *defIter;
     retval->insert(def->clone());
@@ -107,10 +107,10 @@ bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   }
 
   // same size:  for every element in mSet, find the element in other.mSet
-  std::set<OA_ptr<DFSetElement> >::iterator set1Iter;
+  MySetT::const_iterator set1Iter;
   for (set1Iter = mSet->begin(); set1Iter!=mSet->end(); ++set1Iter) {
     OA_ptr<DFSetElement> cd1 = *set1Iter;
-    std::set<OA_ptr<DFSetElement> >::iterator set2Iter;
+    MySetT::const_iterator set2Iter;
     set2Iter = recastOther.mSet->find(cd1);
 
     if (set2Iter == recastOther.mSet->end()) {
@@ -134,7 +134,7 @@ OA_ptr<DFSetElement> DFSet::find(OA_ptr<R_VarRef> loc) const {
   
   OA_ptr<DFSetElement> find_var; find_var = new DFSetElement(loc, Locality_TOP);
 
-  std::set<OA_ptr<DFSetElement> >::iterator iter = mSet->find(find_var);
+  MySetT::const_iterator iter = mSet->find(find_var);
   if (iter != mSet->end()) {
     retval = *iter;
   }

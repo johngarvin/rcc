@@ -73,7 +73,7 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name, SEXP defn) :
   SEXP args = get_args();
   for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
     FormalArgInfo * formal_info = new FormalArgInfo(e);
-    putProperty(FormalArgInfo, e, formal_info, false);
+    putProperty(FormalArgInfo, e, formal_info);
   }
 
   // this is a new lexical scope
@@ -94,12 +94,12 @@ void FuncInfo::set_num_args(unsigned int x)
   m_num_args = x;
 }
 
-SEXP FuncInfo::get_defn()
+SEXP FuncInfo::get_defn() const
 {
   return m_defn;
 }
 
-SEXP FuncInfo::get_first_name()
+SEXP FuncInfo::get_first_name() const
 {
   return m_first_name;
 }
@@ -119,7 +119,7 @@ void FuncInfo::set_requires_context(bool requires_context)
   m_requires_context = requires_context; 
 }
 
-bool FuncInfo::requires_context() 
+bool FuncInfo::requires_context() const
 { 
   return m_requires_context;
 }
@@ -129,7 +129,7 @@ SEXP FuncInfo::get_args() const
   return CAR(fundef_args_c(m_defn)); 
 }
 
-bool FuncInfo::is_arg(SEXP sym)
+bool FuncInfo::is_arg(SEXP sym) const
 {
   SEXP args = get_args();
   SEXP e;
@@ -139,7 +139,7 @@ bool FuncInfo::is_arg(SEXP sym)
   return false;
 }
 
-int FuncInfo::find_arg_position(char* name)
+int FuncInfo::find_arg_position(char* name) const
 {
   SEXP args = get_args();
   int pos = 1;
@@ -152,7 +152,7 @@ int FuncInfo::find_arg_position(char* name)
   return pos;
 }
 
-SEXP FuncInfo::get_arg(int position)
+SEXP FuncInfo::get_arg(int position) const
 {
   SEXP args = get_args();
   int p = 1;
@@ -162,14 +162,14 @@ SEXP FuncInfo::get_arg(int position)
   return e;
 }
 
-bool FuncInfo::is_arg_value(SEXP arg)
+bool FuncInfo::is_arg_value(SEXP arg) const
 {
   FormalArgInfo* formal_info = getProperty(FormalArgInfo, arg);
   bool isvalue = formal_info->is_value();
   return isvalue;
 }
 
-bool FuncInfo::are_all_value()
+bool FuncInfo::are_all_value() const
 {
   bool allvalue = true;
   SEXP args = get_args();
@@ -289,6 +289,9 @@ void FuncInfo::perform_analysis() {
 #endif
 }
 
+#if 0
+Moved to Analyst; circular dependence
+
 void FuncInfo::analyze_args() {
   SEXP args = CAR(fundef_args_c(m_defn));
   const SEXP ddd = Rf_install("...");
@@ -302,7 +305,7 @@ void FuncInfo::analyze_args() {
     annot->setMayMustType(Var::Var_MUST);
     annot->setScopeType(Locality_LOCAL);
     annot->setRhs_c(0);
-    putProperty(Var, e, annot, true);
+    putProperty(Var, e, annot);
     if (TAG(e) == ddd) {
       has_var_args = true;
     }
@@ -310,6 +313,12 @@ void FuncInfo::analyze_args() {
   set_num_args(n_args);
   set_has_var_args(has_var_args);
 }
+#endif
+
+#if 0
+Moved to Analyst; needs VarAnnotationMap filled in,
+which needs FuncInfos to traverse the scope tree (ugh)
+TODO: split up FuncInfos to avoid circular dependence
 
 void FuncInfo::collect_mentions_and_call_sites() {
   assert(!m_cfg.ptrEqual(0));
@@ -327,7 +336,7 @@ void FuncInfo::collect_mentions_and_call_sites() {
       ExpressionInfo::const_var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	Var * v = getProperty(Var, (*mi)->getMention_c());
-	// FIXME: should make sure we always get the data-flow-solved
+	// TODO: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
 	insert_mention(v);
@@ -339,6 +348,7 @@ void FuncInfo::collect_mentions_and_call_sites() {
     }
   }
 }
+#endif
 
 std::ostream& FuncInfo::dump(std::ostream& os) const
 {

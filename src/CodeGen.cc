@@ -240,23 +240,29 @@ Output CodeGen::op_lang(SEXP e, string rho) {
   SEXP r_args = CDR(e);
   if (TYPEOF(lhs) == SYMSXP) {
     string r_sym = var_name(lhs);
-    if (ParseInfo::is_direct(r_sym)) {
-      //direct function call
-      string func = make_c_id(r_sym) + "_direct";
-      Output args = op_list(r_args, rho, false);
-      string call = m_scope.new_label();
-      string code = emit_prot_assign(call, emit_call1(func, args.handle()));
-      return Output(Decls(args.decls() + emit_decl(call)),
-		    Code(args.code() + code),
-		    GDecls(args.g_decls()),
-		    GCode(args.g_code()),
-		    Handle(call),
-		    DelText(args.del_text() + emit_unprotect(call)),
-		    CONST, 
+    if (!is_library(lhs)) {
+      // not in global env; presumably, user-defined function
+      string func = m_scope.new_label();
+      string code = emit_prot_assign(func, emit_call2("findFun",
+						      make_symbol(lhs),
+						      rho));
+      Output out = op_clos_app(func, r_args, rho);
+      return Output(Decls(out.decls()),
+		    Code(out.code()),
+		    GDecls(out.g_decls()),
+		    GCode(out.g_code()),
+		    Handle(out.handle()),
+		    DelText(out.del_text() + emit_unprotect(func)),
+		    DEPENDENT,
 		    VISIBLE);
-    } else {                   // not direct; call via closure
-      if (!is_library(lhs)) {
-	// not in global env; presumably, user-defined function
+    } else {        // builtin function, special function, or library closure
+      SEXP op = library_value(lhs);
+      if (TYPEOF(op) == SPECIALSXP) {
+	return op_special(e, op, rho);
+      } else if (TYPEOF(op) == BUILTINSXP) {
+	return op_builtin(e, op, rho);
+      } else if (TYPEOF(op) == CLOSXP) {
+	// generate code to look up the function
 	string func = m_scope.new_label();
 	string code = emit_prot_assign(func, emit_call2("findFun",
 							make_symbol(lhs),
@@ -270,34 +276,12 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 		      DelText(out.del_text() + emit_unprotect(func)),
 		      DEPENDENT,
 		      VISIBLE);
-      } else {        // builtin function, special function, or library closure
-	SEXP op = library_value(lhs);
-	if (TYPEOF(op) == SPECIALSXP) {
-	  return op_special(e, op, rho);
-	} else if (TYPEOF(op) == BUILTINSXP) {
-	  return op_builtin(e, op, rho);
-	} else if (TYPEOF(op) == CLOSXP) {
-	  // generate code to look up the function
-	  string func = m_scope.new_label();
-	  string code = emit_prot_assign(func, emit_call2("findFun",
-							  make_symbol(lhs),
-							  rho));
-	  Output out = op_clos_app(func, r_args, rho);
-	  return Output(Decls(out.decls()),
-			Code(out.code()),
-			GDecls(out.g_decls()),
-			GCode(out.g_code()),
-			Handle(out.handle()),
-			DelText(out.del_text() + emit_unprotect(func)),
-			DEPENDENT,
-			VISIBLE);
-	} else if (TYPEOF(op) == PROMSXP) {
-	  rcc_error("Hey! I don't think we should see a promise in LANGSXP!");
-	  return Output::bogus;
-	} else {
-	  rcc_error("LANGSXP encountered non-function op");
-	  return Output::bogus;
-	}
+      } else if (TYPEOF(op) == PROMSXP) {
+	rcc_error("Hey! I don't think we should see a promise in LANGSXP!");
+	return Output::bogus;
+      } else {
+	rcc_error("LANGSXP encountered non-function op");
+	return Output::bogus;
       }
     }
   } else {     // LHS is not a symbol

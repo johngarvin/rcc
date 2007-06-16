@@ -44,12 +44,12 @@ void DFSetIterator::operator++() {
 }
 
 /// is the iterator at the end
-bool DFSetIterator::isValid() {
+bool DFSetIterator::isValid() const {
   return (mIter != mSet->end());
 }
 
 /// return copy of current node in iterator
-OA_ptr<DFSetElement> DFSetIterator::current() {
+OA_ptr<DFSetElement> DFSetIterator::current() const {
   assert(isValid());
   return (*mIter);
 }

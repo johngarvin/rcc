@@ -35,77 +35,77 @@ namespace HandleInterface {
 
 // ----- forward declarations -----
 
-static OA::irhandle_t as_handle(SEXP e);
-static SEXP as_sexp(OA::irhandle_t h);
+static OA::irhandle_t as_handle(const SEXP e);
+static const SEXP as_sexp(const OA::irhandle_t h);
 
 // interface functions
 
-OA::ProcHandle make_proc_h(SEXP e) {
+OA::ProcHandle make_proc_h(const SEXP e) {
   assert(is_fundef(e));
   return OA::ProcHandle(as_handle(e));
 }
 
-OA::SymHandle make_sym_h(SEXP e) {
+OA::SymHandle make_sym_h(const SEXP e) {
   assert(is_var(e));
   return OA::SymHandle(as_handle(e));
 }
 
-OA::ExprHandle make_expr_h(SEXP e) {
+OA::ExprHandle make_expr_h(const SEXP e) {
   return OA::ExprHandle(as_handle(e));
 }
 
-OA::MemRefHandle make_mem_ref_h(SEXP e) {
+OA::MemRefHandle make_mem_ref_h(const SEXP e) {
   return OA::MemRefHandle(as_handle(e));
 }
 
-OA::CallHandle make_call_h(SEXP e) {
+OA::CallHandle make_call_h(const SEXP e) {
   assert(is_call(e));
   return OA::CallHandle(as_handle(e));
 }
 
-OA::OpHandle make_op_h(SEXP e) {
+OA::OpHandle make_op_h(const SEXP e) {
   return OA::OpHandle(as_handle(e));
 }
   
-OA::ConstSymHandle make_const_sym_h(SEXP e) {
+OA::ConstSymHandle make_const_sym_h(const SEXP e) {
   assert(is_var(e));
   return OA::ConstSymHandle(as_handle(e));
 }
 
-OA::ConstValHandle make_const_val_h(SEXP e) {
+OA::ConstValHandle make_const_val_h(const SEXP e) {
   assert(is_const(e));
   return OA::ConstValHandle(as_handle(e));
 }
 
-OA::StmtHandle make_stmt_h(SEXP e) {
+OA::StmtHandle make_stmt_h(const SEXP e) {
   return OA::StmtHandle(as_handle(e));
 }
 
-OA::LeafHandle make_leaf_h(SEXP e) {
+OA::LeafHandle make_leaf_h(const SEXP e) {
   return OA::LeafHandle(as_handle(e));
 }
 
-SEXP make_sexp(OA::IRHandle h)       { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::ProcHandle h)     { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::SymHandle h)      { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::ExprHandle h)     { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::MemRefHandle h)   { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::CallHandle h)     { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::OpHandle h)       { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::ConstSymHandle h) { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::ConstValHandle h) { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::StmtHandle h)     { return as_sexp(h.hval()); }
-SEXP make_sexp(OA::LeafHandle h)     { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::IRHandle h)       { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::ProcHandle h)     { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::SymHandle h)      { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::ExprHandle h)     { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::MemRefHandle h)   { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::CallHandle h)     { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::OpHandle h)       { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::ConstSymHandle h) { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::ConstValHandle h) { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::StmtHandle h)     { return as_sexp(h.hval()); }
+const SEXP make_sexp(OA::LeafHandle h)     { return as_sexp(h.hval()); }
 
 // ----- local conversion functions -----
 
 // reinterpret SEXP as an irhandle_t.
-static OA::irhandle_t as_handle(SEXP e) {
+static OA::irhandle_t as_handle(const SEXP e) {
   return reinterpret_cast<OA::irhandle_t>(e);
 }
 
 // reinterpret irhandle_t as SEXP
-static SEXP as_sexp(OA::irhandle_t h) {
+static const SEXP as_sexp(const OA::irhandle_t h) {
   return reinterpret_cast<SEXP>(h);
 }
 

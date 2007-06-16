@@ -181,7 +181,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. For example: dim(x) <- foo
     //
-    // FIXME: We should really be checking if the function is valid;
+    // TODO: We should really be checking if the function is valid;
     // only some functions applied to arguments make a valid lvalue.
     assert(CDDR(e) == R_NilValue); // more than one argument is an error, right?
     build_ud_rhs(e, Var::Var_MUST);

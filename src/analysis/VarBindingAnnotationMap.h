@@ -39,7 +39,7 @@ class VarBindingAnnotationMap : public AnnotationMap
 {
 public:
   // constructor/deconstructor
-  VarBindingAnnotationMap(bool ownsAnnotations = true);
+  VarBindingAnnotationMap();
   virtual ~VarBindingAnnotationMap();
 
   // singleton pattern

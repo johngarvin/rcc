@@ -82,12 +82,7 @@ private:
   LexicalScope * m_library_scope;
   LexicalScope * m_global_scope;
   
-  void build_cfgs();
-  void build_locality_info();
-  void build_local_variable_info();
   void build_local_function_info();
-  void build_bindings();
-  void build_call_graph();
 };
 
 #endif

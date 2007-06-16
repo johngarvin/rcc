@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.4 2006/10/17 22:09:50 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.5 2007/06/16 00:21:07 garvin Exp $
 
 #ifndef ANNOTATION_MAP_H
 #define ANNOTATION_MAP_H
@@ -80,7 +80,7 @@ public:
   // -------------------------------------------------------
   // get the annotation given a key (performs analysis if necessary)
   // -------------------------------------------------------
-  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // FIXME: remove when refactoring is done
+  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // TODO: remove when refactoring is done
   virtual MyMappedT get(const MyKeyT & k) = 0;
   
   // -------------------------------------------------------

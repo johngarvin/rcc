@@ -72,7 +72,8 @@ typedef CallGraphAnnotationMap::EdgeSetT EdgeSetT;
 CallGraphAnnotationMap::CallGraphAnnotationMap()
   : m_computed(false), m_node_map(), m_edge_set(), m_traversed_map(),
     m_fundef_map(), m_library_map(), m_coord_map(), m_call_site_map()
-{}
+{
+}
   
 CallGraphAnnotationMap::~CallGraphAnnotationMap() {
   NodeMapT::const_iterator i;
@@ -117,7 +118,7 @@ PropertyHndlT CallGraphAnnotationMap::m_handle = "CallGraph";
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
+// TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & CallGraphAnnotationMap::operator[](const MyKeyT & k) {
   if (!is_computed()) {
     compute();

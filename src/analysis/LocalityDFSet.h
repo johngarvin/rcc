@@ -26,6 +26,8 @@
 #ifndef LOCALITY_DF_SET_H
 #define LOCALITY_DF_SET_H
 
+#include <set>
+
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
@@ -45,6 +47,9 @@ class DFSetIterator;
 // Removed "virtual": need clone() to be able to return an DFSet.
 //class DFSet : public virtual OA::DataFlow::DataFlowSet {
 class DFSet : public OA::DataFlow::DataFlowSet {
+private:
+  typedef std::set<OA::OA_ptr<DFSetElement> > MySetT;
+
 public:
 
   // methods inherited from DataFlowSet
@@ -101,7 +106,7 @@ public:
   OA::OA_ptr<DFSetIterator> get_iterator() const;
   
 protected:
-  OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > mSet;
+  OA::OA_ptr<MySetT> mSet;
 
   friend class DFSetIterator;
 };

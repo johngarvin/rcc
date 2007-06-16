@@ -54,12 +54,17 @@ typedef VarAnnotationMap::const_iterator const_iterator;
 
 //  ----- constructor/destructor ----- 
   
-VarAnnotationMap::VarAnnotationMap(bool ownsAnnotations /* = true */)
+VarAnnotationMap::VarAnnotationMap()
   : m_computed(false),
     m_map()
   {}
   
-VarAnnotationMap::~VarAnnotationMap() {}
+VarAnnotationMap::~VarAnnotationMap() {
+  map<MyKeyT, MyMappedT>::const_iterator iter;
+  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    delete(iter->second);
+  }
+}
 
 // ----- singleton pattern -----
 
@@ -89,7 +94,7 @@ PropertyHndlT VarAnnotationMap::m_handle = "Var";
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
+// TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & VarAnnotationMap::operator[](const MyKeyT & k) {
   if (!is_computed()) {
     compute();

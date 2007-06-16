@@ -26,12 +26,16 @@ typedef FuncInfoAnnotationMap::const_iterator const_iterator;
 
 //  ----- constructor/destructor ----- 
 
-FuncInfoAnnotationMap::FuncInfoAnnotationMap(bool ownsAnnotations /* = true */)
+FuncInfoAnnotationMap::FuncInfoAnnotationMap()
 : m_computed(false),
   m_map()
   {}
 
-FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {}
+FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {
+  // This AnnotationMap owns all FuncInfos, so we want to delete them now.
+  // FuncInfos are in JMC's tree structure; deleting the root will delete all the FuncInfos.
+  delete R_Analyst::get_instance()->get_scope_tree_root();
+}
 
 // ----- singleton pattern -----
 

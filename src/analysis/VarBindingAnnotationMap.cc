@@ -57,13 +57,17 @@ typedef VarBindingAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor -----
 
-VarBindingAnnotationMap::VarBindingAnnotationMap(bool ownsAnnotations /* = true */)
+VarBindingAnnotationMap::VarBindingAnnotationMap()
   : m_computed(false),
     m_map()
   {}
 
-VarBindingAnnotationMap::~VarBindingAnnotationMap()
-  {}
+VarBindingAnnotationMap::~VarBindingAnnotationMap() {
+  map<MyKeyT, MyMappedT>::const_iterator iter;
+  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    delete(iter->second);
+  }
+}
 
 // ----- singleton pattern -----
 
@@ -140,7 +144,7 @@ void VarBindingAnnotationMap::compute() {
     for (mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
       Var * v = *mi;
       v = getProperty(Var, v->getMention_c());
-      // FIXME: should make sure we always get the data-flow-solved
+      // TODO: should make sure we always get the data-flow-solved
       // version of the Var. Shouldn't have to loop through
       // getProperty!
       VarBinding * scopes = new VarBinding();

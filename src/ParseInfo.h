@@ -43,7 +43,6 @@ public:
 
   static void flag_problem();
   static bool get_problem_flag();
-  static bool is_direct(std::string func);
 
   static void set_allow_oo(bool x);
   static bool allow_oo();
@@ -94,9 +93,6 @@ public:
   static bool binding_exists(std::string binding);
   static std::string get_binding(std::string binding);
   static void insert_binding(std::string binding, std::string value);
-
-  // functions called directly
-  static std::set<std::string> direct_funcs;
 
 private:
 

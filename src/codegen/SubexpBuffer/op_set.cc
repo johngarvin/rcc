@@ -56,10 +56,8 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     SEXP rhs_c = assign_rhs_c(e);
     SEXP rhs = CAR(assign_rhs_c(e));
     Expression body;
-    // if body is a function definition, give op_fundef
-    // the R name so that the f-function can be called directly later on
     if (is_fundef(rhs)) {
-      body = op_fundef(rhs, rho, resultProtection, var_name(lhs));
+      body = op_fundef(rhs, rho, resultProtection);
     } else {
       // Right side of an assignment is always evaluated.
       // Pass 'true' to tell op_exp to evaluate the result
