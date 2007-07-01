@@ -146,7 +146,7 @@ void SymbolTableAnnotationMap::add_def(MyKeyT func, DefVar * def) {
   } else {
     vi = it->second;
   }
-  vi->insertDef(def);
+  vi->insert_def(def);
 }
 
 /// Create the symbol table of each procedure.
@@ -156,7 +156,7 @@ void SymbolTableAnnotationMap::compute() {
   // create empty symbol table for each scope
   for( ; fii.IsValid(); ++fii) {
     SymbolTable * st = new SymbolTable();
-    m_map[make_proc_h(fii.Current()->get_defn())] = st;
+    m_map[fii.Current()->get_defn()] = st;
   }
 
   // visitor that, for each def, adds appropriate info to scopes where
@@ -179,7 +179,7 @@ void SymbolTableAnnotationMap::compute() {
       // for each scope in which the variable might be defined
       for(VarBinding::const_iterator vbi(vb->begin()); vbi != vb->end(); ++vbi) {
 	if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*vbi)) {
-	  m_host->add_def(make_proc_h(scope->get_fundef()), def);
+	  m_host->add_def(scope->get_fundef(), def);
 	}
       }    
     }

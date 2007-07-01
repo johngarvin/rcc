@@ -34,18 +34,75 @@
 
 namespace RAnnot {
 
-//****************************************************************************
-// VarInfo
-//****************************************************************************
+  // typedefs for readability
+
+typedef VarInfo::iterator iterator;
+typedef VarInfo::const_iterator const_iterator;
+typedef VarInfo::size_type size_type;
 
 VarInfo::VarInfo()
-  : m_c_location("")
+  : m_c_location(""), m_param(false)
 {
 }
 
 
 VarInfo::~VarInfo()
 {
+}
+
+VarInfo * VarInfo::clone() {
+  return new VarInfo(*this);
+}
+
+// defs iterators:
+
+iterator VarInfo::begin_defs() {
+  return m_defs.begin();
+}
+
+const_iterator VarInfo::begin_defs() const {
+  return m_defs.begin();
+}
+
+iterator VarInfo::end_defs() {
+  return m_defs.end();
+}
+
+const_iterator VarInfo::end_defs() const {
+  return m_defs.end();
+}
+  
+// defs capacity:
+size_type VarInfo::size_defs() const {
+  return m_defs.size();
+}
+  
+// defs modifiers:
+void VarInfo::insert_def(const value_type& x) {
+  m_defs.push_back(x);
+  if (x->getSourceType() == DefVar::DefVar_FORMAL) {
+    m_param = true;
+  }
+}
+
+iterator VarInfo::insert_def(iterator position, const value_type& x) {
+  return m_defs.insert(position, x);
+}
+
+void VarInfo::erase_defs(iterator position) {
+  m_defs.erase(position);
+}
+
+void VarInfo::erase_defs(iterator first, iterator last) {
+  m_defs.erase(first, last);
+}
+
+void VarInfo::clear_defs() {
+  m_defs.clear();
+}
+
+bool VarInfo::is_param() {
+  return m_param;
 }
 
 std::string VarInfo::get_location(SubexpBuffer * sb) {
@@ -61,7 +118,7 @@ VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
   const_iterator it;
-  for(it = beginDefs(); it != endDefs(); ++it) {
+  for(it = begin_defs(); it != end_defs(); ++it) {
     DefVar * def = *it;
     SEXP name = def->getName();
     SEXP rhs = CAR(def->getRhs_c());

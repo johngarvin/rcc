@@ -78,7 +78,7 @@ namespace RAnnot {
       } else {  // symbol is defined at least once in this scope
 	VarInfo * vi = it->second;
 	VarInfo::const_iterator var;
-	for (var = vi->beginDefs(); var != vi->endDefs(); ++var) {
+	for (var = vi->begin_defs(); var != vi->end_defs(); ++var) {
 	  DefVar * def = *var;
 	  if (is_fundef(CAR(def->getRhs_c()))) {
 	    // def is of the form _ <- function(...)

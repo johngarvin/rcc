@@ -54,42 +54,63 @@ template<class T> void R_SingletonIterator<T>::reset() {
 // R_ListIterator methods
 //--------------------------------------------------------------------
 
+R_ListIterator::R_ListIterator(SEXP exp) : m_exp(exp) {
+  // make sure it's of list type: data cons cell, language cons cell, or nil
+  assert(TYPEOF(exp) == LISTSXP || TYPEOF(exp) == LANGSXP || exp == R_NilValue);
+  m_curr = exp;
+}
+
+R_ListIterator::~R_ListIterator() {
+}
+
 SEXP R_ListIterator::current() const {
-  return curr;
+  return m_curr;
 }
 
 bool R_ListIterator::isValid() const {
-  return (curr != R_NilValue);
+  return (m_curr != R_NilValue);
 }
 
+// prefix
 void R_ListIterator::operator++() {
   // must be a data or language cons cell to be able to take the CDR
-  assert(TYPEOF(curr) == LISTSXP || TYPEOF(curr) == LANGSXP);
-  curr = CDR(curr);
+  assert(TYPEOF(m_curr) == LISTSXP || TYPEOF(m_curr) == LANGSXP);
+  m_curr = CDR(m_curr);
 }
 
+// postfix
+void R_ListIterator::operator++(int) { ++*this; }
+
 void R_ListIterator::reset() {
-  curr = exp;
+  m_curr = m_exp;
 }
 
 //--------------------------------------------------------------------
 // R_PreorderIterator methods
 //--------------------------------------------------------------------
 
+R_PreorderIterator::R_PreorderIterator(SEXP exp) : m_exp(exp) {
+  build_pre(exp);
+  m_iter = m_preorder.begin();
+}
+
+R_PreorderIterator::~R_PreorderIterator() {
+}
+
 SEXP R_PreorderIterator::current() const {
-  return *iter;
+  return *m_iter;
 }
   
 bool R_PreorderIterator::isValid() const {
-  return (iter != preorder.end());
+  return (m_iter != m_preorder.end());
 }
 
 void R_PreorderIterator::operator++() {
-  ++iter; 
+  ++m_iter;
 }
 
 void R_PreorderIterator::reset() {
-  iter = preorder.begin();
+  m_iter = m_preorder.begin();
 }
 
 /// Preorder iterator: building the preorder list of nodes
@@ -101,12 +122,12 @@ void R_PreorderIterator::build_pre(SEXP e) {
     break;
   case LISTSXP:
   case LANGSXP:
-    preorder.push_back(e);
+    m_preorder.push_back(e);
     build_pre(CAR(e));
     build_pre(CDR(e));
     break;
   default:
-    preorder.push_back(e);
+    m_preorder.push_back(e);
     break;
   }
 }

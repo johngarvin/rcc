@@ -22,6 +22,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <map>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
@@ -47,7 +49,7 @@ ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
   {}
 
 ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
-  map<MyKeyT, MyMappedT>::const_iterator iter;
+  std::map<MyKeyT, MyMappedT>::const_iterator iter;
   for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
     delete(iter->second);
   }
@@ -90,8 +92,8 @@ const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
 
 void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
   ExpressionInfo * annot = new ExpressionInfo();
-  annot->setDefn(make_sexp(k));
-  LocalVariableAnalysis lva(make_sexp(k));
+  annot->setDefn(k);
+  LocalVariableAnalysis lva(k);
   lva.perform_analysis();
   LocalVariableAnalysis::const_var_iterator v;
   for(v = lva.begin_vars(); v != lva.end_vars(); ++v) {

@@ -32,8 +32,10 @@
 #include <analysis/ExprTreeBuilder.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/SimpleIterators.h>
+#include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/Var.h>
+#include <analysis/VarInfo.h>
 #include <analysis/VarRefFactory.h>
 #include <analysis/Utils.h>
 
@@ -44,6 +46,8 @@
 using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
+
+VarInfo * find_st_entry(ProcHandle p, SEXP name);
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -326,7 +330,10 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   SEXP e = make_sexp(h);
   OA_ptr<MemRefExpr> mre;
   if (is_var(call_lhs(e))) {
-    SymHandle sym = make_sym_h(call_lhs(e));
+    // TODO: redo Annotations so we can use getProperty without requiring the annotations to have a certain name
+    FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(e));
+    VarInfo * vi = find_st_entry(make_proc_h(fi->get_defn()), call_lhs(e));
+    SymHandle sym = make_sym_h(vi);
     mre = new NamedRef(MemRefExpr::USE, sym);
     //    mre = new Deref(MemRefExpr::USE, mre);
   } else {
@@ -389,12 +396,18 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
     n++;
   }
   if (!li.isValid()) {
-    rcc_error("getFormalForActual: param not found");
+    rcc_error("getFormalForActual: actual param not found");
   }
     
   // get nth formal of callee
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(callee));
-  return make_sym_h(TAG(fi->get_arg(n)));
+  // hack to deal with varargs (used in .rcc.assert.exp, etc.)
+  // TODO: figure out what to do
+  if (n > fi->get_num_args()) {
+    return SymHandle(0);
+  }
+  VarInfo * vi = find_st_entry(callee, TAG(fi->get_arg(n)));
+  return make_sym_h(vi);
 }
 
 OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
@@ -426,7 +439,10 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
   OA_ptr<MemRefExprIterator> iter;
   SEXP cell = make_sexp(h);
   if (is_var(CAR(cell))) {
-    OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(CAR(cell)));
+    // TODO: make this easier
+    FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
+    VarInfo * vi = find_st_entry(make_proc_h(fi->get_defn()), CAR(cell));
+    OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(vi));
     //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
   } else {
@@ -538,13 +554,14 @@ OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIt
 /// to the number provided in getParamBindPtrAssign pairs
 /// Should return SymHandle(0) if there is no formal parameter for 
 /// given num
-SymHandle R_IRInterface::getFormalSym(ProcHandle h, int n) {
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(proc));
   if (n >= fi->get_num_args()) {
     return SymHandle(0);
   } else {
-    SEXP sym = TAG(fi->get_arg(n + 1));  // FuncInfo gives 1-based params
-    return make_sym_h(sym);
+    SEXP name = TAG(fi->get_arg(n + 1));  // FuncInfo gives 1-based params
+    VarInfo * vi = find_st_entry(proc, name);
+    return make_sym_h(vi);
   }
 }
 
@@ -611,7 +628,7 @@ void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   // TODO: remove the zero check; shouldn't be zero
   if (h == ProcHandle(0)) {
-    return make_sym_h(Rf_install("<null procedure: bug in OA>"));
+    rcc_error("getProcSymHandle received null procedure: possible bug in OA");
   }
   // TODO: make it easier to do this
   RProp::PropertySet::const_iterator iter = analysisResults.find(FuncInfo::handle());
@@ -619,25 +636,25 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
     // if FuncInfo already exists, then use it
     // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
-    return make_sym_h(fi->get_first_name());
+    return make_sym_h(find_st_entry(h, fi->get_first_name()));
   } else {
-    return make_sym_h(Rf_install("<procedure>"));
+    return make_sym_h(find_st_entry(h, Rf_install("<procedure>")));
   }
 }
 
 // TODO: symbols in different scopes should be called
 // different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
-  return make_sym_h(make_sexp(h));
+  FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(make_sexp(h)));
+  return make_sym_h(find_st_entry(make_proc_h(fi->get_defn()), make_sexp(h)));
 }
 
 //------------------------------------------------------------
 // Param bindings (ParamBindingsIRInterface)
 //------------------------------------------------------------
 
-// TODO: not enough information!
 bool R_IRInterface::isParam(OA::SymHandle h) {
-  return false;
+  return make_var_info(h)->is_param();
 }
 
 
@@ -666,7 +683,7 @@ std::string R_IRInterface::toString(MemRefHandle h) {
 }
 
 std::string R_IRInterface::toString(SymHandle h) {
-  return var_name(make_sexp(h));
+  return "";
 }
 
 std::string R_IRInterface::toString(ConstSymHandle h) {
@@ -936,4 +953,15 @@ void R_SingletonMemRefExprIterator::operator++() {
 
 void R_SingletonMemRefExprIterator::reset() {
   R_SingletonIterator<OA_ptr<MemRefExpr> >::reset();
+}
+
+
+//------------------------------------------------------------
+// given a name in a procedure, find the symbol table entry
+//------------------------------------------------------------
+
+VarInfo * find_st_entry(ProcHandle p, SEXP name) {
+  assert(is_var(name));
+  SymbolTable * table = getProperty(SymbolTable, make_sexp(p));
+  return (*table)[name];
 }

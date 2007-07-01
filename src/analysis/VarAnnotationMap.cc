@@ -163,8 +163,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
-	  MemRefHandle s = make_mem_ref_h(v->getMention_c());
-	  m_map[s] = v;
+	  m_map[v->getMention_c()] = v;
 	}
       }
     }

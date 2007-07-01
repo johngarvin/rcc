@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.cc,v 1.3 2007/06/16 00:21:07 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.cc,v 1.4 2007/07/01 02:04:12 garvin Exp $
 
 // * BeginCopyright *********************************************************
 // Copyright (c) 2006 Rice University
@@ -63,7 +63,7 @@ AnnotationMap::dump(std::ostream& os) const
 {
   os << "{ AnnotationMap:\n";
   for (const_iterator it = this->begin(); it != this->end(); ++it) {
-    os << "(" << it->first.hval() << " --> " << it->second << ")\n";
+    os << "(" << it->first << " --> " << it->second << ")\n";
     it->second->dump(os);
   }
   os << "}\n";

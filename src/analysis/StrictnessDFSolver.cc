@@ -66,7 +66,7 @@ OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::
   SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals));
-  OA_ptr<DFSet> retval = m_solver->solve(cfg).convert<DFSet>();
+  OA_ptr<DFSet> retval = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
   if (debug) dump_node_maps();
   return retval;
 }

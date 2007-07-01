@@ -45,10 +45,11 @@ OA::ProcHandle make_proc_h(const SEXP e) {
   return OA::ProcHandle(as_handle(e));
 }
 
-OA::SymHandle make_sym_h(const SEXP e) {
-  assert(is_var(e));
-  return OA::SymHandle(as_handle(e));
-}
+  // a SymHandle no longer represents an SEXP
+  //OA::SymHandle make_sym_h(const SEXP e) {
+  //  assert(is_var(e));
+  //  return OA::SymHandle(as_handle(e));
+  //}
 
 OA::ExprHandle make_expr_h(const SEXP e) {
   return OA::ExprHandle(as_handle(e));
@@ -67,10 +68,11 @@ OA::OpHandle make_op_h(const SEXP e) {
   return OA::OpHandle(as_handle(e));
 }
   
-OA::ConstSymHandle make_const_sym_h(const SEXP e) {
-  assert(is_var(e));
-  return OA::ConstSymHandle(as_handle(e));
-}
+  // a SymHandle no longer represents an SEXP
+// OA::ConstSymHandle make_const_sym_h(const SEXP e) {
+//   assert(is_var(e));
+//   return OA::ConstSymHandle(as_handle(e));
+// }
 
 OA::ConstValHandle make_const_val_h(const SEXP e) {
   assert(is_const(e));
@@ -85,17 +87,24 @@ OA::LeafHandle make_leaf_h(const SEXP e) {
   return OA::LeafHandle(as_handle(e));
 }
 
+/// symbol handles represent VarInfo annotations, not SEXPs
+OA::SymHandle make_sym_h(const RAnnot::VarInfo * vi) {
+  return OA::SymHandle(reinterpret_cast<OA::irhandle_t>(vi));
+}
+
 const SEXP make_sexp(OA::IRHandle h)       { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::ProcHandle h)     { return as_sexp(h.hval()); }
-const SEXP make_sexp(OA::SymHandle h)      { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::ExprHandle h)     { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::MemRefHandle h)   { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::CallHandle h)     { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::OpHandle h)       { return as_sexp(h.hval()); }
-const SEXP make_sexp(OA::ConstSymHandle h) { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::ConstValHandle h) { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::StmtHandle h)     { return as_sexp(h.hval()); }
 const SEXP make_sexp(OA::LeafHandle h)     { return as_sexp(h.hval()); }
+
+RAnnot::VarInfo * const make_var_info(const OA::SymHandle h) {
+  return reinterpret_cast<RAnnot::VarInfo *>(h.hval());
+}
 
 // ----- local conversion functions -----
 

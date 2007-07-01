@@ -111,7 +111,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
 
   // solve as a forward data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
-  m_solver->solve(cfg);
+  m_solver->solve(cfg, DataFlow::ITERATIVE);
 
   // data flow problem solved; now traverse the function and fill in annotations
 

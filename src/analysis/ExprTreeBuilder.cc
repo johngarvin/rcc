@@ -39,7 +39,9 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP cell) {
     tree->addNode(n);
   } else if (is_var(e)) {
     // use the cell to create the handle
-    OA_ptr<ExprTree::ConstSymNode> n; n = new ExprTree::ConstSymNode(make_const_sym_h(e));
+    // TODO: is MemRefNode/MemRefHandle right?
+    // A ConstSymHandle doesn't belong here; that represents a constant bound to a symbol
+    OA_ptr<ExprTree::MemRefNode> n; n = new ExprTree::MemRefNode(make_mem_ref_h(e));
     tree->addNode(n);
   } else if (is_assign(e)) {
     OA_ptr<ExprTree::OpNode> assign; assign = new ExprTree::OpNode(make_op_h(e));

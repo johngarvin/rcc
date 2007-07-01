@@ -89,6 +89,8 @@ rcc_bin_SOURCES =				\
   PropertySetMgr.h				\
   RequiresContext.cc				\
   RequiresContext.h				\
+  ScopeAnnotationMap.cc                         \
+  ScopeAnnotationMap.h                          \
   SimpleIterators.cc				\
   SimpleIterators.h				\
   StrictnessDFSolver.h                          \

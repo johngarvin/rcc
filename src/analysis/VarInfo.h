@@ -60,35 +60,27 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual VarInfo * clone() { return new VarInfo(*this); }
+  virtual VarInfo * clone();
 
   // defs iterators:
-  iterator beginDefs()
-    { return mDefs.begin(); }
-  const_iterator beginDefs() const
-    { return mDefs.begin(); }
-  iterator endDefs()
-    { return mDefs.end(); }
-  const_iterator endDefs() const
-    { return mDefs.end(); }
+  iterator begin_defs();
+  const_iterator begin_defs() const;
+  iterator end_defs();
+  const_iterator end_defs() const;
   
   // defs capacity:
-  size_type sizeDefs() const
-    { return mDefs.size(); }
+  size_type size_defs() const;
   
   // defs modifiers:
-  void insertDef(const value_type& x)
-    { mDefs.push_back(x); }
-  iterator insertDef(iterator position, const value_type& x)
-    { return mDefs.insert(position, x); }
+  void insert_def(const value_type& x);
+  iterator insert_def(iterator position, const value_type& x);
 
-  void eraseDefs(iterator position)
-    { mDefs.erase(position); }
-  void eraseDefs(iterator first, iterator last)
-    { mDefs.erase(first, last); }
+  void erase_defs(iterator position);
+  void erase_defs(iterator first, iterator last);
 
-  void clearDefs()
-    { mDefs.clear(); }
+  void clear_defs();
+
+  bool is_param();
 
   /// get the location in the R environment
   std::string get_location(SubexpBuffer* sb);
@@ -100,8 +92,9 @@ public:
 
 private:
   // data_type mType
-  MySet_t mDefs;
+  MySet_t m_defs;
   std::string m_c_location;
+  bool m_param;
 };
 
 }

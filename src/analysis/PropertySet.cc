@@ -65,7 +65,7 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
   if (annotations == 0) {
     rcc_error("Annotation map not found in PropertySet");
   }
-  (*annotations)[reinterpret_cast<OA::irhandle_t>(s)] = annot;
+  (*annotations)[s] = annot;
 }
 
 AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)
@@ -74,7 +74,7 @@ AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)
   if (annotations == 0) {
     rcc_error("AnnotationMap not found; possible invalid propertyName " + std::string(propertyName));
   }
-  return annotations->get(OA::IRHandle(reinterpret_cast<OA::irhandle_t>(s)));
+  return annotations->get(s);
 }
 
 void PropertySet::add(PropertyHndlT propertyName, RAnnot::AnnotationMap * amap)

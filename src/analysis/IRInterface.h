@@ -302,8 +302,8 @@ public:
   OA::SymHandle getSymHandle(OA::LeafHandle h);
 
   //--------------------------------------------------------
-  // getProcSymHandle: implementing virtual method from CFGIRInterface,
-  // CallGraphIRInterface, and SideEffectIRInterface
+  // getProcSymHandle: implementing virtual method from
+  // CallGraphIRInterface and SideEffectIRInterface
   //--------------------------------------------------------
 
   OA::SymHandle getProcSymHandle(OA::ProcHandle h);

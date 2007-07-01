@@ -1,5 +1,5 @@
 // -*- Mode: C++ -*-
-/* $Id: AnalysisResults.h,v 1.9 2007/06/16 00:21:07 garvin Exp $ */
+/* $Id: AnalysisResults.h,v 1.10 2007/07/01 02:04:12 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //****************************************************************************/
@@ -36,9 +36,10 @@
 #define AnalysisResults_h
 
 #include <analysis/PropertySet.h>
-#include <analysis/FuncInfo.h>
 
 #include <support/stacks/StackTmpl.h>
+
+namespace RAnnot { class FuncInfo; }
 
 typedef std::map<char *,RAnnot::FuncInfo*> func_attribute_map;
 extern func_attribute_map  func_unique_defintion;

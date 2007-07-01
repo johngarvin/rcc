@@ -26,6 +26,7 @@
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/FormalArgInfo.h>
+#include <analysis/FuncInfo.h>
 
 #include <ParseInfo.h>
 

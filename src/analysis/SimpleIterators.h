@@ -64,43 +64,37 @@ typedef R_SingletonIterator<SEXP> R_SingletonSEXPIterator;
 /// To make sure all locations are unique, the iterator gives you the
 /// cons cell; take the CAR to get the data you want.
 class R_ListIterator : public R_SEXPIterator {
-protected:
-  const SEXP exp;
-  SEXP curr;
 public:
-  R_ListIterator(SEXP _exp) : exp(_exp) {
-    // make sure it's of list type: data cons cell, language cons cell, or nil
-    assert(TYPEOF(exp) == LISTSXP || TYPEOF(exp) == LANGSXP || exp == R_NilValue);
-    curr = exp;
-  }
-  virtual ~R_ListIterator() { }
+  R_ListIterator(SEXP _exp);
+  virtual ~R_ListIterator();
   
   SEXP current() const;
   bool isValid() const;
-  void operator++();                  // prefix
-  void operator++(int) { ++*this; }   // postfix
+  void operator++();       // prefix
+  void operator++(int);    // postfix
   void reset();
+private:
+  const SEXP m_exp;
+  SEXP m_curr;
 };
 
 /// preorder traversal of an R object through CARs and CDRs
 class R_PreorderIterator {
-private:
-  std::list<SEXP> preorder;
-  std::list<SEXP>::const_iterator iter;
-  const SEXP exp;
-  SEXP curr;
-  void build_pre(SEXP e);
 public:
-  R_PreorderIterator(SEXP _exp) : exp(_exp) {
-    build_pre(exp);
-    iter = preorder.begin();
-  }
-  virtual ~R_PreorderIterator() { }
+  R_PreorderIterator(SEXP exp);
+  virtual ~R_PreorderIterator();
   
   SEXP current() const;
   bool isValid() const;
   void operator++();
   void reset();
+private:
+  void build_pre(SEXP e);
+
+  std::list<SEXP> m_preorder;
+  std::list<SEXP>::const_iterator m_iter;
+  const SEXP m_exp;
+  SEXP m_curr;
 };
 
 #endif

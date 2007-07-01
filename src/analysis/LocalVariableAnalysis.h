@@ -27,7 +27,7 @@
 #ifndef LOCAL_VARIABLE_ANALYSIS_H
 #define LOCAL_VARIABLE_ANALYSIS_H
 
-#include <vector>
+#include <list>
 
 #include <include/R/R_RInternals.h>
 

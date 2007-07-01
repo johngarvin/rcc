@@ -71,7 +71,7 @@ OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle pr
 
   // solve as a forward data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
-  m_solver->solve(cfg);
+  m_solver->solve(cfg, DataFlow::ITERATIVE);
 
   // now find the first mentions for each variable
   OA_ptr<NameMentionMultiMap> first_mention_map; first_mention_map = new NameMentionMultiMap();

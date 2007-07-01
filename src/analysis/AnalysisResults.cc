@@ -1,5 +1,5 @@
 // -*- Mode: C++ -*-
-/* $Id: AnalysisResults.cc,v 1.5 2006/10/17 22:09:49 garvin Exp $ */
+/* $Id: AnalysisResults.cc,v 1.6 2007/07/01 02:04:12 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //****************************************************************************/
@@ -33,6 +33,7 @@
 //**************************************************************************/
   
 #include <analysis/AnalysisResults.h>
+#include <analysis/FuncInfo.h>
 
 RProp::PropertySet analysisResults;
 

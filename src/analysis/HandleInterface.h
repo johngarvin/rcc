@@ -30,25 +30,25 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
+namespace RAnnot { class VarInfo; }
+
 /// Provide an interface between IRHandles and SEXPs. This will
 /// improve typing ability and provide a single point of control for
 /// the casts necessary.
 namespace HandleInterface {
 
 OA::ProcHandle make_proc_h(const SEXP e);
-OA::SymHandle make_sym_h(const SEXP e);
 OA::ExprHandle make_expr_h(const SEXP e);
 OA::MemRefHandle make_mem_ref_h(const SEXP e);
 OA::CallHandle make_call_h(const SEXP e);
 OA::OpHandle make_op_h(const SEXP e);
-OA::ConstSymHandle make_const_sym_h(const SEXP e);
 OA::ConstValHandle make_const_val_h(const SEXP e);
 OA::StmtHandle make_stmt_h(const SEXP e);
 OA::LeafHandle make_leaf_h(const SEXP e);
+OA::SymHandle make_sym_h(const RAnnot::VarInfo * vi);
  
 const SEXP make_sexp(const OA::IRHandle h);
 const SEXP make_sexp(const OA::ProcHandle h);
-const SEXP make_sexp(const OA::SymHandle h);
 const SEXP make_sexp(const OA::ExprHandle h);
 const SEXP make_sexp(const OA::MemRefHandle h);
 const SEXP make_sexp(const OA::CallHandle h);
@@ -58,6 +58,7 @@ const SEXP make_sexp(const OA::ConstValHandle h);
 const SEXP make_sexp(const OA::StmtHandle h);
 const SEXP make_sexp(const OA::LeafHandle h);
 
+RAnnot::VarInfo * const make_var_info(const OA::SymHandle h);
 }
 
 #endif

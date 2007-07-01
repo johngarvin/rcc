@@ -25,11 +25,11 @@
 
 #include <iostream>
 
-// TODO: remove these OpenAnalysis includes after call graph testing is done
 #include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>
 #include <OpenAnalysis/Alias/InterAliasMap.hpp>
 #include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
 #include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
+#include <OpenAnalysis/DataFlow/DGraphSolverDFP.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
 #include <OpenAnalysis/Utils/OutputBuilderDOT.hpp>
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
       OA::OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
       intra_man = new OA::SideEffect::ManagerSideEffectStandard(an->get_interface());
       OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> df_info;
-      df_info = solver.performAnalysis(call_graph, param_bindings, alias, intra_man);
+      df_info = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, OA::DataFlow::ITERATIVE);
       df_info->dump(cout, an->get_interface());
     }
     if (cfg_dot_dump) {
