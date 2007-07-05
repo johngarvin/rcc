@@ -120,14 +120,7 @@ VarInfo::dump(std::ostream& os) const
   const_iterator it;
   for(it = begin_defs(); it != end_defs(); ++it) {
     DefVar * def = *it;
-    SEXP name = def->getName();
-    SEXP rhs = CAR(def->getRhs_c());
-
-    os << "(";
-    dumpSEXP(os, name);
-    os << " ---> ";
-    dumpSEXP(os, rhs);
-    os << ")" << std::endl;
+    def->dump(os);
   }
   endObjDump(os, VarInfo);
 }

@@ -32,10 +32,12 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
+#include <analysis/SymbolTable.h>
 #include <analysis/Utils.h>
 #include <analysis/Var.h>
 #include <analysis/VarBinding.h>
 #include <analysis/VarBindingAnnotationMap.h>
+#include <analysis/VarInfo.h>
 
 #include "VarBindingAnnotationMap.h"
 
@@ -133,13 +135,29 @@ const_iterator VarBindingAnnotationMap::end() const { return m_map.end(); }
 /// scopes in which each Var is bound and add the (Var,sequence) pair
 /// into the annotation map.
 void VarBindingAnnotationMap::compute() {
-  static FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
+  create_var_bindings();
+  populate_symbol_tables();
+}
+  
+void VarBindingAnnotationMap::create_var_bindings() {
+  FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
   // for each function
   FuncInfoIterator fii(global);
   for( ; fii.IsValid(); ++fii) {
     FuncInfo * fi = fii.Current();
     assert(fi != 0);
-    // each mention
+
+    // first, create VarBindings for formal args; each one has just
+    // one scope, which is the current procedure
+    for(int i = 1; i <= fi->get_num_args(); i++) {
+      Var * var = getProperty(Var, fi->get_arg(i));
+      VarBinding * binding = new VarBinding();
+      binding->insert(fi->get_scope());
+      m_map[fi->get_arg(i)] = binding;
+    }
+    
+    // now create bindings for mentions in the function body
+    // for each mention
     FuncInfo::mention_iterator mi;
     for (mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
       Var * v = *mi;
@@ -148,7 +166,6 @@ void VarBindingAnnotationMap::compute() {
       // version of the Var. Shouldn't have to loop through
       // getProperty!
       VarBinding * scopes = new VarBinding();
-      bool binding_found;
       switch(v->getScopeType()) {
       case Locality_LOCAL:
 	// bound in current scope only
@@ -160,27 +177,28 @@ void VarBindingAnnotationMap::compute() {
 	// FALLTHROUGH
       case Locality_FREE:
 	// start at this scope's parent; iterate upward through ancestors
-	binding_found = false;
 	for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
 	  if (defined_local_in_scope(v,a)) {
 	    scopes->insert(a->get_scope());
-	    binding_found = true;
 	  }
 	}
-
+	
 	// for R internal names, add the library scope
 	if (is_library(CAR(v->getMention_c()))) {
 	  scopes->insert(R_Analyst::get_instance()->get_library_scope());
 	}
-
+	
 	// double-arrow (<<-) definitions declare the name in the
 	// global scope if it's not local in some middle scope. Just
 	// check for a def; since we're here, we already know the
 	// mention is non-local.
+	//
+	// TODO: in the latest version of R, this is no longer the
+	// case.
 	if (v->getUseDefType() == Var::Var_DEF) {
 	  scopes->insert(R_Analyst::get_instance()->get_global_scope());
 	}
-
+	
 	break;
       default:
 	rcc_error("Unknown scope type encountered");
@@ -188,12 +206,35 @@ void VarBindingAnnotationMap::compute() {
       }
       // whether global or not...
       m_map[v->getMention_c()] = scopes;
+    }  // next mention
+  }  // next function
+}
+
+void VarBindingAnnotationMap::populate_symbol_tables() {
+  // for each (mention, VarBinding) pair in our map
+  std::map<MyKeyT, MyMappedT>::const_iterator iter;
+  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    // TODO: refactor AnnotationMaps to avoid downcasting
+    VarBinding * vb = dynamic_cast<VarBinding *>(iter->second);
+    Var * var = getProperty(Var, iter->first);
+    SEXP name = var->getName();
+    // for each scope in the VarBinding
+    VarBinding::const_iterator scope_iter;
+    for(scope_iter = vb->begin(); scope_iter != vb->end(); ++scope_iter) {
+      // in the scope's symbol table, associate the name with a VarInfo
+      SymbolTable * st = (*scope_iter)->get_symbol_table();
+      VarInfo * vi = st->find_or_create(name);
+      // each VarInfo has a list of definitions. If this mention is a
+      // def, add it to the appropriate VarInfo if it's not there
+      // already.
+      if(DefVar * def = dynamic_cast<DefVar *>(var)) {
+	vi->insert_def(def);
+      }
     }
   }
 }
   
-  
-}
+}  // end namespace RAnnot
 
 /// Is the given variable defined as local in the given scope?
 static bool defined_local_in_scope(Var * v, FuncInfo * s) {

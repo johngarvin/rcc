@@ -116,11 +116,21 @@ MyMappedT VarAnnotationMap::get(const MyKeyT & k) {
   // key. If not, it's an error
   std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
   if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
+    rcc_error("VarAnnotationMap: possible invalid key not found in map");
   }
 
   return annot->second;
 }
+
+bool VarAnnotationMap::is_valid(const MyKeyT & k) {
+  if (!is_computed()) {
+    compute();
+    m_computed = true;
+  }
+  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
+  return (annot != m_map.end());
+}
+    
   
 bool VarAnnotationMap::is_computed() {
   return m_computed;

@@ -88,8 +88,8 @@ namespace RAnnot {
   }
 
   void FundefCallGraphNode::dump(std::ostream & os) const {
-    FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
-    SEXP first_name = finfo->get_first_name();
+    FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+    SEXP first_name = CAR(fi->get_first_name_c());
 
     beginObjDump(os, FundefCallGraphNode);
     dumpVar(os, get_id());
@@ -98,8 +98,8 @@ namespace RAnnot {
   }
 
   void FundefCallGraphNode::dump_string(std::ostream & os) const {
-    FuncInfo * finfo = getProperty(FuncInfo, m_fundef);
-    std::string first_name = CHAR(PRINTNAME(finfo->get_first_name()));
+    FuncInfo * fi = getProperty(FuncInfo, m_fundef);
+    std::string first_name = CHAR(PRINTNAME(CAR(fi->get_first_name_c())));
     beginObjDump(os, FundefCallGraphNode);
     dumpVar(os, get_id());
     dumpString(os, first_name);

@@ -113,10 +113,10 @@ void FuncInfoAnnotationMap::compute() {
 
 void FuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {
   // create the root FuncInfo node
-  SEXP name = CAR(assign_lhs_c(r_root));
+  SEXP name_c = assign_lhs_c(r_root);
   SEXP definition = CAR(assign_rhs_c(r_root));
   assert(is_fundef(definition));
-  FuncInfo * a_root = new FuncInfo(0, name, definition); // root node has null parent
+  FuncInfo * a_root = new FuncInfo(0, name_c, definition); // root node has null parent
   m_map[definition] = a_root;
   
   // Skip to the body of the function. Otherwise, the definition we
@@ -140,10 +140,10 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
     break;
   case LANGSXP:
     if (is_simple_assign(e)) {
-      SEXP var = CAR(assign_lhs_c(e));
+      SEXP name_c = assign_lhs_c(e);
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {                  // a variable bound to a function
-	FuncInfo * newfun = new FuncInfo(parent, var, rhs);
+	FuncInfo * newfun = new FuncInfo(parent, name_c, rhs);
 	m_map[rhs] = newfun;
 
 	// Skip to the body of the function. Otherwise, the definition we
@@ -154,7 +154,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
 	build_scope_tree_rec(rhs, parent);
       }
     } else if (is_fundef(e)) {  // anonymous function
-      FuncInfo * newfun = new FuncInfo(parent, Rf_install("<unknown function>"), e);
+      FuncInfo * newfun = new FuncInfo(parent, Rf_cons(Rf_install("<unknown function>"), R_NilValue), e);
       m_map[e] = newfun;
       build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
     } else if (is_rcc_assertion(e)) { // rcc_assert call

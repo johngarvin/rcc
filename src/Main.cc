@@ -196,14 +196,14 @@ int main(int argc, char *argv[]) {
 	cout << "Dumping CFG via Analyst:" << endl;
 	an->dump_cfg(cout, fi->get_defn());
 	cout << "Dumping symbol table:" << endl;
-	SymbolTable * st = getProperty(SymbolTable, fi->get_defn());
+	SymbolTable * st = fi->get_scope()->get_symbol_table();
 	st->dump(cout);
       }
       cout << "Dumping call graph:" << endl;
       CallGraphAnnotationMap::get_instance()->dump(cout);
 
       cout << "Dumping OA call graph (not yet used):" << endl;
-      // TODO: remove
+
       // first build call graph
       OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
       OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
@@ -211,13 +211,13 @@ int main(int argc, char *argv[]) {
       OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
       OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph = man.performAnalysis(proc_iter, alias);
       // output call graph
-      call_graph->output(*an->get_interface());
+      // call_graph->output(*an->get_interface());
       
       //   output graph in DOT form
-      //   OA::OA_ptr<OA::OutputBuilder> dot_builder;
-      //   dot_builder = new OA::OutputBuilderDOT;
-      //   call_graph->configOutput(dot_builder);
-      //   call_graph->output(*an->get_interface());
+      OA::OA_ptr<OA::OutputBuilder> dot_builder;
+      dot_builder = new OA::OutputBuilderDOT;
+      call_graph->configOutput(dot_builder);
+      call_graph->output(*an->get_interface());
       
       // now perform call graph data flow analysis
       OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
@@ -227,6 +227,7 @@ int main(int argc, char *argv[]) {
       intra_man = new OA::SideEffect::ManagerSideEffectStandard(an->get_interface());
       OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> df_info;
       df_info = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, OA::DataFlow::ITERATIVE);
+      cout << "Dumping call graph DF analysis:" << endl;
       df_info->dump(cout, an->get_interface());
     }
     if (cfg_dot_dump) {

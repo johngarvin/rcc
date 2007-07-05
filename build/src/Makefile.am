@@ -97,8 +97,6 @@ rcc_bin_SOURCES =				\
   StrictnessDFSolver.cc                         \
   SymbolTable.cc                                \
   SymbolTable.h                                 \
-  SymbolTableAnnotationMap.cc                   \
-  SymbolTableAnnotationMap.h                    \
   TypeInference.h				\
   UseVar.cc                                     \
   UseVar.h                                      \

@@ -19,7 +19,7 @@
 // File: SymbolTable.cc
 //
 // A table mapping names (SEXPs of SYMSXP type) to VarInfos describing
-// them. There's a SymbolTable for each function.
+// them. There's a SymbolTable for each lexical scope.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -27,7 +27,6 @@
 
 #include <support/DumpMacros.h>
 
-#include <analysis/SymbolTableAnnotationMap.h>
 #include <analysis/VarInfo.h>
 
 #include "SymbolTable.h"
@@ -43,8 +42,16 @@ SymbolTable::~SymbolTable()
 {
 }
 
-PropertyHndlT SymbolTable::handle() {
-  return SymbolTableAnnotationMap::handle();
+SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k) {
+  mapped_type value;
+  iterator entry = find(k);
+  if (entry == end()) {
+    value = new VarInfo();
+    (*this)[k] = value;
+  } else {
+    value = entry->second;
+  }
+  return value;
 }
 
 std::ostream& SymbolTable::dump(std::ostream& os) const

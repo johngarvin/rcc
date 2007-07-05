@@ -59,6 +59,8 @@ public:
 
 private:
   void compute();
+  void create_var_bindings();
+  void populate_symbol_tables();
 
   static void create();
 

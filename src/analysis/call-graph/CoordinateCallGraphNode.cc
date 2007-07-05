@@ -70,7 +70,7 @@ namespace RAnnot {
       cg->add_edge(this, cg->make_library_node(m_name, library_value(m_name)));
       // but don't add library fun to worklist
     } else if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(m_scope)) {
-      SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
+      SymbolTable * st = scope->get_symbol_table();
       SymbolTable::const_iterator it = st->find(m_name);
       if (it == st->end()) {
 	// Name not found in SymbolTable: unbound variable

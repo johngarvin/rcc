@@ -33,9 +33,19 @@
 
 #include <include/R/R_RInternals.h>
 
+namespace RAnnot { class SymbolTable; }
+
 class LexicalScope {
 public:
+  explicit LexicalScope();
+  virtual ~LexicalScope();
+
   virtual const std::string get_name() const = 0;
+
+  RAnnot::SymbolTable * get_symbol_table() const;
+
+private:
+  RAnnot::SymbolTable * m_st;
 };
 
 class InternalLexicalScope : public LexicalScope {

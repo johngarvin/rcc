@@ -19,7 +19,7 @@
 // File: SymbolTable.h
 //
 // A table mapping names (SEXPs of SYMSXP type) to VarInfos describing
-// them. There's a SymbolTable for each function.
+// them. There's a SymbolTable for each lexical scope.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -51,8 +51,7 @@ class VarInfo;
 
 // ----- class definition -----
 
-class SymbolTable 
-  : public AnnotationBase
+class SymbolTable
 {
 public:
   enum AllocT {
@@ -82,9 +81,6 @@ public:
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
   virtual SymbolTable * clone() { return new SymbolTable(*this); }
-
-  // getting the name causes this map to be created and registered
-  static PropertyHndlT handle();
 
   // -------------------------------------------------------
   // iterator, find/insert, etc 
@@ -131,6 +127,10 @@ public:
     { return mVars.find(x); }
   size_type count(const key_type& x) const
     { return mVars.count(x); }
+
+  // if value exists for the given key, return it. Otherwise, create a
+  // new value, map key to value, and return the value.
+  mapped_type find_or_create(const key_type& k);
   
   // -------------------------------------------------------
   // code generation

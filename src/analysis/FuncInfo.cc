@@ -59,9 +59,9 @@ typedef FuncInfo::const_mention_iterator const_mention_iterator;
 typedef FuncInfo::call_site_iterator call_site_iterator;
 typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
 
-FuncInfo::FuncInfo(FuncInfo* parent, SEXP name, SEXP defn) :
+FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP defn) :
   m_parent(parent),
-  m_first_name(name),
+  m_first_name_c(name_c),
   m_defn(defn),
   m_c_name(""),
   m_closure(""),
@@ -99,9 +99,9 @@ SEXP FuncInfo::get_defn() const
   return m_defn;
 }
 
-SEXP FuncInfo::get_first_name() const
+SEXP FuncInfo::get_first_name_c() const
 {
-  return m_first_name;
+  return m_first_name_c;
 }
 
 bool FuncInfo::get_has_var_args() const
@@ -182,7 +182,7 @@ bool FuncInfo::are_all_value() const
 const std::string& FuncInfo::get_c_name()
 {
   if (m_c_name == "") {
-    SEXP name_sym = get_first_name();
+    SEXP name_sym = CAR(get_first_name_c());
     if (name_sym == R_NilValue) {
       m_c_name = make_c_id("anon" + ParseInfo::global_fundefs->new_var_unp());
     } else {
@@ -354,7 +354,7 @@ std::ostream& FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
   dumpPtr(os, this);
-  dumpSEXP(os, m_first_name);
+  dumpSEXP(os, CAR(m_first_name_c));
   dumpVar(os, m_num_args);
   dumpVar(os, m_has_var_args);
   dumpVar(os, m_c_name);

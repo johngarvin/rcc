@@ -90,9 +90,9 @@ VarBinding::VarBinding()
     // If there's only one binding and it's in a fundef, then look up
     // the var in the symbol table and get a location for it.
     if (is_single() && (scope = dynamic_cast<FundefLexicalScope *>(*begin())) != 0) {
-      SymbolTable * st = getProperty(SymbolTable, scope->get_fundef());
+      SymbolTable * st = scope->get_symbol_table();
       VarInfo * vi = (*st)[name];
-      assert(vi);
+      assert(vi != 0);
       return vi->get_location(sb); // gets a location; creates it if necessary
     } else {
       return "";

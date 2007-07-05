@@ -22,7 +22,7 @@
 // (InternalLexicalScope) (e.g. the scope where R internal names are
 // bound) or created by a function definition (FundefLexicalScope). The
 // global scope, because it contains code, is represented as a
-// UserLexicalScope.
+// FundefLexicalScope.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -30,11 +30,31 @@
 
 #include <analysis/FuncInfo.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/SymbolTable.h>
 #include <analysis/Utils.h>
 
 #include "LexicalScope.h"
 
 using namespace RAnnot;
+
+//------------------------------------------------------------
+// LexicalScope
+//------------------------------------------------------------
+
+LexicalScope::LexicalScope() : m_st(new SymbolTable()) {
+}
+
+LexicalScope::~LexicalScope() {
+  delete m_st;
+}
+
+SymbolTable * LexicalScope::get_symbol_table() const {
+  return m_st;
+}
+
+//------------------------------------------------------------
+// InternalLexicalScope
+//------------------------------------------------------------
 
 InternalLexicalScope::InternalLexicalScope() {
 }
@@ -42,6 +62,10 @@ InternalLexicalScope::InternalLexicalScope() {
 const std::string InternalLexicalScope::get_name() const {
   return "<Internal scope>";
 }
+
+//------------------------------------------------------------
+// FundefLexicalScope
+//------------------------------------------------------------
 
 FundefLexicalScope::FundefLexicalScope(SEXP fundef) : m_fundef(fundef) {
 }
@@ -52,5 +76,5 @@ SEXP FundefLexicalScope::get_fundef() const {
 
 const std::string FundefLexicalScope::get_name() const {
   FuncInfo * fi = getProperty(FuncInfo, get_fundef());
-  return var_name(fi->get_first_name());
+  return var_name(CAR(fi->get_first_name_c()));
 }

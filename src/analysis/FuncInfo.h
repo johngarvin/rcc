@@ -95,8 +95,8 @@ public:
 
   SEXP get_defn() const;
 
-  /// first R name assigned
-  SEXP get_first_name() const;
+  /// cell containing first R name assigned
+  SEXP get_first_name_c() const;
 
   // has variable arguments
   bool get_has_var_args() const;
@@ -158,7 +158,7 @@ private:
   CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)
 
   SEXP m_defn;         // function definition
-  SEXP m_first_name;   // name of function at original definition 
+  SEXP m_first_name_c; // cell containing name of function at original definition 
   FuncInfo *m_parent;  // parent scope definition
 
   // argument description: types, strict?

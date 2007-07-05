@@ -35,6 +35,8 @@
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/Var.h>
+#include <analysis/VarAnnotationMap.h>
+#include <analysis/VarBinding.h>
 #include <analysis/VarInfo.h>
 #include <analysis/VarRefFactory.h>
 #include <analysis/Utils.h>
@@ -47,7 +49,7 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-VarInfo * find_st_entry(ProcHandle p, SEXP name);
+VarInfo * find_st_entry(FuncInfo * fi, Var * var);
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -332,7 +334,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   if (is_var(call_lhs(e))) {
     // TODO: redo Annotations so we can use getProperty without requiring the annotations to have a certain name
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(e));
-    VarInfo * vi = find_st_entry(make_proc_h(fi->get_defn()), call_lhs(e));
+    VarInfo * vi = find_st_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
     mre = new NamedRef(MemRefExpr::USE, sym);
     //    mre = new Deref(MemRefExpr::USE, mre);
@@ -403,17 +405,14 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(callee));
   // hack to deal with varargs (used in .rcc.assert.exp, etc.)
   // TODO: figure out what to do
-  if (n > fi->get_num_args()) {
+  if (n > fi->get_num_args() || TAG(fi->get_arg(n)) == R_DotsSymbol) {
     return SymHandle(0);
   }
-  VarInfo * vi = find_st_entry(callee, TAG(fi->get_arg(n)));
+  VarInfo * vi = find_st_entry(fi, getProperty(Var, fi->get_arg(n)));
   return make_sym_h(vi);
 }
 
 OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
-  SymbolTable * table = getProperty(SymbolTable, make_sexp(p));
-  VarInfo * vi = (*table)[make_sexp(s)];
-
   OA_ptr<OA::Location> loc;
   // NamedLoc constructor's second argument: true = local, false = global
   //
@@ -441,7 +440,7 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
   if (is_var(CAR(cell))) {
     // TODO: make this easier
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
-    VarInfo * vi = find_st_entry(make_proc_h(fi->get_defn()), CAR(cell));
+    VarInfo * vi = find_st_entry(fi, getProperty(Var, cell));
     OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(vi));
     //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
@@ -559,8 +558,8 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
   if (n >= fi->get_num_args()) {
     return SymHandle(0);
   } else {
-    SEXP name = TAG(fi->get_arg(n + 1));  // FuncInfo gives 1-based params
-    VarInfo * vi = find_st_entry(proc, name);
+    SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
+    VarInfo * vi = find_st_entry(fi, getProperty(Var, cell));
     return make_sym_h(vi);
   }
 }
@@ -636,9 +635,17 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
     // if FuncInfo already exists, then use it
     // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
-    return make_sym_h(find_st_entry(h, fi->get_first_name()));
+    SEXP name = fi->get_first_name_c();
+    if (VarAnnotationMap::get_instance()->is_valid(name)) {
+      return make_sym_h(find_st_entry(fi, getProperty(Var, name)));
+    } else {
+      // the global-scope procedure and anonymous functions won't have a Var annotation.
+      // In this case, return 0.
+      return SymHandle(0);
+    }
   } else {
-    return make_sym_h(find_st_entry(h, Rf_install("<procedure>")));
+    // FuncInfo not computed yet
+    rcc_error("getProcSymHandle called when FuncInfo not yet computed");
   }
 }
 
@@ -646,7 +653,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
 // different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(make_sexp(h)));
-  return make_sym_h(find_st_entry(make_proc_h(fi->get_defn()), make_sexp(h)));
+  return make_sym_h(find_st_entry(fi, getProperty(Var, make_sexp(h))));
 }
 
 //------------------------------------------------------------
@@ -960,8 +967,17 @@ void R_SingletonMemRefExprIterator::reset() {
 // given a name in a procedure, find the symbol table entry
 //------------------------------------------------------------
 
-VarInfo * find_st_entry(ProcHandle p, SEXP name) {
-  assert(is_var(name));
-  SymbolTable * table = getProperty(SymbolTable, make_sexp(p));
-  return (*table)[name];
+VarInfo * find_st_entry(FuncInfo * fi, Var * var) {
+  VarBinding * binding = getProperty(VarBinding, var->getMention_c());
+  if (binding->is_single()) {
+    SymbolTable * table = (*binding->begin())->get_symbol_table();
+    VarInfo * vi = (*table)[var->getName()];
+    assert(vi != 0);
+    return vi;
+  } else {
+    rcc_warn("find_st_entry: ambiguous bindings not yet implemented");
+    throw AnalysisException();
+    return 0;
+  }
 }
+
