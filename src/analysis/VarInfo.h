@@ -34,9 +34,10 @@
 
 #include <analysis/DefVar.h>
 
-// ----- forward declaration -----
+// ----- forward declarations -----
 
 class SubexpBuffer;
+class LexicalScope;
 
 namespace RAnnot {
 
@@ -54,7 +55,7 @@ public:
   typedef MySet_t::size_type                                size_type;
 
 public:
-  VarInfo();
+  VarInfo(const SEXP name, const LexicalScope * const scope);
   virtual ~VarInfo();
 
   // -------------------------------------------------------
@@ -85,13 +86,17 @@ public:
   /// get the location in the R environment
   std::string get_location(SubexpBuffer* sb);
 
+  const SEXP get_name() const;
+  const LexicalScope * const get_scope() const;
+
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  // data_type mType
+  const SEXP m_name;
+  const LexicalScope * const m_scope;
   MySet_t m_defs;
   std::string m_c_location;
   bool m_param;

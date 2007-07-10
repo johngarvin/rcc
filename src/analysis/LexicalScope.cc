@@ -52,6 +52,10 @@ SymbolTable * LexicalScope::get_symbol_table() const {
   return m_st;
 }
 
+void LexicalScope::dump(std::ostream & os) const {
+  os << get_name();
+}
+
 //------------------------------------------------------------
 // InternalLexicalScope
 //------------------------------------------------------------

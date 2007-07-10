@@ -44,6 +44,7 @@ public:
 
   RAnnot::SymbolTable * get_symbol_table() const;
 
+  void dump(std::ostream & os) const;
 private:
   RAnnot::SymbolTable * m_st;
 };

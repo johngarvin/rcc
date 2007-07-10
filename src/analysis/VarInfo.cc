@@ -26,7 +26,9 @@
 
 #include <support/DumpMacros.h>
 
+#include <analysis/Var.h>
 #include <analysis/DefVar.h>
+#include <analysis/LexicalScope.h>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
@@ -40,8 +42,8 @@ typedef VarInfo::iterator iterator;
 typedef VarInfo::const_iterator const_iterator;
 typedef VarInfo::size_type size_type;
 
-VarInfo::VarInfo()
-  : m_c_location(""), m_param(false)
+VarInfo::VarInfo(const SEXP name, const LexicalScope * const scope)
+  : m_name(name), m_scope(scope), m_c_location(""), m_param(false)
 {
 }
 
@@ -112,11 +114,20 @@ std::string VarInfo::get_location(SubexpBuffer * sb) {
   return m_c_location;
 }
 
+const SEXP VarInfo::get_name() const {
+  return m_name;
+}
+
+const LexicalScope * const VarInfo::get_scope() const {
+  return m_scope;
+}
 
 std::ostream&
 VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
+  dumpSEXP(os, m_name);
+  dumpObj(os, m_scope);
   const_iterator it;
   for(it = begin_defs(); it != end_defs(); ++it) {
     DefVar * def = *it;

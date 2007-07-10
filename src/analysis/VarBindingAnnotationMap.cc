@@ -221,9 +221,10 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
     // for each scope in the VarBinding
     VarBinding::const_iterator scope_iter;
     for(scope_iter = vb->begin(); scope_iter != vb->end(); ++scope_iter) {
+      LexicalScope * scope = *scope_iter;
       // in the scope's symbol table, associate the name with a VarInfo
-      SymbolTable * st = (*scope_iter)->get_symbol_table();
-      VarInfo * vi = st->find_or_create(name);
+      SymbolTable * st = scope->get_symbol_table();
+      VarInfo * vi = st->find_or_create(name, scope);
       // each VarInfo has a list of definitions. If this mention is a
       // def, add it to the appropriate VarInfo if it's not there
       // already.

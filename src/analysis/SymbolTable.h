@@ -43,6 +43,10 @@ typedef SEXP Name;  // should be of type SYMSXP
 // Symbol table
 // ---------------------------------------------------------------------------
 
+// ----- forward declarations outside RAnnot -----
+
+class LexicalScope;
+
 namespace RAnnot {
 
 // ----- forward declarations -----
@@ -130,7 +134,7 @@ public:
 
   // if value exists for the given key, return it. Otherwise, create a
   // new value, map key to value, and return the value.
-  mapped_type find_or_create(const key_type& k);
+  mapped_type find_or_create(const key_type& k, const LexicalScope * const scope);
   
   // -------------------------------------------------------
   // code generation

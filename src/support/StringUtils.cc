@@ -28,6 +28,8 @@
 #include <sstream>
 #include <map>
 
+#include <include/R/R_Defn.h>
+
 #include <ParseInfo.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
@@ -36,6 +38,21 @@
 #include "StringUtils.h"
 
 using namespace std;
+
+// Based on PrintExpression in R, but concatenates and returns the
+// strings instead of calling printf.
+string to_string(SEXP e) {
+  SEXP u;
+  int i, n;
+  string s;
+
+  u = Rf_deparse1(e, FALSE, SIMPLEDEPARSE);
+  n = LENGTH(u);
+  for (i = 0; i < n; i++) {
+    s += CHAR(STRING_ELT(u, i));
+  }
+  return s;
+}
 
 string make_symbol(SEXP e) {
   if (e == R_MissingArg) {

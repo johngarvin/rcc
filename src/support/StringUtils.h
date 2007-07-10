@@ -3,7 +3,7 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
-// Copyright (c) 2003-2006 Rice University
+// Copyright (c) 2003-2007 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 
 #include <include/R/R_RInternals.h>
 
+std::string to_string(SEXP e);
 std::string make_symbol(SEXP e);
 std::string make_type(int t);
 std::string indent(std::string str);

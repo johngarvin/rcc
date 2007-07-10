@@ -42,11 +42,11 @@ SymbolTable::~SymbolTable()
 {
 }
 
-SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k) {
+SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k, const LexicalScope * const scope) {
   mapped_type value;
   iterator entry = find(k);
   if (entry == end()) {
-    value = new VarInfo();
+    value = new VarInfo(k, scope);
     (*this)[k] = value;
   } else {
     value = entry->second;

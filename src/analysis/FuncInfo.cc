@@ -354,7 +354,8 @@ std::ostream& FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
   dumpPtr(os, this);
-  dumpSEXP(os, CAR(m_first_name_c));
+  SEXP name = CAR(m_first_name_c);
+  dumpSEXP(os, name);
   dumpVar(os, m_num_args);
   dumpVar(os, m_has_var_args);
   dumpVar(os, m_c_name);

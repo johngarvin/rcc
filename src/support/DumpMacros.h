@@ -29,6 +29,7 @@
 
 #include <ostream>
 
+#include <support/StringUtils.h>
 
 //************************* Macro Definitions *******************************
 
@@ -51,13 +52,12 @@
 
 #define dumpPtr(os, ptr) \
   dumpVarStart(os, ptr); \
-  os << (void *) ptr; \
+  os << (void *) ptr;    \
   dumpVarEnd(os, ptr)
 
 #define dumpSEXP(os, sexp) \
-  dumpVarStart(os, sexp); \
-  os << "(WARNING: Rf_PrintValue does not dump in target ostream)" << std::endl;	\
-  Rf_PrintValue(sexp);	  \
+  dumpVarStart(os, sexp);  \
+  os << to_string(sexp) << " ";   \
   dumpVarEnd(os, sexp)
 
 #define dumpObj(os, obj) \

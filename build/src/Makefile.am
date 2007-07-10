@@ -80,8 +80,6 @@ rcc_bin_SOURCES =				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
   NameStmtsMap.h                                \
-  Phi.cc                                        \
-  Phi.h                                         \
   PropertyHndl.h				\
   PropertySet.cc				\
   PropertySet.h					\

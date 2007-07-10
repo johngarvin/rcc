@@ -31,6 +31,7 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/ExprTreeBuilder.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/LexicalScope.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SymbolTable.h>
@@ -42,6 +43,7 @@
 #include <analysis/Utils.h>
 
 #include <support/RccError.h>
+#include <support/StringUtils.h>
 
 #include <analysis/IRInterface.h>
 
@@ -664,45 +666,50 @@ bool R_IRInterface::isParam(OA::SymHandle h) {
   return make_var_info(h)->is_param();
 }
 
+//------------------------------------------------------------
+// Dumping handles as strings for debugging
+//------------------------------------------------------------
 
-// TODO: fill these in
-//
-// We need some way to convince the R system to give us a string for
-// output instead of just spitting it out.
 std::string R_IRInterface::toString(ProcHandle h) {
-  return "";
+  if (h == ProcHandle(0)) {
+    return "ProcHandle(0)";
+  } else {
+    FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+    return var_name(CAR(fi->get_first_name_c()));
+  }
 }
 
 std::string R_IRInterface::toString(StmtHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(ExprHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(OpHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(MemRefHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(SymHandle h) {
-  return "";
+  VarInfo * vi = make_var_info(h);
+  return to_string(vi->get_name()) + "@" + vi->get_scope()->get_name();
 }
 
 std::string R_IRInterface::toString(ConstSymHandle h) {
-  return "";
+  return "*ConstSymHandle*";
 }
 
 std::string R_IRInterface::toString(ConstValHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 std::string R_IRInterface::toString(CallHandle h) {
-  return "";
+  return to_string(make_sexp(h));
 }
 
 //--------------------------------------------------------------------
