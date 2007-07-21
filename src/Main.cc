@@ -214,8 +214,7 @@ int main(int argc, char *argv[]) {
       // call_graph->output(*an->get_interface());
       
       //   output graph in DOT form
-      OA::OA_ptr<OA::OutputBuilder> dot_builder;
-      dot_builder = new OA::OutputBuilderDOT;
+      OA::OA_ptr<OA::OutputBuilder> dot_builder; dot_builder = new OA::OutputBuilderDOT;
       call_graph->configOutput(dot_builder);
       call_graph->output(*an->get_interface());
       

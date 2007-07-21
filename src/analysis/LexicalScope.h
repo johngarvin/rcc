@@ -50,9 +50,15 @@ private:
 };
 
 class InternalLexicalScope : public LexicalScope {
-public:
+  // singleton pattern
+private:
   explicit InternalLexicalScope();
+public:
+  static InternalLexicalScope * get_instance();
+
   const std::string get_name() const;
+private:
+  static InternalLexicalScope * s_instance;
 };
 
 class FundefLexicalScope : public LexicalScope {

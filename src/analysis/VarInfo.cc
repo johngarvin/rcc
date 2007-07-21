@@ -107,6 +107,10 @@ bool VarInfo::is_param() {
   return m_param;
 }
 
+bool VarInfo::is_internal() {
+  return (m_scope == InternalLexicalScope::get_instance());
+}
+
 std::string VarInfo::get_location(SubexpBuffer * sb) {
   if (m_c_location.empty()) {
     m_c_location = sb->new_location();

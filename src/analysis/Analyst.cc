@@ -70,7 +70,6 @@ R_Analyst::R_Analyst(SEXP _program)
   : m_program(_program),
     m_interface(),
     m_scope_tree_root(0),
-    m_library_scope(0),
     m_global_scope(0)
   {}
 
@@ -81,7 +80,6 @@ void R_Analyst::perform_analysis() {
   m_interface = new R_IRInterface();
   m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
   m_global_scope = m_scope_tree_root->get_scope();
-  m_library_scope = new InternalLexicalScope();
   
   if (ParseInfo::allow_oo()           ||
       ParseInfo::allow_envir_manip())
@@ -107,7 +105,7 @@ FuncInfo * R_Analyst::get_scope_tree_root() {
 }
 
 LexicalScope * R_Analyst::get_library_scope() {
-  return m_library_scope;
+  return InternalLexicalScope::get_instance();
 }
 
 LexicalScope * R_Analyst::get_global_scope() {

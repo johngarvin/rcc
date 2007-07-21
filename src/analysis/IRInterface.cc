@@ -24,9 +24,16 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
+#include <OpenAnalysis/SideEffect/ManagerSideEffectStandard.hpp>
+#include <OpenAnalysis/SideEffect/InterSideEffectInterface.hpp>
+#include <OpenAnalysis/SideEffect/InterSideEffectStandard.hpp>
+#include <OpenAnalysis/SideEffect/SideEffectStandard.hpp>
+#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
+#include <OpenAnalysis/Alias/Interface.hpp>
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Analyst.h>
 #include <analysis/DefVar.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/ExprTreeBuilder.h>
@@ -505,12 +512,40 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 /// Can't indicate subprocedure has sideeffects on parameters because
 /// don't have a way to get mapping of formal parameters to actuals
 /// in caller.
-// Right now, using the default conservative approximation from InterSideEffectIRInterfaceDefault
-//OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle, SymHandle) {
-//  // TODO
-//  rcc_warn("getSideEffect: call graph interface not yet implemented");
-//  throw AnalysisException();
-//}
+OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee) {
+  //  std::cout << "getSideEffect called with" << std::endl <<
+  //    "ProcHandle = " << toString(proc) << std::endl <<
+  //    "SymHandle = " << toString(sym) << std::endl;
+  OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
+  OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
+  OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
+  VarInfo * vi = make_var_info(callee);
+  if (vi->is_internal()) {
+    // assuming internal procedures have no effect on any names that we care about
+    OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
+    retval->emptyLMOD();
+    retval->emptyMOD();
+    retval->emptyLDEF();
+    retval->emptyDEF();
+    retval->emptyLUSE();
+    retval->emptyUSE();
+    retval->emptyLREF();
+    retval->emptyREF();
+    return retval;
+  } else {
+    ProcHandle callee_proc = getProcHandle(callee);
+    OA_ptr<ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
+    SideEffect::ManagerSideEffectStandard se_manager(se_this);
+    Alias::ManagerInterAliasMapBasic alias_man(alias_this);
+    OA_ptr<Alias::InterAliasInterface> inter_alias; inter_alias = alias_man.performAnalysis(proc_iter);
+    OA_ptr<Alias::Interface> alias; alias = inter_alias->getAliasResults(callee_proc);
+    OA_ptr<SideEffect::InterSideEffectInterface> inter_se;
+    inter_se = new SideEffect::InterSideEffectStandard();  // create empty to indicate unknown information at this time
+    return se_manager.performAnalysis(callee_proc, alias, inter_se);
+  }
+
+  // return InterSideEffectIRInterfaceDefault::getSideEffect(proc, sym);
+}
 
 //------------------------------------------------------------
 // Alias information
@@ -568,18 +603,22 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
 
 /// Given the callee symbol returns the callee proc handle
 ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
-  // TODO
-  rcc_warn("getProcHandle: Alias interface not yet implemented");
-  throw AnalysisException();
-  return ProcHandle(0);
+  VarInfo * vi = make_var_info(sym);
+  VarInfo::const_iterator iter = vi->begin_defs();
+  if (iter == vi->end_defs()) {
+    rcc_error("getProcHandle: symbol has no definitions");
+  }
+  ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
+  if (++iter != vi->end_defs()) {  // if more than one def
+    rcc_warn("getProcHandle: procedure with more than one definition not yet handled");
+    throw AnalysisException();
+  }
+  return retval;
 }
 
 /// Given a procedure return associated SymHandle
 SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
-  // TODO
-  rcc_warn("getSymHandle: Alias interface not yet implemented");
-  throw AnalysisException();
-  return SymHandle(0);
+  return getProcSymHandle(h);
 }
 
 //--------------------------------------------------------
@@ -602,19 +641,6 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   return dummy;
 }
 
-/// from IRHandlesIRInterface
-void R_IRInterface::dump(StmtHandle h, ostream &os) {
-  Rf_PrintValue(CAR(make_sexp(h)));
-  ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(h));
-  if (annot) {
-    annot->dump(os);
-  }
-}
-
-/// from IRHandlesIRInterface
-void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
-  Rf_PrintValue(make_sexp(h));
-}
 
 //--------------------------------------------------------
 // Symbol Handles
@@ -651,8 +677,6 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   }
 }
 
-// TODO: symbols in different scopes should be called
-// different, even if they have the same name
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(make_sexp(h)));
   return make_sym_h(find_st_entry(fi, getProperty(Var, make_sexp(h))));
@@ -667,8 +691,22 @@ bool R_IRInterface::isParam(OA::SymHandle h) {
 }
 
 //------------------------------------------------------------
-// Dumping handles as strings for debugging
+// Dump routines for debugging
 //------------------------------------------------------------
+
+/// from IRHandlesIRInterface
+void R_IRInterface::dump(StmtHandle h, ostream &os) {
+  os << toString(h);
+  ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(h));
+  if (annot) {
+    annot->dump(os);
+  }
+}
+
+/// from IRHandlesIRInterface
+void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
+  stream << toString(h);
+}
 
 std::string R_IRInterface::toString(ProcHandle h) {
   if (h == ProcHandle(0)) {

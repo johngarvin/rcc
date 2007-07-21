@@ -63,6 +63,15 @@ void LexicalScope::dump(std::ostream & os) const {
 InternalLexicalScope::InternalLexicalScope() {
 }
 
+InternalLexicalScope * InternalLexicalScope::s_instance = 0;
+
+InternalLexicalScope * InternalLexicalScope::get_instance() {
+  if (s_instance == 0) {
+    s_instance = new InternalLexicalScope();
+  }
+  return s_instance;
+}
+
 const std::string InternalLexicalScope::get_name() const {
   return "<Internal scope>";
 }

@@ -254,8 +254,7 @@ public:
   /// Can't indicate subprocedure has sideeffects on parameters because
   /// don't have a way to get mapping of formal parameters to actuals
   /// in caller.
-  // for now, using conservative approximation in InterSideEffectIRInterfaceDefault
-  //  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
+  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
 
   //------------------------------------------------------------------
   // Alias information

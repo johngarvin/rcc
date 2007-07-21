@@ -82,6 +82,7 @@ public:
   void clear_defs();
 
   bool is_param();
+  bool is_internal();
 
   /// get the location in the R environment
   std::string get_location(SubexpBuffer* sb);
