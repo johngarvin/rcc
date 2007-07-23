@@ -70,4 +70,16 @@ private:
   SEXP m_fundef;
 };
 
+class UnboundLexicalScope : public LexicalScope {
+  // singleton pattern
+private:
+  explicit UnboundLexicalScope();
+public:
+  static UnboundLexicalScope * get_instance();
+
+  const std::string get_name() const;
+private:
+  static UnboundLexicalScope * s_instance;
+};
+
 #endif

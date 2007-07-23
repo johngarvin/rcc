@@ -463,9 +463,9 @@ private:
   RAnnot::FuncInfoIterator * m_fii;
 };
 
-class R_CallMemRefHandleIterator : public OA::MemRefHandleIterator {
+class R_ExpMemRefHandleIterator : public OA::MemRefHandleIterator {
 public:
-  R_CallMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
+  R_ExpMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
   OA::MemRefHandle current() const;
   bool isValid() const;
   void operator++();
@@ -473,7 +473,7 @@ public:
   
 private:
   RAnnot::ExpressionInfo * m_stmt;
-  RAnnot::ExpressionInfo::const_call_site_iterator m_iter;
+  RAnnot::ExpressionInfo::const_var_iterator m_iter;
 };
 
 class R_SingletonMemRefExprIterator : public virtual OA::MemRefExprIterator,

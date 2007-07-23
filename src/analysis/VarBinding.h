@@ -74,7 +74,7 @@ public:
   /// Is this mention an internal R name not redefined?
   bool is_internal();
 
-  /// Is this mention bound in no scopes? (may be an internal name or just plain unbound)
+  /// Is this mention bound in no scopes?
   bool is_unbound();
 
   /// get the location in the R environment (empty string if no unique location)

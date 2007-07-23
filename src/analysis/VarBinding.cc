@@ -82,7 +82,7 @@ VarBinding::VarBinding()
   }
 
   bool VarBinding::is_unbound() {
-    return (begin() == end());
+    return (is_single() && *begin() == UnboundLexicalScope::get_instance());
   }
 
   std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {

@@ -91,3 +91,23 @@ const std::string FundefLexicalScope::get_name() const {
   FuncInfo * fi = getProperty(FuncInfo, get_fundef());
   return var_name(CAR(fi->get_first_name_c()));
 }
+
+//------------------------------------------------------------
+// UnboundLexicalScope
+//------------------------------------------------------------
+
+UnboundLexicalScope::UnboundLexicalScope() {
+}
+
+UnboundLexicalScope * UnboundLexicalScope::s_instance = 0;
+
+UnboundLexicalScope * UnboundLexicalScope::get_instance() {
+  if (s_instance == 0) {
+    s_instance = new UnboundLexicalScope();
+  }
+  return s_instance;
+}
+
+const std::string UnboundLexicalScope::get_name() const {
+  return "<Unbound>";
+}

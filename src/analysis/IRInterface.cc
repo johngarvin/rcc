@@ -556,7 +556,8 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle c
 /// over can be arbitrary.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
   ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
-  OA_ptr<MemRefHandleIterator> iter; iter = new R_CallMemRefHandleIterator(ei);
+  // TODO: need to grab all memrefs, not just call sites
+  OA_ptr<MemRefHandleIterator> iter; iter = new R_ExpMemRefHandleIterator(ei);
   return iter;
 }
 
@@ -958,28 +959,28 @@ void R_ProcHandleIterator::reset() {
 }
 
 //------------------------------------------------------------
-// R_CallMemRefHandleIterator
+// R_ExpMemRefHandleIterator
 //------------------------------------------------------------
 
-R_CallMemRefHandleIterator::R_CallMemRefHandleIterator(ExpressionInfo * stmt)
-  : m_stmt(stmt), m_iter(stmt->begin_call_sites())
+R_ExpMemRefHandleIterator::R_ExpMemRefHandleIterator(ExpressionInfo * stmt)
+  : m_stmt(stmt), m_iter(stmt->begin_vars())
 {
 }
 
-MemRefHandle R_CallMemRefHandleIterator::current() const {
-  return make_mem_ref_h(*m_iter);
+MemRefHandle R_ExpMemRefHandleIterator::current() const {
+  return make_mem_ref_h((*m_iter)->getMention_c());
 }
 
-bool R_CallMemRefHandleIterator::isValid() const {
-  return (m_iter != m_stmt->end_call_sites());
+bool R_ExpMemRefHandleIterator::isValid() const {
+  return (m_iter != m_stmt->end_vars());
 }
 
-void R_CallMemRefHandleIterator::operator++() {
+void R_ExpMemRefHandleIterator::operator++() {
   ++m_iter;
 }
 
-void R_CallMemRefHandleIterator::reset() {
-  m_iter = m_stmt->begin_call_sites();
+void R_ExpMemRefHandleIterator::reset() {
+  m_iter = m_stmt->begin_vars();
 }
 
 //------------------------------------------------------------
@@ -1014,13 +1015,19 @@ void R_SingletonMemRefExprIterator::reset() {
 
 VarInfo * find_st_entry(FuncInfo * fi, Var * var) {
   VarBinding * binding = getProperty(VarBinding, var->getMention_c());
-  if (binding->is_single()) {
+  if (binding->is_unbound()) {
+    SymbolTable * table = UnboundLexicalScope::get_instance()->get_symbol_table();
+    VarInfo * vi = (*table)[var->getName()];
+    assert(vi != 0);
+    return vi;
+  } else if (binding->is_single()) {
     SymbolTable * table = (*binding->begin())->get_symbol_table();
     VarInfo * vi = (*table)[var->getName()];
     assert(vi != 0);
     return vi;
   } else {
     rcc_warn("find_st_entry: ambiguous bindings not yet implemented");
+    binding->dump(std::cerr);
     throw AnalysisException();
     return 0;
   }

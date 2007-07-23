@@ -195,13 +195,18 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	//
 	// TODO: in the latest version of R, this is no longer the
 	// case.
-	if (v->getUseDefType() == Var::Var_DEF) {
+	if (v->getUseDefType() == Var::Var_DEF && !scopes->is_global()) {
 	  scopes->insert(R_Analyst::get_instance()->get_global_scope());
 	}
-	
+
+	// record unbound names
+	if (scopes->begin() == scopes->end()) {
+	  scopes->insert(UnboundLexicalScope::get_instance());
+	}
+
 	break;
       default:
-	rcc_error("Unknown scope type encountered");
+	rcc_error("Unknown locality type encountered");
 	break;
       }
       // whether global or not...
