@@ -2,10 +2,22 @@ source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
 real <- 0
 raw <- 0
+models <- 0
+burnin <- 0
+final <- 0
+raw_params <- 0
+real_params <- 0
+drift <- 0
+num_params <- 0
+inputs <- 0
+errors <- 0
+params <- 0
+param_hits <- 0
+accepts <- 0
 
 set.seed(3)  # initialize RNG for reproducible results
 
-TWOPI <<- 2*pi
+TWOPI <- 2*pi
 
 dist <- function (x1,y1,x2,y2) {
   sqrt((x2-x1)^2+(y2-y1)^2)

@@ -1,5 +1,7 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
+n <- 0
+
 foo <- function() {
   n <<- 10
 }

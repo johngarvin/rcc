@@ -117,6 +117,8 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
 	return Expression(h, DEPENDENT, VISIBLE, "");
       }
+    } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {
+      rcc_error("Attempted to use an unbound variable");
     } else {
       rcc_error("Unknown derived type of LexicalScope found");
     }

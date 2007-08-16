@@ -342,8 +342,8 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 /// in a procedure or a loop. Does not descend into compound statements.
 class R_RegionStmtIterator : public OA::IRRegionStmtIterator {
 public:
-  R_RegionStmtIterator(OA::StmtHandle stmt) { build_stmt_list(stmt); }  // stmt_iter_ptr = new ...
-  virtual ~R_RegionStmtIterator() { delete stmt_iter_ptr; };
+  R_RegionStmtIterator(OA::StmtHandle stmt);
+  virtual ~R_RegionStmtIterator();
   
   OA::StmtHandle current() const;
   bool isValid() const;
@@ -353,6 +353,24 @@ public:
 private:
   R_SEXPIterator * stmt_iter_ptr;
   void build_stmt_list(OA::StmtHandle stmt);
+};
+
+// Enumerate statements; descends into compound statements.
+class R_DescendingStmtIterator : public OA::IRStmtIterator {
+public:
+  R_DescendingStmtIterator(OA::StmtHandle stmt);
+  virtual ~R_DescendingStmtIterator();
+
+  OA::StmtHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  void build_stmt_list(SEXP exp_c);
+
+  std::list<OA::StmtHandle>::const_iterator m_iter;
+  std::list<OA::StmtHandle> m_stmts;
 };
 
 /// Special-case version of R_RegionStmtListIterator: iterates through

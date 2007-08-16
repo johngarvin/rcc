@@ -325,7 +325,10 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 /// Given a subprogram return an IRStmtIterator for the entire
 /// subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
-  return procBody(h);
+  // unlike procBody, here we want an iterator that descends into compound statements.
+  OA_ptr<IRRegionStmtIterator> ptr;
+  ptr = new R_DescendingStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
+  return ptr;
 }
 
 /// Return an iterator over all of the callsites in a given stmt
@@ -513,36 +516,22 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 /// don't have a way to get mapping of formal parameters to actuals
 /// in caller.
 OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee) {
-  //  std::cout << "getSideEffect called with" << std::endl <<
-  //    "ProcHandle = " << toString(proc) << std::endl <<
-  //    "SymHandle = " << toString(sym) << std::endl;
   OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
   OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
   OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
   VarInfo * vi = make_var_info(callee);
-  if (vi->is_internal()) {
-    // assuming internal procedures have no effect on any names that we care about
-    OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
-    retval->emptyLMOD();
-    retval->emptyMOD();
-    retval->emptyLDEF();
-    retval->emptyDEF();
-    retval->emptyLUSE();
-    retval->emptyUSE();
-    retval->emptyLREF();
-    retval->emptyREF();
-    return retval;
-  } else {
-    ProcHandle callee_proc = getProcHandle(callee);
-    OA_ptr<ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
-    SideEffect::ManagerSideEffectStandard se_manager(se_this);
-    Alias::ManagerInterAliasMapBasic alias_man(alias_this);
-    OA_ptr<Alias::InterAliasInterface> inter_alias; inter_alias = alias_man.performAnalysis(proc_iter);
-    OA_ptr<Alias::Interface> alias; alias = inter_alias->getAliasResults(callee_proc);
-    OA_ptr<SideEffect::InterSideEffectInterface> inter_se;
-    inter_se = new SideEffect::InterSideEffectStandard();  // create empty to indicate unknown information at this time
-    return se_manager.performAnalysis(callee_proc, alias, inter_se);
-  }
+  assert (vi->is_internal());
+  // assuming internal procedures have no effect on any names that we care about
+  OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
+  retval->emptyLMOD();
+  retval->emptyMOD();
+  retval->emptyLDEF();
+  retval->emptyDEF();
+  retval->emptyLUSE();
+  retval->emptyUSE();
+  retval->emptyLREF();
+  retval->emptyREF();
+  return retval;
 
   // return InterSideEffectIRInterfaceDefault::getSideEffect(proc, sym);
 }
@@ -556,7 +545,6 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle c
 /// over can be arbitrary.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
   ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
-  // TODO: need to grab all memrefs, not just call sites
   OA_ptr<MemRefHandleIterator> iter; iter = new R_ExpMemRefHandleIterator(ei);
   return iter;
 }
@@ -753,9 +741,17 @@ std::string R_IRInterface::toString(CallHandle h) {
 
 //--------------------------------------------------------------------
 // R_RegionStmtIterator
+//
+// Statement iterator that does not descend into compound statements.
 //--------------------------------------------------------------------
 
-// TODO: rename
+R_RegionStmtIterator::R_RegionStmtIterator(OA::StmtHandle stmt) {
+  build_stmt_list(stmt); // allocates memory for stmt_iter_ptr
+}
+
+R_RegionStmtIterator::~R_RegionStmtIterator() {
+  delete stmt_iter_ptr;
+}
 
 StmtHandle R_RegionStmtIterator::current() const {
   return make_stmt_h(stmt_iter_ptr->current());
@@ -795,6 +791,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       // that doesn't take a cell.
       stmt_iter_ptr = new R_ListIterator(CDR(exp));
     } else if (is_loop(exp)) {
+      // TODO: loops are not considered COMPOUND. I don't think this case can happen.
       stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     } else {
       // We have a non-loop compound statement with a body. (body_c is
@@ -818,6 +815,72 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
   default:
     stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     break;
+  }
+}
+
+//------------------------------------------------------------
+// R_DescendingStmtIterator
+//------------------------------------------------------------
+
+R_DescendingStmtIterator::R_DescendingStmtIterator(OA::StmtHandle stmt) {
+  build_stmt_list(make_sexp(stmt));
+  m_iter = m_stmts.begin();
+}
+
+R_DescendingStmtIterator::~R_DescendingStmtIterator() {
+}
+
+StmtHandle R_DescendingStmtIterator::current() const {
+  return *m_iter;
+}
+
+bool R_DescendingStmtIterator::isValid() const {
+  return (m_iter != m_stmts.end());
+}
+
+void R_DescendingStmtIterator::operator++() {
+  ++m_iter;
+}
+
+void R_DescendingStmtIterator::reset() {
+  m_iter = m_stmts.begin();
+}
+
+void R_DescendingStmtIterator::build_stmt_list(SEXP exp_c) {
+  assert(exp_c != 0);
+  SEXP exp = CAR(exp_c);
+  switch(getSexpCfgType(exp)) {
+  case CFG::COMPOUND:
+    if (is_curly_list(exp)) {
+      for (SEXP e = curly_body(exp); e != R_NilValue; e = CDR(e)) {
+	build_stmt_list(e);
+      }
+    } else if (is_fundef(exp)) {
+      // no-op
+      // (nested fundefs are NOT counted as part of the parent)
+    } else if (is_paren_exp(exp)) {
+      build_stmt_list(paren_body_c(exp));
+    }
+    break;
+  case CFG::LOOP:
+    if (is_for(exp)) {
+      build_stmt_list(for_range_c(exp));
+      build_stmt_list(for_body_c(exp));
+    } else if (is_while(exp)) {
+      build_stmt_list(while_cond_c(exp));
+      build_stmt_list(while_body_c(exp));
+    } else if (is_repeat(exp)) {
+      build_stmt_list(repeat_body_c(exp));
+    }
+    break;
+  case CFG::STRUCT_TWOWAY_CONDITIONAL:  // a.k.a. "if"
+    build_stmt_list(if_truebody_c(exp));
+    build_stmt_list(if_falsebody_c(exp));
+    break;
+  default:  // including CFG::SIMPLE
+    if (exp != R_NilValue) {
+      m_stmts.push_back(make_stmt_h(exp_c));
+    }
   }
 }
 
