@@ -244,6 +244,17 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
 
 /// Is the given variable defined as local in the given scope?
 static bool defined_local_in_scope(Var * v, FuncInfo * s) {
+
+  // look at formal args
+  for(int i = 1; i <= s->get_num_args(); i++) { // args are indexed from 1
+    Var * formal = getProperty(Var, s->get_arg(i));
+    // all formal args are local and def
+    if (formal->getName() == v->getName()) {
+      return true;
+    }
+  }
+
+  // look at mentions
   FuncInfo::mention_iterator mi;
   for(mi = s->begin_mentions(); mi != s->end_mentions(); ++mi) {
     Var * m = *mi;

@@ -40,7 +40,7 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP cell) {
   } else if (is_var(e)) {
     // use the cell to create the handle
     // TODO: is MemRefNode/MemRefHandle right?
-    // A ConstSymHandle doesn't belong here; that represents a constant bound to a symbol
+    // Note: a ConstSymHandle doesn't belong here; that represents a constant bound to a symbol
     OA_ptr<ExprTree::MemRefNode> n; n = new ExprTree::MemRefNode(make_mem_ref_h(e));
     tree->addNode(n);
   } else if (is_assign(e)) {
@@ -75,8 +75,14 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP cell) {
     // TODO
     throw AnalysisException();
   } else if (is_call(e)) {  // regular function call
-    // TODO
-    throw AnalysisException();
+    OA_ptr<ExprTree::CallNode> call; call = new ExprTree::CallNode(make_call_h(e));
+    tree->addNode(call);
+    OA_ptr<ExprTree> lhs = build(e);  // e = cell containing lhs
+    tree->copyAndConnectSubTree(call, lhs);
+    for(SEXP arg = call_args(e); arg != R_NilValue; arg = CDR(arg)) {
+      OA_ptr<ExprTree> arg_tree = build(arg);
+      tree->copyAndConnectSubTree(call, arg_tree);
+    }
   } else {
     assert(0);
   }

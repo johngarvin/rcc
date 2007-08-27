@@ -215,6 +215,7 @@ AC_CONFIG_FILES([Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
+		 tests/real-world/Makefile
 		 tools/Makefile
 		 tools/rcc
 		 tools/rcc-cc
@@ -234,6 +235,12 @@ AC_CONFIG_FILES([tests/regression/run-compiled],
 
 AC_CONFIG_FILES([tests/regression/run-interpreted],
                 [chmod +x tests/regression/run-interpreted])
+
+AC_CONFIG_FILES([tests/real-world/run-compiled],
+                [chmod +x tests/real-world/run-compiled])
+
+AC_CONFIG_FILES([tests/real-world/run-interpreted],
+                [chmod +x tests/real-world/run-interpreted])
 
 AC_CONFIG_FILES([tests/performance/run-test],
                 [chmod +x tests/performance/run-test])
