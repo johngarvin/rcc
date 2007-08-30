@@ -9,6 +9,8 @@ check_SCRIPTS = run-test
 check:
 	./run-test $(MYTESTFILES)
 
+run-test: run-test.in
+
 MOSTLYCLEANFILES = $(subst .r,,$(MYTESTFILES)) $(subst .r,.c,$(MYTESTFILES))
 
 .r.c: ../../src/rcc

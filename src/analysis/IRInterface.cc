@@ -351,8 +351,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
     mre = new NamedRef(MemRefExpr::USE, sym);
     //    mre = new Deref(MemRefExpr::USE, mre);
   } else {
-    rcc_warn("getCallMemRefExpr: Call graph interface for calls with non-symbol LHS not yet implemented");
-    throw AnalysisException();
+    mre = new UnknownRef(MemRefExpr::USE);
   }
   return mre;
 }
@@ -457,9 +456,8 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
     //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
   } else {
-    // TODO
-    rcc_warn("getMemRefExprIterator: call graph interface not yet implemented for non-symbol callees");
-    throw AnalysisException();
+    OA_ptr<MemRefExpr> mre = mre = new UnknownRef(MemRefExpr::USE);
+    iter = new R_SingletonMemRefExprIterator(mre);
   }
   return iter;
 }
