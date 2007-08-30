@@ -38,6 +38,7 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/ExprTreeBuilder.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/HellProcedure.h>
 #include <analysis/LexicalScope.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
@@ -67,6 +68,7 @@ VarInfo * find_st_entry(FuncInfo * fi, Var * var);
 /// Given a ProcHandle, return an IRRegionStmtIterator for the
 /// procedure.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
+  assert(h != HellProcedure::get_instance());
   OA_ptr<IRRegionStmtIterator> ptr;
   ptr = new R_RegionStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
   return ptr;
@@ -325,6 +327,7 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
 /// Given a subprogram return an IRStmtIterator for the entire
 /// subprogram
 OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
+  assert(h != HellProcedure::get_instance());
   // unlike procBody, here we want an iterator that descends into compound statements.
   OA_ptr<IRRegionStmtIterator> ptr;
   ptr = new R_DescendingStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
@@ -398,6 +401,7 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
 					    ProcHandle callee, ExprHandle param)
 {
   // TODO: handle named arguments
+  // TODO: handle Hell procedure
 
   // param is the nth actual arg of call: find n
   SEXP actual = make_sexp(param);
@@ -514,6 +518,7 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 /// don't have a way to get mapping of formal parameters to actuals
 /// in caller.
 OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee) {
+  assert(caller != HellProcedure::get_instance());
   OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
   OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
   OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
@@ -578,6 +583,10 @@ OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIt
 /// Should return SymHandle(0) if there is no formal parameter for 
 /// given num
 SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
+  if (proc == HellProcedure::get_instance()) {
+    // TODO: is this the right thing to do?
+    return SymHandle(0);
+  }
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(proc));
   if (n >= fi->get_num_args()) {
     return SymHandle(0);
@@ -593,12 +602,12 @@ ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   VarInfo * vi = make_var_info(sym);
   VarInfo::const_iterator iter = vi->begin_defs();
   if (iter == vi->end_defs()) {
-    rcc_error("getProcHandle: symbol has no definitions");
+    rcc_warn("getProcHandle: procedure symbol has no definitions");
+    return HellProcedure::get_instance();
   }
   ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
   if (++iter != vi->end_defs()) {  // if more than one def
-    rcc_warn("getProcHandle: procedure with more than one definition not yet handled");
-    throw AnalysisException();
+    return HellProcedure::get_instance();
   }
   return retval;
 }
@@ -640,9 +649,8 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 /// to have different "names" even if they happen to be bound to the
 /// same symbol. For now we're just giving the first name assigned.
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
-  // TODO: remove the zero check; shouldn't be zero
-  if (h == ProcHandle(0)) {
-    rcc_error("getProcSymHandle received null procedure: possible bug in OA");
+  if (h == HellProcedure::get_instance()) {
+    return SymHandle(0);
   }
   // TODO: make it easier to do this
   RProp::PropertySet::const_iterator iter = analysisResults.find(FuncInfo::handle());
@@ -698,6 +706,8 @@ void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
 std::string R_IRInterface::toString(ProcHandle h) {
   if (h == ProcHandle(0)) {
     return "ProcHandle(0)";
+  } else if (h == HellProcedure::get_instance()) {
+    return "*Hell Procedure*";
   } else {
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
     return var_name(CAR(fi->get_first_name_c()));

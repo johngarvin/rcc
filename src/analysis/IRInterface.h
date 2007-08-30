@@ -329,6 +329,7 @@ public:
   std::string toString(OA::SymHandle h);
   std::string toString(OA::ConstSymHandle h);
   std::string toString(OA::ConstValHandle h);
+
 };
 
 /// Get the statement type of an R expression.

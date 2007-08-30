@@ -61,6 +61,8 @@ rcc_bin_SOURCES =				\
   FuncInfoAnnotationMap.h                       \
   HandleInterface.cc				\
   HandleInterface.h				\
+  HellProcedure.cc                              \
+  HellProcedure.h                               \
   IRInterface.cc				\
   IRInterface.h					\
   LexicalScope.cc                               \
