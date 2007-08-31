@@ -374,7 +374,7 @@ OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
     }
 
     ExprHandle current() const {
-      return make_expr_h(m_list_iter.current());
+      return make_expr_h(CAR(m_list_iter.current()));
     }
 
     bool isValid() const {
@@ -409,7 +409,7 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   int n = 1;
   R_ListIterator li(args);
   for( ; li.isValid(); ++li) {
-    if (li.current() == actual) break;
+    if (CAR(li.current()) == actual) break;
     n++;
   }
   if (!li.isValid()) {
@@ -460,6 +460,7 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
     //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
   } else {
+    rcc_warn("getMemRefExprIterator: non-var " + to_string(CAR(cell)));
     OA_ptr<MemRefExpr> mre = mre = new UnknownRef(MemRefExpr::USE);
     iter = new R_SingletonMemRefExprIterator(mre);
   }
@@ -517,6 +518,8 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 /// Can't indicate subprocedure has sideeffects on parameters because
 /// don't have a way to get mapping of formal parameters to actuals
 /// in caller.
+///
+/// Note: ManagerInterSideEffectStandard only uses this method for undefined callees.
 OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee) {
   assert(caller != HellProcedure::get_instance());
   OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
