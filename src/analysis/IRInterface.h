@@ -427,6 +427,7 @@ private:
 // R_IRCallsiteIterator
 //
 // Enumerate all the procedure calls in a statement.
+// This includes calls to internal R procedures.
 //--------------------------------------------------------------------
 
 class R_IRCallsiteIterator : public OA::IRCallsiteIterator {
@@ -446,28 +447,28 @@ private:
   RAnnot::ExpressionInfo::const_call_site_iterator m_current;
 };
 
-#if 0
+//--------------------------------------------------------------------
+// R_IRProgramCallsiteIterator
+//
+// Enumerate all the procedure calls in a statement, NOT including
+// calls to internal R procedures.
+//--------------------------------------------------------------------
 
-/// Enumerate all (actual) parameters within a callsite
-
-// TODO: implement
-
-class R_IRCallsiteParamIterator : public IRCallsiteParamIterator {
-private:
-  const SEXP args;
-  R_ListIterator args_iter;
+class R_IRProgramCallsiteIterator : public OA::IRCallsiteIterator {
 public:
-  // CDR of the expression is the list of arguments
-  R_IRCallsiteParamIterator(OA::ExprHandle stmt) : args(CDR(make_sexp(stmt))), args_iter(args) { }
-  virtual ~R_IRCallsiteParamIterator() { }
+  R_IRProgramCallsiteIterator(OA::StmtHandle _h);
+  virtual ~R_IRProgramCallsiteIterator();
 
-  OA::ExprHandle current() const { return (OA::ExprHandle)args_iter.current(); }
-  bool isValid() const { return args_iter.isValid(); }
-  void operator++() { ++args_iter; }
-  void reset() { args_iter.reset(); }
+  OA::CallHandle current() const;
+  bool isValid() const;
+  void operator++();
+  void reset();
+
+private:
+  RAnnot::ExpressionInfo * const m_annot;
+  std::list<RAnnot::ExpressionInfo::MyCallSite_t> m_program_call_sites;
+  RAnnot::ExpressionInfo::const_call_site_iterator m_current;
 };
-
-#endif
 
 class R_ProcHandleIterator : public OA::ProcHandleIterator {
 public:

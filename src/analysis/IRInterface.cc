@@ -336,7 +336,8 @@ OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
 
 /// Return an iterator over all of the callsites in a given stmt
 OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
-  OA_ptr<IRCallsiteIterator> iter; iter = new R_IRCallsiteIterator(h);
+  // R_IRProgramCallsiteIterator (as opposed to R_IRCallsiteIterator) does not include internal calls
+  OA_ptr<IRCallsiteIterator> iter; iter = new R_IRProgramCallsiteIterator(h);
   return iter;
 }
 
@@ -1000,6 +1001,44 @@ void R_IRCallsiteIterator::operator++() {
 
 void R_IRCallsiteIterator::reset() {
   m_current = m_begin;
+}
+
+//--------------------------------------------------------------------
+// R_IRProgramCallsiteIterator
+//--------------------------------------------------------------------
+
+R_IRProgramCallsiteIterator::R_IRProgramCallsiteIterator(StmtHandle _h)
+  : m_annot(getProperty(ExpressionInfo, make_sexp(_h)))    
+{
+  // In the ExpressionInfo's call sites, collect only non-internal calls
+  for(ExpressionInfo::const_call_site_iterator it = m_annot->begin_call_sites();
+      it != m_annot->end_call_sites();
+      ++it)
+    {
+      if (is_var(call_lhs(*it)) && !is_library(call_lhs(*it))) {
+	m_program_call_sites.push_back(*it);
+      }
+    }
+  m_current = m_program_call_sites.begin();
+}
+
+R_IRProgramCallsiteIterator::~R_IRProgramCallsiteIterator() {
+}
+
+CallHandle R_IRProgramCallsiteIterator::current() const {
+  return make_call_h(*m_current);
+}
+
+bool R_IRProgramCallsiteIterator::isValid() const {
+  return (m_current != m_program_call_sites.end());
+}
+
+void R_IRProgramCallsiteIterator::operator++() {
+  ++m_current;
+}
+
+void R_IRProgramCallsiteIterator::reset() {
+  m_current = m_program_call_sites.begin();
 }
 
 

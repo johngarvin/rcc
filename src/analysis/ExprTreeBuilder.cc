@@ -21,6 +21,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <analysis/AnalysisException.h>
+#include <analysis/Analyst.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>
 
@@ -58,9 +59,19 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
     rcc_warn("ExprTreeBuilder: structure fields not yet implemented");
     throw AnalysisException();
   } else if (is_subscript(e)) {
-    // TODO
-    rcc_warn("ExprTreeBuilder: subscript expressions not yet implemented");
-    throw AnalysisException();
+    OA_ptr<IRHandlesIRInterface> iface; iface = R_Analyst::get_instance()->get_interface();
+    // TODO: what about more than one subscript?
+    std::cout << "ExprTreeBuilder: building subscript "; Rf_PrintValue(e);
+    OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(make_op_h(e));
+    std::cout << "adding node "; bracket->dump(std::cout, iface);
+    tree->addNode(bracket);
+    OA_ptr<ExprTree> lhs = build(CAR(subscript_lhs_c(e)));
+    std::cout << "copying and connecting "; lhs->dump(std::cout, iface);
+    tree->copyAndConnectSubTree(bracket, lhs);
+    OA_ptr<ExprTree> rhs = build(CAR(subscript_rhs_c(e)));
+    std::cout << "tree = "; tree->dump(std::cout, iface);
+    std::cout << "copying and connecting "; rhs->dump(std::cout, iface);
+    tree->copyAndConnectSubTree(bracket, rhs);
   } else if (is_if(e)) {
     // TODO
     rcc_warn("ExprTreeBuilder: if expressions not yet implemented");
