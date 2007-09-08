@@ -65,6 +65,8 @@ rcc_bin_SOURCES =				\
   HellProcedure.h                               \
   IRInterface.cc				\
   IRInterface.h					\
+  LexicalContext.h                              \
+  LexicalContext.cc                             \
   LexicalScope.cc                               \
   LexicalScope.h                                \
   LocalFunctionAnalysis.cc			\

@@ -70,23 +70,10 @@ void process_assert(SEXP assertion, FuncInfo * fi) {
     }
   } else if (is_rcc_assert_exp(assertion)) {
     // .rcc.assert.exp
-    SEXP body_of_e = CDR(assertion);
-    if (is_simple_assign(CDR(assertion))) // no attribute given in the assertion
-      ;
-    else {  // see if the attribute is "unique_definiton"
-      SEXP body_of_e = CDR(assertion);
-      SEXP header = CAR(body_of_e); // is_simple_assign(header) is true 
-      SEXP attrib = CADR(body_of_e); 
-      char *funcname;
-      if (is_simple_assign(header)) { // get function name  
-	funcname = CHAR(PRINTNAME(CADR(header)));
-	if (attrib == Rf_install("unique_definition"))  {
-	  func_unique_defintion.insert(std::make_pair(funcname,fi)); 
-	}
-      }
-    }
+    // Note: no assert.exp assertions at this time
   } else if (is_rcc_assert_sym(assertion)) {
     // .rcc.assert.sym
+    // Note: no assert.sym assertions at this time
   }
 }
   

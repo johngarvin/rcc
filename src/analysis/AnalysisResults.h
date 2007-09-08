@@ -1,5 +1,5 @@
 // -*- Mode: C++ -*-
-/* $Id: AnalysisResults.h,v 1.10 2007/07/01 02:04:12 garvin Exp $ */
+/* $Id: AnalysisResults.h,v 1.11 2007/09/08 03:05:41 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //****************************************************************************/
@@ -29,6 +29,9 @@
 //
 // Modification History:
 //  31 August 2005 -- John Mellor-Crummey
+//  7 Sep 2007 -- John Garvin
+//    Removed obsolete variable func_unique_definition.
+//    Moved lexicalContext to separate file.
 //
 //**************************************************************************/
   
@@ -36,13 +39,6 @@
 #define AnalysisResults_h
 
 #include <analysis/PropertySet.h>
-
-#include <support/stacks/StackTmpl.h>
-
-namespace RAnnot { class FuncInfo; }
-
-typedef std::map<char *,RAnnot::FuncInfo*> func_attribute_map;
-extern func_attribute_map  func_unique_defintion;
 
 //**************************************************************************/
 // macros 
@@ -63,6 +59,5 @@ void clearProperties();
 // extern declarations for global variables
 //**************************************************************************/
 extern RProp::PropertySet analysisResults;
-extern StackTmpl<RAnnot::FuncInfo*> lexicalContext;
 
 #endif

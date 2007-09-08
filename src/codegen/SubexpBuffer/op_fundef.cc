@@ -32,6 +32,7 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/LexicalContext.h>
 #include <analysis/Utils.h>
 
 #include <support/StringUtils.h>

@@ -1,5 +1,5 @@
 // -*- Mode: C++ -*-
-/* $Id: AnalysisResults.cc,v 1.6 2007/07/01 02:04:12 garvin Exp $ */
+/* $Id: AnalysisResults.cc,v 1.7 2007/09/08 03:05:41 garvin Exp $ */
 //****************************************************************************/
 //                 Copyright (c) 1990-2005 Rice University
 //****************************************************************************/
@@ -29,7 +29,8 @@
 //
 // Modification History:
 //  31 August 2005 -- John Mellor-Crummey
-//
+//  7 Sep 2997 -- John Garvin
+//    Moved lexicalContext to separate file.
 //**************************************************************************/
   
 #include <analysis/AnalysisResults.h>
@@ -41,7 +42,4 @@ void clearProperties() {
   analysisResults.clear();
 }
 
-StackTmpl<RAnnot::FuncInfo*> lexicalContext;
-
-func_attribute_map  func_unique_defintion;
 

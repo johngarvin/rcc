@@ -28,8 +28,9 @@
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include <include/R/R_RInternals.h>
-#include <analysis/AnalysisResults.h>
+
 #include <analysis/FuncInfo.h>
+#include <analysis/LexicalContext.h>
 
 #include <ParseInfo.h>
 #include <Dependence.h>
