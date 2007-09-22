@@ -122,10 +122,10 @@ rcc_bin_SOURCES =				\
   VarRefSet.h					\
   VarVisitor.h                                  \
                                                 \
-  CallGraphAnnotation.cc                        \
-  CallGraphAnnotation.h                         \
-  CallGraphAnnotationMap.cc                     \
-  CallGraphAnnotationMap.h                      \
+  RccCallGraphAnnotation.cc                        \
+  RccCallGraphAnnotation.h                         \
+  RccCallGraphAnnotationMap.cc                     \
+  RccCallGraphAnnotationMap.h                      \
   CallGraphEdge.cc                              \
   CallGraphEdge.h                               \
   CallGraphInfo.cc                              \

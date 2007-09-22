@@ -28,7 +28,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphInfo.h>
 
 #include "UnknownValueCallGraphNode.h"
@@ -47,16 +47,16 @@ namespace RAnnot {
   }
 
   void UnknownValueCallGraphNode::
-  compute(CallGraphAnnotationMap::NodeListT & worklist,
-	  CallGraphAnnotationMap::NodeSetT & visited) const
+  compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
     rcc_error("Internal error: compute: UnknownValueCallGraphNode found on worklist");
   }
 
   void UnknownValueCallGraphNode::
-  get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-		    CallGraphAnnotationMap::NodeSetT & visited,
-		    CallGraphAnnotation * ann) const
+  get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+		    RccCallGraphAnnotationMap::NodeSetT & visited,
+		    RccCallGraphAnnotation * ann) const
   {
     ann->insert_node(this);
   }

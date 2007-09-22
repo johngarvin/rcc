@@ -53,10 +53,10 @@ namespace RAnnot {
   }
 
   void CallSiteCallGraphNode::
-  compute(CallGraphAnnotationMap::NodeListT & worklist,
-	  CallGraphAnnotationMap::NodeSetT & visited) const
+  compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
-    CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
     if (is_var(call_lhs(m_cs))) {
       // if left side of call is a symbol
       VarBinding * binding = getProperty(VarBinding, m_cs);  // cell containing symbol
@@ -76,11 +76,11 @@ namespace RAnnot {
   }
 
   void CallSiteCallGraphNode::
-  get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-		    CallGraphAnnotationMap::NodeSetT & visited,
-		    CallGraphAnnotation * ann) const
+  get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+		    RccCallGraphAnnotationMap::NodeSetT & visited,
+		    RccCallGraphAnnotation * ann) const
   {
-    CallGraphAnnotationMap * cg = CallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
     CallGraphInfo * info = cg->get_edges(this);
     // TODO: remove cast when maps are parametrized
     for (CallGraphInfo::const_iterator edge = info->begin_calls_out();

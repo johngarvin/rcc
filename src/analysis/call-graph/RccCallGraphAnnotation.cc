@@ -25,40 +25,40 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <analysis/call-graph/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/RccCallGraphAnnotationMap.h>
 
-#include "CallGraphAnnotation.h"
+#include "RccCallGraphAnnotation.h"
 
 namespace RAnnot {
 
   // typedef for readability
-  typedef CallGraphAnnotation::MySetT MySetT;
+  typedef RccCallGraphAnnotation::MySetT MySetT;
 
-  CallGraphAnnotation::CallGraphAnnotation()
+  RccCallGraphAnnotation::RccCallGraphAnnotation()
   {}
 
-  CallGraphAnnotation::~CallGraphAnnotation()
+  RccCallGraphAnnotation::~RccCallGraphAnnotation()
   {}
 
   // ----- methods to insert nodes -----
 
-  void CallGraphAnnotation::insert_node(const CallGraphNode * const node) {
+  void RccCallGraphAnnotation::insert_node(const CallGraphNode * const node) {
     m_nodes.insert(node);
   }
 
   // ----- iterators -----
 
-  MySetT::const_iterator CallGraphAnnotation::begin() const {
+  MySetT::const_iterator RccCallGraphAnnotation::begin() const {
     return m_nodes.begin();
   }
 
-  MySetT::const_iterator CallGraphAnnotation::end() const {
+  MySetT::const_iterator RccCallGraphAnnotation::end() const {
     return m_nodes.end();
   }
 
   // ----- get_singleton_if_exists -----
 
-  const CallGraphNode * CallGraphAnnotation::get_singleton_if_exists() const {
+  const CallGraphNode * RccCallGraphAnnotation::get_singleton_if_exists() const {
     if (begin() == end()) return 0;
     MySetT::const_iterator elt1 = begin();
     MySetT::const_iterator elt2 = begin();
@@ -72,15 +72,15 @@ namespace RAnnot {
 
   // ----- AnnotationBase -----
 
-  AnnotationBase * CallGraphAnnotation::clone() {
+  AnnotationBase * RccCallGraphAnnotation::clone() {
     return 0; // don't support this
   }
 
-  PropertyHndlT CallGraphAnnotation::handle() {
-    return CallGraphAnnotationMap::handle();
+  PropertyHndlT RccCallGraphAnnotation::handle() {
+    return RccCallGraphAnnotationMap::handle();
   }
 
-  std::ostream & CallGraphAnnotation::dump(std::ostream & stream) const {
+  std::ostream & RccCallGraphAnnotation::dump(std::ostream & stream) const {
     MySetT::const_iterator it;
     stream << "Nodes:" << std::endl;
     for (it = begin(); it != end(); ++it) {

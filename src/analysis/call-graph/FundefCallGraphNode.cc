@@ -28,7 +28,7 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallSiteCallGraphNode.h>
 
 #include "FundefCallGraphNode.h"
@@ -53,16 +53,16 @@ namespace RAnnot {
   }
 
   void FundefCallGraphNode::
-  compute(CallGraphAnnotationMap::NodeListT & worklist,
-	  CallGraphAnnotationMap::NodeSetT & visited) const
+  compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
-    CallGraphAnnotationMap * const cg = CallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * const cg = RccCallGraphAnnotationMap::get_instance();
     FuncInfo * fi = getProperty(FuncInfo, m_fundef);
 
     // Keep track of call sites attached to this node to avoid
     // redundancy. This is a temporary workaround for a bug in which
     // the CFG has duplicate nodes. TODO: fix
-    CallGraphAnnotationMap::NodeSetT visited_cs;
+    RccCallGraphAnnotationMap::NodeSetT visited_cs;
 
     const CallSiteCallGraphNode * csnode;
     FuncInfo::const_call_site_iterator csi;
@@ -80,9 +80,9 @@ namespace RAnnot {
   }
 
   void FundefCallGraphNode::
-  get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-		    CallGraphAnnotationMap::NodeSetT & visited,
-		    CallGraphAnnotation * ann) const
+  get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+		    RccCallGraphAnnotationMap::NodeSetT & visited,
+		    RccCallGraphAnnotation * ann) const
   {
     ann->insert_node(this);
   }

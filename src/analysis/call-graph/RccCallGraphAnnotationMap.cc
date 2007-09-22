@@ -39,7 +39,7 @@
 #include <analysis/VarBinding.h>
 #include <analysis/VarInfo.h>
 
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphEdge.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/CallGraphInfo.h>
@@ -49,7 +49,7 @@
 #include <analysis/call-graph/CallSiteCallGraphNode.h>
 #include <analysis/call-graph/UnknownValueCallGraphNode.h>
 
-#include "CallGraphAnnotationMap.h"
+#include "RccCallGraphAnnotationMap.h"
 
 using namespace HandleInterface;
 
@@ -57,25 +57,25 @@ namespace RAnnot {
 
 // ----- type definitions for readability -----
   
-typedef CallGraphAnnotationMap::MyKeyT MyKeyT;
-typedef CallGraphAnnotationMap::MyMappedT MyMappedT;
-typedef CallGraphAnnotationMap::iterator iterator;
-typedef CallGraphAnnotationMap::const_iterator const_iterator;
+typedef RccCallGraphAnnotationMap::MyKeyT MyKeyT;
+typedef RccCallGraphAnnotationMap::MyMappedT MyMappedT;
+typedef RccCallGraphAnnotationMap::iterator iterator;
+typedef RccCallGraphAnnotationMap::const_iterator const_iterator;
 
-typedef CallGraphAnnotationMap::NodeListT NodeListT;
-typedef CallGraphAnnotationMap::NodeSetT NodeSetT;
-typedef CallGraphAnnotationMap::NodeMapT NodeMapT;
-typedef CallGraphAnnotationMap::EdgeSetT EdgeSetT;
+typedef RccCallGraphAnnotationMap::NodeListT NodeListT;
+typedef RccCallGraphAnnotationMap::NodeSetT NodeSetT;
+typedef RccCallGraphAnnotationMap::NodeMapT NodeMapT;
+typedef RccCallGraphAnnotationMap::EdgeSetT EdgeSetT;
 
 // ----- constructor, destructor -----
 
-CallGraphAnnotationMap::CallGraphAnnotationMap()
+RccCallGraphAnnotationMap::RccCallGraphAnnotationMap()
   : m_computed(false), m_node_map(), m_edge_set(), m_traversed_map(),
     m_fundef_map(), m_library_map(), m_coord_map(), m_call_site_map()
 {
 }
   
-CallGraphAnnotationMap::~CallGraphAnnotationMap() {
+RccCallGraphAnnotationMap::~RccCallGraphAnnotationMap() {
   NodeMapT::const_iterator i;
   
   // delete CallGraphInfo objects
@@ -92,34 +92,34 @@ CallGraphAnnotationMap::~CallGraphAnnotationMap() {
   
 // ----- singleton pattern -----
 
-CallGraphAnnotationMap * CallGraphAnnotationMap::get_instance() {
+RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::get_instance() {
   if (m_instance == 0) {
     create();
   }
   return m_instance;
 }
   
-PropertyHndlT CallGraphAnnotationMap::handle() {
+PropertyHndlT RccCallGraphAnnotationMap::handle() {
   if (m_instance == 0) {
     create();
   }
   return m_handle;
 }
   
-void CallGraphAnnotationMap::create() {
-  m_instance = new CallGraphAnnotationMap();
+void RccCallGraphAnnotationMap::create() {
+  m_instance = new RccCallGraphAnnotationMap();
   analysisResults.add(m_handle, m_instance);
 }
   
-CallGraphAnnotationMap * CallGraphAnnotationMap::m_instance = 0;
-PropertyHndlT CallGraphAnnotationMap::m_handle = "CallGraph";
+RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::m_instance = 0;
+PropertyHndlT RccCallGraphAnnotationMap::m_handle = "CallGraph";
   
 //  ----- demand-driven analysis ----- 
 
 // Subscripting is here temporarily to allow PutProperty -->
 // PropertySet::insert to work right.
 // TODO: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & CallGraphAnnotationMap::operator[](const MyKeyT & k) {
+MyMappedT & RccCallGraphAnnotationMap::operator[](const MyKeyT & k) {
   if (!is_computed()) {
     compute();
     m_computed = true;
@@ -130,7 +130,7 @@ MyMappedT & CallGraphAnnotationMap::operator[](const MyKeyT & k) {
 
 // Perform the computation if necessary and returns the requested
 // data.
-MyMappedT CallGraphAnnotationMap::get(const MyKeyT & k) {
+MyMappedT RccCallGraphAnnotationMap::get(const MyKeyT & k) {
   if (!is_computed()) {
     compute();
     m_computed = true;
@@ -144,7 +144,7 @@ MyMappedT CallGraphAnnotationMap::get(const MyKeyT & k) {
   }
 }
 
-CallGraphInfo* CallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
+CallGraphInfo* RccCallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
   if (!is_computed()) {
     compute();
     m_computed = true;
@@ -152,20 +152,20 @@ CallGraphInfo* CallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
   return m_node_map[node];
 }
   
-bool CallGraphAnnotationMap::is_computed() {
+bool RccCallGraphAnnotationMap::is_computed() {
   return m_computed;
 }
 
 //  ----- iterators ----- 
 
-iterator CallGraphAnnotationMap::begin() { return m_traversed_map.begin(); }
-iterator CallGraphAnnotationMap::end() { return m_traversed_map.end(); }
-const_iterator CallGraphAnnotationMap::begin() const { return m_traversed_map.begin(); }
-const_iterator CallGraphAnnotationMap::end() const { return m_traversed_map.end(); }
+iterator RccCallGraphAnnotationMap::begin() { return m_traversed_map.begin(); }
+iterator RccCallGraphAnnotationMap::end() { return m_traversed_map.end(); }
+const_iterator RccCallGraphAnnotationMap::begin() const { return m_traversed_map.begin(); }
+const_iterator RccCallGraphAnnotationMap::end() const { return m_traversed_map.end(); }
 
 // ----- creation -----
 
-FundefCallGraphNode * CallGraphAnnotationMap::make_fundef_node(SEXP e) {
+FundefCallGraphNode * RccCallGraphAnnotationMap::make_fundef_node(SEXP e) {
   assert(is_fundef(e));
   FundefCallGraphNode * node;
   std::map<SEXP, FundefCallGraphNode *>::const_iterator it = m_fundef_map.find(e);
@@ -179,7 +179,7 @@ FundefCallGraphNode * CallGraphAnnotationMap::make_fundef_node(SEXP e) {
   return node;
 }
 
-LibraryCallGraphNode * CallGraphAnnotationMap::make_library_node(SEXP name, SEXP value) {
+LibraryCallGraphNode * RccCallGraphAnnotationMap::make_library_node(SEXP name, SEXP value) {
   assert(is_var(name));
   assert(TYPEOF(value) == CLOSXP ||
 	 TYPEOF(value) == BUILTINSXP ||
@@ -196,7 +196,7 @@ LibraryCallGraphNode * CallGraphAnnotationMap::make_library_node(SEXP name, SEXP
   return node;
 }
 
-CoordinateCallGraphNode * CallGraphAnnotationMap::make_coordinate_node(SEXP name, LexicalScope * scope) {
+CoordinateCallGraphNode * RccCallGraphAnnotationMap::make_coordinate_node(SEXP name, LexicalScope * scope) {
   assert(is_var(name));
   CoordinateCallGraphNode * node;
   std::map<std::pair<SEXP, LexicalScope *>, CoordinateCallGraphNode *>::const_iterator it;
@@ -211,7 +211,7 @@ CoordinateCallGraphNode * CallGraphAnnotationMap::make_coordinate_node(SEXP name
   return node;
 }
 
-CallSiteCallGraphNode * CallGraphAnnotationMap::make_call_site_node(SEXP e) {
+CallSiteCallGraphNode * RccCallGraphAnnotationMap::make_call_site_node(SEXP e) {
   assert(is_call(e));
   CallSiteCallGraphNode * node;
   std::map<SEXP, CallSiteCallGraphNode *>::const_iterator it = m_call_site_map.find(e);
@@ -225,7 +225,7 @@ CallSiteCallGraphNode * CallGraphAnnotationMap::make_call_site_node(SEXP e) {
   return node; 
 }
 
-UnknownValueCallGraphNode * CallGraphAnnotationMap::make_unknown_value_node() {
+UnknownValueCallGraphNode * RccCallGraphAnnotationMap::make_unknown_value_node() {
   UnknownValueCallGraphNode * node = UnknownValueCallGraphNode::get_instance();
   if (m_node_map.find(node) == m_node_map.end()) {
     m_node_map[node] = new CallGraphInfo();
@@ -233,7 +233,7 @@ UnknownValueCallGraphNode * CallGraphAnnotationMap::make_unknown_value_node() {
   return node;  
 }
 
-void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const CallGraphNode * const sink) {
+void RccCallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const CallGraphNode * const sink) {
   CallGraphEdge * edge = new CallGraphEdge(source, sink);
   m_edge_set.insert(edge);
   CallGraphInfo * source_info = m_node_map[source];
@@ -246,7 +246,7 @@ void CallGraphAnnotationMap::add_edge(const CallGraphNode * const source, const 
 
 // ----- computation -----  
 
-MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
+MyMappedT RccCallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
   const CallSiteCallGraphNode * const cs_node = make_call_site_node(cs);
   
   // search graph, accumulate fundefs/library functions
@@ -254,7 +254,7 @@ MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
   NodeSetT visited;
   
   // new annotation
-  CallGraphAnnotation * ann = new CallGraphAnnotation();
+  RccCallGraphAnnotation * ann = new RccCallGraphAnnotation();
   
   // start with worklist containing the given call site
   worklist.push_back(cs_node);
@@ -271,7 +271,7 @@ MyMappedT CallGraphAnnotationMap::get_call_bindings(MyKeyT cs) {
   return ann;
 }
 
-void CallGraphAnnotationMap::compute() {
+void RccCallGraphAnnotationMap::compute() {
   NodeListT worklist;
   NodeSetT visited;
 
@@ -316,7 +316,7 @@ void CallGraphAnnotationMap::compute() {
   //          add edge (Coordinate, unknown) NOTE: look up DSystem's name
 }
 
-void CallGraphAnnotationMap::dump(std::ostream & os) {
+void RccCallGraphAnnotationMap::dump(std::ostream & os) {
   if (!is_computed()) {
     compute();
     m_computed = true;
@@ -340,7 +340,7 @@ void CallGraphAnnotationMap::dump(std::ostream & os) {
   endObjDump(os, CallGraph);
 }
 
-void CallGraphAnnotationMap::dumpdot(std::ostream & os) {
+  void RccCallGraphAnnotationMap::dumpdot(std::ostream & os) {
   if (!is_computed()) {
     compute();
     m_computed = true;

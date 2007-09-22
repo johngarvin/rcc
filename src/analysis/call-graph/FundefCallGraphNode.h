@@ -41,12 +41,12 @@ public:
   const OA::IRHandle get_handle() const;
   const SEXP get_sexp() const;
 
-  void compute(CallGraphAnnotationMap::NodeListT & worklist,
-	       CallGraphAnnotationMap::NodeSetT & visited) const;
+  void compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	       RccCallGraphAnnotationMap::NodeSetT & visited) const;
 
-  void get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-			 CallGraphAnnotationMap::NodeSetT & visited,
-			 CallGraphAnnotation * ann) const;
+  void get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+			 RccCallGraphAnnotationMap::NodeSetT & visited,
+			 RccCallGraphAnnotation * ann) const;
 
   /// dump the node contents to os using R printing
   void dump(std::ostream & os) const;

@@ -28,7 +28,7 @@
 
 #include <analysis/HandleInterface.h>
 
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 
 #include "LibraryCallGraphNode.h"
 
@@ -52,16 +52,16 @@ namespace RAnnot {
   }
 
   void LibraryCallGraphNode::
-  compute(CallGraphAnnotationMap::NodeListT & worklist,
-	  CallGraphAnnotationMap::NodeSetT & visited) const
+  compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
     rcc_error("compute: Library call graph node incorrectly appeared in worklist");
   }
 
   void LibraryCallGraphNode::
-  get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-		    CallGraphAnnotationMap::NodeSetT & visited,
-		    CallGraphAnnotation * ann) const
+  get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+		    RccCallGraphAnnotationMap::NodeSetT & visited,
+		    RccCallGraphAnnotation * ann) const
   {
     ann->insert_node(this);
   }

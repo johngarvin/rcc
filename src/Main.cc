@@ -43,8 +43,8 @@
 #include <analysis/SymbolTable.h>
 #include <support/RccError.h>
 
-#include <analysis/call-graph/CallGraphAnnotationMap.h>
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotationMap.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 	st->dump(cout);
       }
       cout << "Dumping call graph:" << endl;
-      CallGraphAnnotationMap::get_instance()->dump(cout);
+      RccCallGraphAnnotationMap::get_instance()->dump(cout);
 
       cout << "Dumping OA call graph (not yet used):" << endl;
 
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
       df_info->dump(cout, an->get_interface());
     }
     if (cfg_dot_dump) {
-      CallGraphAnnotationMap::get_instance()->dumpdot(cout);
+      RccCallGraphAnnotationMap::get_instance()->dumpdot(cout);
     }
     analysis_ok = true;
   }

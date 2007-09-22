@@ -16,17 +16,17 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallGraphAnnotation.h
+// File: RccCallGraphAnnotation.h
 //
 // Annotation for call graph information. Contains a set of
-// CallGraphNodes. Returned by CallGraphAnnotation::get_call_bindings;
+// CallGraphNodes. Returned by CallGraphNode::get_call_bindings;
 // it's a container for the relevant list of nodes computed by that
 // method.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_GRAPH_ANNOTATION_H
-#define CALL_GRAPH_ANNOTATION_H
+#ifndef RCC_CALL_GRAPH_ANNOTATION_H
+#define RCC_CALL_GRAPH_ANNOTATION_H
 
 #include <set>
 
@@ -37,13 +37,13 @@
 
 namespace RAnnot {
 
-class CallGraphAnnotation : public AnnotationBase {
+class RccCallGraphAnnotation : public AnnotationBase {
 public:
   typedef std::set<const CallGraphNode *> MySetT;
   typedef MySetT::const_iterator const_iterator;
 
-  explicit CallGraphAnnotation();
-  virtual ~CallGraphAnnotation();
+  explicit RccCallGraphAnnotation();
+  virtual ~RccCallGraphAnnotation();
 
   void insert_node(const CallGraphNode * const node);
 

@@ -33,7 +33,7 @@
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/call-graph/CallGraphAnnotation.h>
+#include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/LibraryCallGraphNode.h>
 #include <analysis/call-graph/FundefCallGraphNode.h>
@@ -63,7 +63,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
     // see if call graph supplies a single definition
-    CallGraphAnnotation * ann = getProperty(CallGraphAnnotation, e);
+    RccCallGraphAnnotation * ann = getProperty(RccCallGraphAnnotation, e);
     const CallGraphNode * node = ann->get_singleton_if_exists();
     if (node) {
       // node is Fundef, Library, or UnknownValue node

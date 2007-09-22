@@ -49,7 +49,7 @@ class FundefCallGraphNode;
 class LibraryCallGraphNode;
 class UnknownValueCallGraphNode;
 
-class CallGraphAnnotationMap : public AnnotationMap
+class RccCallGraphAnnotationMap : public AnnotationMap
 {
 public:
   // ----- types -----
@@ -59,7 +59,7 @@ public:
   typedef std::set<const CallGraphEdge *>                  EdgeSetT;
 
   // ----- destructor -----
-  virtual ~CallGraphAnnotationMap();
+  virtual ~RccCallGraphAnnotationMap();
 
   // ----- demand-driven analysis -----
 
@@ -74,7 +74,7 @@ public:
 
   // ----- implement singleton pattern -----
 
-  static CallGraphAnnotationMap * get_instance();
+  static RccCallGraphAnnotationMap * get_instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
@@ -98,9 +98,9 @@ private:
   // ----- implement singleton pattern -----
 
   // private constructor for singleton pattern
-  CallGraphAnnotationMap();
+  RccCallGraphAnnotationMap();
 
-  static CallGraphAnnotationMap * m_instance;
+  static RccCallGraphAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
   static void create();
 

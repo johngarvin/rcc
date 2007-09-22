@@ -24,7 +24,7 @@
 
 #include <support/DumpMacros.h>
 
-#include <analysis/call-graph/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/RccCallGraphAnnotationMap.h>
 
 #include "CallGraphInfo.h"
 

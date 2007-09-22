@@ -45,12 +45,12 @@ public:
   const SEXP get_name() const;
   const LexicalScope * get_scope() const;
 
-  void compute(CallGraphAnnotationMap::NodeListT & worklist,
-	       CallGraphAnnotationMap::NodeSetT & visited) const;
+  void compute(RccCallGraphAnnotationMap::NodeListT & worklist,
+	       RccCallGraphAnnotationMap::NodeSetT & visited) const;
 
-  void get_call_bindings(CallGraphAnnotationMap::NodeListT & worklist,
-			 CallGraphAnnotationMap::NodeSetT & visited,
-			 CallGraphAnnotation * ann) const;
+  void get_call_bindings(RccCallGraphAnnotationMap::NodeListT & worklist,
+			 RccCallGraphAnnotationMap::NodeSetT & visited,
+			 RccCallGraphAnnotation * ann) const;
 
   void dump(std::ostream & os) const;
   void dump_string(std::ostream & os) const;

@@ -25,7 +25,7 @@
 #ifndef CALL_GRAPH_EDGE_H
 #define CALL_GRAPH_EDGE_H
 
-#include <analysis/call-graph/CallGraphAnnotationMap.h>
+#include <analysis/call-graph/RccCallGraphAnnotationMap.h>
 #include <analysis/call-graph/CallGraphNode.h>
 
 namespace RAnnot {
