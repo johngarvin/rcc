@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallGraphAnnotationMap.cc
+// File: RccCallGraphAnnotationMap.cc
 //
 // Represents the call graph of the program. A call graph node can be
 // a function definition ("fundef"), a call site, a coordinate (a name
@@ -112,7 +112,7 @@ void RccCallGraphAnnotationMap::create() {
 }
   
 RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::m_instance = 0;
-PropertyHndlT RccCallGraphAnnotationMap::m_handle = "CallGraph";
+PropertyHndlT RccCallGraphAnnotationMap::m_handle = "RccCallGraph";
   
 //  ----- demand-driven analysis ----- 
 
@@ -316,6 +316,8 @@ void RccCallGraphAnnotationMap::compute() {
   //          add edge (Coordinate, unknown) NOTE: look up DSystem's name
 }
 
+// ----- debugging -----
+
 void RccCallGraphAnnotationMap::dump(std::ostream & os) {
   if (!is_computed()) {
     compute();
@@ -340,7 +342,7 @@ void RccCallGraphAnnotationMap::dump(std::ostream & os) {
   endObjDump(os, CallGraph);
 }
 
-  void RccCallGraphAnnotationMap::dumpdot(std::ostream & os) {
+void RccCallGraphAnnotationMap::dumpdot(std::ostream & os) {
   if (!is_computed()) {
     compute();
     m_computed = true;

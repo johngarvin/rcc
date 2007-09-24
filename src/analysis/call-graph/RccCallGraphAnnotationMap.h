@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallGraphAnnotationMap.h
+// File: RccCallGraphAnnotationMap.h
 //
 // Represents the call graph of the program. A call graph node can be
 // a function definition ("fundef"), a call site, a coordinate (a name
@@ -24,8 +24,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_GRAPH_ANNOTATION_MAP_H
-#define CALL_GRAPH_ANNOTATION_MAP_H
+#ifndef RCC_CALL_GRAPH_ANNOTATION_MAP_H
+#define RCC_CALL_GRAPH_ANNOTATION_MAP_H
 
 #include <map>
 #include <list>

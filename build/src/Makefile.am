@@ -84,6 +84,8 @@ rcc_bin_SOURCES =				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
   NameStmtsMap.h                                \
+  OACallGraphAnnotationMap.cc                   \
+  OACallGraphAnnotationMap.h                    \
   PropertyHndl.h				\
   PropertySet.cc				\
   PropertySet.h					\
@@ -122,10 +124,10 @@ rcc_bin_SOURCES =				\
   VarRefSet.h					\
   VarVisitor.h                                  \
                                                 \
-  RccCallGraphAnnotation.cc                        \
-  RccCallGraphAnnotation.h                         \
-  RccCallGraphAnnotationMap.cc                     \
-  RccCallGraphAnnotationMap.h                      \
+  RccCallGraphAnnotation.cc                     \
+  RccCallGraphAnnotation.h                      \
+  RccCallGraphAnnotationMap.cc                  \
+  RccCallGraphAnnotationMap.h                   \
   CallGraphEdge.cc                              \
   CallGraphEdge.h                               \
   CallGraphInfo.cc                              \
