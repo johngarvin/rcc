@@ -22,9 +22,23 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>
+#include <OpenAnalysis/Alias/InterAliasMap.hpp>
+#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
+#include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
+#include <OpenAnalysis/DataFlow/DGraphSolverDFP.hpp>
+#include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
+#include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
+#include <OpenAnalysis/Utils/OutputBuilderDOT.hpp>
+
 #include <analysis/AnalysisResults.h>
+#include <analysis/Analyst.h>
+#include <analysis/IRInterface.h>
+
 
 #include "OACallGraphAnnotationMap.h"
+
+using namespace OA;
 
 namespace RAnnot {
 
@@ -97,6 +111,23 @@ bool OACallGraphAnnotationMap::is_computed() {
 }
 
 void OACallGraphAnnotationMap::compute() {
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  // first build call graph
+  OA::CallGraph::ManagerCallGraphStandard man(interface);
+  OA::OA_ptr<OA::ProcHandleIterator> proc_iter;
+  proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
+  OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man;
+  alias_man = new OA::Alias::ManagerInterAliasMapBasic(interface);
+  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+  m_call_graph = man.performAnalysis(proc_iter, alias);
+  
+  // now perform call graph data flow analysis
+  OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
+  OA::DataFlow::ManagerParamBindings pb_man(interface);
+  OA::OA_ptr<OA::DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(m_call_graph);
+  OA::OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
+  intra_man = new OA::SideEffect::ManagerSideEffectStandard(interface);
+  m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, alias, intra_man, OA::DataFlow::ITERATIVE);
 }
 
 //  ----- iterators ----- 
@@ -108,11 +139,16 @@ const_iterator OACallGraphAnnotationMap::end() const {  }
 
 // ----- debugging -----
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
-  // TODO
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  m_call_graph->output(*interface);
+  m_side_effect->dump(cout, interface);
 }
 
 void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
-  // TODO
+  //   output graph in DOT form
+  OA::OA_ptr<OA::OutputBuilder> dot_builder; dot_builder = new OA::OutputBuilderDOT;
+  m_call_graph->configOutput(dot_builder);
+  m_call_graph->output(*R_Analyst::get_instance()->get_interface());
 }
 
 

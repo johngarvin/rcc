@@ -28,6 +28,9 @@
 #include <analysis/AnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
+class OA::CallGraph::CallGraphInterface;
+class OA::SideEffect::InterSideEffectStandard;
+
 namespace RAnnot {
 
 class OACallGraphAnnotationMap : public AnnotationMap
@@ -83,6 +86,8 @@ private:
 
 private:
   bool m_computed; // has our information been computed yet?
+  OA::OA_ptr<OA::CallGraph::CallGraphInterface> m_call_graph;
+  OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect; // side effect information
 };
 
 }
