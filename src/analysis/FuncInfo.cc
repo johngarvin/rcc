@@ -290,7 +290,7 @@ void FuncInfo::perform_analysis() {
 }
 
 bool FuncInfo::has_children() const {
-  return (ChildCount() == 0);
+  return !(ChildCount() == 0);
 }
 
 #if 0
