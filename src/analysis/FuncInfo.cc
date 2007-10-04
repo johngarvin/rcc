@@ -289,6 +289,10 @@ void FuncInfo::perform_analysis() {
 #endif
 }
 
+bool FuncInfo::has_children() const {
+  return (ChildCount() == 0);
+}
+
 #if 0
 Moved to Analyst; circular dependence
 

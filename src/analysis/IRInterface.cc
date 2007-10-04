@@ -430,11 +430,15 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
 
 OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
   OA_ptr<OA::Location> loc;
-  // NamedLoc constructor's second argument: true = local, false = global
-  //
-  // we conservatively say global here because we don't know if it
-  // might be referenced in a child scope
-  loc = new NamedLoc(s, false);
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(p));
+  VarInfo * vi = make_var_info(s);
+  // NamedLoc constructor wants to know if the location is global (can
+  // be seen in the scope of other procedures) or local (limited to
+  // this scope). We conservatively say that it can only be local if
+  // the procedure has no children (because a child procedure might
+  // refer to this one's "local" variables).
+  bool location_is_local = (vi->get_scope() == fi->get_scope() && !fi->has_children());
+  loc = new NamedLoc(s, location_is_local);
   // TODO: need to give information about possible overlap
   return loc;
 }
