@@ -24,22 +24,29 @@
 
 #include <string>
 
+#include <include/R/R_RInternals.h>
+
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
+
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
-
-#include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/OACallGraphAnnotation.h>
+#include <analysis/OACallGraphAnnotationMap.h>
+
 #include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/LibraryCallGraphNode.h>
 #include <analysis/call-graph/FundefCallGraphNode.h>
 #include <analysis/call-graph/UnknownValueCallGraphNode.h>
+
 #include <support/StringUtils.h>
 #include <support/RccError.h>
+
 #include <Visibility.h>
 #include <ParseInfo.h>
 #include <CodeGen.h>
@@ -48,13 +55,15 @@ using namespace std;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-static Expression op_internal_call(SubexpBuffer * sb, const LibraryCallGraphNode * lib, SEXP e,
+static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
 				   string rho, Protection resultProtection, ResultStatus resultStatus);
 
 Expression SubexpBuffer::op_lang(SEXP e, string rho, 
 	   Protection resultProtection,
 	   ResultStatus resultStatus)
 {
+  // TODO: need to handle internal calls
+
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
     // the value is conveniently stored in the symbol, so we can just grab it
@@ -62,6 +71,32 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     if (is_library(call_lhs(e)) && TYPEOF(library_value(call_lhs(e))) == SPECIALSXP) {
       return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
+    // see if symbol is in call graph
+    
+    OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
+    if (cga == 0) {
+      // not in call graph; call to internal procedure
+      if (is_library(call_lhs(e))) {
+	return op_internal_call(this, library_value(call_lhs(e)), e, rho, resultProtection, resultStatus);
+      } else {
+	rcc_error("Unexpected procedure symbol in neither call graph nor R library");
+      }
+    } else {
+      OA::ProcHandle ph = cga->get_singleton_if_exists();
+      if (ph != OA::ProcHandle(0)) {
+	FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
+	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
+	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
+      } else {
+	Expression func = op_fun_use(e, rho);
+	return op_clos_app(func, call_args(e), rho, resultProtection);
+      }
+    }
+
+#if 0
+
+code with home-grown call graph
+
     // see if call graph supplies a single definition
     RccCallGraphAnnotation * ann = getProperty(RccCallGraphAnnotation, e);
     const CallGraphNode * node = ann->get_singleton_if_exists();
@@ -72,7 +107,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
-	return op_internal_call(this, lib, e, rho, resultProtection, resultStatus);
+	return op_internal_call(this, lib->get_value(), e, rho, resultProtection, resultStatus);
       } else if (const UnknownValueCallGraphNode * uv = dynamic_cast<const UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, call_args(e), rho, resultProtection);
@@ -83,6 +118,9 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       Expression func = op_fun_use(e, rho);
       return op_clos_app(func, call_args(e), rho, resultProtection);
     }
+
+#endif
+
   } else {  // left side is not a symbol
     // generate closure and application
     Expression op1;
@@ -93,11 +131,10 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 }
 
 /// Output a call to a library or builtin bound in the R environment.
-static Expression op_internal_call(SubexpBuffer * sb, const LibraryCallGraphNode * lib, SEXP e,
+static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
 				   string rho, Protection resultProtection, ResultStatus resultStatus)
 {
   Expression ret_val;
-  const SEXP op = lib->get_value();
   if (TYPEOF(op) == CLOSXP) {
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     // above: false as last argument for unevaluated result. Is this correct?

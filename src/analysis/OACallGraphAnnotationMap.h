@@ -25,11 +25,19 @@
 #ifndef OA_CALL_GRAPH_ANNOTATION_MAP
 #define OA_CALL_GRAPH_ANNOTATION_MAP
 
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
+
 #include <analysis/AnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
-class OA::CallGraph::CallGraphInterface;
-class OA::SideEffect::InterSideEffectStandard;
+namespace OA {
+  namespace CallGraph {
+    class CallGraphInterface;
+  }
+  namespace SideEffect {
+    class InterSideEffectStandard;
+  }
+}
 
 namespace RAnnot {
 
@@ -88,6 +96,7 @@ private:
   bool m_computed; // has our information been computed yet?
   OA::OA_ptr<OA::CallGraph::CallGraphInterface> m_call_graph;
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect; // side effect information
+  std::map<MyKeyT, MyMappedT> m_map;
 };
 
 }

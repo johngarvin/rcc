@@ -33,8 +33,11 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
+#include <analysis/OACallGraphAnnotation.h>
 
+#include <support/RccError.h>
 
 #include "OACallGraphAnnotationMap.h"
 
@@ -92,17 +95,29 @@ MyMappedT & OACallGraphAnnotationMap::operator[](const MyKeyT & k) {
     m_computed = true;
   }
   
-  // TODO
+  return m_map[k];
 }
 
-/// given a call site, return the list of fundef/library nodes reachable; compute if necessary
+/// given a call site, return the list of fundef nodes reachable; compute if necessary
 MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
   if (!is_computed()) {
     compute();
     m_computed = true;
   }
   
-  // TODO
+  std::map<MyKeyT, MyMappedT>::const_iterator it = m_map.find(k);
+  if (it != m_map.end()) {
+    return it->second;
+  } else {
+    OA_ptr<ProcHandleIterator> iter = m_call_graph->getCalleeProcIter(HandleInterface::make_call_h(k));
+    // only populate map if iterator is nonempty
+    if (iter->isValid()) {
+      m_map[k] = new OACallGraphAnnotation(iter);
+      return m_map[k];
+    } else {
+      return 0;
+    }
+  }
 }
 
 
@@ -132,10 +147,11 @@ void OACallGraphAnnotationMap::compute() {
 
 //  ----- iterators ----- 
 
-iterator OACallGraphAnnotationMap::begin() {  }
-iterator OACallGraphAnnotationMap::end() {  }
-const_iterator OACallGraphAnnotationMap::begin() const {  }
-const_iterator OACallGraphAnnotationMap::end() const {  }
+// TODO: fill in
+iterator OACallGraphAnnotationMap::begin() { rcc_error("not yet implemented"); }
+iterator OACallGraphAnnotationMap::end() { rcc_error("not yet implemented"); }
+const_iterator OACallGraphAnnotationMap::begin() const { rcc_error("not yet implemented"); }
+const_iterator OACallGraphAnnotationMap::end() const { rcc_error("not yet implemented"); }
 
 // ----- debugging -----
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
