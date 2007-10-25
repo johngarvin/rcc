@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.6 2007/07/01 02:04:13 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.7 2007/10/25 08:15:29 garvin Exp $
 
 #ifndef ANNOTATION_MAP_H
 #define ANNOTATION_MAP_H
@@ -85,7 +85,7 @@ public:
   // -------------------------------------------------------
   // demand-driven analysis
   // -------------------------------------------------------
-  virtual bool is_computed() = 0;
+  virtual bool is_computed() const = 0;
   
   // -------------------------------------------------------
   // debugging

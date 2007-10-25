@@ -77,7 +77,7 @@ MyMappedT ExpressionInfoAnnotationMap::get(const MyKeyT & k) {
 }
   
 /// Expression info is computed piece by piece, so it's never fully computed
-bool ExpressionInfoAnnotationMap::is_computed() {
+bool ExpressionInfoAnnotationMap::is_computed() const {
   return false;
 }
 

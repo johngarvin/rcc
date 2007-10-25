@@ -70,7 +70,7 @@ public:
 
   /// given a node, return a CallGraphInfo containing the in and out edges
   CallGraphInfo* get_edges(const CallGraphNode* node);
-  bool is_computed();
+  bool is_computed() const;
 
   // ----- implement singleton pattern -----
 

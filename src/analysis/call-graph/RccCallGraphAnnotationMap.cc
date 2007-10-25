@@ -152,7 +152,7 @@ CallGraphInfo* RccCallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
   return m_node_map[node];
 }
   
-bool RccCallGraphAnnotationMap::is_computed() {
+bool RccCallGraphAnnotationMap::is_computed() const {
   return m_computed;
 }
 

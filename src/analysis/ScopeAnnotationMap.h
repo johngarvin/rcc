@@ -39,7 +39,7 @@ public:
   // demand-driven analysis
   MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
   MyMappedT get(const MyKeyT & k);
-  bool is_computed();
+  bool is_computed() const;
 
   // singleton
   static ScopeAnnotationMap * get_instance();

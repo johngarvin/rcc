@@ -560,11 +560,6 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
   return iter;
 }
 
-/// Given a statement, return its Alias::IRStmtType
-Alias::IRStmtType R_IRInterface::getAliasStmtType(StmtHandle h) {
-  return Alias::ANY_STMT;  // not a pointer assignment (R doesn't have pointers)
-}
-
 /// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
 /// pairs where there is a source and target such that target
 OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIterator(StmtHandle stmt) {

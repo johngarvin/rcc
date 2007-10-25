@@ -40,11 +40,12 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/SymbolTable.h>
 #include <support/RccError.h>
 
-#include <analysis/call-graph/RccCallGraphAnnotationMap.h>
-#include <analysis/call-graph/RccCallGraphAnnotation.h>
+// #include <analysis/call-graph/RccCallGraphAnnotationMap.h>
+// #include <analysis/call-graph/RccCallGraphAnnotation.h>
 
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
@@ -61,7 +62,6 @@ using namespace RAnnot;
 static bool output_main_program = true;
 static bool output_default_args = true;
 static bool analysis_debug = false;
-static bool cfg_dot_dump = false;
 
 int main(int argc, char *argv[]) {
   int i;
@@ -83,17 +83,13 @@ int main(int argc, char *argv[]) {
 
   // get options
   while(1) {
-    c = getopt(argc, argv, "acdmo:");
+    c = getopt(argc, argv, "admo:");
     if (c == -1) {
       break;
     }
     switch(c) {
     case 'a':
       output_default_args = false;
-      break;
-    case 'c':
-      // dump CFG in dot form
-      cfg_dot_dump = true;
       break;
     case 'd':
       // print debugging information
@@ -199,38 +195,6 @@ int main(int argc, char *argv[]) {
 	SymbolTable * st = fi->get_scope()->get_symbol_table();
 	st->dump(cout);
       }
-      cout << "Dumping call graph:" << endl;
-      RccCallGraphAnnotationMap::get_instance()->dump(cout);
-
-      cout << "Dumping OA call graph (not yet used):" << endl;
-
-      // first build call graph
-      OA::CallGraph::ManagerCallGraphStandard man(an->get_interface());
-      OA::OA_ptr<OA::ProcHandleIterator> proc_iter; proc_iter = new R_ProcHandleIterator(an->get_scope_tree_root());
-      OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man; alias_man = new OA::Alias::ManagerInterAliasMapBasic(an->get_interface());
-      OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
-      OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph = man.performAnalysis(proc_iter, alias);
-      // output call graph
-      // call_graph->output(*an->get_interface());
-      
-      //   output graph in DOT form
-      OA::OA_ptr<OA::OutputBuilder> dot_builder; dot_builder = new OA::OutputBuilderDOT;
-      call_graph->configOutput(dot_builder);
-      call_graph->output(*an->get_interface());
-      
-      // now perform call graph data flow analysis
-      OA::SideEffect::ManagerInterSideEffectStandard solver(an->get_interface());
-      OA::DataFlow::ManagerParamBindings pb_man(an->get_interface());
-      OA::OA_ptr<OA::DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(call_graph);
-      OA::OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
-      intra_man = new OA::SideEffect::ManagerSideEffectStandard(an->get_interface());
-      OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> df_info;
-      df_info = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, OA::DataFlow::ITERATIVE);
-      cout << "Dumping call graph DF analysis:" << endl;
-      df_info->dump(cout, an->get_interface());
-    }
-    if (cfg_dot_dump) {
-      RccCallGraphAnnotationMap::get_instance()->dumpdot(cout);
     }
     analysis_ok = true;
   }
@@ -301,8 +265,15 @@ int main(int argc, char *argv[]) {
       continue;
     }
     if (analysis_ok) {
-      exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
-    } else {
+      try {
+	exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
+      } catch (AnalysisException ae) {
+	rcc_warn("analysis encountered difficulties; compiling trivially");
+	clearProperties();
+	analysis_ok = false;
+      }
+    }
+    if (!analysis_ok) {
       // compile trivially
       Expression exp1 = subexps.op_literal(CAR(r_expressions), "R_GlobalEnv");      
       exp = Expression(emit_call2("Rf_eval", exp1.var, "R_GlobalEnv"),
@@ -329,6 +300,16 @@ int main(int argc, char *argv[]) {
       this_exp += "UNPROTECT(1);\n";
     exec_code += indent(emit_in_braces(this_exp));
   }
+  if (analysis_debug && analysis_ok) {
+    // output call graph in DOT form
+    cout << "Dumping call graph in DOT form:" << endl;
+    OACallGraphAnnotationMap::get_instance()->dumpdot(cout);
+    
+    // output data flow results
+    cout << "Dumping call graph DF analysis:" << endl;
+    OACallGraphAnnotationMap::get_instance()->dump(cout);
+  }
+
 #endif
 
   string finish_code = "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) +

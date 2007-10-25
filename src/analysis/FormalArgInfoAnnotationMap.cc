@@ -92,7 +92,7 @@ AnnotationMap::MyMappedT FormalArgInfoAnnotationMap::get(const AnnotationMap::My
   return annot->second;
 }
   
-bool FormalArgInfoAnnotationMap::is_computed() {
+bool FormalArgInfoAnnotationMap::is_computed() const {
   return m_computed;
 }
 

@@ -132,7 +132,7 @@ bool VarAnnotationMap::is_valid(const MyKeyT & k) {
 }
     
   
-bool VarAnnotationMap::is_computed() {
+bool VarAnnotationMap::is_computed() const {
   return m_computed;
 }
 

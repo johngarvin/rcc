@@ -117,7 +117,7 @@ MyMappedT VarBindingAnnotationMap::get(const MyKeyT & k) {
   return annot->second;
 }
 
-bool VarBindingAnnotationMap::is_computed() {
+bool VarBindingAnnotationMap::is_computed() const {
   return m_computed;
 }
 

@@ -265,9 +265,6 @@ public:
   /// over can be arbitrary.
   OA::OA_ptr<OA::MemRefHandleIterator> getAllMemRefs(OA::StmtHandle stmt);
 
-  /// Given a statement, return its Alias::IRStmtType
-  OA::Alias::IRStmtType getAliasStmtType(OA::StmtHandle h);
-
   /// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
   /// pairs where there is a source and target such that target
   OA::OA_ptr<OA::Alias::PtrAssignPairStmtIterator> getPtrAssignStmtPairIterator(OA::StmtHandle stmt);

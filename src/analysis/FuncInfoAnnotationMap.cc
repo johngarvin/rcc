@@ -87,7 +87,7 @@ MyMappedT FuncInfoAnnotationMap::get(const MyKeyT & k) {
   return annot->second;
 }
 
-bool FuncInfoAnnotationMap::is_computed() {
+bool FuncInfoAnnotationMap::is_computed() const {
   return m_computed;
 }
 

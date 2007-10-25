@@ -54,7 +54,7 @@ public:
   /// given a call site, return the list of fundef/library nodes reachable; compute if necessary
   MyMappedT get(const MyKeyT & k);
 
-  bool is_computed();
+  bool is_computed() const;
 
   // ----- implement singleton pattern -----
 

@@ -109,7 +109,7 @@ MyMappedT ScopeAnnotationMap::get(const MyKeyT & k) {
   return annot->second;
 }
   
-bool ScopeAnnotationMap::is_computed() {
+bool ScopeAnnotationMap::is_computed() const {
   return m_computed;
 }
 

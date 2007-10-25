@@ -92,7 +92,6 @@ PropertyHndlT OACallGraphAnnotationMap::m_handle = "OACallGraph";
 MyMappedT & OACallGraphAnnotationMap::operator[](const MyKeyT & k) {
   if (!is_computed()) {
     compute();
-    m_computed = true;
   }
   
   return m_map[k];
@@ -102,7 +101,6 @@ MyMappedT & OACallGraphAnnotationMap::operator[](const MyKeyT & k) {
 MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
   if (!is_computed()) {
     compute();
-    m_computed = true;
   }
   
   std::map<MyKeyT, MyMappedT>::const_iterator it = m_map.find(k);
@@ -121,33 +119,49 @@ MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
 }
 
 
-bool OACallGraphAnnotationMap::is_computed() {
+bool OACallGraphAnnotationMap::is_computed() const {
   return m_computed;
 }
 
 void OACallGraphAnnotationMap::compute() {
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
-  // first build call graph
-  OA::CallGraph::ManagerCallGraphStandard man(interface);
-  OA::OA_ptr<OA::ProcHandleIterator> proc_iter;
+  // first build call graph. The call graph manager needs
+  // (1) a procedure iterator and (2) alias information
+  CallGraph::ManagerCallGraphStandard man(interface);
+
+  // (1) procedure iterator
+  OA_ptr<ProcHandleIterator> proc_iter;
   proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
-  OA::OA_ptr<OA::Alias::ManagerInterAliasMapBasic> alias_man;
-  alias_man = new OA::Alias::ManagerInterAliasMapBasic(interface);
-  OA::OA_ptr<OA::Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+
+  // (2) alias information
+  OA_ptr<Alias::ManagerInterAliasMapBasic> alias_man;
+  alias_man = new Alias::ManagerInterAliasMapBasic(interface);
+  OA_ptr<Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+
+  // build call graph
   m_call_graph = man.performAnalysis(proc_iter, alias);
   
-  // now perform call graph data flow analysis
-  OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
-  OA::DataFlow::ManagerParamBindings pb_man(interface);
-  OA::OA_ptr<OA::DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(m_call_graph);
-  OA::OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
-  intra_man = new OA::SideEffect::ManagerSideEffectStandard(interface);
-  m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, alias, intra_man, OA::DataFlow::ITERATIVE);
+  // now perform call graph data flow analysis (specifically, interprocedural side effect).
+  // We need (3) param bindings and (4) intraprocedural side effect information
+  SideEffect::ManagerInterSideEffectStandard solver(interface);
+
+  // (3) param bindings
+  DataFlow::ManagerParamBindings pb_man(interface);
+  OA_ptr<DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(m_call_graph);
+
+  // (4) intra side effect information
+  OA_ptr<SideEffect::ManagerSideEffectStandard> intra_man;
+  intra_man = new SideEffect::ManagerSideEffectStandard(interface);
+
+  // compute side effect information
+  m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
+
+  m_computed = true;
 }
 
 //  ----- iterators ----- 
 
-// TODO: fill in
+// TODO: fill in if anyone ever uses these
 iterator OACallGraphAnnotationMap::begin() { rcc_error("not yet implemented"); }
 iterator OACallGraphAnnotationMap::end() { rcc_error("not yet implemented"); }
 const_iterator OACallGraphAnnotationMap::begin() const { rcc_error("not yet implemented"); }
@@ -155,14 +169,20 @@ const_iterator OACallGraphAnnotationMap::end() const { rcc_error("not yet implem
 
 // ----- debugging -----
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
+  if (!is_computed()) {
+    compute();
+  }
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
   m_call_graph->output(*interface);
   m_side_effect->dump(cout, interface);
 }
 
 void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
+  if (!is_computed()) {
+    compute();
+  }
   //   output graph in DOT form
-  OA::OA_ptr<OA::OutputBuilder> dot_builder; dot_builder = new OA::OutputBuilderDOT;
+  OA_ptr<OutputBuilder> dot_builder; dot_builder = new OutputBuilderDOT;
   m_call_graph->configOutput(dot_builder);
   m_call_graph->output(*R_Analyst::get_instance()->get_interface());
 }

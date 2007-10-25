@@ -49,7 +49,7 @@ public:
   // demand-driven analysis
   MyMappedT & operator[](const MyKeyT & k);
   MyMappedT get(const MyKeyT & k);
-  bool is_computed();
+  bool is_computed() const;
 
   // iterators
   iterator begin();
