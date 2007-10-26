@@ -625,19 +625,41 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  // TODO
-  rcc_warn("getDefs: SSA interface not yet implemented");
-  throw AnalysisException();
-  OA_ptr<SSA::IRUseDefIterator> dummy;
-  return dummy;
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
+  assert(stmt_info != 0);
+
+  // For each variable, insert only if it's a def
+  OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
+  VarRefFactory * fact = VarRefFactory::get_instance();
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
+    if ((*var_iter)->getUseDefType() == Var::Var_DEF) {
+      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
+      defs->insert_ref(bvr);
+    }
+  }
+  OA_ptr<SSA::IRUseDefIterator> retval;
+  retval = new R_UseDefAsLeafIterator(defs->get_iterator());
+  return retval;
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  // TODO
-  rcc_warn("getUses: SSA interface not yet implemented");
-  throw AnalysisException();
-  OA_ptr<SSA::IRUseDefIterator> dummy;
-  return dummy;
+  ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
+  assert(stmt_info != 0);
+
+  // For each variable, insert only if it's a use
+  OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
+  VarRefFactory * fact = VarRefFactory::get_instance();
+  ExpressionInfo::const_var_iterator var_iter;
+  for(var_iter = stmt_info->begin_vars(); var_iter != stmt_info->end_vars(); ++var_iter) {
+    if ((*var_iter)->getUseDefType() == Var::Var_USE) {
+      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref((*var_iter)->getMention_c());
+      uses->insert_ref(bvr);
+    }
+  }
+  OA_ptr<SSA::IRUseDefIterator> retval;
+  retval = new R_UseDefAsLeafIterator(uses->get_iterator());
+  return retval;
 }
 
 
