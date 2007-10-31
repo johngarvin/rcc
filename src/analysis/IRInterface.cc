@@ -531,20 +531,24 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle c
   OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
   OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
   VarInfo * vi = make_var_info(callee);
-  assert (vi->is_internal());
-  // assuming internal procedures have no effect on any names that we care about
-  OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
-  retval->emptyLMOD();
-  retval->emptyMOD();
-  retval->emptyLDEF();
-  retval->emptyDEF();
-  retval->emptyLUSE();
-  retval->emptyUSE();
-  retval->emptyLREF();
-  retval->emptyREF();
-  return retval;
-
-  // return InterSideEffectIRInterfaceDefault::getSideEffect(proc, sym);
+  if (vi->is_internal()) {
+    // assuming internal procedures have no effect on names in userland
+    OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
+    retval->emptyLMOD();
+    retval->emptyMOD();
+    retval->emptyLDEF();
+    retval->emptyDEF();
+    retval->emptyLUSE();
+    retval->emptyUSE();
+    retval->emptyLREF();
+    retval->emptyREF();
+    return retval;
+  } else {
+    // extremely conservative;
+    // InterSideEffectIRInterfaceDefault::getSideEffect returns a new
+    // SideEffectStandard, indicating side effects on unknown locations
+    return InterSideEffectIRInterfaceDefault::getSideEffect(caller, callee);
+  }
 }
 
 //------------------------------------------------------------
