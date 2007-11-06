@@ -671,12 +671,9 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 // Symbol Handles
 //--------------------------------------------------------
 
-/// To build call graphs, we may need different procedures to return
-/// different names here.
-///
-/// TODO: R procedures are first class. We need different procedures
-/// to have different "names" even if they happen to be bound to the
-/// same symbol. For now we're just giving the first name assigned.
+/// TODO: R procedures are first class. We need to find a way to
+/// handle more than one procedure bound to the same name in the same
+/// scope. For now we're just giving the first name assigned.
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   if (h == HellProcedure::get_instance()) {
     return SymHandle(0);
@@ -689,7 +686,13 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
     SEXP name = fi->get_first_name_c();
     if (VarAnnotationMap::get_instance()->is_valid(name)) {
-      return make_sym_h(find_st_entry(fi, getProperty(Var, name)));
+      VarInfo * sym = find_st_entry(fi, getProperty(Var, name));
+      if (sym->size_defs() == 1) {
+	return make_sym_h(sym);
+      } else {
+	// fail gracefully if there's more than one definition
+	throw AnalysisException();
+      }
     } else {
       // the global-scope procedure and anonymous functions won't have a Var annotation.
       // In this case, return 0.
