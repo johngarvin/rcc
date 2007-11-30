@@ -55,16 +55,11 @@ typedef VarAnnotationMap::const_iterator const_iterator;
 //  ----- constructor/destructor ----- 
   
 VarAnnotationMap::VarAnnotationMap()
-  : m_computed(false),
-    m_map()
-  {}
+{}
   
-VarAnnotationMap::~VarAnnotationMap() {
-  map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
-    delete(iter->second);
-  }
-}
+VarAnnotationMap::~VarAnnotationMap()
+{}
+
 
 // ----- singleton pattern -----
 
@@ -90,58 +85,6 @@ void VarAnnotationMap::create() {
 VarAnnotationMap * VarAnnotationMap::m_instance = 0;
 PropertyHndlT VarAnnotationMap::m_handle = "Var";
 
-//  ----- demand-driven analysis ----- 
-
-// Subscripting is here temporarily to allow PutProperty -->
-// PropertySet::insert to work right.
-// TODO: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & VarAnnotationMap::operator[](const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-
-  return m_map[k];
-}
-
-// Perform the computation if necessary and returns the requested
-// data.
-MyMappedT VarAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    rcc_error("VarAnnotationMap: possible invalid key not found in map");
-  }
-
-  return annot->second;
-}
-
-bool VarAnnotationMap::is_valid(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  return (annot != m_map.end());
-}
-    
-  
-bool VarAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-//  ----- iterators ----- 
-
-iterator VarAnnotationMap::begin() { return m_map.begin(); }
-iterator VarAnnotationMap::end() { return m_map.end(); }
-const_iterator VarAnnotationMap::begin() const { return m_map.begin(); }
-const_iterator VarAnnotationMap::end() const { return m_map.end(); }
 
 // ----- computation -----
 
@@ -173,7 +116,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
 	  // add Var annotation to our map
 	  Var * v = *ei;
-	  m_map[v->getMention_c()] = v;
+	  get_map()[v->getMention_c()] = v;
 	}
       }
     }
@@ -204,4 +147,5 @@ void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
   solver.perform_analysis(proc, cfg);
 }
 
-}
+
+} // end namespace RAnnot

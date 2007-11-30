@@ -38,6 +38,8 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
+  DefaultAnnotationMap.cc                       \
+  DefaultAnnotationMap.h                        \
   DefaultDFSet.cc                               \
   DefaultDFSet.h                                \
   DefVar.cc                                     \

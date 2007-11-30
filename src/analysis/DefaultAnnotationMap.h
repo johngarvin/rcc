@@ -29,8 +29,11 @@
 
 #include <analysis/AnnotationMap.h>
 
-class DefaultAnnotationMap : public AnnotationMap {
+namespace RAnnot {
 
+class DefaultAnnotationMap : public AnnotationMap {
+public:
+  DefaultAnnotationMap();
   virtual ~DefaultAnnotationMap();
 
   virtual MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
@@ -45,13 +48,15 @@ class DefaultAnnotationMap : public AnnotationMap {
   virtual const_iterator end() const;
   
 protected:
-  std::map<MyKeyT, MyMappedT> get_map();
-  virtual void compute() = 0;
+  std::map<MyKeyT, MyMappedT> & get_map();
+  virtual void compute() = 0;              // Template Method pattern
 
 private:
   
   bool m_computed;
   std::map<MyKeyT, MyMappedT> m_map;
 };
+
+} // end namespace RAnnot
 
 #endif
