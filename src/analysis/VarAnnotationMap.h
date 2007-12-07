@@ -20,7 +20,8 @@
 //
 // Set of Var annotations, representing basic variable information,
 // including the methods for computing the information. Maps a cons
-// cell containing a SYMSXP to a Var annotation.
+// cell containing a SYMSXP to a Var annotation. Does NOT own the
+// values (Vars) in the map.
 //
 // TODO: This should
 // probably be split up into the different analyses at some point.

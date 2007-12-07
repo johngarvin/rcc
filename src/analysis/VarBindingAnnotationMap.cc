@@ -19,7 +19,7 @@
 // File: VarBindingAnnotationMap.h
 //
 // Maps each variable to a VarBinding that describes its binding
-// scopes.
+// scopes. Owns the values in its map and must delete them in destructor.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -59,16 +59,10 @@ typedef VarBindingAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor -----
 
-VarBindingAnnotationMap::VarBindingAnnotationMap()
-  : m_computed(false),
-    m_map()
-  {}
+VarBindingAnnotationMap::VarBindingAnnotationMap() {}
 
 VarBindingAnnotationMap::~VarBindingAnnotationMap() {
-  map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
-    delete(iter->second);
-  }
+  delete_map_values();
 }
 
 // ----- singleton pattern -----
@@ -95,39 +89,6 @@ void VarBindingAnnotationMap::create() {
 VarBindingAnnotationMap * VarBindingAnnotationMap::m_instance = 0;
 PropertyHndlT VarBindingAnnotationMap::m_handle = "VarBinding";
 
-// ----- demand-driven analysis -----
-
-MyMappedT & VarBindingAnnotationMap::operator[](const MyKeyT & k) {
-  rcc_error("VarBindingAnnotationMap::operator[] not implemented");
-}
-
-MyMappedT VarBindingAnnotationMap::get(const MyKeyT & k) {
-  if (!m_computed) {
-    compute();
-    m_computed = true;
-  }
-
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in VarBinding map");
-  }
-
-  return annot->second;
-}
-
-bool VarBindingAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-//  ----- iterators ----- 
-
-iterator VarBindingAnnotationMap::begin() { return m_map.begin(); }
-iterator VarBindingAnnotationMap::end() { return m_map.end(); }
-const_iterator VarBindingAnnotationMap::begin() const { return m_map.begin(); }
-const_iterator VarBindingAnnotationMap::end() const { return m_map.end(); }
-
 // ----- computation -----
 
 /// Each Var is bound in some subset of the sequence of ancestor
@@ -153,7 +114,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
       Var * var = getProperty(Var, fi->get_arg(i));
       VarBinding * binding = new VarBinding();
       binding->insert(fi->get_scope());
-      m_map[fi->get_arg(i)] = binding;
+      get_map()[fi->get_arg(i)] = binding;
     }
     
     // now create bindings for mentions in the function body
@@ -210,7 +171,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	break;
       }
       // whether global or not...
-      m_map[v->getMention_c()] = scopes;
+      get_map()[v->getMention_c()] = scopes;
     }  // next mention
   }  // next function
 }
@@ -218,7 +179,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 void VarBindingAnnotationMap::populate_symbol_tables() {
   // for each (mention, VarBinding) pair in our map
   std::map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+  for(iter = begin(); iter != end(); ++iter) {
     // TODO: refactor AnnotationMaps to avoid downcasting
     VarBinding * vb = dynamic_cast<VarBinding *>(iter->second);
     Var * var = getProperty(Var, iter->first);

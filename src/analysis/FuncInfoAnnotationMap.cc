@@ -26,10 +26,7 @@ typedef FuncInfoAnnotationMap::const_iterator const_iterator;
 
 //  ----- constructor/destructor ----- 
 
-FuncInfoAnnotationMap::FuncInfoAnnotationMap()
-: m_computed(false),
-  m_map()
-  {}
+FuncInfoAnnotationMap::FuncInfoAnnotationMap() {}
 
 FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {
   // This AnnotationMap owns all FuncInfos, so we want to delete them now.
@@ -61,43 +58,6 @@ void FuncInfoAnnotationMap::create() {
 FuncInfoAnnotationMap * FuncInfoAnnotationMap::m_instance = 0;
 PropertyHndlT FuncInfoAnnotationMap::m_handle = "FuncInfo";
 
-//  ----- demand-driven analysis ----- 
-
-// Subscripting is here temporarily to allow PutProperty -->
-// PropertySet::insert to work right.
-// FIXME: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & FuncInfoAnnotationMap::operator[](const MyKeyT & k) {
-  return m_map[k];
-}
-
-// Perform the computation if necessary and return the requested data.
-MyMappedT FuncInfoAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
-  }
-
-  return annot->second;
-}
-
-bool FuncInfoAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-//  ----- iterators ----- 
-
-iterator FuncInfoAnnotationMap::begin() { return m_map.begin(); }
-const_iterator  FuncInfoAnnotationMap::begin() const { return m_map.begin(); }
-iterator  FuncInfoAnnotationMap::end() { return m_map.end(); }
-const_iterator  FuncInfoAnnotationMap::end() const { return m_map.end(); }
-
 // ----- computation -----
 
 void FuncInfoAnnotationMap::compute() {
@@ -117,7 +77,7 @@ void FuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {
   SEXP definition = CAR(assign_rhs_c(r_root));
   assert(is_fundef(definition));
   FuncInfo * a_root = new FuncInfo(0, name_c, definition); // root node has null parent
-  m_map[definition] = a_root;
+  get_map()[definition] = a_root;
   
   // Skip to the body of the function. Otherwise, the definition we
   // just recorded would be flagged as a duplicate "anonymous"
@@ -144,7 +104,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
       SEXP rhs = CAR(assign_rhs_c(e));
       if (is_fundef(rhs)) {                  // a variable bound to a function
 	FuncInfo * newfun = new FuncInfo(parent, name_c, rhs);
-	m_map[rhs] = newfun;
+	get_map()[rhs] = newfun;
 
 	// Skip to the body of the function. Otherwise, the definition we
 	// just recorded would be flagged as a duplicate "anonymous"
@@ -155,7 +115,7 @@ void FuncInfoAnnotationMap::build_scope_tree_rec(SEXP e, FuncInfo * parent) {
       }
     } else if (is_fundef(e)) {  // anonymous function
       FuncInfo * newfun = new FuncInfo(parent, Rf_cons(Rf_install("<unknown function>"), R_NilValue), e);
-      m_map[e] = newfun;
+      get_map()[e] = newfun;
       build_scope_tree_rec(CAR(fundef_body_c(e)), newfun);
     } else if (is_rcc_assertion(e)) { // rcc_assert call
       // Assertions are processed here.

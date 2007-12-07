@@ -44,10 +44,7 @@ typedef ScopeAnnotationMap::const_iterator const_iterator;
 
 //  ----- constructor/destructor ----- 
   
-ScopeAnnotationMap::ScopeAnnotationMap()
-  : m_computed(false),
-    m_map()
-  {}
+ScopeAnnotationMap::ScopeAnnotationMap() {}
 
 ScopeAnnotationMap::~ScopeAnnotationMap() {
   // no-op; does not own annotations in map
@@ -77,49 +74,6 @@ void ScopeAnnotationMap::create() {
 ScopeAnnotationMap * ScopeAnnotationMap::s_instance = 0;
 PropertyHndlT ScopeAnnotationMap::s_handle = "Scope";
 
-//  ----- demand-driven analysis ----- 
-
-// Subscripting is here temporarily to allow PutProperty -->
-// PropertySet::insert to work right.
-// TODO: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & ScopeAnnotationMap::operator[](const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-
-  return m_map[k];
-}
-
-// Perform the computation if necessary and returns the requested
-// data.
-MyMappedT ScopeAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
-  }
-
-  return annot->second;
-}
-  
-bool ScopeAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-//  ----- iterators ----- 
-
-iterator ScopeAnnotationMap::begin() { return m_map.begin(); }
-iterator ScopeAnnotationMap::end() { return m_map.end(); }
-const_iterator ScopeAnnotationMap::begin() const { return m_map.begin(); }
-const_iterator ScopeAnnotationMap::end() const { return m_map.end(); }
-
 // ----- computation -----
 
 void ScopeAnnotationMap::compute() {
@@ -130,7 +84,7 @@ void ScopeAnnotationMap::compute() {
     R_PreorderIterator iter(scope->get_defn());
     for(iter.reset(); iter.isValid(); ++iter) {
       if (is_cons(iter.current())) {
-	m_map[iter.current()] = scope;
+	get_map()[iter.current()] = scope;
       }
     }
   }

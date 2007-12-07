@@ -19,27 +19,22 @@
 // File: ScopeAnnotationMap.h
 //
 // Maps cons cells (SEXPs of LISTSXP or LANGSXP type) to the FuncInfo
-// of the scope where they reside.
+// of the scope where they reside. Note: does NOT own the values in the map.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #ifndef SCOPE_ANNOTATION_MAP_H
 #define SCOPE_ANNOTATION_MAP_H
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class ScopeAnnotationMap : public AnnotationMap {
+class ScopeAnnotationMap : public DefaultAnnotationMap {
 public:
   // deconstructor
   virtual ~ScopeAnnotationMap();
-
-  // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
-  MyMappedT get(const MyKeyT & k);
-  bool is_computed() const;
 
   // singleton
   static ScopeAnnotationMap * get_instance();
@@ -47,21 +42,12 @@ public:
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
-  // iterators
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
-
 private:
   // private constructor for singleton pattern
   ScopeAnnotationMap();
 
   void compute();
 
-  bool m_computed;
-  std::map<MyKeyT, MyMappedT> m_map;
-  
   static ScopeAnnotationMap * s_instance;
   static PropertyHndlT s_handle;
   static void create();

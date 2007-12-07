@@ -38,12 +38,11 @@ typedef FormalArgInfoAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor/destructor -----
 
-FormalArgInfoAnnotationMap::FormalArgInfoAnnotationMap()
-: m_computed(false),
-  m_map()
-  {}
+FormalArgInfoAnnotationMap::FormalArgInfoAnnotationMap() {}
 
-FormalArgInfoAnnotationMap::~FormalArgInfoAnnotationMap() {}
+FormalArgInfoAnnotationMap::~FormalArgInfoAnnotationMap() {
+  delete_map_values();
+}
 
 // ----- singleton pattern -----
 
@@ -65,43 +64,6 @@ void FormalArgInfoAnnotationMap::create() {
   m_instance = new FormalArgInfoAnnotationMap();
   analysisResults.add(m_handle, m_instance);
 }
-
-// ----- demand-driven analysis -----
-
-// Subscripting is here temporarily to allow PutProperty -->
-// PropertySet::insert to work right.
-// TODO: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & FormalArgInfoAnnotationMap::operator[](const MyKeyT & k) {
-  return m_map[k];
-}
-
-// Perform the computation if necessary and return the requested data.
-AnnotationMap::MyMappedT FormalArgInfoAnnotationMap::get(const AnnotationMap::MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  
-  // after computing, an annotation ought to exist for every valid
-  // key. If not, it's an error
-  std::map<MyKeyT, MyMappedT>::const_iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    rcc_error("Possible invalid key not found in map");
-  }
-
-  return annot->second;
-}
-  
-bool FormalArgInfoAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-// ----- iterators -----
-
-iterator FormalArgInfoAnnotationMap::begin() { return m_map.begin(); }
-const_iterator  FormalArgInfoAnnotationMap::begin() const { return m_map.begin(); }
-iterator  FormalArgInfoAnnotationMap::end() { return m_map.end(); }
-const_iterator  FormalArgInfoAnnotationMap::end() const { return m_map.end(); }
 
 // TODO: implement this (move functionality that lives in FuncInfo here)
 void FormalArgInfoAnnotationMap::compute() {

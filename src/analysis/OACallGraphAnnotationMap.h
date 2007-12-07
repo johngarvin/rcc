@@ -18,7 +18,8 @@
 
 // File: OACallGraphAnnotationMap.h
 //
-// Represents the OpenAnalysis call graph of the program.
+// Represents the OpenAnalysis call graph of the program. Owns the
+// values in its map, so they must be deleted in the destructor.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -27,7 +28,7 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace OA {
@@ -41,7 +42,7 @@ namespace OA {
 
 namespace RAnnot {
 
-class OACallGraphAnnotationMap : public AnnotationMap
+class OACallGraphAnnotationMap : public DefaultAnnotationMap
 {
 public:
   // ----- destructor -----
@@ -49,12 +50,8 @@ public:
 
   // ----- demand-driven analysis -----
 
-  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
-
-  /// given a call site, return the list of fundef/library nodes reachable; compute if necessary
-  MyMappedT get(const MyKeyT & k);
-
-  bool is_computed() const;
+  // overrides DefaultAnnotationMap::get
+  virtual MyMappedT get(const MyKeyT & k);
 
   // ----- implement singleton pattern -----
 
@@ -62,13 +59,6 @@ public:
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
-
-  // ----- iterators -----
-
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
 
   // ----- debugging -----
 
@@ -93,10 +83,8 @@ private:
   void compute();
 
 private:
-  bool m_computed; // has our information been computed yet?
   OA::OA_ptr<OA::CallGraph::CallGraphInterface> m_call_graph;
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect; // side effect information
-  std::map<MyKeyT, MyMappedT> m_map;
 };
 
 }

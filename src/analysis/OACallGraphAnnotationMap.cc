@@ -54,13 +54,11 @@ typedef OACallGraphAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor, destructor -----
 
-OACallGraphAnnotationMap::OACallGraphAnnotationMap() : m_computed(false)
-{
-}
+OACallGraphAnnotationMap::OACallGraphAnnotationMap() {}
 
-OACallGraphAnnotationMap::~OACallGraphAnnotationMap()
-{
-}
+OACallGraphAnnotationMap::~OACallGraphAnnotationMap() {
+  delete_map_values();
+}  
 
 // ----- singleton pattern -----
 
@@ -88,39 +86,25 @@ PropertyHndlT OACallGraphAnnotationMap::m_handle = "OACallGraph";
 
 // ----- demand-driven analysis -----
 
-// TODO: remove this when refactoring is done
-MyMappedT & OACallGraphAnnotationMap::operator[](const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-  }
-  
-  return m_map[k];
-}
-
 /// given a call site, return the list of fundef nodes reachable; compute if necessary
+// overrides DefaultAnnotationMap::get
 MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
   if (!is_computed()) {
     compute();
   }
   
-  std::map<MyKeyT, MyMappedT>::const_iterator it = m_map.find(k);
-  if (it != m_map.end()) {
-    return it->second;
+  if (is_valid(k)) {
+    return get_map()[k];
   } else {
     OA_ptr<ProcHandleIterator> iter = m_call_graph->getCalleeProcIter(HandleInterface::make_call_h(k));
-    // only populate map if iterator is nonempty
+    // only populate map if there's at least one callee (iterator is nonempty)
     if (iter->isValid()) {
-      m_map[k] = new OACallGraphAnnotation(iter);
-      return m_map[k];
+      get_map()[k] = new OACallGraphAnnotation(iter);
+      return get_map()[k];
     } else {
       return 0;
     }
   }
-}
-
-
-bool OACallGraphAnnotationMap::is_computed() const {
-  return m_computed;
 }
 
 void OACallGraphAnnotationMap::compute() {
@@ -155,17 +139,7 @@ void OACallGraphAnnotationMap::compute() {
 
   // compute side effect information
   m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
-
-  m_computed = true;
 }
-
-//  ----- iterators ----- 
-
-// TODO: fill in if anyone ever uses these
-iterator OACallGraphAnnotationMap::begin() { rcc_error("not yet implemented"); }
-iterator OACallGraphAnnotationMap::end() { rcc_error("not yet implemented"); }
-const_iterator OACallGraphAnnotationMap::begin() const { rcc_error("not yet implemented"); }
-const_iterator OACallGraphAnnotationMap::end() const { rcc_error("not yet implemented"); }
 
 // ----- debugging -----
 void OACallGraphAnnotationMap::dump(std::ostream & os) {

@@ -19,7 +19,7 @@
 // File: VarBindingAnnotationMap.h
 //
 // Maps each variable to a VarBinding that describes its binding
-// scopes.
+// scopes. Owns the values in its map and must delete them in destructor.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -30,34 +30,25 @@
 
 #include <OpenAnalysis/Utils/Iterator.hpp>
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class VarBindingAnnotationMap : public AnnotationMap
+class VarBindingAnnotationMap : public DefaultAnnotationMap
 {
 public:
-  // constructor/deconstructor
-  VarBindingAnnotationMap();
+  // deconstructor
   virtual ~VarBindingAnnotationMap();
 
   // singleton pattern
   static VarBindingAnnotationMap * get_instance();
   static PropertyHndlT handle();
 
-  // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k);
-  MyMappedT get(const MyKeyT & k);
-  bool is_computed() const;
-
-  // iterators
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
-
 private:
+  // private constructor for singleton pattern
+  VarBindingAnnotationMap();
+
   void compute();
   void create_var_bindings();
   void populate_symbol_tables();
@@ -65,9 +56,6 @@ private:
   static void create();
 
 private:
-  bool m_computed; // has our information been computed yet?
-  std::map<MyKeyT, MyMappedT> m_map;
-
   static VarBindingAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
 };

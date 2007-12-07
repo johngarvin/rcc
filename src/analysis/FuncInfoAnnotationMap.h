@@ -4,39 +4,33 @@
 #define FUNC_INFO_ANNOTATION_MAP_H
 
 // Set of FuncInfo annotations representing function information,
-// including the methods for computing the information. This should
-// probably be split up into the different analyses at some point.
+// including the methods for computing the information. We use a
+// special destructor for the FuncInfos uses as values in the map;
+// FuncInfos use the NonUniformDegreeTree library, which has its own
+// mechanism for deletion.
+
+// TODO: This should be split up into the different analyses at some
+// point.
 
 #include <map>
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
 class FuncInfo;
 
-class FuncInfoAnnotationMap : public AnnotationMap {
+class FuncInfoAnnotationMap : public DefaultAnnotationMap {
 public:
   // constructor/deconstructor
   virtual ~FuncInfoAnnotationMap();
-
-  // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
-  MyMappedT get(const MyKeyT & k);
-  bool is_computed() const;
 
   // singleton
   static FuncInfoAnnotationMap * get_instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
-
-  // iterators
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
 
 private:
   /// private constructor for singleton pattern
@@ -54,9 +48,6 @@ private:
   /// Recursively traverse e to build the scope tree. 'parent' is a
   /// pointer to the parent lexical scope.
   void build_scope_tree_rec(SEXP e, FuncInfo * parent);
-
-  bool m_computed; // has our information been computed yet?
-  std::map<MyKeyT, MyMappedT> m_map;
 
   static FuncInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

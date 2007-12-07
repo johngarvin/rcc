@@ -25,7 +25,10 @@
 #ifndef EXPRESSION_INFO_ANNOTATION_MAP_H
 #define EXPRESSION_INFO_ANNOTATION_MAP_H
 
-// Set of ExpressionInfo annotations.
+// Set of ExpressionInfo annotations. Note that this AnnotationMap is
+// computed built piecewise instead of all at once. Thus it uses a
+// different interface than DefaultAnnotationMap. Note: owns values in
+// map, so they must be deleted in the destructor
 
 #include <map>
 

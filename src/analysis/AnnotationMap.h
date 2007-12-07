@@ -1,5 +1,5 @@
 // -*-Mode: C++;-*-
-// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.7 2007/10/25 08:15:29 garvin Exp $
+// $Header: /home/garvin/cvs-svn/cvs-repos/developer/rcc/src/analysis/AnnotationMap.h,v 1.8 2007/12/07 23:27:12 garvin Exp $
 
 #ifndef ANNOTATION_MAP_H
 #define ANNOTATION_MAP_H
@@ -81,10 +81,6 @@ public:
   // -------------------------------------------------------
   virtual MyMappedT & operator[](const MyKeyT & k) = 0; // TODO: remove when refactoring is done
   virtual MyMappedT get(const MyKeyT & k) = 0;
-  
-  // -------------------------------------------------------
-  // demand-driven analysis
-  // -------------------------------------------------------
   virtual bool is_computed() const = 0;
   
   // -------------------------------------------------------

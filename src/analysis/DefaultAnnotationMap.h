@@ -38,8 +38,9 @@ public:
 
   virtual MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
   virtual MyMappedT get(const MyKeyT & k);
-  bool is_valid(const MyKeyT & k);
-  bool is_computed() const;
+
+  virtual bool is_valid(const MyKeyT & k);
+  virtual bool is_computed() const;
 
   // iterators
   virtual iterator begin();
@@ -49,10 +50,10 @@ public:
   
 protected:
   std::map<MyKeyT, MyMappedT> & get_map();
+  void delete_map_values();
   virtual void compute() = 0;              // Template Method pattern
 
 private:
-  
   bool m_computed;
   std::map<MyKeyT, MyMappedT> m_map;
 };
