@@ -41,6 +41,7 @@ public:
 
   virtual bool is_valid(const MyKeyT & k);
   virtual bool is_computed() const;
+  virtual bool computation_in_progress() const;
 
   // iterators
   virtual iterator begin();
@@ -51,10 +52,12 @@ public:
 protected:
   std::map<MyKeyT, MyMappedT> & get_map();
   void delete_map_values();
+  void compute_if_necessary();
   virtual void compute() = 0;              // Template Method pattern
 
 private:
   bool m_computed;
+  bool m_computation_in_progress;
   std::map<MyKeyT, MyMappedT> m_map;
 };
 

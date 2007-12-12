@@ -24,6 +24,8 @@
 
 #include <map>
 
+#include <support/RccError.h>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
@@ -45,7 +47,8 @@ typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
 // ----- constructor/destructor ----- 
 
 ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
-  : m_map()
+  : m_map(),
+    m_computation_in_progress(false)
   {}
 
 ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
@@ -63,7 +66,12 @@ ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
 MyMappedT & ExpressionInfoAnnotationMap::operator[](const MyKeyT & k) {
   std::map<MyKeyT, MyMappedT>::iterator annot = m_map.find(k);
   if (annot == m_map.end()) {
+    if (computation_in_progress()) {
+      rcc_error("ExpressionInfoAnnotationMap depends on itself");
+    }
+    m_computation_in_progress = true;
     compute(k);
+    m_computation_in_progress = false;
     return m_map[k];
   } else {
     return annot->second; 
@@ -79,6 +87,10 @@ MyMappedT ExpressionInfoAnnotationMap::get(const MyKeyT & k) {
 /// Expression info is computed piece by piece, so it's never fully computed
 bool ExpressionInfoAnnotationMap::is_computed() const {
   return false;
+}
+
+bool ExpressionInfoAnnotationMap::computation_in_progress() const {
+  return m_computation_in_progress;
 }
 
 //  ----- iterators ----- 

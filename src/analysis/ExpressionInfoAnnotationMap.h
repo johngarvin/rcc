@@ -52,6 +52,7 @@ public:
   MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
   MyMappedT get(const MyKeyT & k);
   bool is_computed() const;
+  bool computation_in_progress() const;
 
   // iterators
   iterator begin();
@@ -66,7 +67,8 @@ private:
   void compute(const MyKeyT & k);
 
   std::map<MyKeyT, MyMappedT> m_map;
-
+  bool m_computation_in_progress;
+  
   // static members and methods for singleton
   static ExpressionInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

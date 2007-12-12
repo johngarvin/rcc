@@ -70,7 +70,7 @@ typedef RccCallGraphAnnotationMap::EdgeSetT EdgeSetT;
 // ----- constructor, destructor -----
 
 RccCallGraphAnnotationMap::RccCallGraphAnnotationMap()
-  : m_computed(false), m_node_map(), m_edge_set(), m_traversed_map(),
+  : m_node_map(), m_edge_set(), m_traversed_map(),
     m_fundef_map(), m_library_map(), m_coord_map(), m_call_site_map()
 {
 }
@@ -120,21 +120,14 @@ PropertyHndlT RccCallGraphAnnotationMap::m_handle = "RccCallGraph";
 // PropertySet::insert to work right.
 // TODO: delete this when fully refactored to disallow insertion from outside.
 MyMappedT & RccCallGraphAnnotationMap::operator[](const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
-  
+  compute_if_necessary();
   return m_traversed_map[k];
 }
 
 // Perform the computation if necessary and returns the requested
 // data.
 MyMappedT RccCallGraphAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
+  compute_if_necessary();
   
   std::map<MyKeyT, MyMappedT>::const_iterator it = m_traversed_map.find(k);
   if (it != m_traversed_map.end()) {  // already computed and stored in map
@@ -145,24 +138,10 @@ MyMappedT RccCallGraphAnnotationMap::get(const MyKeyT & k) {
 }
 
 CallGraphInfo* RccCallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
+  compute_if_necessary();
   return m_node_map[node];
 }
   
-bool RccCallGraphAnnotationMap::is_computed() const {
-  return m_computed;
-}
-
-//  ----- iterators ----- 
-
-iterator RccCallGraphAnnotationMap::begin() { return m_traversed_map.begin(); }
-iterator RccCallGraphAnnotationMap::end() { return m_traversed_map.end(); }
-const_iterator RccCallGraphAnnotationMap::begin() const { return m_traversed_map.begin(); }
-const_iterator RccCallGraphAnnotationMap::end() const { return m_traversed_map.end(); }
-
 // ----- creation -----
 
 FundefCallGraphNode * RccCallGraphAnnotationMap::make_fundef_node(SEXP e) {
@@ -319,10 +298,7 @@ void RccCallGraphAnnotationMap::compute() {
 // ----- debugging -----
 
 void RccCallGraphAnnotationMap::dump(std::ostream & os) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
+  compute_if_necessary();
   
   beginObjDump(os, CallGraph);
 
@@ -343,10 +319,7 @@ void RccCallGraphAnnotationMap::dump(std::ostream & os) {
 }
 
 void RccCallGraphAnnotationMap::dumpdot(std::ostream & os) {
-  if (!is_computed()) {
-    compute();
-    m_computed = true;
-  }
+  compute_if_necessary();
 
   os << "digraph CallGraph" << " {" << std::endl;
 

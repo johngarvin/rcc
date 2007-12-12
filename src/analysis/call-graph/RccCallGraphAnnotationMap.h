@@ -34,7 +34,7 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
 
@@ -49,7 +49,7 @@ class FundefCallGraphNode;
 class LibraryCallGraphNode;
 class UnknownValueCallGraphNode;
 
-class RccCallGraphAnnotationMap : public AnnotationMap
+class RccCallGraphAnnotationMap : public DefaultAnnotationMap
 {
 public:
   // ----- types -----
@@ -63,14 +63,15 @@ public:
 
   // ----- demand-driven analysis -----
 
+  // overrides DefaultAnnotationMap
   MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
 
+  // overrides DefaultAnnotationMap
   /// given a call site, return the list of fundef/library nodes reachable; compute if necessary
   MyMappedT get(const MyKeyT & k);
 
   /// given a node, return a CallGraphInfo containing the in and out edges
   CallGraphInfo* get_edges(const CallGraphNode* node);
-  bool is_computed() const;
 
   // ----- implement singleton pattern -----
 
@@ -78,13 +79,6 @@ public:
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
-
-  // ----- iterators -----
-
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
 
   // ----- debugging -----
 
