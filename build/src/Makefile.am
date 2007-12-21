@@ -38,6 +38,8 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
+  DebutDFSolver.cc                              \
+  DebutDFSolver.h                               \
   DefaultAnnotationMap.cc                       \
   DefaultAnnotationMap.h                        \
   DefaultDFSet.cc                               \
@@ -51,8 +53,6 @@ rcc_bin_SOURCES =				\
   ExpressionInfoAnnotationMap.h                 \
   ExprTreeBuilder.cc                            \
   ExprTreeBuilder.h                             \
-  FirstMentionDFSolver.cc                       \
-  FirstMentionDFSolver.h                        \
   FormalArgInfo.cc                              \
   FormalArgInfo.h                               \
   FormalArgInfoAnnotationMap.cc                 \

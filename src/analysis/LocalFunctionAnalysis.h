@@ -38,7 +38,7 @@ private:
   void analyze_args();
   void collect_mentions_and_call_sites();
   void analyze_strictness();
-  void analyze_first_mentions();
+  void analyze_debuts();
   
   const SEXP m_fundef;
 };

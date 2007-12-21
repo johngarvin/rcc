@@ -16,16 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: FirstMentionDFSolver.cc
-//
-// Implements the general OpenAnalysis CFG data flow problem. For each
-// local variable in a given procedure, finds a set of mentions: a
-// mention is in the set if and only if it's the first mention of that
-// variable on some path. It's similar to the MUST-KILL data flow
-// problem, except that a variable can be "killed" by a use or a def,
-// not just a def. Useful for discovering where arguments (which are
-// lazy in R) may be evaluated. For this problem, formal arguments do
-// not count as defs.
+// File: DebutDFSolver.cc
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -45,7 +36,7 @@
 #include <analysis/VarRef.h>
 #include <analysis/Var.h>
 
-#include "FirstMentionDFSolver.h"
+#include "DebutDFSolver.h"
 
 using namespace RAnnot;
 using namespace OA;
@@ -53,11 +44,11 @@ using namespace HandleInterface;
 
 typedef DefaultDFSet DFSet;
 
-FirstMentionDFSolver::FirstMentionDFSolver(OA_ptr<R_IRInterface> ir)
+DebutDFSolver::DebutDFSolver(OA_ptr<R_IRInterface> ir)
   : m_ir(ir), m_fact(VarRefFactory::get_instance())
 {}
 
-FirstMentionDFSolver::~FirstMentionDFSolver()
+DebutDFSolver::~DebutDFSolver()
 {}
 
 /// Perform the data flow analysis. The main data flow analysis really
@@ -65,7 +56,7 @@ FirstMentionDFSolver::~FirstMentionDFSolver()
 /// this information to find the first mentions. If a name is
 /// mentioned in the current statement and does not appear in the
 /// has-been-mentioned set, then it's a first mention.
-OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
 
@@ -102,11 +93,11 @@ OA_ptr<NameMentionMultiMap> FirstMentionDFSolver::perform_analysis(ProcHandle pr
 
 // ----- debugging -----
 
-void FirstMentionDFSolver::dump_node_maps() {
+void DebutDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void FirstMentionDFSolver::dump_node_maps(ostream &os) {
+void DebutDFSolver::dump_node_maps(ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
@@ -128,7 +119,7 @@ void FirstMentionDFSolver::dump_node_maps(ostream &os) {
 // ----- callbacks for CFGDFProblem: initialization, meet, transfer -----
 
 /// Initialize TOP as the set of all variables mentioned
-OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeTop() {
+OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeTop() {
   if (m_top.ptrEqual(NULL)) {
     m_top = new DFSet();
     FuncInfo * func = getProperty(FuncInfo, make_sexp(m_proc));
@@ -142,7 +133,7 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeTop() {
 }
 
 /// Not used.
-OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeBottom() {
+OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeBottom() {
   assert(0);
 }
 
@@ -151,7 +142,7 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeBottom() {
 /// with the empty set. On entry to all other procedures, initialize
 /// to TOP (the set of all variables) so that meets (intersections)
 /// will not erase other sets.
-OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   if (n.ptrEqual(m_cfg->getEntry())) {
     OA_ptr<DFSet> dfset; dfset = new DFSet;
     return dfset.convert<DataFlow::DataFlowSet>();  // upcast
@@ -160,7 +151,7 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeIN(OA_ptr<CFG:
   }
 }
 
-OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
@@ -171,7 +162,7 @@ OA_ptr<DataFlow::DataFlowSet> FirstMentionDFSolver::initializeNodeOUT(OA_ptr<CFG
 /// Note: base class CFGDFProblem says: OK to modify set1 and return
 /// it as result, because solver only passes a tempSet in as set1
 OA_ptr<DataFlow::DataFlowSet>
-FirstMentionDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2_orig) {
+DebutDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2_orig) {
   // downcast sets from interface DataFlowSet to concrete class DFSet
   OA_ptr<DFSet> set1; set1 = set1_orig.convert<DFSet>();
   OA_ptr<DFSet> set2; set2 = set2_orig.convert<DFSet>();
@@ -185,7 +176,7 @@ FirstMentionDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataF
 /// Note: base class CFGDFProblem says: OK to modify in set and return
 /// it again as result because solver clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> 
-FirstMentionDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
+DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;

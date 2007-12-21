@@ -31,7 +31,7 @@
 #include <analysis/DefaultDFSet.h>
 #include <analysis/DefVar.h>
 #include <analysis/ExpressionInfo.h>
-#include <analysis/FirstMentionDFSolver.h>
+#include <analysis/DebutDFSolver.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityType.h>
@@ -62,7 +62,7 @@ void LocalFunctionAnalysis::perform_analysis() {
   analyze_args();
   collect_mentions_and_call_sites();
   analyze_strictness();
-  analyze_first_mentions();
+  analyze_debuts();
 }
 
 void LocalFunctionAnalysis::analyze_args() {
@@ -138,19 +138,19 @@ void LocalFunctionAnalysis::analyze_strictness() {
   }
 }
 
-// find the set of first mentions of each name (those that are the
+// find the set of debuts of each name (those that are the
 // first mention of that name on some path)
-void LocalFunctionAnalysis::analyze_first_mentions() {
+void LocalFunctionAnalysis::analyze_debuts() {
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
   OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
-  FirstMentionDFSolver first_mention_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameMentionMultiMap> first_mention_map = first_mention_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  DebutDFSolver debut_solver(R_Analyst::get_instance()->get_interface());
+  OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(make_proc_h(m_fundef), cfg);
   typedef NameMentionMultiMap::const_iterator Iterator;
-  for (Iterator name = first_mention_map->begin(); name != first_mention_map->end(); name++) {
-    Iterator start = first_mention_map->lower_bound(name->first);
-    Iterator end = first_mention_map->upper_bound(name->first);
+  for (Iterator name = debut_map->begin(); name != debut_map->end(); name++) {
+    Iterator start = debut_map->lower_bound(name->first);
+    Iterator end = debut_map->upper_bound(name->first);
     for(Iterator mi = start; mi != end; mi++) {
       Var * annot = getProperty(Var, name->first);
       annot->set_first_on_some_path(true);

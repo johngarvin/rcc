@@ -16,21 +16,22 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: FirstMentionDFSolver.h
+// File: DebutDFSolver.h
 //
-// Implements the general OpenAnalysis CFG data flow problem. For each
-// local variable in the given procedure, finds a set of mentions: a
-// mention is in the set if and only if it's the first mention of that
-// variable on some path. It's similar to the MUST-KILL data flow
-// problem, except that a variable can be "killed" by a use or a def,
-// not just a def. Useful for discovering where arguments (which are
-// lazy in R) may be evaluated. For this problem, formal arguments do
-// not count as defs.
+// Implements debut analysis, a CFG data flow problem. Derived class
+// of the OpenAnalysis data flow framework. Each local name of the
+// given procedure has a set of _debuts_. A mention is a debut iff
+// it's the first mention of that variable on some path from the
+// start. It's something like the MUST-KILL data flow problem, except
+// that a name can be "killed" by a use or a def, not just a def.
+// Finding the debuts of formal arguments is useful for finding where
+// R's call-by-need arguments are evaluated. Note: for this problem,
+// formal arguments do not count as defs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef FIRST_MENTION_DF_SOLVER_H
-#define FIRST_MENTION_DF_SOLVER_H
+#ifndef DEBUT_DF_SOLVER_H
+#define DEBUT_DF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
@@ -44,10 +45,10 @@ class OA::CFG::CFGInterface;
 class R_IRInterface;
 class DefaultDFSet;
 
-class FirstMentionDFSolver : private OA::DataFlow::CFGDFProblem {
+class DebutDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
-  FirstMentionDFSolver(OA::OA_ptr<R_IRInterface> _rir);
-  ~FirstMentionDFSolver();
+  DebutDFSolver(OA::OA_ptr<R_IRInterface> _rir);
+  ~DebutDFSolver();
   OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
@@ -79,4 +80,4 @@ private:
   VarRefFactory * m_fact;
 };
 
-#endif // FIRST_MENTION_DF_SOLVER_H
+#endif // DEBUT_DF_SOLVER_H
