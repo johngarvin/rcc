@@ -53,9 +53,9 @@ DebutDFSolver::~DebutDFSolver()
 
 /// Perform the data flow analysis. The main data flow analysis really
 /// solves the "must have been mentioned" problem. In a post-pass, use
-/// this information to find the first mentions. If a name is
-/// mentioned in the current statement and does not appear in the
-/// has-been-mentioned set, then it's a first mention.
+/// this information to find the debuts. If a name is mentioned in the
+/// current statement and does not appear in the has-been-mentioned
+/// set, then it's a debut.
 OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
@@ -64,8 +64,8 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
   m_solver->solve(cfg, DataFlow::ITERATIVE);
 
-  // now find the first mentions for each variable
-  OA_ptr<NameMentionMultiMap> first_mention_map; first_mention_map = new NameMentionMultiMap();
+  // now find the debuts for each name
+  OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
   // for each CFG node
   OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
@@ -81,14 +81,14 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref((*mi)->getMention_c());
 	if (! in_set->member(ref)) {
-	  first_mention_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
 	}
       }  // next mention
       in_set = transfer(in_set, si->current()).convert<DFSet>();
     }  // next statement
   }  // next CFG node
 
-  return first_mention_map;
+  return debut_map;
 }
 
 // ----- debugging -----
@@ -181,7 +181,7 @@ DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_ha
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    // only local variables can be first mentions
+    // only local name can be debuts
     //
     // What about TOP? Since we are solving the
     // must-have-been-mentioned problem, if it might be local or free

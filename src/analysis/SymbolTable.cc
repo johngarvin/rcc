@@ -63,4 +63,13 @@ std::ostream& SymbolTable::dump(std::ostream& os) const
   endObjDump(os, SymbolTable);
 }
 
+SymbolTable * SymbolTable::get_ambiguous_st() {
+  if (s_ambiguous_st == 0) {
+    s_ambiguous_st = new SymbolTable();
+  }
+  return s_ambiguous_st;
+}
+
+SymbolTable * SymbolTable::s_ambiguous_st = 0;
+
 } // end namespace RAnnot

@@ -198,6 +198,11 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
 	vi->insert_def(def);
       }
     }
+    // if VarBinding is ambiguous (more than one scope), add it to the
+    // special symbol table
+    if (!vb->is_single() && !vb->is_unbound()) {
+      (*SymbolTable::get_ambiguous_st())[name] = new VarInfo(name);
+    }
   }
 }
   

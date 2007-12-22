@@ -19,7 +19,8 @@
 // File: SymbolTable.h
 //
 // A table mapping names (SEXPs of SYMSXP type) to VarInfos describing
-// them. There's a SymbolTable for each lexical scope.
+// them. There's a SymbolTable for each lexical scope, plus an extra
+// symbol table for ambiguously scoped mentions.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -147,8 +148,12 @@ public:
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
+  // single symbol table for mentions in ambiguous scope
+  static SymbolTable * get_ambiguous_st();
+
 private:
   MyMap_t mVars; // (contents of map not owned)
+  static SymbolTable * s_ambiguous_st;
 };
 
 } // end namespace RAnnot

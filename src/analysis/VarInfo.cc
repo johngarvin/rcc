@@ -30,6 +30,8 @@
 #include <analysis/DefVar.h>
 #include <analysis/LexicalScope.h>
 
+#include <support/RccError.h>
+
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 
 #include "VarInfo.h"
@@ -47,6 +49,10 @@ VarInfo::VarInfo(const SEXP name, const LexicalScope * const scope)
 {
 }
 
+VarInfo::VarInfo(const SEXP name)
+  : m_name(name), m_scope(), m_c_location(""), m_param(false)
+{
+}
 
 VarInfo::~VarInfo()
 {
@@ -123,7 +129,14 @@ const SEXP VarInfo::get_name() const {
 }
 
 const LexicalScope * const VarInfo::get_scope() const {
+  if (!has_scope()) {
+    rcc_error("VarInfo: tried to get lexical scope of a VarInfo in the ambiguous symbol table");
+  }
   return m_scope;
+}
+
+bool VarInfo::has_scope() const {
+  return (m_scope != 0);
 }
 
 std::ostream&

@@ -437,7 +437,9 @@ OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
   // this scope). We conservatively say that it can only be local if
   // the procedure has no children (because a child procedure might
   // refer to this one's "local" variables).
-  bool location_is_local = (vi->get_scope() == fi->get_scope() && !fi->has_children());
+  bool location_is_local = (vi->has_scope() &&
+			    vi->get_scope() == fi->get_scope() &&
+			    !fi->has_children());
   loc = new NamedLoc(s, location_is_local);
   // TODO: need to give information about possible overlap
   return loc;
@@ -678,11 +680,11 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   if (h == HellProcedure::get_instance()) {
     return SymHandle(0);
   }
+  // if FuncInfo already exists, then use it
+  // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
   // TODO: make it easier to do this
   RProp::PropertySet::const_iterator iter = analysisResults.find(FuncInfo::handle());
   if (iter != analysisResults.end() && iter->second->is_computed()) {
-    // if FuncInfo already exists, then use it
-    // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
     SEXP name = fi->get_first_name_c();
     if (VarAnnotationMap::get_instance()->is_valid(name)) {
@@ -1167,10 +1169,9 @@ VarInfo * find_st_entry(FuncInfo * fi, Var * var) {
     assert(vi != 0);
     return vi;
   } else {
-    rcc_warn("find_st_entry: ambiguous bindings not yet implemented");
-    binding->dump(std::cerr);
-    throw AnalysisException();
-    return 0;
+    VarInfo * vi = (*SymbolTable::get_ambiguous_st())[var->getName()];
+    assert(vi != 0);
+    return vi;
   }
 }
 

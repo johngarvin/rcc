@@ -55,7 +55,12 @@ public:
   typedef MySet_t::size_type                                size_type;
 
 public:
+  // constructor for SymbolTables in LexicalScopes
   VarInfo(const SEXP name, const LexicalScope * const scope);
+
+  // constructor for special SymbolTable for ambiguous references
+  VarInfo(const SEXP name);
+
   virtual ~VarInfo();
 
   // -------------------------------------------------------
@@ -89,6 +94,7 @@ public:
 
   const SEXP get_name() const;
   const LexicalScope * const get_scope() const;
+  bool has_scope() const;
 
   // -------------------------------------------------------
   // debugging
