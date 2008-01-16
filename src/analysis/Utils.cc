@@ -279,6 +279,14 @@ SEXP for_body_c(const SEXP e) {
   return CDR(CDDR(e));
 }
 
+// true if the range of the for loop is a colon expression, like
+// 'for (i in 1:n) ...' or 'for (a in (n+1):(m+k/2))'
+bool is_for_colon(const SEXP e) {
+  assert(is_for(e));
+  return (TYPEOF(CAR(for_range_c(e))) == LANGSXP &&
+	  CAR(CAR(for_range_c(e))) == Rf_install(":"));
+}
+
 bool is_while(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("while"));
 }

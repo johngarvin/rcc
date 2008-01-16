@@ -21,7 +21,7 @@
 // Implements the OpenAnalysis CFG data flow problem interface for a
 // function to determine whether a function is strict in each of its
 // formal arguments. (A function is strict in argument v if there is a
-// use of v on all paths.)
+// use of v before a def of v on all paths.)
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -49,7 +49,7 @@ class OA::CFG::CFGInterface;
 
 typedef DefaultDFSet DFSet;
 
-static const bool debug = false;
+static const bool debug = true;
 
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
   : m_ir(ir)

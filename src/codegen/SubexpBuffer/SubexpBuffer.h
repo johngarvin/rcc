@@ -132,6 +132,8 @@ public:
 		   ResultStatus resultStatus = ResultNeeded); 
   Expression op_for(SEXP e, std::string rho,
 		   ResultStatus resultStatus = ResultNeeded); 
+  Expression op_for_colon(SEXP e, std::string rho,
+			  ResultStatus resultStatus = ResultNeeded);
   Expression op_while(SEXP e, std::string rho);
   Expression op_return(SEXP e, std::string rho);
   Expression op_break(SEXP e, std::string rho);

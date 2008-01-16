@@ -78,6 +78,7 @@ bool is_for(const SEXP e);
 SEXP for_iv_c(const SEXP e);
 SEXP for_range_c(const SEXP e);
 SEXP for_body_c(const SEXP e);
+bool is_for_colon(const SEXP e);
 bool is_while(const SEXP e);
 SEXP while_cond_c(const SEXP e);
 SEXP while_body_c(const SEXP e);

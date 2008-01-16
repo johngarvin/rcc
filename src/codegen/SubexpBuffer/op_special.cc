@@ -31,6 +31,7 @@
 #include <include/R/R_Defn.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/Utils.h>
 #include <support/StringUtils.h>
 #include <CodeGen.h>
 #include <GetName.h>
@@ -86,7 +87,11 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     return op_if(e, rho, resultStatus);
 #endif
   } else if (PRIMFUN(op) == (CCODE)do_for) {
-    return op_for(e, rho, resultStatus);
+    if (is_for_colon(e)) {
+      return op_for_colon(e, rho, resultStatus);
+    } else {
+      return op_for(e, rho, resultStatus);
+    }
     //
     // } else if (PRIMFUN(op) == (CCODE)do_while) {
     //   return op_while(e, rho);
