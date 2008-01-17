@@ -18,7 +18,7 @@
 
 // File: StrictnessDFSetElement.h
 //
-// Associates an R_VarRef with a boolean. This is the unit that
+// Associates an R_VarRef with a StrictnessType. This is the unit that
 // DFSet (which implements OA's DataFlowSet) contains.
 // Modeled after ConstDef in ReachConstsStandard.hpp.
 //
@@ -31,21 +31,19 @@
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/VarRef.h>
+#include <analysis/StrictnessType.h>
 
 namespace Strictness {
 
-/// Associates an R_VarRef with a boolean. This is the unit that
-/// DFSet (which implements OA's DataFlowSet) contains.
-/// Modeled after ConstDef in ReachConstsStandard.hpp.
 class DFSetElement {
 public:
   // constructors
-  DFSetElement(OA::OA_ptr<R_VarRef> _loc, bool _strict);
+  DFSetElement(OA::OA_ptr<R_VarRef> _loc, StrictnessType _strict);
   DFSetElement(const DFSetElement& other);
 
   // access
   OA::OA_ptr<R_VarRef> get_loc() const;
-  LocalityType get_locality_type() const;
+  StrictnessType get_strictness_type() const;
 
   // relationships
   DFSetElement& operator= (const DFSetElement& other);
@@ -67,7 +65,7 @@ public:
 
 private:
   OA::OA_ptr<R_VarRef> m_loc;
-  LocalityType m_type;
+  StrictnessType m_type;
 };
 
 } // namespace Strictness

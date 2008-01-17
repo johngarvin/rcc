@@ -101,8 +101,16 @@ rcc_bin_SOURCES =				\
   ScopeAnnotationMap.h                          \
   SimpleIterators.cc				\
   SimpleIterators.h				\
-  StrictnessDFSolver.h                          \
+  StrictnessDFSet.cc                            \
+  StrictnessDFSet.h                             \
+  StrictnessDFSetElement.cc                     \
+  StrictnessDFSetElement.h                      \
+  StrictnessDFSetIterator.cc                    \
+  StrictnessDFSetIterator.h                     \
   StrictnessDFSolver.cc                         \
+  StrictnessDFSolver.h                          \
+  StrictnessType.cc                             \
+  StrictnessType.h                              \
   SymbolTable.cc                                \
   SymbolTable.h                                 \
   TypeInference.h				\

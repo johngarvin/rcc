@@ -18,10 +18,6 @@
 
 // File: StrictnessDFSetElement.cc
 //
-// Associates an R_VarRef with a LocalityType. This is the unit that
-// DFSet (which implements OA's DataFlowSet) contains.
-// Modeled after ConstDef in ReachConstsStandard.hpp.
-//
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include "StrictnessDFSetElement.h"
@@ -32,8 +28,8 @@ using namespace OA;
 
 namespace Strictness {
 
-DFSetElement::DFSetElement(OA_ptr<R_VarRef> _loc, bool _strict)
-  : m_loc(_loc), m_strict(_strict)
+DFSetElement::DFSetElement(OA_ptr<R_VarRef> _loc, StrictnessType _type)
+  : m_loc(_loc), m_type(_type)
   {}
 
 DFSetElement::DFSetElement(const DFSetElement& other)
@@ -43,7 +39,7 @@ DFSetElement::DFSetElement(const DFSetElement& other)
 // access
 
 OA_ptr<R_VarRef> DFSetElement::get_loc() const { return m_loc; }
-LocalityType DFSetElement::get_locality_type() const { return m_type; }
+StrictnessType DFSetElement::get_strictness_type() const { return m_type; }
 
 
 /// not doing a deep copy
@@ -57,7 +53,7 @@ OA_ptr<DFSetElement> DFSetElement::clone() {
 /// as other
 DFSetElement& DFSetElement::operator=(const DFSetElement& other) {
   m_loc = other.get_loc();
-  m_type = other.get_locality_type();
+  m_type = other.get_strictness_type();
   return *this;
 }
 
@@ -80,7 +76,7 @@ bool DFSetElement::operator< (const DFSetElement &other) const {
 
 /// Equality method for DFSetElement.
 bool DFSetElement::equiv(const DFSetElement& other) {
-  return (m_loc == other.get_loc() && m_type == other.get_locality_type());
+  return (m_loc == other.get_loc() && m_type == other.get_strictness_type());
 }
 
 bool DFSetElement::sameLoc (const DFSetElement &other) const {
@@ -97,16 +93,9 @@ std::string DFSetElement::toString() {
   std::ostringstream oss;
   oss << "<";
   oss << m_loc->toString();
-  switch (m_type) {
-  case Locality_TOP:
-    oss << ",TOP>"; break;
-  case Locality_BOTTOM: 
-    oss << ",BOTTOM>"; break;
-  case Locality_LOCAL:
-    oss << ",LOCAL>"; break;
-  case Locality_FREE:
-    oss << ",FREE>"; break;
-  }
+  oss << ",";
+  oss << typeName(m_type);
+  oss << ">";
   return oss.str();
 }
 

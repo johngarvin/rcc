@@ -299,7 +299,7 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   return in.convert<DataFlow::DataFlowSet>();
 }
 
-}
+}  // end namespace Locality
 
 //--------------------------------------------------------------------
 // Static meet functions

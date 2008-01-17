@@ -35,6 +35,8 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
+#include <analysis/StrictnessDFSet.h>
+#include <analysis/StrictnessDFSetIterator.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
 #include <analysis/VarRefSet.h>
@@ -45,11 +47,14 @@ using namespace OA;
 using namespace HandleInterface;
 using namespace RAnnot;
 
-class OA::CFG::CFGInterface;
+// forward declarations
 
-typedef DefaultDFSet DFSet;
+static StrictnessType var_meet(StrictnessType x, StrictnessType y);
+static OA_ptr<Strictness::DFSet> set_meet(OA_ptr<Strictness::DFSet> set1, OA_ptr<Strictness::DFSet> set2);
 
 static const bool debug = true;
+
+namespace Strictness {
 
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
   : m_ir(ir)
@@ -65,7 +70,7 @@ OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
   SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
   m_formal_args = new DFSet;
-  m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals));
+  m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals), Strictness_TOP);
   OA_ptr<DFSet> retval = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
   if (debug) dump_node_maps();
   return retval;
@@ -108,21 +113,14 @@ OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeBottom() {
   assert(0);
 }
 
-/// On procedure entry, no variables are strict, so initialize with
-/// an empty set. On entry to all other nodes, initialize to the set
-/// of all formal args (TOP) so that meets will work correctly.
+/// Initialize with TOP.
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
-  if (n.ptrEqual(m_cfg->getEntry())) {
-    OA_ptr<DFSet> dfset; dfset = new DFSet;
-    return dfset.convert<DataFlow::DataFlowSet>();
-  } else {
-    return m_formal_args->clone();
-  }
+  return m_formal_args->clone();
 }
 
+/// Initialize with TOP
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
-  OA_ptr<DFSet> dfset; dfset = new DFSet;
-  return dfset.convert<DataFlow::DataFlowSet>();
+  return m_formal_args->clone();
 }
 
 /// Meet function merges info from predecessors. CFGDFProblem says: OK
@@ -140,7 +138,8 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2
     set1->dump(std::cout);
     set2->dump(std::cout);
   }
-  return set1->intersect(set2);
+  OA_ptr<DFSet> retval; retval = set_meet(set1, set2);
+  return retval.convert<DataFlow::DataFlowSet>();
 }
 
 /// Transfer function adds data given a statement. CFGDFProblem says:
@@ -158,11 +157,55 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
     OA_ptr<R_VarRef> mention; mention = fact->make_body_var_ref((*var_iter)->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
+	(*var_iter)->getUseDefType() == Var::Var_DEF)
+      {
+	in->replace(mention, Strictness_KILLED);
+      }
+  }
+  for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
+    OA_ptr<R_VarRef> mention; mention = fact->make_body_var_ref((*var_iter)->getMention_c());
+    
+    if (m_formal_args->includes_name(mention) &&
 	(*var_iter)->getUseDefType() == Var::Var_USE &&
 	(*var_iter)->getMayMustType() == Var::Var_MUST)
     {
-      in->insert(mention);
+      in->replace(mention, Strictness_USED);
     }
   }
   return in;
+}
+
+} // end namespace Strictness
+
+//--------------------------------------------------------------------
+// Static meet functions
+//--------------------------------------------------------------------
+
+// meet function for single lattice element
+//    TOP
+//   |   \
+//   |   USED
+//   |   /
+//  KILLED
+StrictnessType var_meet(StrictnessType x, StrictnessType y) {
+  if (x == y) {
+    return x;
+  } else if (x == Strictness_TOP) {
+    return y;
+  } else if (y == Strictness_TOP) {
+    return x;
+  } else {
+    return Strictness_KILLED;
+  }
+}
+
+/// Meet function for two DFSets, using the single-element meet
+OA_ptr<Strictness::DFSet> set_meet(OA_ptr<Strictness::DFSet> set1, OA_ptr<Strictness::DFSet> set2) {
+  OA_ptr<Strictness::DFSet> retval; retval = set1->clone().convert<Strictness::DFSet>();
+  OA_ptr<Strictness::DFSetElement> elem;
+  for(OA_ptr<Strictness::DFSetIterator> it2 = set2->get_iterator(); it2->isValid(); ++*it2) {
+    elem = set1->find(it2->current()->get_loc());
+    StrictnessType new_type = var_meet(elem->get_strictness_type(), it2->current()->get_strictness_type());
+    retval->replace(elem->get_loc(), new_type);
+  }
 }

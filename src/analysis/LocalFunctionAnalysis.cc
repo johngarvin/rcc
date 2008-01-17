@@ -128,14 +128,14 @@ void LocalFunctionAnalysis::analyze_strictness() {
   assert(fi != 0);
   OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
-  StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<DefaultDFSet> strict_set = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
-  if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
-  OA_ptr<std::set<SEXP> > arg_set = strict_set->as_sexp_set();
-  for (std::set<SEXP>::const_iterator it = arg_set->begin(); it != arg_set->end(); it++) {
-    FormalArgInfo * annot = getProperty(FormalArgInfo, *it);
-    annot->set_is_strict(true);
-  }
+  //  StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
+  //  OA_ptr<DefaultDFSet> strict_set = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  //  if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
+  //  OA_ptr<std::set<SEXP> > arg_set = strict_set->as_sexp_set();
+  //  for (std::set<SEXP>::const_iterator it = arg_set->begin(); it != arg_set->end(); it++) {
+  //    FormalArgInfo * annot = getProperty(FormalArgInfo, *it);
+  //    annot->set_is_strict(true);
+  //  }
 }
 
 // find the set of debuts of each name (those that are the
