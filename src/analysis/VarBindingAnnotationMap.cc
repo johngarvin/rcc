@@ -128,15 +128,15 @@ void VarBindingAnnotationMap::create_var_bindings() {
       // getProperty!
       VarBinding * scopes = new VarBinding();
       switch(v->getScopeType()) {
-      case Locality_LOCAL:
+      case Locality::Locality_LOCAL:
 	// bound in current scope only
 	scopes->insert(fi->get_scope());
 	break;
-      case Locality_BOTTOM:
+      case Locality::Locality_BOTTOM:
 	// bound in current scope and one or more ancestors
 	scopes->insert(fi->get_scope());
 	// FALLTHROUGH
-      case Locality_FREE:
+      case Locality::Locality_FREE:
 	// start at this scope's parent; iterate upward through ancestors
 	for(FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
 	  if (defined_local_in_scope(v,a)) {
@@ -225,7 +225,7 @@ static bool defined_local_in_scope(Var * v, FuncInfo * s) {
   for(mi = s->begin_mentions(); mi != s->end_mentions(); ++mi) {
     Var * m = *mi;
     if (m->getUseDefType() == Var::Var_DEF  &&
-	m->getScopeType() == Locality_LOCAL &&
+	m->getScopeType() == Locality::Locality_LOCAL &&
 	m->getName() == v->getName())
     {
       return true;

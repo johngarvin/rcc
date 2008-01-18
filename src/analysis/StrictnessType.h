@@ -36,6 +36,8 @@
 
 #include <string>
 
+namespace Strictness {
+
 enum StrictnessType {
   Strictness_TOP,
   Strictness_USED,
@@ -44,5 +46,7 @@ enum StrictnessType {
 
 /// Return the name of the type as a string: "TOP", "USED", etc.
 const std::string typeName(StrictnessType x);
+
+}  // end namespace Strictness
 
 #endif

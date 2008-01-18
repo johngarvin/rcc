@@ -35,6 +35,7 @@
 
 class OA::CFG::CFGInterface;
 class R_IRInterface;
+class VarRefFactory;
 namespace Strictness {
   class DFSet;
   class StrictnessResult;
@@ -74,6 +75,7 @@ private:
   OA::ProcHandle m_proc;
   OA::OA_ptr<Strictness::DFSet> m_formal_args;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
+  VarRefFactory * m_var_ref_fact;
 };
 
 }

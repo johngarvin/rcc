@@ -62,7 +62,7 @@ static const bool debug = false;
 namespace Strictness {
 
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir)
+  : m_ir(ir), m_var_ref_fact(VarRefFactory::get_instance())
 {}
 
 StrictnessDFSolver::~StrictnessDFSolver()
@@ -97,7 +97,7 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	OA_ptr<R_BodyVarRef> ref; ref = VarRefFactory::get_instance()->make_body_var_ref((*mi)->getMention_c());
+	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref((*mi)->getMention_c());
 	if (in_set->includes_name(ref) &&
 	    in_set->find(ref)->get_strictness_type() == Strictness_USED)
 	{
@@ -208,12 +208,11 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2
 ///
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
-  VarRefFactory * fact = VarRefFactory::get_instance();
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   ExpressionInfo::const_var_iterator var_iter;
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = fact->make_body_var_ref((*var_iter)->getMention_c());
+    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref((*var_iter)->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
 	(*var_iter)->getUseDefType() == Var::Var_DEF)
@@ -222,7 +221,7 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
       }
   }
   for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = fact->make_body_var_ref((*var_iter)->getMention_c());
+    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref((*var_iter)->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
 	in->find(mention)->get_strictness_type() != Strictness_KILLED &&

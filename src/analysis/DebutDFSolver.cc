@@ -186,7 +186,7 @@ DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_ha
     // What about TOP? Since we are solving the
     // must-have-been-mentioned problem, if it might be local or free
     // we conservatively say it hasn't been mentioned.
-    if ((*var_iter)->getScopeType() == Locality_LOCAL) {
+    if ((*var_iter)->getScopeType() == Locality::Locality_LOCAL) {
       OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref((*var_iter)->getMention_c());
       in->insert(mention);
     }

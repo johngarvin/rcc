@@ -32,6 +32,8 @@
 
 #include <string>
 
+namespace Locality {
+
 enum LocalityType {
   Locality_TOP,
   Locality_LOCAL,
@@ -41,5 +43,7 @@ enum LocalityType {
 
 /// Return the name of the type as a string: "TOP", "LOCAL", etc.
 const std::string typeName(LocalityType x);
+
+}  // end namespace Locality
 
 #endif

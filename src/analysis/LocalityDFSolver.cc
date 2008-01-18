@@ -50,16 +50,16 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
+namespace Locality {
+
 // forward declarations
 
 static LocalityType var_meet(LocalityType x, LocalityType y);
-static OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2);
+static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
 
 // static variable for debugging
 
 static const bool debug = false;
-
-namespace Locality {
 
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
@@ -299,8 +299,6 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   return in.convert<DataFlow::DataFlowSet>();
 }
 
-}  // end namespace Locality
-
 //--------------------------------------------------------------------
 // Static meet functions
 //--------------------------------------------------------------------
@@ -320,12 +318,12 @@ LocalityType var_meet(LocalityType x, LocalityType y) {
 
 /// Meet function for two DFSets, using the single-variable meet
 /// operation when a use appears in both sets
-OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locality::DFSet> set2) {
+OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2) {
   // return value begins as set 1
-  OA_ptr<Locality::DFSet> retval; retval = set1->clone().convert<Locality::DFSet>();
-  OA_ptr<Locality::DFSetElement> use1;
+  OA_ptr<DFSet> retval; retval = set1->clone().convert<DFSet>();
+  OA_ptr<DFSetElement> use1;
   // check each element of set 2
-  for(OA_ptr<Locality::DFSetIterator> it2 = set2->get_iterator(); it2->isValid(); ++*it2) {
+  for(OA_ptr<DFSetIterator> it2 = set2->get_iterator(); it2->isValid(); ++*it2) {
     // if not in set 1 also, add it to the final set. If in both sets, meet the two elements.
     use1 = set1->find(it2->current()->get_loc());
     if (use1.ptrEqual(NULL)) {          // in set 2 only
@@ -337,3 +335,5 @@ OA_ptr<Locality::DFSet> meet_use_set(OA_ptr<Locality::DFSet> set1, OA_ptr<Locali
   }
   return retval;
 }
+
+}  // end namespace Locality

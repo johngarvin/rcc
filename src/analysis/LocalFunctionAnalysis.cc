@@ -78,7 +78,7 @@ void LocalFunctionAnalysis::analyze_args() {
     annot->setMention_c(e);
     annot->setSourceType(DefVar::DefVar_FORMAL);
     annot->setMayMustType(Var::Var_MUST);
-    annot->setScopeType(Locality_LOCAL);
+    annot->setScopeType(Locality::Locality_LOCAL);
     annot->setRhs_c(0);
     putProperty(Var, e, annot);
     if (TAG(e) == ddd) {
@@ -138,7 +138,7 @@ void LocalFunctionAnalysis::analyze_strictness() {
   OA_ptr<Strictness::DFSetIterator> it = strict_set->get_iterator();
   for (it->reset(); it->isValid(); ++*it) {
     FormalArgInfo * annot = getProperty(FormalArgInfo, it->current()->get_loc()->get_sexp());
-    if (it->current()->get_strictness_type() == Strictness_USED) {
+    if (it->current()->get_strictness_type() == Strictness::Strictness_USED) {
       annot->set_is_strict(true);
     }
   }

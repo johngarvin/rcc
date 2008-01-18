@@ -29,6 +29,8 @@
 
 #include "LocalityType.h"
 
+namespace Locality {
+
 const std::string typeName(LocalityType x) {
   switch(x) {
   case Locality_TOP: return "TOP";
@@ -37,3 +39,5 @@ const std::string typeName(LocalityType x) {
   case Locality_BOTTOM: return "BOTTOM";
   }
 }
+
+}  // end namespace Locality

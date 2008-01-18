@@ -22,6 +22,8 @@
 
 #include "StrictnessType.h"
 
+namespace Strictness {
+
 const std::string typeName(StrictnessType x) {
   switch(x) {
   case Strictness_TOP: return "TOP";
@@ -29,3 +31,5 @@ const std::string typeName(StrictnessType x) {
   case Strictness_KILLED: return "KILLED";
   }
 }
+
+}  // end namespace Strictness

@@ -70,7 +70,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     var_annot->setMention_c(cell);
     var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
     var_annot->setMayMustType(Var::Var_MUST);
-    var_annot->setScopeType(Locality_TOP);
+    var_annot->setScopeType(Locality::Locality_TOP);
     m_vars.push_back(var_annot);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
@@ -114,7 +114,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
       var_annot->setMention_c(e);
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
-      var_annot->setScopeType(Locality_TOP);
+      var_annot->setScopeType(Locality::Locality_TOP);
       m_vars.push_back(var_annot);
     } else {
       // TODO: what about the lhs?
@@ -165,12 +165,12 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
     // flow to figure out the scope of x.
     if (may_must_type == Var::Var_MUST) {
       if (lhs_type == IN_LOCAL_ASSIGN) {
-	var_annot->setScopeType(Locality_LOCAL);
+	var_annot->setScopeType(Locality::Locality_LOCAL);
       } else {
-	var_annot->setScopeType(Locality_FREE);
+	var_annot->setScopeType(Locality::Locality_FREE);
       }
     } else {                                             // may-def
-      var_annot->setScopeType(Locality_TOP);
+      var_annot->setScopeType(Locality::Locality_TOP);
     }
     m_vars.push_back(var_annot);
   } else if (is_struct_field(e)) {

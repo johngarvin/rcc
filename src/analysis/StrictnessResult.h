@@ -51,6 +51,6 @@ private:
   OA::OA_ptr<NameStmtMultiMap> m_post_debut_stmts;
 };
 
-}
+}  // end namespace Strictness
 
 #endif

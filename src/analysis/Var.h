@@ -72,9 +72,9 @@ public:
     { mMayMustType = x; }
 
   // scope type
-  LocalityType getScopeType() const
+  Locality::LocalityType getScopeType() const
     { return mScopeType; }
-  void setScopeType(LocalityType x)
+  void setScopeType(Locality::LocalityType x)
     { mScopeType = x; }
 
   // Mention (cons cell that contains the name)
@@ -139,7 +139,7 @@ protected:
   SEXP mSEXP;
   UseDefT mUseDefType;
   MayMustT mMayMustType;
-  LocalityType mScopeType;
+  Locality::LocalityType mScopeType;
   bool m_first_on_some_path;
 };
 
