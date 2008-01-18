@@ -85,7 +85,8 @@ rcc_bin_SOURCES =				\
   LocalityType.h				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
-  NameStmtsMap.h                                \
+  NameMentionMultiMap.h                         \
+  NameStmtMultiMap.h                            \
   OACallGraphAnnotation.cc                      \
   OACallGraphAnnotation.h                       \
   OACallGraphAnnotationMap.cc                   \

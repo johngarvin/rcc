@@ -28,20 +28,27 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 
 #include <analysis/StrictnessDFSet.h>
+#include <analysis/NameMentionMultiMap.h>
+#include <analysis/NameStmtMultiMap.h>
 
 namespace Strictness {
 
 class StrictnessResult {
 public:
   StrictnessResult(OA::OA_ptr<Strictness::DFSet> args_on_exit,
-		   OA::OA_ptr<NameMentionMultiMap> debuts)
-    : m_args_on_exit(args_on_exit), m_debuts(debuts)
+		   OA::OA_ptr<NameMentionMultiMap> debuts,
+		   OA::OA_ptr<NameStmtMultiMap> post_debut_stmts)
+    : m_args_on_exit(args_on_exit),
+      m_debuts(debuts),
+      m_post_debut_stmts(post_debut_stmts)
     {}
   OA::OA_ptr<Strictness::DFSet> get_args_on_exit() { return m_args_on_exit; }
   OA::OA_ptr<NameMentionMultiMap> get_debuts() { return m_debuts; }
+  OA::OA_ptr<NameStmtMultiMap> get_post_debut_stmts() { return m_post_debut_stmts; }
 private:
   OA::OA_ptr<Strictness::DFSet> m_args_on_exit;
   OA::OA_ptr<NameMentionMultiMap> m_debuts;
+  OA::OA_ptr<NameStmtMultiMap> m_post_debut_stmts;
 };
 
 }

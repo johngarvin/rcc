@@ -16,15 +16,15 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: NameStmtsMap.h
+// File: NameStmtMultiMap.h
 //
 // Defines a mapping from names (SEXPs of SYMSXP type) to a set of
 // statements (StmtHandles).
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef NAME_STMTS_MAP_H
-#define NAME_STMTS_MAP_H
+#ifndef NAME_STMT_MULTI_MAP_H
+#define NAME_STMT_MULTI_MAP_H
 
 #include <map>
 
@@ -33,6 +33,6 @@
 class OA::StmtHandle;
 
 typedef SEXP Name;
-typedef std::multimap<Name, OA::StmtHandle> NameStmtsMap;
+typedef std::multimap<Name, OA::StmtHandle> NameStmtMultiMap;
 
 #endif 

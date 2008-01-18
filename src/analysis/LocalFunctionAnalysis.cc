@@ -35,7 +35,7 @@
 #include <analysis/FormalArgInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityType.h>
-#include <analysis/NameStmtsMap.h>
+#include <analysis/NameMentionMultiMap.h>
 #include <analysis/StrictnessDFSetIterator.h>
 #include <analysis/StrictnessDFSolver.h>
 #include <analysis/StrictnessResult.h>
@@ -130,6 +130,7 @@ void LocalFunctionAnalysis::analyze_strictness() {
   assert(fi != 0);
   OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
   assert(!cfg.ptrEqual(0));
+  assert(m_fundef != 0);
   Strictness::StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
   OA_ptr<Strictness::StrictnessResult> strict; strict = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
   OA_ptr<Strictness::DFSet> strict_set = strict->get_args_on_exit();

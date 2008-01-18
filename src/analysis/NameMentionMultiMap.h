@@ -24,8 +24,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef NAME_STMTS_MAP_H
-#define NAME_STMTS_MAP_H
+#ifndef NAME_MENTION_MULTI_MAP_H
+#define NAME_MENTION_MULTI_MAP_H
 
 #include <map>
 

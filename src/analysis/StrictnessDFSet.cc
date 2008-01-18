@@ -189,7 +189,7 @@ void DFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
 }
 
 void DFSet::dump(std::ostream &os) {
-  std::cout << "call dump(os,interface) instead";
+  std::cout << "StrictnessDFSet::dump: call dump(os,interface) instead";
 }
 
 OA_ptr<DFSetIterator> DFSet::get_iterator() const {
