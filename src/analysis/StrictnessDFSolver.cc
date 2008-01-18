@@ -35,8 +35,10 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
+#include <analysis/NameMentionMultiMap.h>
 #include <analysis/StrictnessDFSet.h>
 #include <analysis/StrictnessDFSetIterator.h>
+#include <analysis/StrictnessResult.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
 #include <analysis/VarRefSet.h>
@@ -64,16 +66,45 @@ StrictnessDFSolver::~StrictnessDFSolver()
 {}
 
 /// Perform the data flow analysis.
-OA_ptr<DFSet> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   m_proc = proc;
   m_cfg = cfg;
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
   SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals), Strictness_TOP);
-  OA_ptr<DFSet> retval = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
+
+  // call the solver, which returns the set of args associated with StrictnessTypes on exit
+  OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
   if (debug) dump_node_maps();
-  return retval;
+
+  // compute the mentions that are debuts (a mention is a debut iff
+  // it's a use and it's the first mention on some path)
+  OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
+  // for each CFG node
+  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
+  for ( ; ni->isValid(); ++*ni) {
+    OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
+    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
+    // for each statement
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
+    for ( ; si->isValid(); ++*si) {
+      // for each mention
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      assert(stmt_annot != 0);
+      ExpressionInfo::const_var_iterator mi;
+      for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
+	OA_ptr<R_BodyVarRef> ref; ref = VarRefFactory::get_instance()->make_body_var_ref((*mi)->getMention_c());
+	if (in_set->find(ref)->get_strictness_type() == Strictness_USED) {
+	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
+	}
+      }  // next mention
+      in_set = transfer(in_set, si->current()).convert<DFSet>();
+    }  // next statement
+  }  // next CFG node
+
+  OA_ptr<Strictness::StrictnessResult> result; result = new Strictness::StrictnessResult(args_on_exit, debut_map);
+  return result;
 }
 
 /// Print out a representation of the in and out sets for each CFG node.

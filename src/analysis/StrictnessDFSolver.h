@@ -35,7 +35,10 @@
 
 class OA::CFG::CFGInterface;
 class R_IRInterface;
-namespace Strictness { class DFSet; }
+namespace Strictness {
+  class DFSet;
+  class StrictnessResult;
+}
 
 namespace Strictness {
 
@@ -43,7 +46,7 @@ class StrictnessDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   StrictnessDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~StrictnessDFSolver();
-  OA::OA_ptr<Strictness::DFSet> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<StrictnessResult> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();
   void dump_node_maps(ostream &os);
 

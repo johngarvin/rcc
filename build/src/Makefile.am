@@ -109,6 +109,7 @@ rcc_bin_SOURCES =				\
   StrictnessDFSetIterator.h                     \
   StrictnessDFSolver.cc                         \
   StrictnessDFSolver.h                          \
+  StrictnessResult.h                            \
   StrictnessType.cc                             \
   StrictnessType.h                              \
   SymbolTable.cc                                \
