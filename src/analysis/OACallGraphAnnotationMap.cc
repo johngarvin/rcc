@@ -120,10 +120,10 @@ void OACallGraphAnnotationMap::compute() {
   // (2) alias information
   OA_ptr<Alias::ManagerInterAliasMapBasic> alias_man;
   alias_man = new Alias::ManagerInterAliasMapBasic(interface);
-  OA_ptr<Alias::InterAliasInterface> alias; alias = alias_man->performAnalysis(proc_iter);
+  m_alias = alias_man->performAnalysis(proc_iter);
 
   // build call graph
-  m_call_graph = man.performAnalysis(proc_iter, alias);
+  m_call_graph = man.performAnalysis(proc_iter, m_alias);
   
   // now perform call graph data flow analysis (specifically, interprocedural side effect).
   // We need (3) param bindings and (4) intraprocedural side effect information
@@ -138,10 +138,11 @@ void OACallGraphAnnotationMap::compute() {
   intra_man = new SideEffect::ManagerSideEffectStandard(interface);
 
   // compute side effect information
-  m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
+  m_side_effect = solver.performAnalysis(m_call_graph, param_bindings, m_alias, intra_man, DataFlow::ITERATIVE);
 }
 
 // ----- debugging -----
+
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
   if (!is_computed()) {
     compute();
@@ -159,6 +160,16 @@ void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
   OA_ptr<OutputBuilder> dot_builder; dot_builder = new OutputBuilderDOT;
   m_call_graph->configOutput(dot_builder);
   m_call_graph->output(*R_Analyst::get_instance()->get_interface());
+}
+
+// ----- access to OA call graph -----
+
+OA_ptr<CallGraph::CallGraphInterface> OACallGraphAnnotationMap::get_OA_call_graph() {
+  return m_call_graph;
+}
+
+OA_ptr<Alias::InterAliasInterface> OACallGraphAnnotationMap::get_OA_alias() {
+  return m_alias;
 }
 
 

@@ -23,18 +23,17 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef OA_CALL_GRAPH_ANNOTATION_MAP
-#define OA_CALL_GRAPH_ANNOTATION_MAP
+#ifndef OA_CALL_GRAPH_ANNOTATION_MAP_H
+#define OA_CALL_GRAPH_ANNOTATION_MAP_H
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
+#include <OpenAnalysis/CallGraph/CallGraphInterface.hpp>
+#include <OpenAnalysis/Alias/InterAliasInterface.hpp>
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace OA {
-  namespace CallGraph {
-    class CallGraphInterface;
-  }
   namespace SideEffect {
     class InterSideEffectStandard;
   }
@@ -68,6 +67,10 @@ public:
   /// dump the call graph in dot form
   void dumpdot(std::ostream & os);
 
+  // ----- access to OA call graph and alias info -----
+  OA::OA_ptr<OA::CallGraph::CallGraphInterface> get_OA_call_graph();
+  OA::OA_ptr<OA::Alias::InterAliasInterface> get_OA_alias();
+
 private:
   // ----- implement singleton pattern -----
 
@@ -85,6 +88,7 @@ private:
 private:
   OA::OA_ptr<OA::CallGraph::CallGraphInterface> m_call_graph;
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect; // side effect information
+  OA::OA_ptr<OA::Alias::InterAliasInterface> m_alias;                // alias information
 };
 
 }

@@ -100,6 +100,8 @@ rcc_bin_SOURCES =				\
   RequiresContext.h				\
   ScopeAnnotationMap.cc                         \
   ScopeAnnotationMap.h                          \
+  SideEffectAnnotationMap.cc                    \
+  SideEffectAnnotationMap.h                     \
   SimpleIterators.cc				\
   SimpleIterators.h				\
   StrictnessDFSet.cc                            \
