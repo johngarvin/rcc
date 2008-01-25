@@ -31,6 +31,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
+#include <analysis/VarSet.h>
 
 using namespace OA;
 using namespace HandleInterface;
@@ -86,13 +87,19 @@ void SideEffectAnnotationMap::compute() {
       for(StmtHandle stmt; si->isValid(); ++*si) {
 	stmt = si->current();
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
+	VarSet * annot = dynamic_cast<VarSet *>(get_map()[expr->getDefn()]);
 	// each variable in the expression
-	ExpressionInfo::const_var_iterator ei;
-	for(ei = expr->begin_vars(); ei != expr->end_vars(); ++ei) {
-	  // TODO: add uses/defs to map
+	ExpressionInfo::const_var_iterator vi;
+	for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {
+	  if ((*vi)->getUseDefType() == Var::Var_USE) {
+	    annot->insert_use(*vi);
+	  } else if ((*vi)->getUseDefType() == Var::Var_DEF) {
+	    annot->insert_def(*vi);
+	  }
 	}
 	ExpressionInfo::const_call_site_iterator csi;
 	for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
+	  
 	  // TODO: add MOD/REF info to map
 	  // m_call_graph->getMODIterator()
 	  // m_call_graph->getREFIterator()

@@ -29,35 +29,71 @@
 
 namespace RAnnot {
 
+// ----- typedefs for readability -----
+
+typedef VarSet::MyVarT MyVarT;
+typedef VarSet::MyVarSetT MyVarSetT;
+
+
+// ----- constructor/destructor -----
+
 VarSet::VarSet() {
 }
 
 VarSet::~VarSet() {
 }
 
-void VarSet::insert(Var * & v) {
-  m_vars.push_back(v);
+
+// ----- insertion and iterators -----
+
+void VarSet::insert_use(const MyVarT & v) {
+  assert(v->getUseDefType() == Var::Var_USE);
+  m_uses.push_back(v);
 }
 
-std::list<Var *>::const_iterator VarSet::begin() const {
-  return m_vars.begin();
+void VarSet::insert_def(const MyVarT & v) {
+  assert(v->getUseDefType() == Var::Var_DEF);
+  m_defs.push_back(v);
 }
 
-std::list<Var *>::const_iterator VarSet::end() const {
-  return m_vars.end();
+std::list<Var *>::const_iterator VarSet::begin_uses() const {
+  return m_uses.begin();
 }
+
+std::list<Var *>::const_iterator VarSet::end_uses() const {
+  return m_uses.end();
+}
+
+std::list<Var *>::const_iterator VarSet::begin_defs() const {
+  return m_defs.begin();
+}
+
+std::list<Var *>::const_iterator VarSet::end_defs() const {
+  return m_defs.end();
+}
+
+
+// ----- handle for Annotation -----
 
 PropertyHndlT VarSet::handle() {
   return SideEffectAnnotationMap::handle();
 }
 
+
+// ----- debugging -----
+
 std::ostream& VarSet::dump(std::ostream& os) const {
   beginObjDump(os, VarSet);
-  os << "Begin mentions:" << std::endl;
-  for(std::list<Var *>::const_iterator it = begin(); it != end(); ++it) {
+  os << "Begin interprocedural uses:" << std::endl;
+  for(std::list<Var *>::const_iterator it = begin_uses(); it != end_uses(); ++it) {
     (*it)->dump(os);
   }
-  os << "End mentions" << std::endl;
+  os << "End interprocedural uses" << std::endl;
+  os << "Begin interprocedural defs:" << std::endl;
+  for(std::list<Var *>::const_iterator it = begin_defs(); it != end_defs(); ++it) {
+    (*it)->dump(os);
+  }
+  os << "End interprocedural uses" << std::endl;
   endObjDump(os, VarSet);
 }
 

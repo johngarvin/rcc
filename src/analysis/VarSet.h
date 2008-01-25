@@ -19,6 +19,7 @@
 // File: VarSet.h
 //
 // Set of Vars. Used as an annotation type by SideEffectAnnotationMap.
+// Does not own the Var annotations it contains.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -34,19 +35,26 @@ namespace RAnnot {
 
 class VarSet : public AnnotationBase {
 public:
+  typedef Var *             MyVarT;
+  typedef std::list<MyVarT> MyVarSetT;
+
   VarSet();
   virtual ~VarSet();
 
-  void insert(Var * & v);
-  std::list<Var *>::const_iterator begin() const;
-  std::list<Var *>::const_iterator end() const;
+  void insert_use(const MyVarT & v);
+  void insert_def(const MyVarT & v);
+  MyVarSetT::const_iterator begin_uses() const;
+  MyVarSetT::const_iterator end_uses() const;
+  MyVarSetT::const_iterator begin_defs() const;
+  MyVarSetT::const_iterator end_defs() const;
 
   static PropertyHndlT handle();
 
   std::ostream& dump(std::ostream& os) const;
 
 private:
-  std::list<Var *> m_vars;
+  MyVarSetT m_uses;
+  MyVarSetT m_defs;
 };
 
 }  // end namespace RAnnot
