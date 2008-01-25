@@ -16,45 +16,37 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: SideEffectAnnotationMap.h
+// File: VarSet.h
 //
-// Maps expression SEXPs to side effect information.
+// Set of Vars. Used as an annotation type by SideEffectAnnotationMap.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef SIDE_EFFECT_ANNOTATION_MAP_H
-#define SIDE_EFFECT_ANNOTATION_MAP_H
+#ifndef VAR_SET_H
+#define VAR_SET_H
 
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include <OpenAnalysis/SideEffect/InterSideEffectStandard.hpp>
+#include <list>
 
-#include <analysis/DefaultAnnotationMap.h>
-#include <analysis/PropertyHndl.h>
+#include <analysis/AnnotationBase.h>
+#include <analysis/Var.h>
 
 namespace RAnnot {
 
-class SideEffectAnnotationMap : public DefaultAnnotationMap {
+class VarSet : public AnnotationBase {
 public:
-  // destructor
-  virtual ~SideEffectAnnotationMap();
+  VarSet();
+  virtual ~VarSet();
 
-  // singleton
-  static SideEffectAnnotationMap * get_instance();
+  void insert(Var * & v);
+  std::list<Var *>::const_iterator begin() const;
+  std::list<Var *>::const_iterator end() const;
 
-  // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
+  std::ostream& dump(std::ostream& os) const;
+
 private:
-  // private constructor for singleton pattern
-  SideEffectAnnotationMap();
-
-  void compute();
-
-  static SideEffectAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
-  static void create();
-
-  OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect;
+  std::list<Var *> m_vars;
 };
 
 }  // end namespace RAnnot

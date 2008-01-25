@@ -138,6 +138,8 @@ rcc_bin_SOURCES =				\
   VarRefFactory.h                               \
   VarRefSet.cc					\
   VarRefSet.h					\
+  VarSet.cc                                     \
+  VarSet.h                                      \
   VarVisitor.h                                  \
                                                 \
   RccCallGraphAnnotation.cc                     \
