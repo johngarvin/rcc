@@ -37,6 +37,7 @@
 #include <analysis/DefVar.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/ExprTreeBuilder.h>
+#include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/HellProcedure.h>
 #include <analysis/LexicalScope.h>
@@ -680,29 +681,20 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
   if (h == HellProcedure::get_instance()) {
     return SymHandle(0);
   }
-  // if FuncInfo already exists, then use it
-  // (otherwise, FuncInfoAnnotationMap would go into an infinite loop)
-  // TODO: make it easier to do this
-  RProp::PropertySet::const_iterator iter = analysisResults.find(FuncInfo::handle());
-  if (iter != analysisResults.end() && iter->second->is_computed()) {
-    FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
-    SEXP name = fi->get_first_name_c();
-    if (VarAnnotationMap::get_instance()->is_valid(name)) {
-      VarInfo * sym = find_st_entry(fi, getProperty(Var, name));
-      if (sym->size_defs() == 1) {
-	return make_sym_h(sym);
-      } else {
-	// fail gracefully if there's more than one definition
-	throw AnalysisException();
-      }
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+  SEXP name = fi->get_first_name_c();
+  if (VarAnnotationMap::get_instance()->is_valid(name)) {
+    VarInfo * sym = find_st_entry(fi, getProperty(Var, name));
+    if (sym->size_defs() == 1) {
+      return make_sym_h(sym);
     } else {
-      // the global-scope procedure and anonymous functions won't have a Var annotation.
-      // In this case, return 0.
-      return SymHandle(0);
+      // fail gracefully if there's more than one definition
+      throw AnalysisException();
     }
   } else {
-    // FuncInfo not computed yet
-    rcc_error("getProcSymHandle called when FuncInfo not yet computed");
+    // the global-scope procedure and anonymous functions won't have a Var annotation.
+    // In this case, return 0.
+    return SymHandle(0);
   }
 }
 
