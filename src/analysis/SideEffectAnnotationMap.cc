@@ -25,6 +25,8 @@
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
 #include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
+#include <OpenAnalysis/Location/Location.hpp>
+#include <OpenAnalysis/Location/NamedLoc.hpp>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
@@ -32,6 +34,8 @@
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/VarSet.h>
+
+#include <support/RccError.h>
 
 using namespace OA;
 using namespace HandleInterface;
@@ -74,6 +78,27 @@ PropertyHndlT SideEffectAnnotationMap::m_handle = "SideEffect";
 
 // compute all Var annotation information
 void SideEffectAnnotationMap::compute() {
+  // populate m_side_effect with OA side effect info
+
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  OA_ptr<CallGraph::CallGraphInterface> call_graph;
+  call_graph = OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
+  OA_ptr<Alias::InterAliasInterface> alias;
+  alias = OACallGraphAnnotationMap::get_instance()->get_OA_alias();
+
+  SideEffect::ManagerInterSideEffectStandard solver(interface);
+  // param bindings
+  DataFlow::ManagerParamBindings pb_man(interface);
+  OA_ptr<DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(call_graph);
+
+  // intra side effect information
+  OA_ptr<SideEffect::ManagerSideEffectStandard> intra_man;
+  intra_man = new SideEffect::ManagerSideEffectStandard(interface);
+
+  // compute side effect information
+  m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
+
+  // now use m_side_effect to get info on expressions
   // for each function
   FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
   for(FuncInfo *fi; fii.IsValid(); fii++) {
@@ -99,14 +124,30 @@ void SideEffectAnnotationMap::compute() {
 	}
 	ExpressionInfo::const_call_site_iterator csi;
 	for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
-	  
-	  // TODO: add MOD/REF info to map
-	  // m_call_graph->getMODIterator()
-	  // m_call_graph->getREFIterator()
-	}
-      }
-    }
-  }
+	  OA_ptr<LocIterator> li;
+	  for(li = m_side_effect->getMODIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+	    OA_ptr<OA::Location> location; location = li->current();
+	    if (location->isaNamed()) {
+	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
+	      annot->insert_def(getProperty(Var, make_sexp(named_loc->getSymHandle())));
+	    } else {
+	      rcc_error("Unexpected non-NamedLoc location");
+	    }
+	  }  // next MOD location
+	  for(li = m_side_effect->getREFIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+	    OA_ptr<OA::Location> location; location = li->current();
+	    if (location->isaNamed()) {
+	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
+	      annot->insert_use(getProperty(Var, make_sexp(named_loc->getSymHandle())));
+	    } else {
+	      rcc_error("Unexpected non-NamedLoc location");
+	    }
+	  }  // next REF location
+	}  // next call site in expression
+	get_map()[make_sexp(stmt)] = annot;
+      }  // next statement
+    }  // next node
+  }  // next function
 }
 
 } // end namespace RAnnot
