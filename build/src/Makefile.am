@@ -38,6 +38,8 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
+  CallByValueAnalysis.cc                        \
+  CallByValueAnalysis.h                         \
   DebutDFSolver.cc                              \
   DebutDFSolver.h                               \
   DefaultAnnotationMap.cc                       \
