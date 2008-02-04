@@ -33,7 +33,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
-#include <analysis/VarSet.h>
+#include <analysis/SideEffect.h>
 
 #include <support/RccError.h>
 
@@ -86,14 +86,14 @@ void SideEffectAnnotationMap::compute() {
   OA_ptr<Alias::InterAliasInterface> alias;
   alias = OACallGraphAnnotationMap::get_instance()->get_OA_alias();
 
-  SideEffect::ManagerInterSideEffectStandard solver(interface);
+  OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
   // param bindings
   DataFlow::ManagerParamBindings pb_man(interface);
   OA_ptr<DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(call_graph);
 
   // intra side effect information
-  OA_ptr<SideEffect::ManagerSideEffectStandard> intra_man;
-  intra_man = new SideEffect::ManagerSideEffectStandard(interface);
+  OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
+  intra_man = new OA::SideEffect::ManagerSideEffectStandard(interface);
 
   // compute side effect information
   m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
@@ -112,7 +112,7 @@ void SideEffectAnnotationMap::compute() {
       for(StmtHandle stmt; si->isValid(); ++*si) {
 	stmt = si->current();
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-	VarSet * annot = dynamic_cast<VarSet *>(get_map()[expr->getDefn()]);
+	SideEffect * annot = dynamic_cast<SideEffect *>(get_map()[expr->getDefn()]);
 	// each variable in the expression
 	ExpressionInfo::const_var_iterator vi;
 	for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {

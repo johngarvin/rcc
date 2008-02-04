@@ -16,11 +16,11 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: VarSet.cc
+// File: SideEffect.cc
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "VarSet.h"
+#include "SideEffect.h"
 
 #include <support/DumpMacros.h>
 
@@ -31,59 +31,59 @@ namespace RAnnot {
 
 // ----- typedefs for readability -----
 
-typedef VarSet::MyVarT MyVarT;
-typedef VarSet::MyVarSetT MyVarSetT;
+typedef SideEffect::MyVarT MyVarT;
+typedef SideEffect::MyVarSetT MyVarSetT;
 
 
 // ----- constructor/destructor -----
 
-VarSet::VarSet() {
+SideEffect::SideEffect() {
 }
 
-VarSet::~VarSet() {
+SideEffect::~SideEffect() {
 }
 
 
 // ----- insertion and iterators -----
 
-void VarSet::insert_use(const MyVarT & v) {
+void SideEffect::insert_use(const MyVarT & v) {
   assert(v->getUseDefType() == Var::Var_USE);
   m_uses.push_back(v);
 }
 
-void VarSet::insert_def(const MyVarT & v) {
+void SideEffect::insert_def(const MyVarT & v) {
   assert(v->getUseDefType() == Var::Var_DEF);
   m_defs.push_back(v);
 }
 
-std::list<Var *>::const_iterator VarSet::begin_uses() const {
+std::list<Var *>::const_iterator SideEffect::begin_uses() const {
   return m_uses.begin();
 }
 
-std::list<Var *>::const_iterator VarSet::end_uses() const {
+std::list<Var *>::const_iterator SideEffect::end_uses() const {
   return m_uses.end();
 }
 
-std::list<Var *>::const_iterator VarSet::begin_defs() const {
+std::list<Var *>::const_iterator SideEffect::begin_defs() const {
   return m_defs.begin();
 }
 
-std::list<Var *>::const_iterator VarSet::end_defs() const {
+std::list<Var *>::const_iterator SideEffect::end_defs() const {
   return m_defs.end();
 }
 
 
 // ----- handle for Annotation -----
 
-PropertyHndlT VarSet::handle() {
+PropertyHndlT SideEffect::handle() {
   return SideEffectAnnotationMap::handle();
 }
 
 
 // ----- debugging -----
 
-std::ostream& VarSet::dump(std::ostream& os) const {
-  beginObjDump(os, VarSet);
+std::ostream& SideEffect::dump(std::ostream& os) const {
+  beginObjDump(os, SideEffect);
   os << "Begin interprocedural uses:" << std::endl;
   for(std::list<Var *>::const_iterator it = begin_uses(); it != end_uses(); ++it) {
     (*it)->dump(os);
@@ -94,7 +94,7 @@ std::ostream& VarSet::dump(std::ostream& os) const {
     (*it)->dump(os);
   }
   os << "End interprocedural uses" << std::endl;
-  endObjDump(os, VarSet);
+  endObjDump(os, SideEffect);
 }
 
 }  // end namespace RAnnot

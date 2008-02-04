@@ -102,6 +102,8 @@ rcc_bin_SOURCES =				\
   RequiresContext.h				\
   ScopeAnnotationMap.cc                         \
   ScopeAnnotationMap.h                          \
+  SideEffect.cc                                 \
+  SideEffect.h                                  \
   SideEffectAnnotationMap.cc                    \
   SideEffectAnnotationMap.h                     \
   SimpleIterators.cc				\
@@ -119,6 +121,8 @@ rcc_bin_SOURCES =				\
   StrictnessType.h                              \
   SymbolTable.cc                                \
   SymbolTable.h                                 \
+  SymbolTableFacade.cc                          \
+  SymbolTableFacade.h                           \
   TypeInference.h				\
   UseVar.cc                                     \
   UseVar.h                                      \
@@ -140,8 +144,6 @@ rcc_bin_SOURCES =				\
   VarRefFactory.h                               \
   VarRefSet.cc					\
   VarRefSet.h					\
-  VarSet.cc                                     \
-  VarSet.h                                      \
   VarVisitor.h                                  \
                                                 \
   RccCallGraphAnnotation.cc                     \

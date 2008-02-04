@@ -20,8 +20,10 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/SideEffect.h>
 #include <analysis/SideEffectAnnotationMap.h>
 
 #include "CallByValueAnalysis.h"
@@ -35,6 +37,12 @@ void CallByValueAnalysis::perform_analysis() {
     fi = fii.Current();
     FuncInfo::const_call_site_iterator csi;
     for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
+      for(int i = 1; i <= fi->get_num_args(); i++) {
+	SideEffect * arg_side_effect = getProperty(SideEffect, fi->get_arg(i));
+	VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, call_lhs(*csi));
+      }
+    }
+
       // for each actual arg
       //   get arg expression's side effect
       //   look up function name in symbol table to get FuncInfo of callee
@@ -51,6 +59,5 @@ void CallByValueAnalysis::perform_analysis() {
       //   compare arg def with arg def
       //     if any members in common, must remain CBN
       //   if none in common, arg may be CBV
-    }
   }
 }

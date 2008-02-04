@@ -16,47 +16,34 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: VarSet.h
+// File: SymbolTableFacade.h
 //
-// Set of Vars. Used as an annotation type by SideEffectAnnotationMap.
-// Does not own the Var annotations it contains.
+// Facade pattern; useful methods for dealing with SymbolTables.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef VAR_SET_H
-#define VAR_SET_H
+#ifndef SYMBOL_TABLE_FACADE_H
+#define SYMBOL_TABLE_FACADE_H
 
-#include <list>
-
-#include <analysis/AnnotationBase.h>
+#include <analysis/FuncInfo.h>
+#include <analysis/SymbolTable.h>
 #include <analysis/Var.h>
+#include <analysis/VarInfo.h>
 
-namespace RAnnot {
-
-class VarSet : public AnnotationBase {
+class SymbolTableFacade {
+private:
+  SymbolTableFacade();
 public:
-  typedef Var *             MyVarT;
-  typedef std::list<MyVarT> MyVarSetT;
+  virtual ~SymbolTableFacade();
 
-  VarSet();
-  virtual ~VarSet();
-
-  void insert_use(const MyVarT & v);
-  void insert_def(const MyVarT & v);
-  MyVarSetT::const_iterator begin_uses() const;
-  MyVarSetT::const_iterator end_uses() const;
-  MyVarSetT::const_iterator begin_defs() const;
-  MyVarSetT::const_iterator end_defs() const;
-
-  static PropertyHndlT handle();
-
-  std::ostream& dump(std::ostream& os) const;
+public:
+  // given a name in a procedure, find the symbol table entry
+  RAnnot::VarInfo * find_entry(RAnnot::FuncInfo * fi, RAnnot::Var * var);
+  
+  static SymbolTableFacade * get_instance();
 
 private:
-  MyVarSetT m_uses;
-  MyVarSetT m_defs;
+  static SymbolTableFacade * s_instance;
 };
-
-}  // end namespace RAnnot
 
 #endif

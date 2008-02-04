@@ -43,10 +43,9 @@
 #include <analysis/LexicalScope.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
-#include <analysis/SymbolTable.h>
+#include <analysis/SymbolTableFacade.h>
 #include <analysis/Var.h>
 #include <analysis/VarAnnotationMap.h>
-#include <analysis/VarBinding.h>
 #include <analysis/VarInfo.h>
 #include <analysis/VarRefFactory.h>
 #include <analysis/Utils.h>
@@ -59,8 +58,6 @@
 using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
-
-VarInfo * find_st_entry(FuncInfo * fi, Var * var);
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -346,12 +343,13 @@ OA_ptr<IRCallsiteIterator> R_IRInterface::getCallsites(StmtHandle h) {
 /// to describe that call.  For example, a normal call is
 /// a NamedRef.  A call involving a function ptr is a Deref.
 OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
+  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
   SEXP e = make_sexp(h);
   OA_ptr<MemRefExpr> mre;
   if (is_var(call_lhs(e))) {
     // TODO: redo Annotations so we can use getProperty without requiring the annotations to have a certain name
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(e));
-    VarInfo * vi = find_st_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
+    VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
     mre = new NamedRef(MemRefExpr::USE, sym);
     //    mre = new Deref(MemRefExpr::USE, mre);
@@ -405,6 +403,8 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   // TODO: handle named arguments
   // TODO: handle Hell procedure
 
+  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+
   // param is the nth actual arg of call: find n
   SEXP actual = make_sexp(param);
   SEXP args = call_args(make_sexp(call));
@@ -425,7 +425,7 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   if (n > fi->get_num_args() || TAG(fi->get_arg(n)) == R_DotsSymbol) {
     return SymHandle(0);
   }
-  VarInfo * vi = find_st_entry(fi, getProperty(Var, fi->get_arg(n)));
+  VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, fi->get_arg(n)));
   return make_sym_h(vi);
 }
 
@@ -463,7 +463,7 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
   if (is_var(CAR(cell))) {
     // TODO: make this easier
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
-    VarInfo * vi = find_st_entry(fi, getProperty(Var, cell));
+    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
     OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(vi));
     //    mre = new AddressOf(MemRefExpr::USE, mre);
     iter = new R_SingletonMemRefExprIterator(mre);
@@ -602,7 +602,7 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
     return SymHandle(0);
   } else {
     SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
-    VarInfo * vi = find_st_entry(fi, getProperty(Var, cell));
+    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
     return make_sym_h(vi);
   }
 }
@@ -678,13 +678,14 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 /// handle more than one procedure bound to the same name in the same
 /// scope. For now we're just giving the first name assigned.
 SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
+  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
   if (h == HellProcedure::get_instance()) {
     return SymHandle(0);
   }
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
   SEXP name = fi->get_first_name_c();
   if (VarAnnotationMap::get_instance()->is_valid(name)) {
-    VarInfo * sym = find_st_entry(fi, getProperty(Var, name));
+    VarInfo * sym = symbol_table->find_entry(fi, getProperty(Var, name));
     if (sym->size_defs() == 1) {
       return make_sym_h(sym);
     } else {
@@ -699,8 +700,9 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
 }
 
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
+  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
   FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(make_sexp(h)));
-  return make_sym_h(find_st_entry(fi, getProperty(Var, make_sexp(h))));
+  return make_sym_h(symbol_table->find_entry(fi, getProperty(Var, make_sexp(h))));
 }
 
 //------------------------------------------------------------
@@ -1142,28 +1144,3 @@ void R_SingletonMemRefExprIterator::operator++() {
 void R_SingletonMemRefExprIterator::reset() {
   R_SingletonIterator<OA_ptr<MemRefExpr> >::reset();
 }
-
-
-//------------------------------------------------------------
-// given a name in a procedure, find the symbol table entry
-//------------------------------------------------------------
-
-VarInfo * find_st_entry(FuncInfo * fi, Var * var) {
-  VarBinding * binding = getProperty(VarBinding, var->getMention_c());
-  if (binding->is_unbound()) {
-    SymbolTable * table = UnboundLexicalScope::get_instance()->get_symbol_table();
-    VarInfo * vi = (*table)[var->getName()];
-    assert(vi != 0);
-    return vi;
-  } else if (binding->is_single()) {
-    SymbolTable * table = (*binding->begin())->get_symbol_table();
-    VarInfo * vi = (*table)[var->getName()];
-    assert(vi != 0);
-    return vi;
-  } else {
-    VarInfo * vi = (*SymbolTable::get_ambiguous_st())[var->getName()];
-    assert(vi != 0);
-    return vi;
-  }
-}
-
