@@ -117,6 +117,15 @@ bool VarInfo::is_internal() {
   return (m_scope == InternalLexicalScope::get_instance());
 }
 
+VarInfo::key_type VarInfo::single_def_if_exists() {
+  if (size_defs() == 1) {
+    return *(++(m_defs.begin()));
+  } else {
+    return 0;
+  }
+}
+
+
 std::string VarInfo::get_location(SubexpBuffer * sb) {
   if (m_c_location.empty()) {
     m_c_location = sb->new_location();

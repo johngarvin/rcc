@@ -33,7 +33,7 @@ SymbolTableFacade::SymbolTableFacade() {
 SymbolTableFacade::~SymbolTableFacade() {
 }
 
-VarInfo * SymbolTableFacade::find_entry(FuncInfo * fi, Var * var) {
+VarInfo * SymbolTableFacade::find_entry(const FuncInfo * fi, const Var * var) const {
   VarBinding * binding = getProperty(VarBinding, var->getMention_c());
   if (binding->is_unbound()) {
     SymbolTable * table = UnboundLexicalScope::get_instance()->get_symbol_table();

@@ -29,26 +29,34 @@
 
 #include <list>
 
+#include <OpenAnalysis/Location/Location.hpp>
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
+
 #include <analysis/AnnotationBase.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/Var.h>
 
 namespace RAnnot {
 
 class SideEffect : public AnnotationBase {
 public:
-  typedef Var *             MyVarT;
-  typedef std::list<MyVarT> MyVarSetT;
+  typedef OA::OA_ptr<OA::Location>   MyVarT;
+  typedef OA::LocSet                 MyVarSetT;
 
   SideEffect();
   virtual ~SideEffect();
 
+  void insert_use(const FuncInfo * fi, const Var * v);
   void insert_use(const MyVarT & v);
+  void insert_def(const FuncInfo * fi, const Var * v);
   void insert_def(const MyVarT & v);
+
   MyVarSetT::const_iterator begin_uses() const;
   MyVarSetT::const_iterator end_uses() const;
   MyVarSetT::const_iterator begin_defs() const;
   MyVarSetT::const_iterator end_defs() const;
 
+  AnnotationBase * clone();
   static PropertyHndlT handle();
 
   std::ostream& dump(std::ostream& os) const;

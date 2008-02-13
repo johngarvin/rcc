@@ -99,10 +99,12 @@ void SideEffectAnnotationMap::compute() {
   m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
 
   // now use m_side_effect to get info on expressions
+
   // for each function
   FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
+
     // for each CFG node (basic block)
     OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
     for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
@@ -113,15 +115,21 @@ void SideEffectAnnotationMap::compute() {
 	stmt = si->current();
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
 	SideEffect * annot = dynamic_cast<SideEffect *>(get_map()[expr->getDefn()]);
+
+	// first grab local uses and defs
+
 	// each variable in the expression
 	ExpressionInfo::const_var_iterator vi;
 	for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {
 	  if ((*vi)->getUseDefType() == Var::Var_USE) {
-	    annot->insert_use(*vi);
+	    annot->insert_use(fi, *vi);
 	  } else if ((*vi)->getUseDefType() == Var::Var_DEF) {
-	    annot->insert_def(*vi);
+	    annot->insert_def(fi, *vi);
 	  }
 	}
+
+	// now grab interprocedural uses and defs from m_side_effect
+
 	ExpressionInfo::const_call_site_iterator csi;
 	for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
 	  OA_ptr<LocIterator> li;
@@ -129,7 +137,7 @@ void SideEffectAnnotationMap::compute() {
 	    OA_ptr<OA::Location> location; location = li->current();
 	    if (location->isaNamed()) {
 	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	      annot->insert_def(getProperty(Var, make_sexp(named_loc->getSymHandle())));
+	      annot->insert_def(named_loc);
 	    } else {
 	      rcc_error("Unexpected non-NamedLoc location");
 	    }
@@ -138,7 +146,7 @@ void SideEffectAnnotationMap::compute() {
 	    OA_ptr<OA::Location> location; location = li->current();
 	    if (location->isaNamed()) {
 	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	      annot->insert_use(getProperty(Var, make_sexp(named_loc->getSymHandle())));
+	      annot->insert_use(named_loc);
 	    } else {
 	      rcc_error("Unexpected non-NamedLoc location");
 	    }

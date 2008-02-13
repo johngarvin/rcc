@@ -89,6 +89,9 @@ public:
   bool is_param();
   bool is_internal();
 
+  // if there is exactly one def, return it, otherwise return 0
+  key_type single_def_if_exists();
+
   /// get the location in the R environment
   std::string get_location(SubexpBuffer* sb);
 

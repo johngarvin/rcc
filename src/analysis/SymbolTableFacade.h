@@ -38,7 +38,7 @@ public:
 
 public:
   // given a name in a procedure, find the symbol table entry
-  RAnnot::VarInfo * find_entry(RAnnot::FuncInfo * fi, RAnnot::Var * var);
+  RAnnot::VarInfo * find_entry(const RAnnot::FuncInfo * fi, const RAnnot::Var * var) const;
   
   static SymbolTableFacade * get_instance();
 

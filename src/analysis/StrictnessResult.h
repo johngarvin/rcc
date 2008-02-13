@@ -42,9 +42,9 @@ public:
       m_debuts(debuts),
       m_post_debut_stmts(post_debut_stmts)
     {}
-  OA::OA_ptr<Strictness::DFSet> get_args_on_exit() { return m_args_on_exit; }
-  OA::OA_ptr<NameMentionMultiMap> get_debuts() { return m_debuts; }
-  OA::OA_ptr<NameStmtMultiMap> get_post_debut_stmts() { return m_post_debut_stmts; }
+  OA::OA_ptr<Strictness::DFSet> get_args_on_exit() const { return m_args_on_exit; }
+  OA::OA_ptr<NameMentionMultiMap> get_debuts() const { return m_debuts; }
+  OA::OA_ptr<NameStmtMultiMap> get_post_debut_stmts() const { return m_post_debut_stmts; }
 private:
   OA::OA_ptr<Strictness::DFSet> m_args_on_exit;
   OA::OA_ptr<NameMentionMultiMap> m_debuts;
