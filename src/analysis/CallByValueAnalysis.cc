@@ -33,6 +33,7 @@
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SideEffect.h>
 #include <analysis/SideEffectAnnotationMap.h>
+#include <analysis/SimpleIterators.h>
 #include <analysis/StrictnessDFSolver.h>
 #include <analysis/StrictnessResult.h>
 #include <analysis/SymbolTableFacade.h>
@@ -46,6 +47,9 @@ using namespace Strictness;
 using OA::OA_ptr;
 using OA::StmtHandle;
 
+CallByValueAnalysis::CallByValueAnalysis() {
+}
+
 void CallByValueAnalysis::perform_analysis() {
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
 
@@ -55,18 +59,21 @@ void CallByValueAnalysis::perform_analysis() {
     fi = fii.Current();
     FuncInfo::const_call_site_iterator csi;
     for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
-      for(int i = 1; i <= fi->get_num_args(); i++) {
+      int i = 1;
+      for(R_ListIterator argi(call_args(*csi)); argi.isValid(); ++argi) {
 	// the actual argument's side effect
-	SideEffect * arg_side_effect = getProperty(SideEffect, fi->get_arg(i));
+	SEXP actual = argi.current();
+	SideEffect * arg_side_effect = getProperty(SideEffect, actual);
 
 	// the side effect of the pre-debut part of the callee
-	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, call_lhs(*csi)));
+	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, *csi)); // not call_lhs; Var wants the cons cell
 	DefVar * def = vi->single_def_if_exists();
 	if (def == 0) {
-	  throw new AnalysisException();
+	  throw AnalysisException();
 	}
-	ScopeAnnotationMap * scope_map = ScopeAnnotationMap::get_instance();
-	FuncInfo * callee = dynamic_cast<FuncInfo*>((*scope_map)[def->getName()]);
+	
+	FuncInfo * callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	assert(callee != 0);
 	StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
 	OA_ptr<StrictnessResult> strictness;
 	strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_defn()), callee->get_cfg());
@@ -94,23 +101,16 @@ void CallByValueAnalysis::perform_analysis() {
 	    if (strictness->get_post_debut_stmts()->find(expr->getDefn()) != 0) {
 	      continue;
 	    }
-	    // pre_debut->union(strictness->get_post_debut_stmts());
+	    pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));
 	  }
 	}
 	
-	// if (arg_side_effect->get_defs()->intersect(pre_debut->get_uses()) is empty) {
-	//   formal->set_is_value(false);
-	//   continue;
-	// }
-	// if (arg_side_effect->get_uses()->intersect(pre_debut->get_defs()) is empty) {
-	//   formal->set_is_value(false);
-	//   continue;
-	// }
-	// if (arg_side_effect->get_defs()->intersect(pre_debut->get_defs()) is empty) {
-	//   formal->set_is_value(false);
-	//   continue;
-	// }
-	// formal->set_is_value(true);
+	if (arg_side_effect->intersects(pre_debut)) {
+	  formal->set_is_value(false);
+	  continue;
+	}
+	formal->set_is_value(true);
+	i++;
       }
     }
 

@@ -165,10 +165,16 @@ void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
 // ----- access to OA call graph -----
 
 OA_ptr<CallGraph::CallGraphInterface> OACallGraphAnnotationMap::get_OA_call_graph() {
+  if (!is_computed()) {
+    compute();
+  }
   return m_call_graph;
 }
 
 OA_ptr<Alias::InterAliasInterface> OACallGraphAnnotationMap::get_OA_alias() {
+  if (!is_computed()) {
+    compute();
+  }
   return m_alias;
 }
 

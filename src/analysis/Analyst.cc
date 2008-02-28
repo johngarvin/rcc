@@ -30,6 +30,7 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/CallByValueAnalysis.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalFunctionAnalysis.h>
@@ -87,6 +88,7 @@ void R_Analyst::perform_analysis() {
       throw AnalysisException();
     }
   build_local_function_info();
+  (new CallByValueAnalysis())->perform_analysis();
 }
 
 /// Discovers local information on procedures: arguments, names

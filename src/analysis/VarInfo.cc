@@ -119,7 +119,7 @@ bool VarInfo::is_internal() {
 
 VarInfo::key_type VarInfo::single_def_if_exists() {
   if (size_defs() == 1) {
-    return *(++(m_defs.begin()));
+    return *(m_defs.begin());
   } else {
     return 0;
   }

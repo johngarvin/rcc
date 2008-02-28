@@ -34,6 +34,7 @@
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/SideEffect.h>
+#include <analysis/SimpleIterators.h>
 
 #include <support/RccError.h>
 
@@ -78,6 +79,38 @@ PropertyHndlT SideEffectAnnotationMap::m_handle = "SideEffect";
 
 // compute all Var annotation information
 void SideEffectAnnotationMap::compute() {
+  compute_oa_side_effect();
+  // now use m_side_effect to get info on expressions
+
+  // for each function
+  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
+  for(FuncInfo *fi; fii.IsValid(); fii++) {
+    fi = fii.Current();
+
+    // get a SideEffect for each statement
+
+    // for each CFG node (basic block)
+    OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
+    for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
+      node = ni->current().convert<CFG::Node>();
+      // each statement in basic block
+      OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
+      for(StmtHandle stmt; si->isValid(); ++*si) {
+	stmt = si->current();
+	make_side_effect(fi, make_sexp(stmt));
+      }  // next statement
+    }  // next node
+
+    // get a SideEffect for each call site argument
+    for(FuncInfo::const_call_site_iterator csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
+      for(R_ListIterator arg_it(*csi); arg_it.isValid(); ++arg_it) {
+	make_side_effect(fi, arg_it.current());
+      }
+    }
+  }  // next function
+}
+
+void SideEffectAnnotationMap::compute_oa_side_effect() {
   // populate m_side_effect with OA side effect info
 
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
@@ -89,7 +122,7 @@ void SideEffectAnnotationMap::compute() {
   OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
   // param bindings
   DataFlow::ManagerParamBindings pb_man(interface);
-  OA_ptr<DataFlow::ParamBindings> param_bindings = pb_man.performAnalysis(call_graph);
+  OA_ptr<DataFlow::ParamBindings> param_bindings; param_bindings = pb_man.performAnalysis(call_graph);
 
   // intra side effect information
   OA_ptr<OA::SideEffect::ManagerSideEffectStandard> intra_man;
@@ -97,65 +130,50 @@ void SideEffectAnnotationMap::compute() {
 
   // compute side effect information
   m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
-
-  // now use m_side_effect to get info on expressions
-
-  // for each function
-  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
-
-    // for each CFG node (basic block)
-    OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
-    for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
-      node = ni->current().convert<CFG::Node>();
-      // each statement in basic block
-      OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
-      for(StmtHandle stmt; si->isValid(); ++*si) {
-	stmt = si->current();
-	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-	SideEffect * annot = dynamic_cast<SideEffect *>(get_map()[expr->getDefn()]);
-
-	// first grab local uses and defs
-
-	// each variable in the expression
-	ExpressionInfo::const_var_iterator vi;
-	for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {
-	  if ((*vi)->getUseDefType() == Var::Var_USE) {
-	    annot->insert_use(fi, *vi);
-	  } else if ((*vi)->getUseDefType() == Var::Var_DEF) {
-	    annot->insert_def(fi, *vi);
-	  }
-	}
-
-	// now grab interprocedural uses and defs from m_side_effect
-
-	ExpressionInfo::const_call_site_iterator csi;
-	for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
-	  OA_ptr<LocIterator> li;
-	  for(li = m_side_effect->getMODIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
-	    OA_ptr<OA::Location> location; location = li->current();
-	    if (location->isaNamed()) {
-	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	      annot->insert_def(named_loc);
-	    } else {
-	      rcc_error("Unexpected non-NamedLoc location");
-	    }
-	  }  // next MOD location
-	  for(li = m_side_effect->getREFIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
-	    OA_ptr<OA::Location> location; location = li->current();
-	    if (location->isaNamed()) {
-	      OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	      annot->insert_use(named_loc);
-	    } else {
-	      rcc_error("Unexpected non-NamedLoc location");
-	    }
-	  }  // next REF location
-	}  // next call site in expression
-	get_map()[make_sexp(stmt)] = annot;
-      }  // next statement
-    }  // next node
-  }  // next function
 }
+
+void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP e) {
+  ExpressionInfo * expr = getProperty(ExpressionInfo, e);
+  SideEffect * annot = new SideEffect();
+
+  // first grab local uses and defs
+
+  // each variable in the expression
+  ExpressionInfo::const_var_iterator vi;
+  for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {
+    annot->insert_mention(fi, *vi);
+  }
+
+  // now grab interprocedural uses and defs from m_side_effect
+
+  ExpressionInfo::const_call_site_iterator csi;
+  for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
+    OA_ptr<LocIterator> li;
+    for(li = m_side_effect->getMODIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+      OA_ptr<OA::Location> location; location = li->current();
+      if (location->isaNamed()) {
+	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
+	annot->insert_def(named_loc);
+      } else if (location->isaUnknown()) {
+	annot->insert_def(location);
+      } else {
+	rcc_error("Unexpected location type");
+      }
+    }  // next MOD location
+    for(li = m_side_effect->getREFIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+      OA_ptr<OA::Location> location; location = li->current();
+      if (location->isaNamed()) {
+	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
+	annot->insert_use(named_loc);
+      } else if (location->isaUnknown()) {
+	annot->insert_use(location);
+      } else {
+	rcc_error("Unexpected location type");
+      }
+    }  // next REF location
+  }  // next call site in expression
+  
+  get_map()[e] = annot;
+} 
 
 } // end namespace RAnnot

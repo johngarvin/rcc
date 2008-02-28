@@ -41,11 +41,13 @@ namespace RAnnot {
 
 typedef SideEffect::MyVarT MyVarT;
 typedef SideEffect::MyVarSetT MyVarSetT;
-
+typedef SideEffect::MyIterator MyIterator;
 
 // ----- constructor/destructor -----
 
 SideEffect::SideEffect() {
+  m_uses = new OA::LocSet();
+  m_defs = new OA::LocSet();
 }
 
 SideEffect::~SideEffect() {
@@ -54,47 +56,74 @@ SideEffect::~SideEffect() {
 
 // ----- insertion -----
 
-void SideEffect::insert_use(const FuncInfo * fi, const Var * v) {
-  assert(v->getUseDefType() == Var::Var_USE);
+void SideEffect::insert_mention(const FuncInfo * fi, const Var * v) {
   OA::ProcHandle proc = make_proc_h(fi->get_defn());
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, v));
-  insert_use(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  if (v->getUseDefType() == Var::Var_USE) {
+    insert_use(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  } else {
+    insert_def(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  }
 }
 
 void SideEffect::insert_use(const MyVarT & v) {
-  m_uses.insert(v);
-}
-
-void SideEffect::insert_def(const FuncInfo * fi, const Var * v) {
-  assert(v->getUseDefType() == Var::Var_DEF);
-  OA::ProcHandle proc = make_proc_h(fi->get_defn());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, v));
-  insert_def(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  m_uses->insert(v);
 }
 
 void SideEffect::insert_def(const MyVarT & v) {
-  m_defs.insert(v);
+  m_defs->insert(v);
 }
 
+  // ----- set operators -----
+
+void SideEffect::add(const SideEffect * x) {
+  OA::LocSet::const_iterator it;
+  for(it = x->begin_uses(); it != x->end_uses(); ++it) {
+    m_uses->insert(*it);
+  }
+  for(it = x->begin_defs(); it != x->end_defs(); ++it) {
+    m_defs->insert(*it);
+  }
+}
+
+// ----- getters -----
+
+MyVarSetT SideEffect::get_uses() {
+  return m_uses;
+}
+
+MyVarSetT SideEffect::get_defs() {
+  return m_defs;
+}
 
 // ----- iterators -----
 
-MyVarSetT::const_iterator SideEffect::begin_uses() const {
-  return m_uses.begin();
+MyIterator SideEffect::begin_uses() const {
+  return m_uses->begin();
 }
 
-MyVarSetT::const_iterator SideEffect::end_uses() const {
-  return m_uses.end();
+MyIterator SideEffect::end_uses() const {
+  return m_uses->end();
 }
 
-MyVarSetT::const_iterator SideEffect::begin_defs() const {
-  return m_defs.begin();
+MyIterator SideEffect::begin_defs() const {
+  return m_defs->begin();
 }
 
-MyVarSetT::const_iterator SideEffect::end_defs() const {
-  return m_defs.end();
+MyIterator SideEffect::end_defs() const {
+  return m_defs->end();
 }
 
+// ----- ask whether this SideEffect intersects with another -----
+
+bool SideEffect::intersects(SideEffect * other) {
+  OA::OA_ptr<OA::LocSet> true_dep; true_dep = intersectLocSets(*get_defs(), *other->get_uses());
+  OA::OA_ptr<OA::LocSet> anti_dep; anti_dep = intersectLocSets(*get_uses(), *other->get_defs());
+  OA::OA_ptr<OA::LocSet> output_dep; output_dep = intersectLocSets(*get_defs(), *other->get_defs());
+  return (!(true_dep->empty() &&
+	    anti_dep->empty() &&
+	    output_dep->empty()));
+}
 
 // ----- handle, cloning for Annotation -----
 
@@ -111,12 +140,12 @@ AnnotationBase * SideEffect::clone() {
 std::ostream& SideEffect::dump(std::ostream& os) const {
   beginObjDump(os, SideEffect);
   os << "Begin interprocedural uses:" << std::endl;
-  for(MyVarSetT::const_iterator it = begin_uses(); it != end_uses(); ++it) {
+  for(MyIterator it = begin_uses(); it != end_uses(); ++it) {
     (*it)->dump(os);
   }
   os << "End interprocedural uses" << std::endl;
   os << "Begin interprocedural defs:" << std::endl;
-  for(MyVarSetT::const_iterator it = begin_defs(); it != end_defs(); ++it) {
+  for(MyIterator it = begin_defs(); it != end_defs(); ++it) {
     (*it)->dump(os);
   }
   os << "End interprocedural uses" << std::endl;

@@ -186,6 +186,16 @@ SEXP call_args(const SEXP e) {
   return CDR(e);
 }
 
+SEXP call_nth_arg(const SEXP e, int n) {
+  SEXP args = call_args(e);
+  assert(n > 0);
+  assert(Rf_length(args) <= n);
+  for(int i = 0; i<(n-1); i++) {  // take the CDR (n-1) times
+    args = CDR(args);
+  }
+  return args;
+}
+
 //--------------------------------------------------------------------
 // control flow statements
 //--------------------------------------------------------------------

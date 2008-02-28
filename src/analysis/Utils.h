@@ -60,6 +60,8 @@ bool is_string(const SEXP e);
 bool is_call(const SEXP e);
 SEXP call_lhs(const SEXP e);
 SEXP call_args(const SEXP e);
+// get the cons containing nth arg, indexed from 1
+SEXP call_nth_arg(const SEXP e, int n);
 
 bool is_if(const SEXP e);
 SEXP if_cond_c(const SEXP e);

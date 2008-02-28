@@ -41,20 +41,28 @@ namespace RAnnot {
 class SideEffect : public AnnotationBase {
 public:
   typedef OA::OA_ptr<OA::Location>   MyVarT;
-  typedef OA::LocSet                 MyVarSetT;
+  typedef OA::OA_ptr<OA::LocSet>     MyVarSetT;
+  typedef OA::LocSet::const_iterator MyIterator;
 
   SideEffect();
   virtual ~SideEffect();
 
-  void insert_use(const FuncInfo * fi, const Var * v);
+  MyVarSetT get_uses();
+  MyVarSetT get_defs();
+
+  void insert_mention(const FuncInfo * fi, const Var * v);
   void insert_use(const MyVarT & v);
-  void insert_def(const FuncInfo * fi, const Var * v);
   void insert_def(const MyVarT & v);
 
-  MyVarSetT::const_iterator begin_uses() const;
-  MyVarSetT::const_iterator end_uses() const;
-  MyVarSetT::const_iterator begin_defs() const;
-  MyVarSetT::const_iterator end_defs() const;
+  void add(const SideEffect * x);
+
+  MyIterator begin_uses() const;
+  MyIterator end_uses() const;
+  MyIterator begin_defs() const;
+  MyIterator end_defs() const;
+
+  // returns true if there is any true, anti, or output dependence between the two
+  bool intersects(SideEffect * other);
 
   AnnotationBase * clone();
   static PropertyHndlT handle();
