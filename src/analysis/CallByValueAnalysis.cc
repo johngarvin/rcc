@@ -60,13 +60,20 @@ void CallByValueAnalysis::perform_analysis() {
     FuncInfo::const_call_site_iterator csi;
     for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
       // get side effect of the pre-debut part of the callee
-      VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, *csi)); // not call_lhs; Var wants the cons cell
-      DefVar * def = vi->single_def_if_exists();
-      if (def == 0) {
-	continue;
-	// TODO: what should be done here? Need to handle library procedures with side effects
+      FuncInfo * callee;
+      if (is_fundef(call_lhs(*csi))) {
+	callee = getProperty(FuncInfo, CAR(call_lhs(*csi)));
+      } else if (is_var(call_lhs(*csi))) {
+	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, *csi)); // not call_lhs; Var wants the cons cell
+	DefVar * def = vi->single_def_if_exists();
+	if (def == 0) {
+	  continue;
+	  // TODO: what should be done here? Need to handle library procedures with side effects
+	}
+	callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+      } else {
+	throw AnalysisException();
       }
-      FuncInfo * callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
       SideEffect * pre_debut = get_pre_debut_side_effect(callee);
 
       // for each arg
