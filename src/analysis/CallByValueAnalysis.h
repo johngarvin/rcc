@@ -25,10 +25,18 @@
 
 #include <include/R/R_RInternals.h>
 
+namespace RAnnot {
+  class SideEffect;
+  class FuncInfo;
+}
+
 class CallByValueAnalysis {
 public:
   CallByValueAnalysis();
   void perform_analysis();
+
+private:
+  RAnnot::SideEffect * get_pre_debut_side_effect(RAnnot::FuncInfo * callee);
 };
 
 #endif
