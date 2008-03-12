@@ -69,8 +69,13 @@ void CallByValueAnalysis::perform_analysis() {
 	if (def == 0) {
 	  continue;
 	  // TODO: what should be done here? Need to handle library procedures with side effects
+	  // and procedures with more than one definition.
 	}
-	callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	if (is_fundef(CAR(def->getRhs_c()))) {
+	  callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	} else {
+	  continue;
+	}
       } else {
 	throw AnalysisException();
       }
@@ -80,6 +85,11 @@ void CallByValueAnalysis::perform_analysis() {
       int i = 1;
       for(R_ListIterator argi(call_args(*csi)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
+	if (TAG(argi.current()) == Rf_install("...")) {
+	  // we are not yet handling varargs
+	  throw AnalysisException();
+	}
+
 	// if not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
 	  formal->set_is_value(false);
@@ -106,6 +116,7 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
   StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
   OA_ptr<StrictnessResult> strictness;
   strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_defn()), callee->get_cfg());
+
   OA_ptr<OA::CFG::NodesIteratorInterface> ni = callee->get_cfg()->getCFGNodesIterator();
   for(OA_ptr<OA::CFG::Node> node; ni->isValid(); ++*ni) {
     node = ni->current().convert<OA::CFG::Node>();
