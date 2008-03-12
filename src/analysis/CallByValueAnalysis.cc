@@ -81,14 +81,14 @@ void CallByValueAnalysis::perform_analysis() {
       }
       SideEffect * pre_debut = get_pre_debut_side_effect(callee);
 
+      if (callee->get_num_args() != Rf_length(call_args(*csi))) {
+	// TODO: handle default args and "..."
+	throw AnalysisException();
+      }
       // for each arg
       int i = 1;
       for(R_ListIterator argi(call_args(*csi)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
-	if (TAG(argi.current()) == Rf_install("...")) {
-	  // we are not yet handling varargs
-	  throw AnalysisException();
-	}
 
 	// if not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
