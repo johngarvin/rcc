@@ -97,7 +97,7 @@ void R_Analyst::build_local_function_info() {
   FuncInfoIterator fii(m_scope_tree_root);
   for(FuncInfo *fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    LocalFunctionAnalysis lfa(fi->get_defn());
+    LocalFunctionAnalysis lfa(fi->get_sexp());
     lfa.perform_analysis();
   }
 }

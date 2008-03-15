@@ -131,7 +131,7 @@ void VarAnnotationMap::compute_all_locality_info() {
   FuncInfoIterator fii(root);
   for(FuncInfo * fi; fii.IsValid(); fii++) {
     fi = fii.Current();
-    ProcHandle ph = make_proc_h(fi->get_defn());
+    ProcHandle ph = make_proc_h(fi->get_sexp());
     OA_ptr<MyCFG> cfg = fi->get_cfg();
     compute_locality_info(interface, ph, cfg);
   }

@@ -59,15 +59,15 @@ typedef FuncInfo::const_mention_iterator const_mention_iterator;
 typedef FuncInfo::call_site_iterator call_site_iterator;
 typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
 
-FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP defn) :
+FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP sexp) :
   m_parent(parent),
   m_first_name_c(name_c),
-  m_defn(defn),
+  m_sexp(sexp),
   m_c_name(""),
   m_closure(""),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
-  m_requires_context = functionRequiresContext(defn);
+  m_requires_context = functionRequiresContext(sexp);
 
   // make formal argument annotations
   SEXP args = get_args();
@@ -77,7 +77,7 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP defn) :
   }
 
   // this is a new lexical scope
-  m_scope = new FundefLexicalScope(defn);
+  m_scope = new FundefLexicalScope(sexp);
 }
 
 FuncInfo::~FuncInfo()
@@ -94,9 +94,9 @@ void FuncInfo::set_num_args(unsigned int x)
   m_num_args = x;
 }
 
-SEXP FuncInfo::get_defn() const
+SEXP FuncInfo::get_sexp() const
 {
-  return m_defn;
+  return m_sexp;
 }
 
 SEXP FuncInfo::get_first_name_c() const
@@ -126,7 +126,7 @@ bool FuncInfo::requires_context() const
 
 SEXP FuncInfo::get_args() const
 { 
-  return CAR(fundef_args_c(m_defn)); 
+  return CAR(fundef_args_c(m_sexp)); 
 }
 
 bool FuncInfo::is_arg(SEXP sym) const
@@ -274,7 +274,7 @@ void FuncInfo::perform_analysis() {
   // compute CFG
   // pass 'true' as second arg to build statement-level CFG
   CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
-  m_cfg = cfg_man.performAnalysis(make_proc_h(m_defn));
+  m_cfg = cfg_man.performAnalysis(make_proc_h(m_sexp));
 
 #if 0
   // moved to Analyst (collect_... needs VarAnnotationMap filled in,
@@ -285,7 +285,7 @@ void FuncInfo::perform_analysis() {
 
   // perform strictness analysis
   StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
-  strict_solver.perform_analysis(make_proc_h(m_defn), m_cfg);
+  strict_solver.perform_analysis(make_proc_h(m_sexp), m_cfg);
 #endif
 }
 
@@ -297,7 +297,7 @@ bool FuncInfo::has_children() const {
 Moved to Analyst; circular dependence
 
 void FuncInfo::analyze_args() {
-  SEXP args = CAR(fundef_args_c(m_defn));
+  SEXP args = CAR(fundef_args_c(m_sexp));
   const SEXP ddd = Rf_install("...");
   bool has_var_args = false;
   int n_args = 0;
@@ -364,8 +364,8 @@ std::ostream& FuncInfo::dump(std::ostream& os) const
   dumpVar(os, m_has_var_args);
   dumpVar(os, m_c_name);
   dumpVar(os, m_requires_context);
-  R_Analyst::get_instance()->dump_cfg(os, m_defn); // can't call CFG::dump; it requires the IRInterface
-  dumpSEXP(os, m_defn);
+  R_Analyst::get_instance()->dump_cfg(os, m_sexp); // can't call CFG::dump; it requires the IRInterface
+  dumpSEXP(os, m_sexp);
   dumpPtr(os, m_parent);
   os << "Begin arguments:" << std::endl;
   for (SEXP arg = get_args(); arg != R_NilValue; arg = CDR(arg)) {

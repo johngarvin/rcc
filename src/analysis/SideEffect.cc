@@ -57,7 +57,7 @@ SideEffect::~SideEffect() {
 // ----- insertion -----
 
 void SideEffect::insert_mention(const FuncInfo * fi, const Var * v) {
-  OA::ProcHandle proc = make_proc_h(fi->get_defn());
+  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, v));
   if (v->getUseDefType() == Var::Var_USE) {
     insert_use(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));

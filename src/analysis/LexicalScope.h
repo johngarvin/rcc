@@ -64,10 +64,10 @@ private:
 class FundefLexicalScope : public LexicalScope {
 public:
   explicit FundefLexicalScope(SEXP fundef);
-  SEXP get_fundef() const;
+  SEXP get_sexp() const;
   const std::string get_name() const;
 private:
-  SEXP m_fundef;
+  SEXP m_sexp;
 };
 
 class UnboundLexicalScope : public LexicalScope {

@@ -58,7 +58,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     assert(var != 0);
     FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()));
     assert(scope != 0);
-    FuncInfo * fi = getProperty(FuncInfo, scope->get_fundef());
+    FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());
     // if redefining a parameter, we don't have a location, so emit a defineVar.
     if (fi->is_arg(CAR(cell))) {
       // TODO: be able to cache redefinitions of formal args

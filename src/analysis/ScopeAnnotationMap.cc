@@ -81,7 +81,7 @@ void ScopeAnnotationMap::compute() {
   FuncInfoIterator fii(an->get_scope_tree_root());
   for(fii.Reset(); fii.IsValid(); ++fii) {
     FuncInfo * scope = fii.Current();
-    R_PreorderIterator iter(scope->get_defn());
+    R_PreorderIterator iter(scope->get_sexp());
     for(iter.reset(); iter.isValid(); ++iter) {
       if (is_cons(iter.current())) {
 	get_map()[iter.current()] = scope;

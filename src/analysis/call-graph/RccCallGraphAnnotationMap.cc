@@ -258,7 +258,7 @@ void RccCallGraphAnnotationMap::compute() {
   SEXP program = CAR(assign_rhs_c(R_Analyst::get_instance()->get_program()));
   FuncInfoIterator fii(getProperty(FuncInfo, program));
   for(FuncInfo *fi; fi = fii.Current(); ++fii) {
-    worklist.push_back(make_fundef_node(fi->get_defn()));
+    worklist.push_back(make_fundef_node(fi->get_sexp()));
   }
 
   while(!worklist.empty()) {

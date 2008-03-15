@@ -49,7 +49,7 @@ std::ostream&
 ExpressionInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, ExpressionInfo);
-  SEXP definition = CAR(mDefn);
+  SEXP definition = CAR(m_sexp);
   dumpSEXP(os, definition);
 
   os << "Begin mentions:" << std::endl;

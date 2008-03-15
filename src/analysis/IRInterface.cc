@@ -1080,7 +1080,7 @@ R_ProcHandleIterator::~R_ProcHandleIterator() {
 }
 
 ProcHandle R_ProcHandleIterator::current() const {
-  return make_proc_h(m_fii->Current()->get_defn());
+  return make_proc_h(m_fii->Current()->get_sexp());
 }
 
 bool R_ProcHandleIterator::isValid() const {

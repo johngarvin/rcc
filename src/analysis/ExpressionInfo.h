@@ -90,10 +90,10 @@ public:
     { return mCallSites.end(); }
 
   // definition of the expression
-  SEXP getDefn() const
-    { return mDefn; }
+  SEXP get_sexp() const
+    { return m_sexp; }
   void setDefn(SEXP x)
-    { mDefn = x; }
+    { m_sexp = x; }
 
   static PropertyHndlT handle();
 
@@ -108,7 +108,7 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  SEXP mDefn;
+  SEXP m_sexp;
   MyVarSet_t mVars;            // contents of set not owned
   MyCallSiteSet_t mCallSites;  // contents of set not owned
 };

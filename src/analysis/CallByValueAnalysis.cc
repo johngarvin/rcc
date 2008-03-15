@@ -115,7 +115,7 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
   SideEffect * pre_debut = new SideEffect();
   StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
   OA_ptr<StrictnessResult> strictness;
-  strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_defn()), callee->get_cfg());
+  strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_sexp()), callee->get_cfg());
 
   OA_ptr<OA::CFG::NodesIteratorInterface> ni = callee->get_cfg()->getCFGNodesIterator();
   for(OA_ptr<OA::CFG::Node> node; ni->isValid(); ++*ni) {
@@ -131,7 +131,7 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
       // we're already excluding non-strict functions (functions
       // with non-strict statements), we can approximate this by
       // just excluding post-debut statements.
-      if (strictness->get_post_debut_stmts()->find(expr->getDefn()) != 0) {
+      if (strictness->get_post_debut_stmts()->find(expr->get_sexp()) != 0) {
 	continue;
       }
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));

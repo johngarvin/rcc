@@ -80,15 +80,15 @@ const std::string InternalLexicalScope::get_name() const {
 // FundefLexicalScope
 //------------------------------------------------------------
 
-FundefLexicalScope::FundefLexicalScope(SEXP fundef) : m_fundef(fundef) {
+FundefLexicalScope::FundefLexicalScope(SEXP sexp) : m_sexp(sexp) {
 }
 
-SEXP FundefLexicalScope::get_fundef() const {
-  return m_fundef;
+SEXP FundefLexicalScope::get_sexp() const {
+  return m_sexp;
 }
 
 const std::string FundefLexicalScope::get_name() const {
-  FuncInfo * fi = getProperty(FuncInfo, get_fundef());
+  FuncInfo * fi = getProperty(FuncInfo, get_sexp());
   return var_name(CAR(fi->get_first_name_c()));
 }
 

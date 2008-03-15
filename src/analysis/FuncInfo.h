@@ -91,7 +91,7 @@ public:
   // find the numerical position of the formal with the given name. Indexed from 1.
   int find_arg_position(char* name) const;
 
-  SEXP get_defn() const;
+  SEXP get_sexp() const;
 
   /// cell containing first R name assigned
   SEXP get_first_name_c() const;
@@ -161,7 +161,7 @@ private:
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)
   CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)
 
-  SEXP m_defn;         // function definition
+  SEXP m_sexp;         // function definition
   SEXP m_first_name_c; // cell containing name of function at original definition 
   FuncInfo *m_parent;  // parent scope definition
 

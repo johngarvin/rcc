@@ -106,7 +106,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
     } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
-      FuncInfo* fi = getProperty(FuncInfo, scope->get_fundef());
+      FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
       if (fi->is_arg(e)) {
 	// have to produce a lookup here; we don't know whether we need to evalaute a promise
 	// TODO: handle this case
