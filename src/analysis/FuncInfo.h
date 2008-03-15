@@ -91,8 +91,6 @@ public:
   // find the numerical position of the formal with the given name. Indexed from 1.
   int find_arg_position(char* name) const;
 
-  void analyze_args();
-
   SEXP get_defn() const;
 
   /// cell containing first R name assigned
@@ -120,9 +118,6 @@ public:
   OA::OA_ptr<OA::CFG::CFG> get_cfg() const;
   void set_cfg(OA::OA_ptr<OA::CFG::CFG> x);
   
-  // mentions and call sites
-  void collect_mentions_and_call_sites();
-
   // mention iterators
   mention_iterator begin_mentions();
   const_mention_iterator begin_mentions() const;
@@ -138,14 +133,21 @@ public:
   // lexical scope
   FundefLexicalScope * get_scope() const;
 
-  void perform_analysis();
-
   bool has_children() const;
+
+  void perform_analysis();
 
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
+
+private:
+#if 0
+  moved to Analyst to avoid circular dependence
+  void collect_mentions_and_call_sites();
+  void analyze_args();
+#endif
 
 private:
   unsigned int m_num_args;        // number of known arguments
