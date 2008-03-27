@@ -59,6 +59,9 @@ void CallByValueAnalysis::perform_analysis() {
     fi = fii.Current();
     FuncInfo::const_call_site_iterator csi;
     for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
+      std::cout << "Call site:" << std::endl;
+      Rf_PrintValue(*csi);
+
       // get side effect of the pre-debut part of the callee
       FuncInfo * callee;
       if (is_fundef(call_lhs(*csi))) {
@@ -80,6 +83,8 @@ void CallByValueAnalysis::perform_analysis() {
 	throw AnalysisException();
       }
       SideEffect * pre_debut = get_pre_debut_side_effect(callee);
+      cout << "Pre-debut side effect: ";
+      pre_debut->dump(cout);
 
       if (callee->get_num_args() != Rf_length(call_args(*csi))) {
 	// TODO: handle default args and "..."
@@ -93,18 +98,27 @@ void CallByValueAnalysis::perform_analysis() {
 	// if not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
 	  formal->set_is_value(false);
+	  cout << "nonstrict formal arg ";
+	  formal->dump(std::cout);
 	  continue;
 	}
 
 	// get the actual argument's side effect
 	SEXP actual = argi.current();
 	SideEffect * arg_side_effect = getProperty(SideEffect, actual);
+	cout << "Arg side effect: ";
+	arg_side_effect->dump(cout);
 
 	if (arg_side_effect->intersects(pre_debut)) {
+	  std::cout << "dependence between actual arg";
+	  Rf_PrintValue(actual);
+	  std::cout << "and pre-debut" << std::endl;
 	  formal->set_is_value(false);
 	  continue;
 	}
 	formal->set_is_value(true);
+	cout << "strict formal arg ";
+	formal->dump(std::cout);
       }
     }
   }
@@ -116,6 +130,7 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
   StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
   OA_ptr<StrictnessResult> strictness;
   strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_sexp()), callee->get_cfg());
+  strictness->dump(cout);
 
   OA_ptr<OA::CFG::NodesIteratorInterface> ni = callee->get_cfg()->getCFGNodesIterator();
   for(OA_ptr<OA::CFG::Node> node; ni->isValid(); ++*ni) {

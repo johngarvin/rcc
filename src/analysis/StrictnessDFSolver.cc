@@ -81,8 +81,10 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
   if (debug) dump_node_maps();
 
-  // compute debuts (a mention is a debut iff it's a use and it's the
-  // first mention on some path)
+  // Compute debuts. A mention is a debut iff it's a use and it's the
+  // first mention on some path. In data-flow terms, a mention is a
+  // debut if it is a use and it is TOP on entry. If it's not TOP on
+  // entry, that means it has been used or killed prior to this mention.
   OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
   // for each CFG node
   OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
@@ -99,7 +101,8 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref((*mi)->getMention_c());
 	if (in_set->includes_name(ref) &&
-	    in_set->find(ref)->get_strictness_type() == Strictness_USED)
+	    (*mi)->getUseDefType() == Var::Var_USE &&
+	    in_set->find(ref)->get_strictness_type() == Strictness_TOP)
 	{
 	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
 	}

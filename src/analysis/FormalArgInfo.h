@@ -64,7 +64,7 @@ private:
   SEXP m_cell;     // TAG(m_cell) is the name of the argument
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
-  // (actually, a stronger condition: function diverges if this arg diverges)
+  // (actually, "strictness" means a stronger condition: function diverges if this arg diverges)
 };
 
 

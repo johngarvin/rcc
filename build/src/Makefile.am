@@ -116,6 +116,7 @@ rcc_bin_SOURCES =				\
   StrictnessDFSetIterator.h                     \
   StrictnessDFSolver.cc                         \
   StrictnessDFSolver.h                          \
+  StrictnessResult.cc                           \
   StrictnessResult.h                            \
   StrictnessType.cc                             \
   StrictnessType.h                              \

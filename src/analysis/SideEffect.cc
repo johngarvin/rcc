@@ -139,16 +139,16 @@ AnnotationBase * SideEffect::clone() {
 
 std::ostream& SideEffect::dump(std::ostream& os) const {
   beginObjDump(os, SideEffect);
-  os << "Begin interprocedural uses:" << std::endl;
+  os << "Begin uses:" << std::endl;
   for(MyIterator it = begin_uses(); it != end_uses(); ++it) {
     (*it)->dump(os);
   }
-  os << "End interprocedural uses" << std::endl;
-  os << "Begin interprocedural defs:" << std::endl;
+  os << "End uses" << std::endl;
+  os << "Begin defs:" << std::endl;
   for(MyIterator it = begin_defs(); it != end_defs(); ++it) {
     (*it)->dump(os);
   }
-  os << "End interprocedural uses" << std::endl;
+  os << "End defs" << std::endl;
   endObjDump(os, SideEffect);
 }
 
