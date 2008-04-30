@@ -97,15 +97,8 @@ void VarAnnotationMap::compute() {
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
 void VarAnnotationMap::compute_all_syntactic_info() {
-  R_Analyst * an = R_Analyst::get_instance();
-  // for each function
-  FuncInfoIterator fii(an->get_scope_tree_root());
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
-    // for each CFG node (basic block)
-    OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
-    for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
-      node = ni->current().convert<CFG::Node>();
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_NODE(fi, node) {
       // each statement in basic block
       OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
       for(StmtHandle stmt; si->isValid(); ++*si) {
@@ -127,10 +120,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 void VarAnnotationMap::compute_all_locality_info() {
   R_Analyst * an = R_Analyst::get_instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
-  FuncInfo * root = an->get_scope_tree_root();
-  FuncInfoIterator fii(root);
-  for(FuncInfo * fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
+  FOR_EACH_PROC(fi) {
     ProcHandle ph = make_proc_h(fi->get_sexp());
     OA_ptr<MyCFG> cfg = fi->get_cfg();
     compute_locality_info(interface, ph, cfg);

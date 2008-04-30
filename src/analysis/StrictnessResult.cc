@@ -13,15 +13,14 @@ void StrictnessResult::dump(std::ostream & os) {
 
   os << "debuts: ";
   for(NameMentionMultiMap::const_iterator it = m_debuts->begin(); it != m_debuts->end(); ++it) {
-    Rf_PrintValue(it->first);
-    Rf_PrintValue(it->second);
+    Rf_PrintValue(CAR(it->first));
   }
   os << std::endl;
 
   os << "post-debut statements: ";
   for(NameStmtMultiMap::const_iterator it = m_post_debut_stmts->begin(); it != m_post_debut_stmts->end(); ++it) {
-    Rf_PrintValue(it->first);
-    Rf_PrintValue(HandleInterface::make_sexp(it->second));
+    Rf_PrintValue(TAG(it->first));
+    Rf_PrintValue(CAR(HandleInterface::make_sexp(it->second)));
   }
   os << "}" << std::endl;
 }

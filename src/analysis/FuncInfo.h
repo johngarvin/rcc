@@ -38,6 +38,22 @@
 #include <analysis/PropertyHndl.h>
 #include <analysis/Var.h>
 
+#define FOR_EACH_PROC(fi) RAnnot::FuncInfoIterator fii = R_Analyst::get_instance()->get_scope_tree_root(); \
+                          for(RAnnot::FuncInfo * fi = fii.Current();                                       \
+                              fii.IsValid();                                                               \
+                              ++fii, fi = fii.Current())
+#define PROC_FOR_EACH_MENTION(fi, mi) for(RAnnot::FuncInfo::const_mention_iterator mi = (fi)->begin_mentions(); \
+                                          mi != (fi)->end_mentions();                                           \
+                                          ++mi)
+#define PROC_FOR_EACH_CALL_SITE(fi, csi) for(RAnnot::FuncInfo::const_call_site_iterator csi = (fi)->begin_call_sites(); \
+                                             csi != (fi)->end_call_sites();                                             \
+                                             ++csi)
+#define PROC_FOR_EACH_NODE(fi, node) OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni;                                      \
+                                     ni = (fi)->get_cfg()->getCFGNodesIterator();                                         \
+                                     OA::OA_ptr<OA::CFG::Node> node;                                                      \
+                                     node = ni->current().convert<OA::CFG::Node>();                                       \
+                                     for( ; ni->isValid() && (node = ni->current().convert<OA::CFG::Node>()) != OA::OA_ptr<OA::CFG::Node>(); ++*ni)
+
 namespace RAnnot {
 
 //****************************************************************************

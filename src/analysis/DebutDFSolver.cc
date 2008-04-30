@@ -123,8 +123,7 @@ OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeTop() {
   if (m_top.ptrEqual(NULL)) {
     m_top = new DFSet();
     FuncInfo * func = getProperty(FuncInfo, make_sexp(m_proc));
-    FuncInfo::mention_iterator mi;
-    for (mi = func->begin_mentions(); mi != func->end_mentions(); mi++) {
+    PROC_FOR_EACH_MENTION(func, mi) {
       OA_ptr<DFSetElement> mention; mention = m_fact->make_body_var_ref((*mi)->getMention_c());
       m_top->insert(mention);
     }

@@ -125,10 +125,8 @@ void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
 }
 
 void R_Analyst::dump_all_cfgs(std::ostream &os) {
-  FuncInfoIterator fii(m_scope_tree_root);
-  for( ; fii.IsValid(); ++fii) {
-    FuncInfo *finfo = fii.Current();
-    OA::OA_ptr<OA::CFG::CFG> cfg; cfg = finfo->get_cfg();
+  FOR_EACH_PROC(fi) {
+    OA::OA_ptr<OA::CFG::CFG> cfg; cfg = fi->get_cfg();
     cfg->dump(os, m_interface);
   }
 }

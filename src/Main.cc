@@ -184,9 +184,7 @@ int main(int argc, char *argv[]) {
     an->perform_analysis();
 
     if (analysis_debug) {
-      FuncInfo * scope_tree = an->get_scope_tree_root();
-      FuncInfoIterator fii(scope_tree);
-      for(FuncInfo *fi; fi = fii.Current(); ++fii) {
+      FOR_EACH_PROC(fi) {
 	cout << "New procedure:" << endl;
 	fi->dump(cout);
 	cout << "Dumping CFG via Analyst:" << endl;

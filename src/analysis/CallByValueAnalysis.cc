@@ -47,20 +47,20 @@ using namespace Strictness;
 using OA::OA_ptr;
 using OA::StmtHandle;
 
+static const bool debug = false;
+
 CallByValueAnalysis::CallByValueAnalysis() {
 }
 
 void CallByValueAnalysis::perform_analysis() {
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
 
-  // for each call site of each function
-  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
-    FuncInfo::const_call_site_iterator csi;
-    for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
-      std::cout << "Call site:" << std::endl;
-      Rf_PrintValue(*csi);
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_CALL_SITE(fi, csi) {
+      if (debug) {
+	std::cout << "Call site:" << std::endl;
+	Rf_PrintValue(*csi);
+      }
 
       // get side effect of the pre-debut part of the callee
       FuncInfo * callee;
@@ -83,8 +83,10 @@ void CallByValueAnalysis::perform_analysis() {
 	throw AnalysisException();
       }
       SideEffect * pre_debut = get_pre_debut_side_effect(callee);
-      cout << "Pre-debut side effect: ";
-      pre_debut->dump(cout);
+      if (debug) {
+	cout << "Pre-debut side effect: ";
+	pre_debut->dump(cout);
+      }
 
       if (callee->get_num_args() != Rf_length(call_args(*csi))) {
 	// TODO: handle default args and "..."
@@ -98,27 +100,37 @@ void CallByValueAnalysis::perform_analysis() {
 	// if not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
 	  formal->set_is_value(false);
-	  cout << "nonstrict formal arg ";
-	  formal->dump(std::cout);
+	  if (debug) {
+	    cout << "nonstrict formal arg ";
+	    formal->dump(std::cout);
+	  }
 	  continue;
 	}
 
 	// get the actual argument's side effect
 	SEXP actual = argi.current();
 	SideEffect * arg_side_effect = getProperty(SideEffect, actual);
-	cout << "Arg side effect: ";
-	arg_side_effect->dump(cout);
+	if (debug) {
+	  cout << "Actual arg: ";
+	  Rf_PrintValue(CAR(actual));
+	  cout << "Arg side effect: ";
+	  arg_side_effect->dump(cout);
+	}
 
 	if (arg_side_effect->intersects(pre_debut)) {
-	  std::cout << "dependence between actual arg";
-	  Rf_PrintValue(actual);
-	  std::cout << "and pre-debut" << std::endl;
 	  formal->set_is_value(false);
+	  if (debug) {
+	    std::cout << "dependence between actual arg ";
+	    Rf_PrintValue(actual);
+	    std::cout << "and pre-debut" << std::endl;
+	  }
 	  continue;
 	}
 	formal->set_is_value(true);
-	cout << "strict formal arg ";
-	formal->dump(std::cout);
+	if (debug) {
+	  cout << "strict formal arg ";
+	  formal->dump(std::cout);
+	}
       }
     }
   }
@@ -130,23 +142,21 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
   StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
   OA_ptr<StrictnessResult> strictness;
   strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_sexp()), callee->get_cfg());
-  strictness->dump(cout);
+  if (debug) strictness->dump(cout);
 
-  OA_ptr<OA::CFG::NodesIteratorInterface> ni = callee->get_cfg()->getCFGNodesIterator();
-  for(OA_ptr<OA::CFG::Node> node; ni->isValid(); ++*ni) {
-    node = ni->current().convert<OA::CFG::Node>();
+  PROC_FOR_EACH_NODE(callee, node) {
     // each statement in basic block
     OA_ptr<OA::CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
     for(StmtHandle stmt; si->isValid(); ++*si) {
       stmt = si->current();
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
       // For this formal arg, statements in the function can be
-      // divided into pre-debut, post-debut, and non-strict.
-      // We're only interested in pre-debut statements. Since
-      // we're already excluding non-strict functions (functions
-      // with non-strict statements), we can approximate this by
-      // just excluding post-debut statements.
-      if (strictness->get_post_debut_stmts()->find(expr->get_sexp()) != 0) {
+      // divided into pre-debut, post-debut, and non-strict. We're
+      // only interested in pre-debut statements. Since we're already
+      // excluding non-strict functions (functions with non-strict
+      // statements), we can get this set by excluding post-debut
+      // statements.
+      if (strictness->get_post_debut_stmts()->find(expr->get_sexp()) != strictness->get_post_debut_stmts()->end()) {
 	continue;
       }
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));

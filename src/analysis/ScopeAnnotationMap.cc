@@ -77,10 +77,7 @@ PropertyHndlT ScopeAnnotationMap::s_handle = "Scope";
 // ----- computation -----
 
 void ScopeAnnotationMap::compute() {
-  R_Analyst * an = R_Analyst::get_instance();
-  FuncInfoIterator fii(an->get_scope_tree_root());
-  for(fii.Reset(); fii.IsValid(); ++fii) {
-    FuncInfo * scope = fii.Current();
+  FOR_EACH_PROC(scope) {
     R_PreorderIterator iter(scope->get_sexp());
     for(iter.reset(); iter.isValid(); ++iter) {
       if (is_cons(iter.current())) {

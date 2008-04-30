@@ -101,11 +101,7 @@ void VarBindingAnnotationMap::compute() {
 }
   
 void VarBindingAnnotationMap::create_var_bindings() {
-  FuncInfo * global = R_Analyst::get_instance()->get_scope_tree_root();
-  // for each function
-  FuncInfoIterator fii(global);
-  for( ; fii.IsValid(); ++fii) {
-    FuncInfo * fi = fii.Current();
+  FOR_EACH_PROC(fi) {
     assert(fi != 0);
 
     // first, create VarBindings for formal args; each one has just
@@ -118,9 +114,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
     }
     
     // now create bindings for mentions in the function body
-    // for each mention
-    FuncInfo::mention_iterator mi;
-    for (mi = fi->begin_mentions(); mi != fi->end_mentions(); ++mi) {
+    PROC_FOR_EACH_MENTION(fi, mi) {
       Var * v = *mi;
       v = getProperty(Var, v->getMention_c());
       // TODO: should make sure we always get the data-flow-solved
