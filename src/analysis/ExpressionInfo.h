@@ -52,65 +52,50 @@ public:
   ExpressionInfo();
   virtual ~ExpressionInfo();
 
-  typedef Var *                      MyVar_t;
-  typedef std::list<MyVar_t>         MyVarSet_t;
-  typedef MyVarSet_t::iterator       var_iterator;
-  typedef MyVarSet_t::const_iterator const_var_iterator;
+  typedef Var *                     MyVarT;
+  typedef std::list<MyVarT>         MyVarSetT;
+  typedef MyVarSetT::iterator       var_iterator;
+  typedef MyVarSetT::const_iterator const_var_iterator;
 
-  typedef SEXP                            MyCallSite_t;
-  typedef std::list<MyCallSite_t>         MyCallSiteSet_t;
-  typedef MyCallSiteSet_t::iterator       call_site_iterator;
-  typedef MyCallSiteSet_t::const_iterator const_call_site_iterator;
+  typedef SEXP                           MyCallSiteT;
+  typedef std::list<MyCallSiteT>         MyCallSiteSetT;
+  typedef MyCallSiteSetT::iterator       call_site_iterator;
+  typedef MyCallSiteSetT::const_iterator const_call_site_iterator;
 
-  // -------------------------------------------------------
   // set operations
-  // -------------------------------------------------------
-  void insert_var(const MyVar_t & x)
-    { mVars.push_back(x); }
-  void insert_call_site(const MyCallSite_t & x)
-    { mCallSites.push_back(x); }
+  void insert_var(const MyVarT & x);
+  void insert_call_site(const MyCallSiteT & x);
 
   // iterators:
-  var_iterator begin_vars()
-    { return mVars.begin(); }
-  const_var_iterator begin_vars() const 
-    { return mVars.begin(); }
-  var_iterator end_vars()
-    { return mVars.end(); }
-  const_var_iterator end_vars() const 
-    { return mVars.end(); }
+  var_iterator begin_vars();
+  const_var_iterator begin_vars() const;
+  var_iterator end_vars();
+  const_var_iterator end_vars() const;
 
-  call_site_iterator begin_call_sites()
-    { return mCallSites.begin(); }
-  const_call_site_iterator begin_call_sites() const 
-    { return mCallSites.begin(); }
-  call_site_iterator end_call_sites()
-    { return mCallSites.end(); }
-  const_call_site_iterator end_call_sites() const 
-    { return mCallSites.end(); }
+  call_site_iterator begin_call_sites();
+  const_call_site_iterator begin_call_sites() const;
+  call_site_iterator end_call_sites();
+  const_call_site_iterator end_call_sites() const;
+
+  // annotations for strictness
+  bool is_strict();
 
   // definition of the expression
-  SEXP get_sexp() const
-    { return m_sexp; }
-  void setDefn(SEXP x)
-    { m_sexp = x; }
+  SEXP get_sexp() const;
+  void setDefn(SEXP x);
 
   static PropertyHndlT handle();
 
-  // -------------------------------------------------------
-  // cloning: return a shallow copy... 
-  // -------------------------------------------------------
-  virtual ExpressionInfo* clone() { return new ExpressionInfo(*this); }
+  // clone (not implemented; implement this if anyone uses it)
+  AnnotationBase * clone();
 
-  // -------------------------------------------------------
   // debugging
-  // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
   SEXP m_sexp;
-  MyVarSet_t mVars;            // contents of set not owned
-  MyCallSiteSet_t mCallSites;  // contents of set not owned
+  MyVarSetT m_vars;             // contents of set not owned
+  MyCallSiteSetT m_call_sites;  // contents of set not owned
 };
 
 }

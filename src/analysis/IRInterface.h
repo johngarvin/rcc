@@ -463,7 +463,7 @@ public:
 
 private:
   RAnnot::ExpressionInfo * const m_annot;
-  std::list<RAnnot::ExpressionInfo::MyCallSite_t> m_program_call_sites;
+  std::list<RAnnot::ExpressionInfo::MyCallSiteT> m_program_call_sites;
   RAnnot::ExpressionInfo::const_call_site_iterator m_current;
 };
 
