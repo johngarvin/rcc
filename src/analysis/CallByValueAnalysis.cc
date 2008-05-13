@@ -52,6 +52,20 @@ static const bool debug = false;
 CallByValueAnalysis::CallByValueAnalysis() {
 }
 
+// for each procedure:
+//   make StrictnessDFSolver and perform analysis for each procedure, get StrictnessResult
+//   for each formal arg:
+//     compute, store side effect of pre-debut statements for that formal
+// for each call site:
+//   get unique callee if it exists
+//   for each actual arg:
+//     get side effect of actual
+//     get pre-debut side effect of callee (stored above)
+//     if intersection is empty:
+//       store the fact that the actual can be called CBV-wise
+//     else if the intersection is nonempty (a dependence exists):
+//       store the fact that we must use CBN
+
 void CallByValueAnalysis::perform_analysis() {
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
 
@@ -62,7 +76,7 @@ void CallByValueAnalysis::perform_analysis() {
 	Rf_PrintValue(*csi);
       }
 
-      // get side effect of the pre-debut part of the callee
+      // if unique callee can be found at compile time, grab it
       FuncInfo * callee;
       if (is_fundef(call_lhs(*csi))) {
 	callee = getProperty(FuncInfo, CAR(call_lhs(*csi)));
@@ -82,24 +96,27 @@ void CallByValueAnalysis::perform_analysis() {
       } else {
 	throw AnalysisException();
       }
+
+      if (callee->get_num_args() != Rf_length(call_args(*csi))) {
+	// TODO: handle default args and "..."
+	throw AnalysisException();
+      }
+
+      // get side effect of the pre-debut part of the callee
       SideEffect * pre_debut = get_pre_debut_side_effect(callee);
       if (debug) {
 	cout << "Pre-debut side effect: ";
 	pre_debut->dump(cout);
       }
 
-      if (callee->get_num_args() != Rf_length(call_args(*csi))) {
-	// TODO: handle default args and "..."
-	throw AnalysisException();
-      }
       // for each arg
       int i = 1;
       for(R_ListIterator argi(call_args(*csi)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
 
-	// if not strict, conservatively call it CBN
+	// if formal is not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
-	  formal->set_is_value(false);
+	  formal->set_is_value(false);          // XXX
 	  if (debug) {
 	    cout << "nonstrict formal arg ";
 	    formal->dump(std::cout);
@@ -117,8 +134,9 @@ void CallByValueAnalysis::perform_analysis() {
 	  arg_side_effect->dump(cout);
 	}
 
+	// test for intersection
 	if (arg_side_effect->intersects(pre_debut)) {
-	  formal->set_is_value(false);
+	  formal->set_is_value(false);                // XXX
 	  if (debug) {
 	    std::cout << "dependence between actual arg ";
 	    Rf_PrintValue(actual);
@@ -126,7 +144,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  }
 	  continue;
 	}
-	formal->set_is_value(true);
+	formal->set_is_value(true);                   // XXX
 	if (debug) {
 	  cout << "strict formal arg ";
 	  formal->dump(std::cout);

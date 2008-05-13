@@ -90,7 +90,21 @@ const_call_site_iterator ExpressionInfo::end_call_sites() const {
 }
 
 // annotations for strictness
-// bool ExpressionInfo::is_strict() { ... }
+bool ExpressionInfo::is_strict() {
+  return m_strict;
+}
+
+void ExpressionInfo::set_strict(bool x) {
+  m_strict = x;
+}
+
+bool ExpressionInfo::is_trivially_evaluable() {
+  return m_trivially_evaluable;
+}
+
+void ExpressionInfo::set_trivially_evaluable(bool x) {
+  m_trivially_evaluable = x;
+}
 
 // definition of the expression
 SEXP ExpressionInfo::get_sexp() const {

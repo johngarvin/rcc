@@ -62,6 +62,14 @@ void FormalArgInfo::set_is_strict(bool x) {
   m_is_strict = x;
 }
 
+SideEffect * FormalArgInfo::get_pre_debut_side_effect() {
+  return m_pre_debut_side_effect;
+}
+
+void FormalArgInfo::set_pre_debut_side_effect(SideEffect * x) {
+  m_pre_debut_side_effect = x;
+}
+
 std::ostream& FormalArgInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FormalArgInfo);

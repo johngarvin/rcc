@@ -77,8 +77,12 @@ public:
   call_site_iterator end_call_sites();
   const_call_site_iterator end_call_sites() const;
 
-  // annotations for strictness
+  // strictness analysis, etc.
   bool is_strict();
+  void set_strict(bool x);
+
+  bool is_trivially_evaluable();
+  void set_trivially_evaluable(bool x);
 
   // definition of the expression
   SEXP get_sexp() const;
@@ -96,6 +100,8 @@ private:
   SEXP m_sexp;
   MyVarSetT m_vars;             // contents of set not owned
   MyCallSiteSetT m_call_sites;  // contents of set not owned
+  bool m_strict;
+  bool m_trivially_evaluable;
 };
 
 }

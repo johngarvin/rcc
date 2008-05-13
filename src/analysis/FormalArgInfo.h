@@ -60,11 +60,15 @@ public:
   bool is_strict();
   void set_is_strict(bool x);
 
+  SideEffect * get_pre_debut_side_effect();
+  void set_pre_debut_side_effect(SideEffect * x);
+
 private:
   SEXP m_cell;     // TAG(m_cell) is the name of the argument
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
   // (actually, "strictness" means a stronger condition: function diverges if this arg diverges)
+  SideEffect * m_pre_debut_side_effect;  // names used/defined by pre-debut statements for this formal
 };
 
 
