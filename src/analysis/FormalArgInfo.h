@@ -29,6 +29,7 @@
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/SideEffect.h>
 
 namespace RAnnot {
 
@@ -63,8 +64,10 @@ public:
   SideEffect * get_pre_debut_side_effect();
   void set_pre_debut_side_effect(SideEffect * x);
 
+  SEXP get_sexp();
+
 private:
-  SEXP m_cell;     // TAG(m_cell) is the name of the argument
+  SEXP m_sexp;     // TAG(m_sexp) is the name of the argument
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
   // (actually, "strictness" means a stronger condition: function diverges if this arg diverges)

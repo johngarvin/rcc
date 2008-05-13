@@ -55,26 +55,43 @@ CallByValueAnalysis::CallByValueAnalysis() {
 // for each procedure:
 //   make StrictnessDFSolver and perform analysis for each procedure, get StrictnessResult
 //   for each formal arg:
-//     compute, store side effect of pre-debut statements for that formal
+//     compute, store side effect of pre-debut statements for that formal in FormalArgInfo
 // for each call site:
 //   get unique callee if it exists
 //   for each actual arg:
-//     get side effect of actual
-//     get pre-debut side effect of callee (stored above)
+//     compute side effect of actual
+//     get pre-debut side effect of callee for this formal (stored in FormalArgInfo)
 //     if intersection is empty:
 //       store the fact that the actual can be called CBV-wise
 //     else if the intersection is nonempty (a dependence exists):
 //       store the fact that we must use CBN
 
 void CallByValueAnalysis::perform_analysis() {
+  FuncInfo * fi;
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
 
+  FOR_EACH_PROC(fi) {
+    StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
+    OA_ptr<StrictnessResult> strictness;
+    strictness = strictness_solver->perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    if (debug) strictness->dump(cout);
+    fi->set_strictness(strictness);
+    
+    // formals are indexed by 1
+    for(int i=1; i<=fi->get_num_args(); i++) {
+      FormalArgInfo * formal = getProperty(FormalArgInfo, fi->get_arg(i));
+      formal->set_pre_debut_side_effect(compute_pre_debut_side_effect(fi, formal));
+    }
+  }
+  
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       if (debug) {
 	std::cout << "Call site:" << std::endl;
 	Rf_PrintValue(*csi);
       }
+
+      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi);
 
       // if unique callee can be found at compile time, grab it
       FuncInfo * callee;
@@ -102,25 +119,27 @@ void CallByValueAnalysis::perform_analysis() {
 	throw AnalysisException();
       }
 
-      // get side effect of the pre-debut part of the callee
-      SideEffect * pre_debut = get_pre_debut_side_effect(callee);
-      if (debug) {
-	cout << "Pre-debut side effect: ";
-	pre_debut->dump(cout);
-      }
-
       // for each arg
       int i = 1;
       for(R_ListIterator argi(call_args(*csi)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
 
+	// get side effect of the pre-debut part of the callee
+	SideEffect * pre_debut = formal->get_pre_debut_side_effect();
+
+	if (debug) {
+	  cout << "Pre-debut side effect: ";
+	  pre_debut->dump(cout);
+	}
+
 	// if formal is not strict, conservatively call it CBN
 	if (!formal->is_strict()) {
-	  formal->set_is_value(false);          // XXX
 	  if (debug) {
 	    cout << "nonstrict formal arg ";
 	    formal->dump(std::cout);
 	  }
+
+	  call_expr->set_lazy_info(i, ExpressionInfo::LAZY);
 	  continue;
 	}
 
@@ -136,7 +155,7 @@ void CallByValueAnalysis::perform_analysis() {
 
 	// test for intersection
 	if (arg_side_effect->intersects(pre_debut)) {
-	  formal->set_is_value(false);                // XXX
+	  call_expr->set_lazy_info(i, ExpressionInfo::LAZY);
 	  if (debug) {
 	    std::cout << "dependence between actual arg ";
 	    Rf_PrintValue(actual);
@@ -144,7 +163,8 @@ void CallByValueAnalysis::perform_analysis() {
 	  }
 	  continue;
 	}
-	formal->set_is_value(true);                   // XXX
+	// if we get here, good news: no dependence, so we can use eager eval
+	call_expr->set_lazy_info(i, ExpressionInfo::EAGER);
 	if (debug) {
 	  cout << "strict formal arg ";
 	  formal->dump(std::cout);
@@ -154,15 +174,13 @@ void CallByValueAnalysis::perform_analysis() {
   }
 }
 
-SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
-  assert(callee != 0);
-  SideEffect * pre_debut = new SideEffect();
-  StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<StrictnessResult> strictness;
-  strictness = strictness_solver->perform_analysis(make_proc_h(callee->get_sexp()), callee->get_cfg());
-  if (debug) strictness->dump(cout);
+SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
+  assert(fi != 0);
+  assert(fai != 0);
 
-  PROC_FOR_EACH_NODE(callee, node) {
+  SideEffect * pre_debut = new SideEffect();
+  OA_ptr<OA::CFG::NodeInterface> node;
+  PROC_FOR_EACH_NODE(fi, node) {
     // each statement in basic block
     OA_ptr<OA::CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
     for(StmtHandle stmt; si->isValid(); ++*si) {
@@ -174,7 +192,9 @@ SideEffect * CallByValueAnalysis::get_pre_debut_side_effect(FuncInfo * callee) {
       // excluding non-strict functions (functions with non-strict
       // statements), we can get this set by excluding post-debut
       // statements.
-      if (strictness->get_post_debut_stmts()->find(expr->get_sexp()) != strictness->get_post_debut_stmts()->end()) {
+      OA_ptr<StrictnessResult> strictness = fi->get_strictness();
+      OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
+      if (post_debuts->find(TAG(fai->get_sexp())) != post_debuts->end()) {  // if the formal is in the post_debut set
 	continue;
       }
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));

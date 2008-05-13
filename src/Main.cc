@@ -184,6 +184,7 @@ int main(int argc, char *argv[]) {
     an->perform_analysis();
 
     if (analysis_debug) {
+      FuncInfo * fi;
       FOR_EACH_PROC(fi) {
 	cout << "New procedure:" << endl;
 	fi->dump(cout);

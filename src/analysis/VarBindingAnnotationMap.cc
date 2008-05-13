@@ -101,6 +101,8 @@ void VarBindingAnnotationMap::compute() {
 }
   
 void VarBindingAnnotationMap::create_var_bindings() {
+  FuncInfo * fi;
+
   FOR_EACH_PROC(fi) {
     assert(fi != 0);
 

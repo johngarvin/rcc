@@ -97,6 +97,9 @@ void VarAnnotationMap::compute() {
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
 void VarAnnotationMap::compute_all_syntactic_info() {
+  FuncInfo * fi;
+  OA_ptr<OA::CFG::NodeInterface> node;
+
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_NODE(fi, node) {
       // each statement in basic block
@@ -120,6 +123,8 @@ void VarAnnotationMap::compute_all_syntactic_info() {
 void VarAnnotationMap::compute_all_locality_info() {
   R_Analyst * an = R_Analyst::get_instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
+  FuncInfo * fi;
+
   FOR_EACH_PROC(fi) {
     ProcHandle ph = make_proc_h(fi->get_sexp());
     OA_ptr<MyCFG> cfg = fi->get_cfg();

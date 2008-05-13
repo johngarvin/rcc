@@ -28,6 +28,7 @@
 namespace RAnnot {
   class SideEffect;
   class FuncInfo;
+  class FormalArgInfo;
 }
 
 class CallByValueAnalysis {
@@ -36,7 +37,7 @@ public:
   void perform_analysis();
 
 private:
-  RAnnot::SideEffect * get_pre_debut_side_effect(RAnnot::FuncInfo * callee);
+  RAnnot::SideEffect * compute_pre_debut_side_effect(RAnnot::FuncInfo * fi, RAnnot::FormalArgInfo * formal);
 };
 
 #endif

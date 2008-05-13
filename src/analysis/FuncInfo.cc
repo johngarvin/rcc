@@ -41,6 +41,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/RequiresContext.h>
 #include <analysis/StrictnessDFSolver.h>
+#include <analysis/StrictnessResult.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 
@@ -291,6 +292,14 @@ void FuncInfo::perform_analysis() {
 
 bool FuncInfo::has_children() const {
   return !(ChildCount() == 0);
+}
+
+OA_ptr<Strictness::StrictnessResult> FuncInfo::get_strictness() const {
+  return m_strictness;
+}
+
+void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x) {
+  m_strictness = x;
 }
 
 #if 0

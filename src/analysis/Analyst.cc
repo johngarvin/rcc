@@ -118,13 +118,14 @@ LexicalScope * R_Analyst::get_global_scope() {
 /// R_Analyst because cfg->dump needs the IRInterface as an argument.
 void R_Analyst::dump_cfg(std::ostream &os, SEXP proc) {
   if (proc != R_NilValue) {
-    FuncInfo *fi = getProperty(FuncInfo, proc);
+    FuncInfo * fi = getProperty(FuncInfo, proc);
     OA::OA_ptr<OA::CFG::CFG> cfg; cfg = fi->get_cfg();
     cfg->dump(os, m_interface);
   }
 }
 
 void R_Analyst::dump_all_cfgs(std::ostream &os) {
+  FuncInfo * fi;
   FOR_EACH_PROC(fi) {
     OA::OA_ptr<OA::CFG::CFG> cfg; cfg = fi->get_cfg();
     cfg->dump(os, m_interface);

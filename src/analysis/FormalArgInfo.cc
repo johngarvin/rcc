@@ -37,8 +37,8 @@ namespace RAnnot {
 // FormalArgInfo
 //****************************************************************************
 
-FormalArgInfo::FormalArgInfo(SEXP cell)
-  : m_cell(cell), m_is_value(false), m_is_strict(false)
+FormalArgInfo::FormalArgInfo(SEXP sexp)
+  : m_sexp(sexp), m_is_value(false), m_is_strict(false)
 {
 }
 
@@ -70,10 +70,14 @@ void FormalArgInfo::set_pre_debut_side_effect(SideEffect * x) {
   m_pre_debut_side_effect = x;
 }
 
+SEXP FormalArgInfo::get_sexp() {
+  return m_sexp;
+}
+
 std::ostream& FormalArgInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FormalArgInfo);
-  SEXP name = TAG(m_cell);
+  SEXP name = TAG(m_sexp);
   dumpSEXP(os, name);
   dumpVar(os, m_is_value);
   dumpVar(os, m_is_strict);

@@ -103,8 +103,7 @@ const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
 // ----- computation -----
 
 void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
-  ExpressionInfo * annot = new ExpressionInfo();
-  annot->setDefn(k);
+  ExpressionInfo * annot = new ExpressionInfo(k);
   LocalVariableAnalysis lva(k);
   lva.perform_analysis();
   LocalVariableAnalysis::const_var_iterator v;

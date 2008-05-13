@@ -36,23 +36,24 @@
 #include <analysis/AnnotationBase.h>
 #include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/StrictnessResult.h>
 #include <analysis/Var.h>
 
-#define FOR_EACH_PROC(fi) RAnnot::FuncInfoIterator fii = R_Analyst::get_instance()->get_scope_tree_root(); \
-                          for(RAnnot::FuncInfo * fi = fii.Current();                                       \
-                              fii.IsValid();                                                               \
-                              ++fii, fi = fii.Current())
+// iterator macros for convenience and readability. Be sure to declare the variables somewhere above the for loop.
+// Note: don't put initializations in macros except inside for-loop initializers
+
+#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = R_Analyst::get_instance()->get_scope_tree_root(); \
+                              fii.IsValid() && ((fi) = fii.Current()) != 0;                                    \
+                              ++fii, (fi) = fii.Current())
 #define PROC_FOR_EACH_MENTION(fi, mi) for(RAnnot::FuncInfo::const_mention_iterator mi = (fi)->begin_mentions(); \
                                           mi != (fi)->end_mentions();                                           \
                                           ++mi)
 #define PROC_FOR_EACH_CALL_SITE(fi, csi) for(RAnnot::FuncInfo::const_call_site_iterator csi = (fi)->begin_call_sites(); \
                                              csi != (fi)->end_call_sites();                                             \
                                              ++csi)
-#define PROC_FOR_EACH_NODE(fi, node) OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni;                                      \
-                                     ni = (fi)->get_cfg()->getCFGNodesIterator();                                         \
-                                     OA::OA_ptr<OA::CFG::Node> node;                                                      \
-                                     node = ni->current().convert<OA::CFG::Node>();                                       \
-                                     for( ; ni->isValid() && (node = ni->current().convert<OA::CFG::Node>()) != OA::OA_ptr<OA::CFG::Node>(); ++*ni)
+#define PROC_FOR_EACH_NODE(fi, node) for(OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni = (fi)->get_cfg()->getCFGNodesIterator();          \
+                                         ni->isValid() && (node = ni->current().convert<OA::CFG::Node>()) != OA::OA_ptr<OA::CFG::Node>();  \
+                                          ++*ni)
 
 namespace RAnnot {
 
@@ -151,6 +152,9 @@ public:
 
   bool has_children() const;
 
+  OA::OA_ptr<Strictness::StrictnessResult> get_strictness() const;
+  void set_strictness(OA::OA_ptr<Strictness::StrictnessResult> x);
+
   void perform_analysis();
 
   // -------------------------------------------------------
@@ -166,13 +170,15 @@ private:
 #endif
 
 private:
-  unsigned int m_num_args;        // number of known arguments
-  bool m_has_var_args;            // variable number of arguments
-  std::string m_c_name;           // C linkage name
-  std::string m_closure;          // C closure (CLOSXP) name
-  bool m_requires_context;        // is an R context object needed for the function?
-  FundefLexicalScope * m_scope;   // lexical scope
-  OA::OA_ptr<OA::CFG::CFG> m_cfg; // control flow graph
+  unsigned int m_num_args;         // number of known arguments
+  bool m_has_var_args;             // variable number of arguments
+  std::string m_c_name;            // C linkage name
+  std::string m_closure;           // C closure (CLOSXP) name
+  bool m_requires_context;         // is an R context object needed for the function?
+  FundefLexicalScope * m_scope;    // lexical scope
+  OA::OA_ptr<OA::CFG::CFG> m_cfg;  // control flow graph
+  OA::OA_ptr<Strictness::StrictnessResult> m_strictness;
+    // results of strictness analysis: strictness of formals, debuts, post-debut statements
 
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)
   CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)
@@ -180,8 +186,6 @@ private:
   SEXP m_sexp;         // function definition
   SEXP m_first_name_c; // cell containing name of function at original definition 
   FuncInfo *m_parent;  // parent scope definition
-
-  // argument description: types, strict?
 };
 
 class FuncInfoChildIterator: public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {

@@ -25,6 +25,7 @@
 #include <support/DumpMacros.h>
 
 #include <analysis/ExpressionInfoAnnotationMap.h>
+#include <analysis/Utils.h>
 #include <analysis/Var.h>
 
 #include "ExpressionInfo.h"
@@ -38,8 +39,14 @@ typedef ExpressionInfo::var_iterator var_iterator;
 typedef ExpressionInfo::const_var_iterator const_var_iterator;
 typedef ExpressionInfo::call_site_iterator call_site_iterator;
 typedef ExpressionInfo::const_call_site_iterator const_call_site_iterator;
+typedef ExpressionInfo::MyLazyInfoT MyLazyInfoT;
+typedef ExpressionInfo::MyLazyInfoSetT MyLazyInfoSetT;
 
-ExpressionInfo::ExpressionInfo()
+ExpressionInfo::ExpressionInfo(SEXP sexp)
+  : m_sexp(sexp),
+    m_strict(false),
+    m_trivially_evaluable(false),
+    m_lazy_info(is_call(sexp) ? Rf_length(call_args(sexp)) + 1 : 0) // +1 because indexed from 1
 {
 }
 
@@ -111,9 +118,18 @@ SEXP ExpressionInfo::get_sexp() const {
   return m_sexp;
 }
 
-void ExpressionInfo::setDefn(SEXP x) {
+void ExpressionInfo::set_sexp(SEXP x) {
   m_sexp = x;
 }
+
+MyLazyInfoT ExpressionInfo::get_lazy_info(int arg) const {
+  return m_lazy_info[arg];
+}
+
+void ExpressionInfo::set_lazy_info(int arg, MyLazyInfoT x) {
+  m_lazy_info[arg] = x;
+}
+
 
 AnnotationBase * ExpressionInfo::clone() {
   return new ExpressionInfo(*this);

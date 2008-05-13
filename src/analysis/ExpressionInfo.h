@@ -25,6 +25,9 @@
 #ifndef ANNOTATION_EXPRESSION_INFO_H
 #define ANNOTATION_EXPRESSION_INFO_H
 
+#include <list>
+#include <vector>
+
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <include/R/R_RInternals.h>
@@ -49,7 +52,7 @@ class ExpressionInfo
   : public AnnotationBase
 {
 public:
-  ExpressionInfo();
+  ExpressionInfo(SEXP sexp);
   virtual ~ExpressionInfo();
 
   typedef Var *                     MyVarT;
@@ -62,9 +65,14 @@ public:
   typedef MyCallSiteSetT::iterator       call_site_iterator;
   typedef MyCallSiteSetT::const_iterator const_call_site_iterator;
 
+  typedef enum { EAGER,
+		 LAZY }            MyLazyInfoT;
+  typedef std::vector<MyLazyInfoT> MyLazyInfoSetT;
+
   // set operations
   void insert_var(const MyVarT & x);
   void insert_call_site(const MyCallSiteT & x);
+  void insert_lazy_info(const MyLazyInfoT x);
 
   // iterators:
   var_iterator begin_vars();
@@ -86,11 +94,15 @@ public:
 
   // definition of the expression
   SEXP get_sexp() const;
-  void setDefn(SEXP x);
+  void set_sexp(SEXP x);
+
+  MyLazyInfoT get_lazy_info(int arg) const;
+  void set_lazy_info(int arg, MyLazyInfoT x);
 
   static PropertyHndlT handle();
 
-  // clone (not implemented; implement this if anyone uses it)
+  // clone (not implemented because I don't think anyone uses it;
+  // implement this if anyone does)
   AnnotationBase * clone();
 
   // debugging
@@ -98,10 +110,22 @@ public:
 
 private:
   SEXP m_sexp;
-  MyVarSetT m_vars;             // contents of set not owned
-  MyCallSiteSetT m_call_sites;  // contents of set not owned
-  bool m_strict;
-  bool m_trivially_evaluable;
+  MyVarSetT m_vars;             // mentions in expression
+                                // (contents of set not owned)
+  MyCallSiteSetT m_call_sites;  // call sites in expression
+                                // (contents of set not owned)
+  bool m_strict;                // whether expression can be evaluated
+                                //   ahead of time without causing
+                                //   side effects, diverging, or
+                                //   throwing an exception
+  bool m_trivially_evaluable;   // whether expression is both strict
+                                //   and guaranteed to be cheap to
+                                //   evaluate
+  MyLazyInfoSetT m_lazy_info;   // if this expression is a call site,
+				// for each actual arg whether it can
+				// be evaulated eagerly for
+				// performance or must conservatively
+				// be called lazy. Indexed from 1.
 };
 
 }

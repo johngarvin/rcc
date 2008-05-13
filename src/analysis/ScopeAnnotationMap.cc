@@ -77,6 +77,7 @@ PropertyHndlT ScopeAnnotationMap::s_handle = "Scope";
 // ----- computation -----
 
 void ScopeAnnotationMap::compute() {
+  FuncInfo * scope;
   FOR_EACH_PROC(scope) {
     R_PreorderIterator iter(scope->get_sexp());
     for(iter.reset(); iter.isValid(); ++iter) {
