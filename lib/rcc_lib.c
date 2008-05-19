@@ -1,26 +1,27 @@
-// -*- Mode: C -*-
-//
-// Copyright (c) 2007 Rice University
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-
-// File: rcc_lib.c
-//
-// Library of functions for RCC-generated code to call.
-//
-// Author: John Garvin (garvin@cs.rice.edu)
+/* -*- Mode: C -*-
+ *
+ * Copyright (c) 2007 Rice University
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+ 
+ * File: rcc_lib.c
+ *
+ * Library of functions for RCC-generated code to call at runtime.
+ *
+ * Author: John Garvin (garvin@cs.rice.edu)
+ */
 
 #include <IOStuff.h>
 #include "rcc_prot.h"
@@ -36,9 +37,9 @@ void my_init_memory(SEXP mem, int n) {
     ATTRIB(mem+i) = R_NilValue;
     TAG(mem+i) = R_NilValue;
     MARK(mem+i) = 0;
-    //    fool the GC into not taking
-    //    self-allocated memory when its children are R-allocated in
-    //    old_to_new situations
+    /* fool the GC into not taking self-allocated memory when its
+     * children are R-allocated in old_to_new situations
+     */
     mem[i].gengc_next_node = NULL;
     mem[i].gengc_prev_node = NULL;
     mem[i].sxpinfo.gcgen = -1000;
@@ -186,3 +187,8 @@ SEXP rcc_promise_args(SEXP el, SEXP rho) {
     return CDR(ans);  
 }
 
+SEXP make_thunked_promise(SEXP value) {
+  SEXP promise = mkPROMISE(R_NilValue, R_NilValue);
+  SET_PRVALUE(promise, value);
+  return promise;
+}

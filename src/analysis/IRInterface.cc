@@ -257,7 +257,7 @@ bool R_IRInterface::isCatchAll(StmtHandle h, int bodyIndex) {
 // for the body corresponding to default/catchall case.  The user
 // must free the iterator's memory via delete.
 OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
-  rcc_error("getMultiCatchall: multicase branches don't exist R");
+  rcc_error("getMultiCatchall: multicase branches don't exist in R");
   OA_ptr<IRRegionStmtIterator> dummy;
   return dummy;
 }
@@ -266,7 +266,7 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getMultiCatchall (StmtHandle h) {
 /// expression corresponding to target 'bodyIndex'. The n targets are
 /// indexed [0..n-1].
 ExprHandle R_IRInterface::getSMultiCondition(StmtHandle h, int bodyIndex) {
-  rcc_error("getSMultiCondition: multicase branches don't exist R");
+  rcc_error("getSMultiCondition: multicase branches don't exist in R");
   return 0;
 }
 
