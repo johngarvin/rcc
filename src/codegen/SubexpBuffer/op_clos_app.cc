@@ -37,31 +37,52 @@
 
 using namespace std;
 
+// op_arglist:
+//   for each arg a
+//     if a has a value assertion
+//       then op_exp to produce v
+//       else create promise to produce v
+//     add v to cons list
+// Ack! No promiseArgs!
+
 static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
 				  int * unprotcnt, string rho);
 
 /// Output an application of a closure to actual arguments.
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 				     string rho,
-				     Protection resultProtection)
+				     Protection resultProtection,
+				     RAnnot::ExpressionInfo::MyLazyInfoT laziness /* = ExpressionInfo::LAZY */)
 {
   int unprotcnt = 0;
 
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
 
+  Expression args1;
 #ifdef USE_OUTPUT_CODEGEN
-  Expression args1 = output_to_expression(CodeGen::op_list(args, rho, true));
+  if (laziness == RAnnot::ExpressionInfo::EAGER) {
+    args1 = output_to_expression(CodeGen::op_list(args, rho, false));  // false: output compiled list
+  } else {
+    args1 = output_to_expression(CodeGen::op_list(args, rho, true));   // true: output literal list
+  }
 #else
-  Expression args1 = op_list(args, rho, true, Protected); // true: output literal list
+  if (laziness == RAnnot::ExpressionInfo::EAGER) {
+    args1 = op_list(args, rho, false, Protected);  // false: output compiled list
+  } else {
+    args1 = op_list(args, rho, true, Protected); // true: output literal list
+  }
 #endif
+
   string call_str = appl2("lcons", op1.var, args1.var);
   unprotcnt++;  // call_str
-  Expression arglist = op_promise_args(this, args1.var, args, &unprotcnt, rho);
+  if (laziness == RAnnot::ExpressionInfo::LAZY) {
+    args1 = op_promise_args(this, args1.var, args, &unprotcnt, rho);
+  }
   string out = appl5("applyClosure ",
 		     call_str,
 		     op1.var,
-		     arglist.var,
+		     args1.var,
 		     rho,
 		     "R_NilValue", Unprotected);
   if (!op1.del_text.empty()) unprotcnt++;
@@ -93,7 +114,6 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
     if (!arg_value.del_text.empty()) (*unprotcnt)++;
     arglist = arg_value.var;
 #else  // call by need, the usual R semantics
-    // TODO: doesn't applyClosure already perform the promiseArgs call?
     arglist = sb->appl2("promiseArgs", args1var, rho);
     (*unprotcnt)++;
 #endif

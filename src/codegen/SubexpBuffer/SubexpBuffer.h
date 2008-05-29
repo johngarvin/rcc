@@ -29,9 +29,12 @@
 
 #include <Output.h>
 
+#include <analysis/ExpressionInfo.h>  // TODO: remove if we take LAZY/EAGER out of ExpressionInfo
+
 #include <include/Protection.h>
 #include <include/ResultStatus.h>
 #include <include/R/R_RInternals.h>
+
 #include <codegen/SubexpBuffer/Expression.h>
 
 
@@ -148,7 +151,8 @@ public:
   Expression op_subscriptset(SEXP e, std::string rho, 
 			     Protection resultProtection);
   Expression op_clos_app(Expression op1, SEXP args, std::string rho,
-			 Protection resultProtection);
+			 Protection resultProtection,
+			 RAnnot::ExpressionInfo::MyLazyInfoT laziness = RAnnot::ExpressionInfo::LAZY);
   Expression op_closure(SEXP e, std::string rho, Protection resultProtection);
   Expression op_literal(SEXP e, std::string rho);
   Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 

@@ -32,6 +32,7 @@
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/ExpressionInfo.h>   // TODO: remove if EAGER/LAZY is taken out of ExpressionInfo
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 #include <analysis/HandleInterface.h>
@@ -62,8 +63,6 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	   Protection resultProtection,
 	   ResultStatus resultStatus)
 {
-  // TODO: need to handle internal calls
-
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
     // the value is conveniently stored in the symbol, so we can just grab it
@@ -71,8 +70,8 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     if (is_library(call_lhs(e)) && TYPEOF(library_value(call_lhs(e))) == SPECIALSXP) {
       return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
+
     // see if symbol is in call graph
-    
     OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
     if (cga == 0) {
       // not in call graph; call to internal procedure
@@ -83,8 +82,21 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       }
     } else {
       OA::ProcHandle ph = cga->get_singleton_if_exists();
-      if (ph != OA::ProcHandle(0)) {
+      if (ph != OA::ProcHandle(0)) {  // singleton exists
 	FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
+	// if we have an eager call assertion, then output the enclosed call eagerly
+	if (CDR(call_args(e)) != R_NilValue) {
+	  SEXP second_arg = CADR(call_args(e));
+	  if (is_rcc_assert_exp(e) && is_var(second_arg) && var_name(second_arg) == "eager.call") {
+	    // TODO: deal with assertions that aren't user-defined symbols
+	    cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
+	    ph = cga->get_singleton_if_exists();
+	    fi = getProperty(FuncInfo, make_sexp(ph));
+	    Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
+	    return op_clos_app(closure_exp, call_args(CAR(call_args(e))), rho, resultProtection,
+			       ExpressionInfo::EAGER);
+	  }
+	}
 	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else {
