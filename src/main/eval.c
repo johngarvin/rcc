@@ -597,6 +597,17 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
    **** it we should modify this code and applyClosure share code when appropriate
    **** to avoid code drift. */
 
+/* Changes from applyClosure:
+   1. doesn't create a new environment (done ahead of time in the applyRccClosure caller)
+   2. doesn't do object-oriented stuff with usemethod
+   3. doesn't create a new context or end it after the call
+   4. doesn't print debugging output of the function body
+   5. doesn't do hashing even if HASHING is defined
+   6. doesn't set a setjmp/longjmp target for explicit returns (we're
+      assuming all calls to 'return' are compiled)
+   7. calls RCC_FUNSXP_CFUN instead of eval-ing a function body
+ */
+
 SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP funsxp, formals, actuals, savedrho;
@@ -769,6 +780,23 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
    **** it we should modify this code and applyClosure share code when appropriate
    **** to avoid code drift. */
 
+/* Changes from applyClosure:
+   1. doesn't create a new environment (done ahead of time in the applyRccClosure caller)
+   2. doesn't do object-oriented stuff with usemethod
+   3. doesn't create a new context or end it after the call
+   4. doesn't print debugging output of the function body
+   5. doesn't do hashing even if HASHING is defined
+   6. doesn't set a setjmp/longjmp target for explicit returns (we're
+      assuming all calls to 'return' are compiled)
+   7. calls RCC_FUNSXP_CFUN instead of eval-ing a function body
+
+   Changes from applyRccClosure:
+   1. doesn't handle named, default arguments
+ */
+
+/* TODO: call and rho are used only in debugging; suppliedenv is never
+   used. Why not remove them? */
+
 SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP funsxp, formals, actuals, savedrho;
@@ -932,6 +960,18 @@ SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppl
     return (tmp);
 }
 
+SEXP applyPlainRccClosureArgs(SEXP op, ...) {
+  SEXP funsxp, savedrho, tmp;
+  va_list ap;
+
+  funsxp = RCC_CLOSXP_FUN(op);
+  savedrho = RCC_CLOSXP_CLOENV(op);
+
+  va_start(ap, op);
+  tmp = RCC_FUNSXP_CFUN(funsxp) (ap, savedrho);
+  va_end(ap);
+  return (tmp);
+}
 
 /* **** FIXME: This code is factored out of applyClosure.  If we keep
    **** it we should change applyClosure to run through this routine
