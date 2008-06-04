@@ -33,6 +33,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/EagerLazy.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
@@ -65,14 +66,12 @@ public:
   typedef MyCallSiteSetT::iterator       call_site_iterator;
   typedef MyCallSiteSetT::const_iterator const_call_site_iterator;
 
-  typedef enum { EAGER,
-		 LAZY }            MyLazyInfoT;
-  typedef std::vector<MyLazyInfoT> MyLazyInfoSetT;
+  typedef std::vector<EagerLazyT> MyLazyInfoSetT;
 
   // set operations
   void insert_var(const MyVarT & x);
   void insert_call_site(const MyCallSiteT & x);
-  void insert_lazy_info(const MyLazyInfoT x);
+  void insert_eager_lazy(const EagerLazyT x);
 
   // iterators:
   var_iterator begin_vars();
@@ -96,8 +95,8 @@ public:
   SEXP get_sexp() const;
   void set_sexp(SEXP x);
 
-  MyLazyInfoT get_lazy_info(int arg) const;
-  void set_lazy_info(int arg, MyLazyInfoT x);
+  EagerLazyT get_eager_lazy(int arg) const;
+  void set_eager_lazy(int arg, EagerLazyT x);
 
   static PropertyHndlT handle();
 

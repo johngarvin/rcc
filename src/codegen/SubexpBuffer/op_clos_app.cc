@@ -52,7 +52,7 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 				     string rho,
 				     Protection resultProtection,
-				     RAnnot::ExpressionInfo::MyLazyInfoT laziness /* = ExpressionInfo::LAZY */)
+				     EagerLazyT laziness /* = LAZY */)
 {
   int unprotcnt = 0;
 
@@ -61,13 +61,13 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 
   Expression args1;
 #ifdef USE_OUTPUT_CODEGEN
-  if (laziness == RAnnot::ExpressionInfo::EAGER) {
+  if (laziness == EAGER) {
     args1 = output_to_expression(CodeGen::op_list(args, rho, false));  // false: output compiled list
   } else {
     args1 = output_to_expression(CodeGen::op_list(args, rho, true));   // true: output literal list
   }
 #else
-  if (laziness == RAnnot::ExpressionInfo::EAGER) {
+  if (laziness == EAGER) {
     args1 = op_list(args, rho, false, Protected);  // false: output compiled list
   } else {
     args1 = op_list(args, rho, true, Protected); // true: output literal list
@@ -76,7 +76,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP args,
 
   string call_str = appl2("lcons", op1.var, args1.var);
   unprotcnt++;  // call_str
-  if (laziness == RAnnot::ExpressionInfo::LAZY) {
+  if (laziness == LAZY) {
     args1 = op_promise_args(this, args1.var, args, &unprotcnt, rho);
   }
   string out = appl5("applyClosure ",

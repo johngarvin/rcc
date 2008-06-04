@@ -39,7 +39,6 @@ typedef ExpressionInfo::var_iterator var_iterator;
 typedef ExpressionInfo::const_var_iterator const_var_iterator;
 typedef ExpressionInfo::call_site_iterator call_site_iterator;
 typedef ExpressionInfo::const_call_site_iterator const_call_site_iterator;
-typedef ExpressionInfo::MyLazyInfoT MyLazyInfoT;
 typedef ExpressionInfo::MyLazyInfoSetT MyLazyInfoSetT;
 
 ExpressionInfo::ExpressionInfo(SEXP sexp)
@@ -122,11 +121,11 @@ void ExpressionInfo::set_sexp(SEXP x) {
   m_sexp = x;
 }
 
-MyLazyInfoT ExpressionInfo::get_lazy_info(int arg) const {
+EagerLazyT ExpressionInfo::get_eager_lazy(int arg) const {
   return m_lazy_info[arg];
 }
 
-void ExpressionInfo::set_lazy_info(int arg, MyLazyInfoT x) {
+void ExpressionInfo::set_eager_lazy(int arg, EagerLazyT x) {
   m_lazy_info[arg] = x;
 }
 

@@ -94,7 +94,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	    fi = getProperty(FuncInfo, make_sexp(ph));
 	    Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	    return op_clos_app(closure_exp, call_args(CAR(call_args(e))), rho, resultProtection,
-			       ExpressionInfo::EAGER);
+			       EAGER);
 	  }
 	}
 	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");

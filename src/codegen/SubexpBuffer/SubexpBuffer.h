@@ -29,7 +29,7 @@
 
 #include <Output.h>
 
-#include <analysis/ExpressionInfo.h>  // TODO: remove if we take LAZY/EAGER out of ExpressionInfo
+#include <analysis/EagerLazy.h>
 
 #include <include/Protection.h>
 #include <include/ResultStatus.h>
@@ -152,7 +152,7 @@ public:
 			     Protection resultProtection);
   Expression op_clos_app(Expression op1, SEXP args, std::string rho,
 			 Protection resultProtection,
-			 RAnnot::ExpressionInfo::MyLazyInfoT laziness = RAnnot::ExpressionInfo::LAZY);
+			 EagerLazyT laziness = LAZY);
   Expression op_closure(SEXP e, std::string rho, Protection resultProtection);
   Expression op_literal(SEXP e, std::string rho);
   Expression op_list_local(SEXP e, std::string rho, bool literal = TRUE, 

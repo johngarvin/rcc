@@ -27,6 +27,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/DefVar.h>
+#include <analysis/EagerLazy.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
@@ -139,7 +140,7 @@ void CallByValueAnalysis::perform_analysis() {
 	    formal->dump(std::cout);
 	  }
 
-	  call_expr->set_lazy_info(i, ExpressionInfo::LAZY);
+	  call_expr->set_eager_lazy(i, LAZY);
 	  continue;
 	}
 
@@ -155,7 +156,7 @@ void CallByValueAnalysis::perform_analysis() {
 
 	// test for intersection
 	if (arg_side_effect->intersects(pre_debut)) {
-	  call_expr->set_lazy_info(i, ExpressionInfo::LAZY);
+	  call_expr->set_eager_lazy(i, LAZY);
 	  if (debug) {
 	    std::cout << "dependence between actual arg ";
 	    Rf_PrintValue(actual);
@@ -164,7 +165,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  continue;
 	}
 	// if we get here, good news: no dependence, so we can use eager eval
-	call_expr->set_lazy_info(i, ExpressionInfo::EAGER);
+	call_expr->set_eager_lazy(i, EAGER);
 	if (debug) {
 	  cout << "strict formal arg ";
 	  formal->dump(std::cout);
