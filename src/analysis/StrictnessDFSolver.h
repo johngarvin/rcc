@@ -68,6 +68,9 @@ private:
   // solver clones the BB in sets
   OA::OA_ptr<OA::DataFlow::DataFlowSet> 
   transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
+
+  OA::OA_ptr<NameMentionMultiMap> compute_debut_map();
+  OA::OA_ptr<NameStmtMultiMap> compute_post_debut_map(OA::OA_ptr<Strictness::DFSet> args_on_exit);
   
 private:
   OA::OA_ptr<R_IRInterface> m_ir;

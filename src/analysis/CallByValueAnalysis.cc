@@ -88,8 +88,9 @@ void CallByValueAnalysis::perform_analysis() {
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       if (debug) {
-	std::cout << "Call site:" << std::endl;
+	std::cout << "Analyzing call site:" << std::endl;
 	Rf_PrintValue(*csi);
+	std::cout << std::endl;
       }
 
       ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi);
@@ -138,6 +139,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  if (debug) {
 	    cout << "nonstrict formal arg ";
 	    formal->dump(std::cout);
+	    cout << std::endl;
 	  }
 
 	  call_expr->set_eager_lazy(i, LAZY);
@@ -150,8 +152,9 @@ void CallByValueAnalysis::perform_analysis() {
 	if (debug) {
 	  cout << "Actual arg: ";
 	  Rf_PrintValue(CAR(actual));
-	  cout << "Arg side effect: ";
+	  cout << "with side effect: ";
 	  arg_side_effect->dump(cout);
+	  cout << std::endl;
 	}
 
 	// test for intersection

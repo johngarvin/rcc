@@ -81,13 +81,20 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
   if (debug) dump_node_maps();
 
-  // Compute debuts. A mention is a debut iff it's a use and it's the
-  // first mention on some path. In data-flow terms, a mention is a
-  // debut if it is a use and it is TOP on entry. If it's not TOP on
-  // entry, that means it has been used or killed prior to this mention.
+  OA_ptr<NameMentionMultiMap> debut_map = compute_debut_map();
+  OA_ptr<NameStmtMultiMap> post_debut_map = compute_post_debut_map(args_on_exit);
+  OA_ptr<StrictnessResult> result; result = new StrictnessResult(args_on_exit, debut_map, post_debut_map);
+  return result;
+}
+
+// Compute debuts. A mention is a debut iff it's a use and it's the
+// first mention on some path. In data-flow terms, a mention is a
+// debut if it is a use and it is TOP on entry. If it's not TOP on
+// entry, that means it has been used or killed prior to this mention.
+OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
   OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
   // for each CFG node
-  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
+  OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
   for ( ; ni->isValid(); ++*ni) {
     OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
     OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
@@ -110,33 +117,34 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
       in_set = transfer(in_set, si->current()).convert<DFSet>();
     }  // next statement
   }  // next CFG node
+  return debut_map;
+}
 
-  // compute post-debut statements (statements for which every path
-  // from the start to the statement must go through a debut) for each formal
+// compute post-debut statements (statements for which every path
+// from the start to the statement must go through a debut) for each formal
+OA_ptr<NameStmtMultiMap> StrictnessDFSolver::compute_post_debut_map(OA_ptr<DFSet> args_on_exit) {
   OA_ptr<NameStmtMultiMap> post_debut_map; post_debut_map = new NameStmtMultiMap();
   // for each formal
   OA_ptr<DFSetIterator> formal_it = args_on_exit->get_iterator();
   for ( ; formal_it->isValid(); ++*formal_it) {
     OA_ptr<R_VarRef> formal; formal = formal_it->current()->get_loc();
     // for each CFG node
-    OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
+    OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
     for ( ; ni->isValid(); ++*ni) {
       OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
       OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
       // for each statement
       OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
       for ( ; si->isValid(); ++*si) {
+	in_set = transfer(in_set, si->current()).convert<DFSet>();
 	// if formal is USED at this point, add stmt to map
 	if (in_set->find(formal)->get_strictness_type() == Strictness_USED) {
 	  post_debut_map->insert(std::make_pair(formal->get_sexp(), si->current()));
 	}
-	in_set = transfer(in_set, si->current()).convert<DFSet>();
       }
     }
   }
-
-  OA_ptr<StrictnessResult> result; result = new StrictnessResult(args_on_exit, debut_map, post_debut_map);
-  return result;
+  return post_debut_map;
 }
 
 /// Print out a representation of the in and out sets for each CFG node.
