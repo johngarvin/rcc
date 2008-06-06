@@ -60,8 +60,8 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
 				   string rho, Protection resultProtection, ResultStatus resultStatus);
 
 Expression SubexpBuffer::op_lang(SEXP e, string rho, 
-	   Protection resultProtection,
-	   ResultStatus resultStatus)
+				 Protection resultProtection,
+				 ResultStatus resultStatus)
 {
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
@@ -84,24 +84,25 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
       OA::ProcHandle ph = cga->get_singleton_if_exists();
       if (ph != OA::ProcHandle(0)) {  // singleton exists
 	FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
-	// if we have an eager call assertion, then output the enclosed call eagerly
+	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
+
+	// check for eager assertion
 	if (CDR(call_args(e)) != R_NilValue) {
 	  SEXP second_arg = CADR(call_args(e));
 	  if (is_rcc_assert_exp(e) && is_var(second_arg) && var_name(second_arg) == "eager.call") {
-	    // TODO: deal with assertions that aren't user-defined symbols
 	    cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
 	    ph = cga->get_singleton_if_exists();
 	    fi = getProperty(FuncInfo, make_sexp(ph));
-	    Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-	    return op_clos_app(closure_exp, call_args(CAR(call_args(e))), rho, resultProtection,
+	    // TODO: deal with assertions that aren't user-defined symbols
+	    return op_clos_app(closure_exp, CAR(call_args(e)), rho, resultProtection,
 			       EAGER);
 	  }
 	}
-	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
+	
+	return op_clos_app(closure_exp, e, rho, resultProtection);
       } else {
 	Expression func = op_fun_use(e, rho);
-	return op_clos_app(func, call_args(e), rho, resultProtection);
+	return op_clos_app(func, e, rho, resultProtection);
       }
     }
 
@@ -137,7 +138,7 @@ code with home-grown call graph
     // generate closure and application
     Expression op1;
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
-    return op_clos_app(op1, call_args(e), rho, resultProtection);
+    return op_clos_app(op1, e, rho, resultProtection);
     // eval.c: 395
   }
 }
@@ -150,7 +151,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
   if (TYPEOF(op) == CLOSXP) {
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     // above: false as last argument for unevaluated result. Is this correct?
-    return sb->op_clos_app(func, call_args(e), rho, resultProtection);
+    return sb->op_clos_app(func, e, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
     return sb->op_builtin(e, op, rho, resultProtection);
   } else {
