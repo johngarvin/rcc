@@ -580,8 +580,7 @@ OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIter
 /// and the MemRefExpr describes the corresponding actual argument. 
 OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
   // TODO
-  rcc_warn("getParamBindPtrAssignIterator: Alias interface not yet implemented");
-  throw AnalysisException();
+  throw AnalysisException("getParamBindPtrAssignIterator: Alias interface not yet implemented");
   OA_ptr<Alias::ParamBindPtrAssignIterator> dummy;
   return dummy;
 }
@@ -690,7 +689,7 @@ SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
       return make_sym_h(sym);
     } else {
       // fail gracefully if there's more than one definition
-      throw AnalysisException();
+      throw AnalysisException("getProcSymHandle: more than one definition of procedure");
     }
   } else {
     // the global-scope procedure and anonymous functions won't have a Var annotation.

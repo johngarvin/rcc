@@ -113,12 +113,12 @@ void CallByValueAnalysis::perform_analysis() {
 	  continue;
 	}
       } else {
-	throw AnalysisException();
+	throw AnalysisException("CallByValueAnalysis: non-symbol LHS of procedure call");
       }
 
       if (callee->get_num_args() != Rf_length(call_args(*csi))) {
 	// TODO: handle default args and "..."
-	throw AnalysisException();
+	throw AnalysisException("CallByValueAnalysis: default args or \"...\"");
       }
 
       // for each arg

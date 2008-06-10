@@ -52,12 +52,10 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
     tree->copyAndConnectSubTree(assign, rhs);
   } else if (is_fundef(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: fundefs not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: fundefs not yet implemented");
   } else if (is_struct_field(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: structure fields not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: structure fields not yet implemented");
   } else if (is_subscript(e)) {
     OA_ptr<IRHandlesIRInterface> iface; iface = R_Analyst::get_instance()->get_interface();
     // TODO: what about more than one subscript?
@@ -74,24 +72,19 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
     tree->copyAndConnectSubTree(bracket, rhs);
   } else if (is_if(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: if expressions not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: if expressions not yet implemented");
   } else if (is_for(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: for expressions not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: for expressions not yet implemented");
   } else if (is_while(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: while expressions not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: while expressions not yet implemented");
   } else if (is_repeat(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: repeat expressions not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: repeat expressions not yet implemented");
   } else if (is_curly_list(e)) {
     // TODO
-    rcc_warn("ExprTreeBuilder: curly-brace lists not yet implemented");
-    throw AnalysisException();
+    throw AnalysisException("ExprTreeBuilder: curly-brace lists not yet implemented");
   } else if (is_call(e)) {  // regular function call
     OA_ptr<ExprTree::CallNode> call; call = new ExprTree::CallNode(make_call_h(e));
     tree->addNode(call);

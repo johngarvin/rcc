@@ -85,7 +85,7 @@ void R_Analyst::perform_analysis() {
   if (ParseInfo::allow_oo()           ||
       ParseInfo::allow_envir_manip())
     {
-      throw AnalysisException();
+      throw AnalysisException("Unable to perform analysis: no assertion to exclude OO or environment manipulation");
     }
   build_local_function_info();
   (new CallByValueAnalysis())->perform_analysis();

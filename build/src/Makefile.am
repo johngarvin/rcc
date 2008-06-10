@@ -28,6 +28,8 @@ rcc_bin_SOURCES =				\
   CScope.cc CScope.h				\
   CheckProtect.h				\
 						\
+  AnalysisException.cc                          \
+  AnalysisException.h                           \
   AnalysisResults.cc				\
   AnalysisResults.h				\
   Analyst.cc					\

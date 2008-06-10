@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2008 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: AnalysisException.h
+// File: AnalysisException.cc
 //
 // AnalysisExcepsion occurs when some analysis phase rejects a
 // program, usually because it uses a feature of R the compiler is
@@ -24,17 +24,12 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef ANALYSIS_EXCEPTION_H
-#define ANALYSIS_EXCEPTION_H
+#include "AnalysisException.h"
 
-#include <exception>
+AnalysisException::AnalysisException(const char * const message)
+  : m_message(message)
+{}
 
-class AnalysisException : public std::exception {
-public:
-  AnalysisException(const char * const message);
-  virtual const char * what() const throw();
-private:
-  const char * const m_message;
-};
-
-#endif
+const char * AnalysisException::what() const throw() {
+  return m_message;
+}

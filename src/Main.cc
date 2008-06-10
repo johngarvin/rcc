@@ -200,6 +200,7 @@ int main(int argc, char *argv[]) {
   catch (AnalysisException ae) {
     // One phase of analysis rejected a program. Get rid of the
     // information in preparation to compile trivially.
+    rcc_warn(ae.what());
     rcc_warn("analysis encountered difficulties; compiling trivially");
     clearProperties();
     analysis_ok = false;
@@ -267,6 +268,7 @@ int main(int argc, char *argv[]) {
       try {
 	exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
       } catch (AnalysisException ae) {
+	rcc_warn(ae.what());
 	rcc_warn("analysis encountered difficulties; compiling trivially");
 	clearProperties();
 	analysis_ok = false;
