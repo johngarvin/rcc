@@ -34,6 +34,8 @@
 
 #include "ExpressionInfoAnnotationMap.h"
 
+static const bool debug = false;
+
 using namespace HandleInterface;
 
 namespace RAnnot {
@@ -95,14 +97,19 @@ bool ExpressionInfoAnnotationMap::computation_in_progress() const {
 
 //  ----- iterators ----- 
 
-iterator ExpressionInfoAnnotationMap::begin() { return m_map.begin(); }
+iterator       ExpressionInfoAnnotationMap::begin()       { return m_map.begin(); }
 const_iterator ExpressionInfoAnnotationMap::begin() const { return m_map.begin(); }
-iterator  ExpressionInfoAnnotationMap::end() { return m_map.end(); }
+iterator       ExpressionInfoAnnotationMap::end()       { return m_map.end(); }
 const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
 
 // ----- computation -----
 
 void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
+  if (debug) {
+    std::cout << "ExpressionInfoAnnotationMap analyzing the following expression:" << std::endl;
+    Rf_PrintValue(CAR(k));
+  }
+
   ExpressionInfo * annot = new ExpressionInfo(k);
   LocalVariableAnalysis lva(k);
   lva.perform_analysis();

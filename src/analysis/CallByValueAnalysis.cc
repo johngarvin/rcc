@@ -202,6 +202,10 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
 	continue;
       }
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));
+      if (debug) {
+	std::cout << "Found pre-debut statement:" << std::endl;
+	Rf_PrintValue(CAR(make_sexp(stmt)));
+      }
     }
   }
   return pre_debut;

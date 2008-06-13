@@ -104,6 +104,10 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
+      if (debug) {
+	std::cout << "Debut: looking at statement:" << std::endl;
+	Rf_PrintValue(CAR(make_sexp(si->current())));
+      }
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
 	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref((*mi)->getMention_c());
@@ -112,6 +116,10 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
 	    in_set->find(ref)->get_strictness_type() == Strictness_TOP)
 	{
 	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
+	  if (debug) {
+	    std::cout << "Found debut:" << std::endl;
+	    Rf_PrintValue(CAR((*mi)->getMention_c()));
+	  }
 	}
       }  // next mention
       in_set = transfer(in_set, si->current()).convert<DFSet>();
@@ -139,7 +147,11 @@ OA_ptr<NameStmtMultiMap> StrictnessDFSolver::compute_post_debut_map(OA_ptr<DFSet
 	in_set = transfer(in_set, si->current()).convert<DFSet>();
 	// if formal is USED at this point, add stmt to map
 	if (in_set->find(formal)->get_strictness_type() == Strictness_USED) {
-	  post_debut_map->insert(std::make_pair(formal->get_sexp(), si->current()));
+	  post_debut_map->insert(std::make_pair(TAG(formal->get_sexp()), si->current()));
+	  if (debug) {
+	    std::cout << "Found post-debut statement:" << std::endl;
+	    Rf_PrintValue(CAR(make_sexp(si->current())));
+	  }
 	}
       }
     }

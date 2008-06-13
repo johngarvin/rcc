@@ -77,7 +77,9 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
 //--------------------------------------------------------
 
 /// Return statements are allowed in R.
-bool R_IRInterface::returnStatementsAllowed() { return true; }
+bool R_IRInterface::returnStatementsAllowed() {
+  return true;
+}
 
 /// Local R-specific function: return the CFG type (loop, conditional,
 /// etc.) of an SEXP.
@@ -138,10 +140,6 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::getFirstInCompound(StmtHandle h) {
     ptr = new R_RegionStmtIterator(make_stmt_h(paren_body_c(e)));
   } else if (is_fundef(e)) {
     ptr = new R_RegionStmtIterator(make_stmt_h(fundef_body_c(e)));
-#if 0
-  } else if (is_loop(e)) {
-    ptr = new R_RegionStmtIterator(make_stmt_h(loop_body_c(e)));
-#endif
   } else {
     rcc_error("getFirstInCompound: unrecognized statement type");
   }
@@ -196,6 +194,10 @@ bool R_IRInterface::loopIterationsDefinedAtEntry(StmtHandle h) {
   return true;
 }
 
+//-------------------------------------------------------
+// Structured two-way conditionals (if statements)
+//-------------------------------------------------------
+
 /// Given a structured two-way conditional statement, return an
 /// IRRegionStmtIterator for the "true" part (i.e., the statements
 /// under the "if" clause).
@@ -214,9 +216,10 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
   return ptr;
 }
 
-//--------------------------------------------------------
-// Structured multiway conditionals
-//--------------------------------------------------------
+//------------------------------------------------------------------
+// Structured multiway conditionals.
+// R doesn't have multiway conditionals, so these are all stubs.
+//------------------------------------------------------------------
 
 // Given a structured multi-way branch, return the number of cases.
 // The count does not include the default/catchall case.
@@ -781,7 +784,7 @@ std::string R_IRInterface::toString(CallHandle h) {
 //--------------------------------------------------------------------
 
 R_RegionStmtIterator::R_RegionStmtIterator(OA::StmtHandle stmt) {
-  build_stmt_list(stmt); // allocates memory for stmt_iter_ptr
+  build_stmt_list(stmt);
 }
 
 R_RegionStmtIterator::~R_RegionStmtIterator() {
@@ -818,6 +821,13 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     }
     break;
+  case CFG::LOOP:
+  case CFG::STRUCT_TWOWAY_CONDITIONAL:
+  case CFG::RETURN:
+  case CFG::BREAK:
+  case CFG::LOOP_CONTINUE:
+    stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
+    break;
   case CFG::COMPOUND:
     if (is_curly_list(exp)) {
       // Special case for a list of statments in curly braces.
@@ -825,9 +835,6 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
       // guaranteed to be a list or nil, so we can call the iterator
       // that doesn't take a cell.
       stmt_iter_ptr = new R_ListIterator(CDR(exp));
-    } else if (is_loop(exp)) {
-      // TODO: loops are not considered COMPOUND. I don't think this case can happen.
-      stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     } else {
       // We have a non-loop compound statement with a body. (body_c is
       // the cell containing the body.) This body might be a list for
@@ -848,7 +855,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
     }
     break;
   default:
-    stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
+    rcc_error("R_RegionStmtIterator::build_stmt_list: unrecognized CFG statement type");
     break;
   }
 }

@@ -22,6 +22,13 @@
 // information that can be gained locally: use/def, local/free,
 // function/argument.
 //
+// Important note: expressions do not extend across basic block
+// boundaries. This means we are not descending into the bodies of
+// loops or the true and false bodies of if statements; those are
+// considered separate expressions with separate LocalVariableAnalysis
+// objects. But we are descending into compound statements like
+// fundefs and curly-brace statement lists.
+//
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <analysis/Utils.h>
@@ -93,8 +100,10 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     build_ud_rhs(for_range_c(e), Var::Var_MUST);
   } else if (is_loop_header(e)) {
     // TODO
+    // currently this case cannot happen
   } else if (is_loop_increment(e)) {
     // TODO
+    // currently this case cannot happen
   } else if (is_while(e)) {
     build_ud_rhs(while_cond_c(e), Var::Var_MUST);
   } else if (is_repeat(e)) {
@@ -117,7 +126,6 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
       var_annot->setScopeType(Locality::Locality_TOP);
       m_vars.push_back(var_annot);
     } else {
-      // TODO: what about the lhs?
       build_ud_rhs(e, Var::Var_MUST);
     }
     // recur on args
