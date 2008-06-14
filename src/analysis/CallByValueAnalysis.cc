@@ -184,11 +184,9 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
 
   SideEffect * pre_debut = new SideEffect();
   OA_ptr<OA::CFG::NodeInterface> node;
+  StmtHandle stmt;
   PROC_FOR_EACH_NODE(fi, node) {
-    // each statement in basic block
-    OA_ptr<OA::CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
-    for(StmtHandle stmt; si->isValid(); ++*si) {
-      stmt = si->current();
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
       // For this formal arg, statements in the function can be
       // divided into pre-debut, post-debut, and non-strict. We're

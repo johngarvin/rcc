@@ -92,21 +92,19 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
 // debut if it is a use and it is TOP on entry. If it's not TOP on
 // entry, that means it has been used or killed prior to this mention.
 OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
-  // for each CFG node
-  OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
-  for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
-    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
-    // for each statement
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
-    for ( ; si->isValid(); ++*si) {
+  CFG_FOR_EACH_NODE(m_cfg, node) {
+    OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
       if (debug) {
 	std::cout << "Debut: looking at statement:" << std::endl;
-	Rf_PrintValue(CAR(make_sexp(si->current())));
+	Rf_PrintValue(CAR(make_sexp(stmt)));
       }
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
@@ -131,26 +129,24 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
 // compute post-debut statements (statements for which every path
 // from the start to the statement must go through a debut) for each formal
 OA_ptr<NameStmtMultiMap> StrictnessDFSolver::compute_post_debut_map(OA_ptr<DFSet> args_on_exit) {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   OA_ptr<NameStmtMultiMap> post_debut_map; post_debut_map = new NameStmtMultiMap();
   // for each formal
   OA_ptr<DFSetIterator> formal_it = args_on_exit->get_iterator();
   for ( ; formal_it->isValid(); ++*formal_it) {
     OA_ptr<R_VarRef> formal; formal = formal_it->current()->get_loc();
-    // for each CFG node
-    OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
-    for ( ; ni->isValid(); ++*ni) {
-      OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
-      OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
-      // for each statement
-      OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
-      for ( ; si->isValid(); ++*si) {
-	in_set = transfer(in_set, si->current()).convert<DFSet>();
+    CFG_FOR_EACH_NODE(m_cfg, node) {
+      OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
+	in_set = transfer(in_set, stmt).convert<DFSet>();
 	// if formal is USED at this point, add stmt to map
 	if (in_set->find(formal)->get_strictness_type() == Strictness_USED) {
-	  post_debut_map->insert(std::make_pair(TAG(formal->get_sexp()), si->current()));
+	  post_debut_map->insert(std::make_pair(TAG(formal->get_sexp()), stmt));
 	  if (debug) {
 	    std::cout << "Found post-debut statement:" << std::endl;
-	    Rf_PrintValue(CAR(make_sexp(si->current())));
+	    Rf_PrintValue(CAR(make_sexp(stmt)));
 	  }
 	}
       }

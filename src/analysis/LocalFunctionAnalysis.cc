@@ -93,17 +93,13 @@ void LocalFunctionAnalysis::analyze_args() {
 
 /// Find each mention (use or def) and call site in the function
 void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
-  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
-  assert(!cfg.ptrEqual(0));
-  // for each node
-  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
-  for( ; ni->isValid(); ++*ni) {
-    // for each statement
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
-    si = ni->current().convert<CFG::NodeInterface>()->getNodeStatementsIterator();
-    for( ; si->isValid(); ++*si) {
+  PROC_FOR_EACH_NODE(fi, node) {
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);

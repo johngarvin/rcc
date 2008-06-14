@@ -79,30 +79,21 @@ PropertyHndlT SideEffectAnnotationMap::m_handle = "SideEffect";
 
 // compute all Var annotation information
 void SideEffectAnnotationMap::compute() {
+  FuncInfo * fi;
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   compute_oa_side_effect();
   // now use m_side_effect to get info on expressions
 
-  // for each function
-  FuncInfoIterator fii(R_Analyst::get_instance()->get_scope_tree_root());
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
-
-    // get a SideEffect for each statement
-
-    // for each CFG node (basic block)
-    OA_ptr<CFG::NodesIteratorInterface> ni = fi->get_cfg()->getCFGNodesIterator();
-    for (OA_ptr<CFG::Node> node; ni->isValid(); ++*ni) {
-      node = ni->current().convert<CFG::Node>();
-      // each statement in basic block
-      OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
-      for(StmtHandle stmt; si->isValid(); ++*si) {
-	stmt = si->current();
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_NODE(fi, node) {
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
 	make_side_effect(fi, make_sexp(stmt));
       }  // next statement
     }  // next node
 
-    // get a SideEffect for each call site argument
-    for(FuncInfo::const_call_site_iterator csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
+    PROC_FOR_EACH_CALL_SITE(fi, csi) {
       for(R_ListIterator arg_it(*csi); arg_it.isValid(); ++arg_it) {
 	make_side_effect(fi, arg_it.current());
       }

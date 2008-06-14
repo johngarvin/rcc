@@ -104,6 +104,9 @@ LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
 /// annotation with its locality information.
 void LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   m_cfg = cfg;
   m_proc = proc;
 
@@ -115,15 +118,10 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
 
   // data flow problem solved; now traverse the function and fill in annotations
 
-  // for each node
-  OA_ptr<CFG::NodesIteratorInterface> ni = cfg->getCFGNodesIterator();
-  for( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+  CFG_FOR_EACH_NODE(m_cfg, node) {
+    OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
 
-    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
-
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
-    si = n->getNodeStatementsIterator();
+    OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
     // statement-level CFG; there should be no more than one statement
     if (si->isValid()) {
 
@@ -201,26 +199,23 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
 }
 
 void LocalityDFSolver::initialize_sets() {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   m_all_top = new DFSet;
   m_all_bottom = new DFSet;
   m_entry_values = new DFSet;
 
   VarRefFactory * fact = VarRefFactory::get_instance();
 
-  // each CFG node
-  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
-  for ( ; ni->isValid(); ++*ni) {
-
-    // each statement
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
-    si = ni->current().convert<CFG::NodeInterface>()->getNodeStatementsIterator();
-    for ( ; si->isValid(); ++*si) {
+  CFG_FOR_EACH_NODE(m_cfg, node) {
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       if (debug) {
-	Rf_PrintValue(make_sexp(si->current()));
+	Rf_PrintValue(make_sexp(stmt));
       }
 
       // getProperty will trigger lower-level analysis if necessary
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
 
       // for this statement's annotation, iterate through its set of var mentions
       ExpressionInfo::const_var_iterator vi;

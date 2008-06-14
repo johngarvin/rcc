@@ -99,13 +99,11 @@ void VarAnnotationMap::compute() {
 void VarAnnotationMap::compute_all_syntactic_info() {
   FuncInfo * fi;
   OA_ptr<OA::CFG::NodeInterface> node;
+  StmtHandle stmt;
 
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_NODE(fi, node) {
-      // each statement in basic block
-      OA_ptr<CFG::NodeStatementsIteratorInterface> si = node->getNodeStatementsIterator();
-      for(StmtHandle stmt; si->isValid(); ++*si) {
-	stmt = si->current();
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
 	// each variable in the expression
 	ExpressionInfo::const_var_iterator ei;

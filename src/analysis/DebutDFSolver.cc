@@ -57,6 +57,9 @@ DebutDFSolver::~DebutDFSolver()
 /// current statement and does not appear in the has-been-mentioned
 /// set, then it's a debut.
 OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
   m_proc = proc;
   m_cfg = cfg;
 
@@ -66,16 +69,12 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_
 
   // now find the debuts for each name
   OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
-  // for each CFG node
-  OA_ptr<CFG::NodesIteratorInterface> ni; ni = cfg->getCFGNodesIterator();
-  for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::Node> n = ni->current().convert<CFG::Node>();
-    OA_ptr<DFSet> in_set = m_solver->getInSet(n).convert<DFSet>();
-    // for each statement
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si; si = n->getNodeStatementsIterator();
-    for ( ; si->isValid(); ++*si) {
+  
+  CFG_FOR_EACH_NODE(m_cfg, node) {
+    OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
@@ -84,7 +83,7 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_
 	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
 	}
       }  // next mention
-      in_set = transfer(in_set, si->current()).convert<DFSet>();
+      in_set = transfer(in_set, stmt).convert<DFSet>();
     }  // next statement
   }  // next CFG node
 

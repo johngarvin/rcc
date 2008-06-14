@@ -51,9 +51,15 @@
 #define PROC_FOR_EACH_CALL_SITE(fi, csi) for(RAnnot::FuncInfo::const_call_site_iterator csi = (fi)->begin_call_sites(); \
                                              csi != (fi)->end_call_sites();                                             \
                                              ++csi)
-#define PROC_FOR_EACH_NODE(fi, node) for(OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni = (fi)->get_cfg()->getCFGNodesIterator();          \
-                                         ni->isValid() && (node = ni->current().convert<OA::CFG::Node>()) != OA::OA_ptr<OA::CFG::Node>();  \
-                                          ++*ni)
+#define PROC_FOR_EACH_NODE(fi, node) for(OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni = (fi)->get_cfg()->getCFGNodesIterator();                             \
+                                      ni->isValid() && ((node) = ni->current().convert<OA::CFG::Node>()) != FuncInfo::iterator_dummy_node; \
+                                      ++*ni)
+#define CFG_FOR_EACH_NODE(cfg, node) for(OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni = (cfg)->getCFGNodesIterator();                                       \
+                                       ni->isValid() && ((node) = ni->current().convert<OA::CFG::Node>()) != FuncInfo::iterator_dummy_node; \
+                                       ++*ni)
+#define NODE_FOR_EACH_STATEMENT(node, stmt) for(OA::OA_ptr<OA::CFG::NodeStatementsIteratorInterface> si = (node)->getNodeStatementsIterator(); \
+                                                si->isValid() && ((stmt) = si->current()) != StmtHandle(0);                                    \
+                                                ++*si)
 
 namespace RAnnot {
 
@@ -161,6 +167,10 @@ public:
   // debugging
   // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
+
+
+  static const OA::OA_ptr<OA::CFG::NodeInterface> iterator_dummy_node;
+
 
 private:
 #if 0

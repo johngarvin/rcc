@@ -49,6 +49,7 @@
 
 using namespace OA;
 using namespace HandleInterface;
+
 namespace RAnnot {
 
 //****************************************************************************
@@ -336,15 +337,10 @@ TODO: split up FuncInfos to avoid circular dependence
 void FuncInfo::collect_mentions_and_call_sites() {
   assert(!m_cfg.ptrEqual(0));
 
-  // for each node
-  OA_ptr<CFG::NodesIteratorInterface> ni; ni = m_cfg->getCFGNodesIterator();
-  for( ; ni->isValid(); ++*ni) {
-    // for each statement
-    OA_ptr<CFG::NodeStatementsIteratorInterface> si;
-    si = ni->current().convert<CFG::Node>()->getNodeStatementsIterator();
-    for( ; si->isValid(); ++*si) {
+  PROC_FOR_EACH_NODE(fi, node) {
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
       ExpressionInfo::const_var_iterator mi;
       for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
@@ -397,3 +393,5 @@ PropertyHndlT FuncInfo::handle() {
 }
 
 }
+
+const OA_ptr<CFG::NodeInterface> RAnnot::FuncInfo::iterator_dummy_node = OA_ptr<CFG::Node>();
