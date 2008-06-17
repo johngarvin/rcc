@@ -95,6 +95,8 @@ void LocalFunctionAnalysis::analyze_args() {
 void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
+  SEXP cs;
+  Var * var;
 
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
@@ -103,17 +105,15 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
-      ExpressionInfo::const_var_iterator mi;
-      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	Var * v = getProperty(Var, (*mi)->getMention_c());
+      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
+	var = getProperty(Var, var->getMention_c());
 	// TODO: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
-	fi->insert_mention(v);
+	fi->insert_mention(var);
       }
-      ExpressionInfo::const_call_site_iterator cs;
-      for(cs = stmt_annot->begin_call_sites(); cs != stmt_annot->end_call_sites(); ++cs) {
-	fi->insert_call_site(*cs);
+      EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
+	fi->insert_call_site(cs);
       }
     }
   }

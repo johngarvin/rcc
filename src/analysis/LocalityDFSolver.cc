@@ -104,6 +104,7 @@ LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
 /// annotation with its locality information.
 void LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+  Var * var;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -125,13 +126,10 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
     // statement-level CFG; there should be no more than one statement
     if (si->isValid()) {
 
-      // each mention in the statement
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
-      ExpressionInfo::var_iterator mi;
-      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	Var * annot = *mi;
+      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
 	// get a VarRef
-	OA_ptr<R_VarRef> ref = visitor.visit(annot);
+	OA_ptr<R_VarRef> ref = visitor.visit(var);
 	assert(!ref.ptrEqual(0));
 	// look up the mention's name in in_set to get lattice type
 	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
@@ -142,10 +140,10 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
 	// DF problem only analyzes uses and may-defs. Locality flags of
 	// must-defs are already determined statically, so don't reset
 	// them!
-	if (annot->getMayMustType() == Var::Var_MAY
-	    || annot->getUseDefType() == Var::Var_USE)
+	if (var->getMayMustType() == Var::Var_MAY
+	    || var->getUseDefType() == Var::Var_USE)
 	{
-	  annot->setScopeType(elem->get_locality_type());
+	  var->setScopeType(elem->get_locality_type());
 	}
       } // next mention
       // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
@@ -199,6 +197,7 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
 }
 
 void LocalityDFSolver::initialize_sets() {
+  Var * var;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -217,10 +216,8 @@ void LocalityDFSolver::initialize_sets() {
       // getProperty will trigger lower-level analysis if necessary
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
 
-      // for this statement's annotation, iterate through its set of var mentions
-      ExpressionInfo::const_var_iterator vi;
-      for(vi = stmt_annot->begin_vars(); vi != stmt_annot->end_vars(); ++vi) {
-	OA_ptr<R_VarRef> ref; ref = fact->make_body_var_ref((*vi)->getMention_c());
+      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
+	OA_ptr<R_VarRef> ref; ref = fact->make_body_var_ref(var->getMention_c());
 
 	// all_top and all_bottom: all variables set to TOP/BOTTOM,
 	// must be initialized for OA data flow analysis
@@ -278,16 +275,16 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
 /// clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
+  Var * var;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
-  ExpressionInfo::const_var_iterator var_iter;
-  for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
+  EXPRESSION_FOR_EACH_MENTION(annot, var) {
     // if variable was found to be local during statement-level
     // analysis, add it in
-    if ((*var_iter)->getScopeType() == Locality_LOCAL) {
+    if (var->getScopeType() == Locality_LOCAL) {
       MakeVarRefVisitor visitor;
-      OA_ptr<R_VarRef> var; var = visitor.visit(*var_iter);
-      OA_ptr<DFSetElement> use; use = new DFSetElement(var, (*var_iter)->getScopeType());
+      OA_ptr<R_VarRef> var_ref; var_ref = visitor.visit(var);
+      OA_ptr<DFSetElement> use; use = new DFSetElement(var_ref, var->getScopeType());
       in->replace(use);
     }
   }

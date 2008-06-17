@@ -124,23 +124,22 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
 }
 
 void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP e) {
+  SEXP cs;
+  Var * var;
   ExpressionInfo * expr = getProperty(ExpressionInfo, e);
   SideEffect * annot = new SideEffect();
 
   // first grab local uses and defs
 
-  // each variable in the expression
-  ExpressionInfo::const_var_iterator vi;
-  for(vi = expr->begin_vars(); vi != expr->end_vars(); ++vi) {
-    annot->insert_mention(fi, *vi);
+  EXPRESSION_FOR_EACH_MENTION(expr, var) {
+    annot->insert_mention(fi, var);
   }
 
   // now grab interprocedural uses and defs from m_side_effect
 
-  ExpressionInfo::const_call_site_iterator csi;
-  for(csi = expr->begin_call_sites(); csi != expr->end_call_sites(); ++csi) {
+  EXPRESSION_FOR_EACH_CALL_SITE(expr, cs) {
     OA_ptr<LocIterator> li;
-    for(li = m_side_effect->getMODIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+    for(li = m_side_effect->getMODIterator(make_call_h(cs)); li->isValid(); ++(*li)) {
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
@@ -151,7 +150,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 	rcc_error("Unexpected location type");
       }
     }  // next MOD location
-    for(li = m_side_effect->getREFIterator(make_call_h(*csi)); li->isValid(); ++(*li)) {
+    for(li = m_side_effect->getREFIterator(make_call_h(cs)); li->isValid(); ++(*li)) {
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();

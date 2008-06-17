@@ -36,6 +36,14 @@
 #include <analysis/EagerLazy.h>
 #include <analysis/PropertyHndl.h>
 
+#define EXPRESSION_FOR_EACH_MENTION(ei, var) for(RAnnot::ExpressionInfo::const_var_iterator vi = (ei)->begin_vars();  \
+						 (vi != (ei)->end_vars()) && (((var) = *vi) != 0);                    \
+						 ++vi)
+
+#define EXPRESSION_FOR_EACH_CALL_SITE(ei, cs) for(RAnnot::ExpressionInfo::const_call_site_iterator csi = (ei)->begin_call_sites();  \
+						    (csi != (ei)->end_call_sites()) && (((cs) = *csi) != 0);                        \
+						  ++csi)
+
 namespace RAnnot {
 
 // forward declarations

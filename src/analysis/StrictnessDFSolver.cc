@@ -92,6 +92,7 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
 // debut if it is a use and it is TOP on entry. If it's not TOP on
 // entry, that means it has been used or killed prior to this mention.
 OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
+  Var * var;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -106,17 +107,16 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
 	std::cout << "Debut: looking at statement:" << std::endl;
 	Rf_PrintValue(CAR(make_sexp(stmt)));
       }
-      ExpressionInfo::const_var_iterator mi;
-      for (mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref((*mi)->getMention_c());
+      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
+	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref(var->getMention_c());
 	if (in_set->includes_name(ref) &&
-	    (*mi)->getUseDefType() == Var::Var_USE &&
+	    var->getUseDefType() == Var::Var_USE &&
 	    in_set->find(ref)->get_strictness_type() == Strictness_TOP)
 	{
-	  debut_map->insert(std::make_pair(ref->get_sexp(), (*mi)->getMention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), var->getMention_c()));
 	  if (debug) {
 	    std::cout << "Found debut:" << std::endl;
-	    Rf_PrintValue(CAR((*mi)->getMention_c()));
+	    Rf_PrintValue(CAR(var->getMention_c()));
 	  }
 	}
       }  // next mention
@@ -227,25 +227,25 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::DataFlowSet> set2
 ///
 OA_ptr<DataFlow::DataFlowSet> StrictnessDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
+  Var * var;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
-  ExpressionInfo::const_var_iterator var_iter;
-  for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref((*var_iter)->getMention_c());
+  EXPRESSION_FOR_EACH_MENTION(annot, var) {
+    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref(var->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
-	(*var_iter)->getUseDefType() == Var::Var_DEF)
+	var->getUseDefType() == Var::Var_DEF)
       {
 	in->replace(mention, Strictness_KILLED);
       }
   }
-  for(var_iter = annot->begin_vars(); var_iter != annot->end_vars(); ++var_iter) {
-    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref((*var_iter)->getMention_c());
+  EXPRESSION_FOR_EACH_MENTION(annot, var) {
+    OA_ptr<R_VarRef> mention; mention = m_var_ref_fact->make_body_var_ref(var->getMention_c());
     
     if (m_formal_args->includes_name(mention) &&
 	in->find(mention)->get_strictness_type() != Strictness_KILLED &&
-	(*var_iter)->getUseDefType() == Var::Var_USE &&
-	(*var_iter)->getMayMustType() == Var::Var_MUST)
+	var->getUseDefType() == Var::Var_USE &&
+	var->getMayMustType() == Var::Var_MUST)
     {
       in->replace(mention, Strictness_USED);
     }

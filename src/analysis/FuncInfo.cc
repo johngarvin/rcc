@@ -335,6 +335,8 @@ which needs FuncInfos to traverse the scope tree (ugh)
 TODO: split up FuncInfos to avoid circular dependence
 
 void FuncInfo::collect_mentions_and_call_sites() {
+  Var * var;
+  SEXP cs;
   assert(!m_cfg.ptrEqual(0));
 
   PROC_FOR_EACH_NODE(fi, node) {
@@ -342,17 +344,15 @@ void FuncInfo::collect_mentions_and_call_sites() {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
-      ExpressionInfo::const_var_iterator mi;
-      for(mi = stmt_annot->begin_vars(); mi != stmt_annot->end_vars(); ++mi) {
-	Var * v = getProperty(Var, (*mi)->getMention_c());
+      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
+	var = getProperty(Var, var->getMention_c());
 	// TODO: should make sure we always get the data-flow-solved
 	// version of the Var. Shouldn't have to loop through
 	// getProperty!
 	insert_mention(v);
       }
-      ExpressionInfo::const_call_site_iterator cs;
-      for(cs = stmt_annot->begin_call_sites(); cs != stmt_annot->end_call_sites(); ++cs) {
-	insert_call_site(*cs);
+      EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
+	insert_call_site(cs);
       }
     }
   }
