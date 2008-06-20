@@ -23,6 +23,8 @@
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
+#include <support/RccError.h>
+
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
@@ -92,9 +94,9 @@ void CallByValueAnalysis::perform_analysis() {
 	Rf_PrintValue(*csi);
 	std::cout << std::endl;
       }
-
+      
       ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi);
-
+      
       // if unique callee can be found at compile time, grab it
       FuncInfo * callee;
       if (is_fundef(call_lhs(*csi))) {
@@ -185,6 +187,11 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
   SideEffect * pre_debut = new SideEffect();
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
+
+  if (TAG(fai->get_sexp()) == R_DotsSymbol) {
+    return pre_debut;                          // if we have a "..." argument, give it an empty side effect
+  }
+
   PROC_FOR_EACH_NODE(fi, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
@@ -196,9 +203,23 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
       // statements.
       OA_ptr<StrictnessResult> strictness = fi->get_strictness();
       OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
-      if (post_debuts->find(TAG(fai->get_sexp())) != post_debuts->end()) {  // if the formal is in the post_debut set
+
+      // TODO: refactor this. Maybe post_debuts should be a vector of sets, not a multimap
+      pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range = post_debuts->equal_range(TAG(fai->get_sexp()));
+      if (range.first == range.second) {
+	rcc_error("formal arg not found");
+      }
+      bool stmt_is_post_debut = false;
+      for(NameStmtMultiMap::const_iterator it = range.first; it != range.second; ++it) {
+	if (it->second == stmt) {
+	  stmt_is_post_debut = true;
+	  continue;
+	}
+      }
+      if (stmt_is_post_debut) {
 	continue;
       }
+
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));
       if (debug) {
 	std::cout << "Found pre-debut statement:" << std::endl;
