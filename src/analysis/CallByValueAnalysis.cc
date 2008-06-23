@@ -222,7 +222,6 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
       if (stmt_is_post_debut) {
 	continue;
       }
-
       pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));
       if (debug) {
 	std::cout << "Found pre-debut statement:" << std::endl;
