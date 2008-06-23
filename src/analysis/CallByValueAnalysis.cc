@@ -206,10 +206,13 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
 
       // TODO: refactor this. Maybe post_debuts should be a vector of sets, not a multimap
       pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range = post_debuts->equal_range(TAG(fai->get_sexp()));
-      if (range.first == range.second) {
-	rcc_error("formal arg not found");
-      }
       bool stmt_is_post_debut = false;
+      // TODO: we need to differentiate between missing formal
+      // (compiler error) and formal with no post-debut side effect
+      // Then check for missing formal here with something like
+      // if (range.first == range.second) {
+      //   rcc_error(...);
+      // }
       for(NameStmtMultiMap::const_iterator it = range.first; it != range.second; ++it) {
 	if (it->second == stmt) {
 	  stmt_is_post_debut = true;
