@@ -61,6 +61,10 @@ public:
   bool is_strict();
   void set_is_strict(bool x);
 
+  bool has_default();
+  void set_default(SEXP def);
+  SEXP get_default();
+
   SideEffect * get_pre_debut_side_effect();
   void set_pre_debut_side_effect(SideEffect * x);
 
@@ -71,6 +75,7 @@ private:
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
   // (actually, "strictness" means a stronger condition: function diverges if this arg diverges)
+  SEXP m_default;  // default arg if it exists; otherwise 0
   SideEffect * m_pre_debut_side_effect;  // names used/defined by pre-debut statements for this formal
 };
 

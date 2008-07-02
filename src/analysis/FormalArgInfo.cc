@@ -38,7 +38,7 @@ namespace RAnnot {
 //****************************************************************************
 
 FormalArgInfo::FormalArgInfo(SEXP sexp)
-  : m_sexp(sexp), m_is_value(false), m_is_strict(false)
+  : m_sexp(sexp), m_is_value(false), m_is_strict(false), m_default(0)
 {
 }
 
@@ -60,6 +60,19 @@ bool FormalArgInfo::is_strict() {
 
 void FormalArgInfo::set_is_strict(bool x) {
   m_is_strict = x;
+}
+
+bool FormalArgInfo::has_default() {
+  return (m_default != 0);
+}
+
+void FormalArgInfo::set_default(SEXP def) {
+  m_default = def;
+}
+
+SEXP FormalArgInfo::get_default() {
+  assert(m_default != 0);
+  return m_default;
 }
 
 SideEffect * FormalArgInfo::get_pre_debut_side_effect() {
