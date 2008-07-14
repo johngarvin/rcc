@@ -23,6 +23,25 @@
 // Example:
 // for (i in (n-1):(m+k/2)) ...
 //
+// A colon expression represents an inclusive range, always with
+// stride one, incrementing if the second argument is greater,
+// otherwise decrementing.
+//
+// Examples:
+// 1:10      -> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+// 1:1       -> 1
+// 10:1      -> 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+// 1.2:5.5   -> 1.2, 2.2, 3.2, 4.2, 5.2
+// 1.2:6.2   -> 1.2, 2.2, 3.2, 4.2, 5.2, 6.2
+// 3.5:-1    -> 3.5, 2.5, 1.5, 0.5, -0.5
+// 10.1:10.7 -> 10.1
+//
+// Analysis notes:
+// (1) A colon expression always contains at least one value.
+// Therefore, if a for loop whose range is a colon expression is
+// executed, the body is always executed at least once.
+// (2) A colon expression is always a 1D vector; its iteration variable
+
 // Author: John Garvin (garvin@cs.rice.edu)
 
 
@@ -35,6 +54,26 @@ using namespace std;
 Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
 				      ResultStatus resultStatus)
 {
-  //TODO: write special case; now just defaulting to regular for loop
   return op_for(e, rho, resultStatus);
 }
+
+#if 0
+
+[ op_var_def(sym_c, "R_NilValue") -> sym ]
+[ op_exp(CAR(call_args(range))) -> begin ]
+[ op_exp(CADR(call_args(range))) -> end  ]
+v = allocVector(TYPE, 1);
+TYPE i;
+if (begin <= end) {
+  for (i=begin; i<=end; i++) {
+    TYPE(v)[0] = i;
+    setVar(sym, v, rho);
+  }
+} else {
+  for (i=begin; i>=end; i--) {
+    TYPE(v)[0] = i;
+    setVar(sym, v, rho);
+  }
+}
+
+#endif
