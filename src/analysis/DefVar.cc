@@ -22,6 +22,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <cassert>
+
 #include <support/DumpMacros.h>
 
 #include "DefVar.h"

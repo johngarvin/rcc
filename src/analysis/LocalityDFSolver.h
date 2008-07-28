@@ -34,7 +34,7 @@
 
 #include <analysis/LocalityDFSet.h>
 
-class OA::CFG::Interface;
+class OA::CFG::CFGInterface;
 class R_IRInterface;
 
 namespace Locality {

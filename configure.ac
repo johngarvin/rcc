@@ -1,10 +1,10 @@
-include(config/hpc-cxxutils.m4)
+m4_include(config/hpc-cxxutils.m4)
 
-AC_INIT(rcc, 1.1.7, garvin@rice.edu)
+AC_INIT([rcc],[1.1.7],[garvin@rice.edu])
 AC_PREFIX_DEFAULT([/usr/local])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([src/Main.cc])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
  
 AC_CANONICAL_HOST
 
@@ -206,6 +206,9 @@ AC_SUBST([HOST_AR])
 AC_SUBST([HOST_LIBADD])
 AM_CONDITIONAL(IS_HOST_AR, test "${HOST_AR}" != "")
 
+# config for "real-world" directory removed in distribution version so
+# we're not distributing files that don't belong to us
+
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
 		 lib/Makefile
@@ -215,7 +218,6 @@ AC_CONFIG_FILES([Makefile
 		 tests/Makefile
 		 tests/regression/Makefile
 		 tests/performance/Makefile
-		 tests/real-world/Makefile
 		 tools/Makefile
 		 tools/rcc
 		 tools/rcc-cc
@@ -229,6 +231,7 @@ AC_CONFIG_FILES([Makefile
 #		 src/analysis/Makefile
 #		 src/support/Makefile
 #		 src/matmul/Makefile
+#		 tests/real-world/Makefile
 
 AC_CONFIG_FILES([tests/regression/run-compiled],
                 [chmod +x tests/regression/run-compiled])
@@ -236,11 +239,11 @@ AC_CONFIG_FILES([tests/regression/run-compiled],
 AC_CONFIG_FILES([tests/regression/run-interpreted],
                 [chmod +x tests/regression/run-interpreted])
 
-AC_CONFIG_FILES([tests/real-world/run-compiled],
-                [chmod +x tests/real-world/run-compiled])
+#AC_CONFIG_FILES([tests/real-world/run-compiled],
+#                [chmod +x tests/real-world/run-compiled])
 
-AC_CONFIG_FILES([tests/real-world/run-interpreted],
-                [chmod +x tests/real-world/run-interpreted])
+#AC_CONFIG_FILES([tests/real-world/run-interpreted],
+#                [chmod +x tests/real-world/run-interpreted])
 
 AC_CONFIG_FILES([tests/performance/run-test],
                 [chmod +x tests/performance/run-test])

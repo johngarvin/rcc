@@ -22,6 +22,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <cassert>
 #include <string>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>

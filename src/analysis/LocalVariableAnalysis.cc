@@ -31,6 +31,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <cassert>
+
 #include <analysis/Utils.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Var.h>
