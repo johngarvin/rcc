@@ -61,7 +61,6 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
     has_i = TRUE;
   }
   string defs;
-  //  defs += "defineVar(" + make_symbol(sym) + ", R_NilValue, " + rho + ");\n";
   defs += "if (isList(" + range.var + ") || isNull(" + range.var + ")) {\n";
   defs += indent("n = length(" + range.var + ");\n");
   defs += indent("PROTECT_WITH_INDEX(v = R_NilValue, &vpi);\n");
@@ -117,7 +116,6 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
   Expression defIV = op_var_def(sym_c, "R_NilValue", rho);
   append_defs(defs);
   Expression ans = op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
-  string cleanup;
   if (resultStatus == ResultNeeded) {
     append_defs("REPROTECT(ans = " + ans.var + ", api);\n");
   }
