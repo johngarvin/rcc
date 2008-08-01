@@ -42,6 +42,7 @@
 #include <analysis/LocalityDFSetElement.h>
 #include <analysis/LocalityDFSetIterator.h>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 #include "LocalityDFSolver.h"
@@ -59,7 +60,7 @@ static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
 
 // static variable for debugging
 
-static const bool debug = false;
+static bool debug;
 
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
@@ -98,7 +99,9 @@ private:
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
   : m_ir(_rir)
-  {}
+{
+  RCC_DEBUG("RCC_LocalityDFSolver", debug);
+}
 
 /// Perform the data flow analysis. Sets each variable reference's Var
 /// annotation with its locality information.

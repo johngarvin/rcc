@@ -42,6 +42,8 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/SymbolTable.h>
+
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 // #include <analysis/call-graph/RccCallGraphAnnotationMap.h>
@@ -61,9 +63,11 @@ using namespace RAnnot;
 // Settings to change how rcc works
 static bool output_main_program = true;
 static bool output_default_args = true;
-static bool analysis_debug = false;
+static bool analysis_debug;
 
 int main(int argc, char *argv[]) {
+  RCC_DEBUG("RCC_Main", analysis_debug);
+
   int i;
   char *fullname_c;
   string fullname, libname, out_filename, path, exec_decls, exec_code;

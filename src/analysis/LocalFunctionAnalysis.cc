@@ -26,6 +26,8 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 
+#include <support/Debug.h>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/DefaultDFSet.h>
@@ -50,12 +52,13 @@ using namespace HandleInterface;
 
 void collect_mentions_and_call_sites(OA_ptr<CFG::CFGInterface> cfg);
 
-static const bool debug = false;
+static bool debug;
 
 LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
   : m_fundef(fundef)
 {
   assert(is_fundef(fundef));
+  RCC_DEBUG("RCC_LocalFunctionAnalysis", debug);
 }
 
 /// Discovers local information about the given function

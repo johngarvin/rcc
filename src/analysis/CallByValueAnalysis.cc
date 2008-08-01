@@ -23,6 +23,7 @@
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 #include <analysis/AnalysisException.h>
@@ -50,9 +51,10 @@ using namespace Strictness;
 using OA::OA_ptr;
 using OA::StmtHandle;
 
-static const bool debug = false;
+static bool debug;
 
 CallByValueAnalysis::CallByValueAnalysis() {
+  RCC_DEBUG("RCC_CallByValue", debug);
 }
 
 // for each procedure:

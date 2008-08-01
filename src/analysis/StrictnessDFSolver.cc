@@ -30,6 +30,8 @@
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <support/Debug.h>
+
 #include <analysis/AnalysisResults.h>
 #include <analysis/DefaultDFSet.h>
 #include <analysis/ExpressionInfo.h>
@@ -57,13 +59,15 @@ using namespace Strictness;
 static StrictnessType var_meet(StrictnessType x, StrictnessType y);
 static OA_ptr<DFSet> set_meet(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
 
-static const bool debug = false;
+static bool debug;
 
 namespace Strictness {
 
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
   : m_ir(ir), m_var_ref_fact(VarRefFactory::get_instance())
-{}
+{
+  RCC_DEBUG("RCC_StrictnessDFSolver", debug);
+}
 
 StrictnessDFSolver::~StrictnessDFSolver()
 {}

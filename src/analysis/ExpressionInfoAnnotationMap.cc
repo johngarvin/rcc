@@ -24,6 +24,7 @@
 
 #include <map>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 #include <analysis/AnalysisResults.h>
@@ -34,7 +35,7 @@
 
 #include "ExpressionInfoAnnotationMap.h"
 
-static const bool debug = false;
+static bool debug;
 
 using namespace HandleInterface;
 
@@ -51,7 +52,9 @@ typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
 ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
   : m_map(),
     m_computation_in_progress(false)
-  {}
+{
+  RCC_DEBUG("RCC_ExpressionInfoAnnotationMap", debug);
+}
 
 ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
   std::map<MyKeyT, MyMappedT>::const_iterator iter;
