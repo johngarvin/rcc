@@ -1,6 +1,6 @@
 #!/bin/csh 
 # @configure_input@
-setenv PATH @RCC_BIN_PATH@:${PATH}
+setenv PATH @R_PREFIX@/bin:${PATH}
 setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 foreach f ( $* ) 
     echo --- $f ---                                    
