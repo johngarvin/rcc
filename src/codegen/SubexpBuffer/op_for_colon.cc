@@ -84,10 +84,12 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   header += "for (i = begin; i != one_past_end; i += step) {\n";
   header += "REAL(v)[0] = i;\n";
   header += emit_call3("setVar", make_symbol(CAR(sym_c)), "v", rho) + ";\n";
-  append_defs(header);
+  append_defs(indent(header));
   Expression ans = op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
   append_defs("}\n");
   append_defs(this_loop.breakLabel() + ":;\n");
+  del(range_begin);
+  del(range_end);
   append_defs(emit_call1("UNPROTECT_PTR", "v") + ";\n");
   return Expression(ans.var, DEPENDENT, INVISIBLE, "");
 }
