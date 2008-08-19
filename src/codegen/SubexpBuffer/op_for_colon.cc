@@ -82,10 +82,13 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   header += "step = (begin <= end ? 1 : -1);\n";
   header += "one_past_end = end + step;\n";
   header += "for (i = begin; i != one_past_end; i += step) {\n";
-  header += "REAL(v)[0] = i;\n";
-  header += emit_call3("setVar", make_symbol(CAR(sym_c)), "v", rho) + ";\n";
-  append_defs(indent(header));
-  Expression ans = op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
+  append_defs(header);
+  SubexpBuffer for_body;
+  for_body.append_defs("REAL(v)[0] = i;\n");
+  for_body.append_defs(emit_call3("setVar", make_symbol(CAR(sym_c)), "v", rho) + ";\n");
+  Expression ans = for_body.op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
+  append_defs(indent(for_body.output_decls()));
+  append_defs(indent(for_body.output_defs()));
   append_defs("}\n");
   append_defs(this_loop.breakLabel() + ":;\n");
   del(range_begin);

@@ -1,6 +1,7 @@
 #!/bin/csh
 setenv CMD "$*"
-if (${?PRERUN}) setenv CMD "${PRERUN} ${CMD}"
+if (! ${?PRERUN}) setenv PRERUN ''
+setenv CMD "${PRERUN} ${CMD}"
 setenv LD_LIBRARY_PATH @RCC_LIB_PATH@:@R_LIB_PATH@
 setenv R_HOME @R_HOME@
 setenv PATH .:$PATH
