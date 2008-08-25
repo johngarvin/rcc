@@ -66,10 +66,11 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   SEXP sym_c = for_iv_c(e);
   SEXP range = CAR(for_range_c(e));
   decls += "SEXP v;\n";
-  decls += "double step, begin, end, one_past_end;\n";
-  if (!has_i) {
-    decls += "int i;\n";
-    has_i = TRUE;
+  decls += "double step, begin, end;\n";
+  decls += "Rboolean count_up;";
+  if (!has_di) {
+    decls += "double di;\n";
+    has_di = TRUE;
   }
   LoopContext this_loop;
   Expression defIV = op_var_def(sym_c, "R_NilValue", rho);
@@ -77,14 +78,22 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   Expression range_end = op_exp(CDR(call_args(range)), rho);
   string header;
   header += emit_assign("v", emit_call2("allocVector", "REALSXP", "1"), Protected);
-  header += emit_assign("begin", emit_call1("REAL", range_begin.var) + "[0]");
-  header += emit_assign("end", emit_call1("REAL", range_end.var) + "[0]");
-  header += "step = (begin <= end ? 1 : -1);\n";
-  header += "one_past_end = end + step;\n";
-  header += "for (i = begin; i != one_past_end; i += step) {\n";
+  string rbv = range_begin.var;
+  string rev = range_end.var;
+  header += emit_assign("begin",
+			emit_call1("TYPEOF", rbv) + " == " + "INTSXP" + " ? " +
+			emit_call1("INTEGER", rbv) + "[0]" + " : " +
+			emit_call1("REAL", rbv) + "[0]");
+  header += emit_assign("end",
+			emit_call1("TYPEOF", rev) + " == " + "INTSXP" + " ? " +
+			emit_call1("INTEGER", rev) + "[0]" + " : " +
+			emit_call1("REAL", rev) + "[0]");
+  header += emit_assign("count_up", "(begin <= end)");
+  header += "step = (count_up ? 1.0 : -1.0);\n";
+  header += "for (di = begin; (count_up ? (di < end + FLT_EPSILON) : (di > end - FLT_EPSILON)); di += step) {\n";
   append_defs(header);
   SubexpBuffer for_body;
-  for_body.append_defs("REAL(v)[0] = i;\n");
+  for_body.append_defs("REAL(v)[0] = di;\n");
   for_body.append_defs(emit_call3("setVar", make_symbol(CAR(sym_c)), "v", rho) + ";\n");
   Expression ans = for_body.op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
   append_defs(indent(for_body.output_decls()));

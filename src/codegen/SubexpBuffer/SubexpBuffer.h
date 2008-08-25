@@ -46,7 +46,8 @@ public:
 
   std::string decls;
   SubexpBuffer * encl_fn;
-  bool has_i;
+  bool has_i;             // int iterator
+  bool has_di;            // double iterator
   const bool is_const;
 
   virtual void finalize();
