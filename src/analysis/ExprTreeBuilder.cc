@@ -66,7 +66,7 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
     OA_ptr<ExprTree> lhs = build(CAR(subscript_lhs_c(e)));
     std::cout << "copying and connecting "; lhs->dump(std::cout, iface);
     tree->copyAndConnectSubTree(bracket, lhs);
-    OA_ptr<ExprTree> rhs = build(CAR(subscript_rhs_c(e)));
+    OA_ptr<ExprTree> rhs = build(CAR(subscript_first_sub_c(e)));
     std::cout << "tree = "; tree->dump(std::cout, iface);
     std::cout << "copying and connecting "; rhs->dump(std::cout, iface);
     tree->copyAndConnectSubTree(bracket, rhs);

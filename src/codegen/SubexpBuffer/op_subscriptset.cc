@@ -65,16 +65,29 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   // call our version of the "[<-" operator (rcc_subassign), and
   // assign the result to A.
 
+  string subassign;
+  Expression s;
   SEXP lhs = CAR(assign_lhs_c(e));
   SEXP array_c = subscript_lhs_c(lhs);
-  SEXP sub_c = subscript_rhs_c(lhs);
-  SEXP rhs_c = assign_rhs_c(e);
   Expression a_sym = op_literal(CAR(array_c), rho);
   Expression a = op_exp(array_c, rho, Protected, true);  // fully evaluated; need to force promise
-  Expression s = op_exp(sub_c, rho);
-  Expression r = op_exp(rhs_c, rho);
-  string subassign = appl3("rcc_subassign", a.var, s.var, r.var, Unprotected);
-  // unprotected because immediately followed by the defineVar
+  Expression r = op_exp(assign_rhs_c(e), rho);
+  switch(Rf_length(subscript_subs(lhs))) {
+  case 0:
+    s = Expression::bogus_exp;
+    subassign = appl2("rcc_subassign_0", a.var, r.var, Unprotected);
+    break;
+  case 1:
+    s = op_exp(subscript_first_sub_c(lhs), rho);
+    subassign = appl3("rcc_subassign_1", a.var, s.var, r.var, Unprotected);
+    break;
+  default:
+    s = op_list(subscript_subs(lhs), rho, false, Protected);
+    subassign = appl3("rcc_subassign_cons", a.var, s.var, r.var, Unprotected);
+    break;
+  }
+  // the result of the subassign is unprotected because it is
+  // immediately protected by the following defineVar
   append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
   del(a_sym);
   del(a);

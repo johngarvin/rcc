@@ -129,7 +129,12 @@ SEXP subscript_lhs_c(const SEXP e) {
   return CDR(e);
 }
 
-SEXP subscript_rhs_c(const SEXP e) {
+SEXP subscript_first_sub_c(const SEXP e) {
+  assert(is_subscript(e));
+  return CDDR(e);
+}
+
+SEXP subscript_subs(const SEXP e) {
   assert(is_subscript(e));
   return CDDR(e);
 }

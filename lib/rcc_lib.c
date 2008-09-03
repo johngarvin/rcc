@@ -23,7 +23,10 @@
  * Author: John Garvin (garvin@cs.rice.edu)
  */
 
+#include <stdarg.h>
+
 #include <IOStuff.h>
+
 #include "rcc_prot.h"
 #include "rcc_lib.h"
 #include "replacements.h"
@@ -78,9 +81,19 @@ Rboolean my_asLogicalNoNA(SEXP s) {
     return cond;
 }
 
-/* Modified from do_subassign_dflt in subassign.c */
-/* Assumes just one subscript argument */
-SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
+/* rcc_subassign functions                            */
+/* All modified from do_subassign_dflt in subassign.c */
+
+SEXP rcc_subassign_0(SEXP x, SEXP y) {
+  return rcc_subassign_varargs(x, y, 0);
+}
+
+SEXP rcc_subassign_1(SEXP x, SEXP sub, SEXP y) {
+  return rcc_subassign_varargs(x, y, 1, sub);
+}
+
+
+SEXP rcc_subassign_cons(SEXP x, SEXP subs, SEXP y) {
   int oldtype = 0;
 
   if (NAMED(x) == 2) {
@@ -113,7 +126,20 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   case EXPRSXP:
   case VECSXP:
   case RAWSXP:
-    x = VectorAssign(R_NilValue, x, sub, y);
+    switch (length(subs)) {
+    case 0:
+      x = VectorAssign(R_NilValue, x, R_MissingArg, y);
+      break;
+    case 1:
+      x = VectorAssign(R_NilValue, x, CAR(subs), y);
+      break;
+    case 2:
+      x = MatrixAssign(R_NilValue, x, subs, y);
+      break;
+    default:
+      x = ArrayAssign(R_NilValue, x, subs, y);
+      break;
+    }
     break;
   default:
     error("object is not subsettable");
@@ -127,6 +153,73 @@ SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y) {
   
   UNPROTECT(1);
   SET_NAMED(x,0);
+  return x;
+}
+
+SEXP rcc_subassign_varargs(SEXP x, SEXP y, int nsubs, ...) {
+  va_list ap;
+
+  int oldtype = 0;
+
+  if (NAMED(x) == 2) {
+    x = duplicate(x);
+  }
+
+  if (TYPEOF(x) == LISTSXP || TYPEOF(x) == LANGSXP) {
+    PROTECT(x = PairToVectorList(x));
+  }
+  else if (length(x) == 0) {
+    if (length(y) == 0) {
+      va_end(ap);
+      return(x);
+    }
+    else {
+      /* bug PR#2590 coerce only if null */
+      if(isNull(x)) PROTECT(x = coerceVector(x, TYPEOF(y)));
+      else PROTECT(x);
+    }
+  }
+  else {
+    PROTECT(x);
+  }
+  
+  switch (TYPEOF(x)) {
+  case LGLSXP:
+  case INTSXP:
+  case REALSXP:
+  case CPLXSXP:
+  case STRSXP:
+  case EXPRSXP:
+  case VECSXP:
+  case RAWSXP:
+    switch (nsubs) {
+    case 0:
+      x = rcc_VectorAssign(R_NilValue, x, R_MissingArg, y);
+      break;
+    case 1:
+      x = rcc_VectorAssign(R_NilValue, x, va_arg(ap, SEXP), y);
+      break;
+    case 2:
+      /* x = rcc_MatrixAssign(R_NilValue, x, subs, y); */
+    default:
+      error("RCC error: rcc_subassign_varargs called with more than one subscript");
+      /* x = ArrayAssign(R_NilValue, x, subs, y); */
+      break;
+    }
+    break;
+  default:
+    error("object is not subsettable");
+    break;
+  }
+  
+  if (oldtype == LANGSXP) {
+    x = VectorToPairList(x);
+    SET_TYPEOF(x, LANGSXP);
+  }
+  
+  UNPROTECT(1);
+  SET_NAMED(x,0);
+  va_end(ap);
   return x;
 }
 

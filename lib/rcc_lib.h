@@ -30,7 +30,10 @@ Rboolean my_asLogicalNoNA(SEXP s);
 SEXP R_binary(SEXP call, SEXP op, SEXP x, SEXP y);
 SEXP R_unary(SEXP call, SEXP op, SEXP x);
 SEXP rcc_do_arith(SEXP call, SEXP op, SEXP args, SEXP env);
-SEXP rcc_subassign(SEXP x, SEXP sub, SEXP y);
+SEXP rcc_subassign_0(SEXP x,  SEXP y);
+SEXP rcc_subassign_1(SEXP x, SEXP sub, SEXP y);
+SEXP rcc_subassign_cons(SEXP x, SEXP subs, SEXP y);
+SEXP rcc_subassign_varargs(SEXP x, SEXP y, int nsubs, ...);
 SEXP rcc_promise_args(SEXP args, SEXP rho);
 
 // Make a promise in already-evaluated form. The promise's value is

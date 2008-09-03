@@ -93,7 +93,9 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     build_ud_rhs(CDR(e), Var::Var_MUST);
   } else if (is_subscript(e)) {
     build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST);
-    build_ud_rhs(subscript_rhs_c(e), Var::Var_MUST);
+    for (SEXP sub_c = subscript_first_sub_c(e); sub_c != R_NilValue; sub_c = CDR(sub_c)) {
+      build_ud_rhs(sub_c, Var::Var_MUST);
+    }
   } else if (is_if(e)) {
     build_ud_rhs(if_cond_c(e), Var::Var_MUST);
   } else if (is_for(e)) {
@@ -187,7 +189,9 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
     build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {
     build_ud_lhs(subscript_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
-    build_ud_rhs(subscript_rhs_c(e), Var::Var_MUST);
+    for (SEXP sub_c = subscript_first_sub_c(e); sub_c != R_NilValue; sub_c = CDR(sub_c)) {    
+      build_ud_rhs(sub_c, Var::Var_MUST);
+    }
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. For example: dim(x) <- foo
     //
