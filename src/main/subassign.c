@@ -352,7 +352,7 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     return xnew;
 }
 
-static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
     SEXP dim, indx;
     int i, ii, iy, n, nx, ny, stretch, which;
@@ -623,7 +623,7 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     return x;
 }
 
-static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
     int i, j, ii, jj, ij, iy, k, n, which;
     double ry;
@@ -872,7 +872,7 @@ static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 }
 
 
-static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
     int i, j, ii, iy, jj, k=0, n, ny, which;
     int **subs, *indx, *bound, *offset;
