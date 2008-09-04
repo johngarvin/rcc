@@ -78,7 +78,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     if (!body.del_text.empty())
       append_defs("UNPROTECT(1);\n");
     return out;
-  } else if (is_simple_subscript(lhs)) {
+  } else if (is_subscript(lhs)) {
     return op_subscriptset(e, rho, resultProtection);
   } else if (Rf_isLanguage(lhs)) {
 #ifdef USE_OUTPUT_CODEGEN
