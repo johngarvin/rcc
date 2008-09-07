@@ -4,5 +4,5 @@ setenv PATH @R_PREFIX@/bin:${PATH}
 setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 foreach f ( $* ) 
     echo --- $f ---                                    
-	R --slave < $f | grep -v '^>' | grep -v '^+' | grep -v '^$'
+	R --slave < $f | grep -v '^>' | grep -v '^+'
 end

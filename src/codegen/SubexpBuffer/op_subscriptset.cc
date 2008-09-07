@@ -92,7 +92,6 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   del(a_sym);
   del(a);
   del(s);
-  del(r);
   r.visibility = INVISIBLE;
   return r;
 }

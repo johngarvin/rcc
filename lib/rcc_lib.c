@@ -158,6 +158,9 @@ SEXP rcc_subassign_cons(SEXP x, SEXP subs, SEXP y) {
 
 SEXP rcc_subassign_varargs(SEXP x, SEXP y, int nsubs, ...) {
   va_list ap;
+  SEXP arg;
+
+  va_start(ap, nsubs);
 
   int oldtype = 0;
 
@@ -194,10 +197,10 @@ SEXP rcc_subassign_varargs(SEXP x, SEXP y, int nsubs, ...) {
   case RAWSXP:
     switch (nsubs) {
     case 0:
-      x = rcc_VectorAssign(R_NilValue, x, R_MissingArg, y);
+      x = VectorAssign(R_NilValue, x, R_MissingArg, y);
       break;
     case 1:
-      x = rcc_VectorAssign(R_NilValue, x, va_arg(ap, SEXP), y);
+      x = VectorAssign(R_NilValue, x, va_arg(ap, SEXP), y);
       break;
     case 2:
       /* x = rcc_MatrixAssign(R_NilValue, x, subs, y); */

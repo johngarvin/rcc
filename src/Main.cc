@@ -317,8 +317,9 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-  string finish_code = "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) +
-    "); /* c_ */\n";
+  string finish_code;
+  finish_code += "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) + "); /* c_ */\n";
+  finish_code += "Rprintf(\"\\n\");\n";
   
   if (ParseInfo::get_problem_flag()) {
     out_filename += ".bad";
