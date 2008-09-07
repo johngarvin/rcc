@@ -94,9 +94,8 @@ void R_Analyst::perform_analysis() {
 /// Discovers local information on procedures: arguments, names
 /// mentioned, etc.
 void R_Analyst::build_local_function_info() {
-  FuncInfoIterator fii(m_scope_tree_root);
-  for(FuncInfo *fi; fii.IsValid(); fii++) {
-    fi = fii.Current();
+  FuncInfo * fi;
+  FOR_EACH_PROC(fi) {
     LocalFunctionAnalysis lfa(fi->get_sexp());
     lfa.perform_analysis();
   }

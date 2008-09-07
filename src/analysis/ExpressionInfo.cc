@@ -135,21 +135,21 @@ AnnotationBase * ExpressionInfo::clone() {
 }
 
 std::ostream & ExpressionInfo::dump(std::ostream & os) const {
+  Var * var;
+  SEXP cs;
   beginObjDump(os, ExpressionInfo);
   SEXP definition = CAR(m_sexp);
   dumpSEXP(os, definition);
 
   os << "Begin mentions:" << std::endl;
-  const_var_iterator var_iter;
-  for(var_iter = m_vars.begin(); var_iter != m_vars.end(); ++var_iter) {
-    (*var_iter)->dump(os);
+  EXPRESSION_FOR_EACH_MENTION(this, var) {
+    var->dump(os);
   }
   os << "End mentions" << std::endl;
 
   os << "Begin call sites:" << std::endl;
-  const_call_site_iterator cs_iter;
-  for(cs_iter = m_call_sites.begin(); cs_iter != m_call_sites.end(); ++cs_iter) {
-    dumpSEXP(os, *cs_iter);
+  EXPRESSION_FOR_EACH_CALL_SITE(this, cs) {
+    dumpSEXP(os, cs);
   }
   os << "End call sites" << std::endl;
 

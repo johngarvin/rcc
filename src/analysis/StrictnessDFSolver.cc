@@ -104,7 +104,6 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
   CFG_FOR_EACH_NODE(m_cfg, node) {
     OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
     NODE_FOR_EACH_STATEMENT(node, stmt) {
-      // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
       if (debug) {
@@ -168,10 +167,9 @@ void StrictnessDFSolver::dump_node_maps() {
 void StrictnessDFSolver::dump_node_maps(ostream & os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
+  OA_ptr<CFG::NodeInterface> n;
 
-  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
-  for ( ; ni->isValid(); ++*ni) {
-    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+  CFG_FOR_EACH_NODE(m_cfg, n) {
     df_in_set = m_solver->getInSet(n);
     df_out_set = m_solver->getOutSet(n);
     in_set = df_in_set.convert<DFSet>();
