@@ -61,13 +61,16 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     //
     // 14 September 2005 - John Mellor-Crummey
     //----------------------------------------------------------
-    Expression te = op_exp(if_truebody_c(e), rho, Unprotected, false, 
-			   resultStatus);
+    SubexpBuffer true_se;
+    Expression te = true_se.op_exp(if_truebody_c(e), rho, Unprotected, false, 
+				   resultStatus);
     if (resultStatus == ResultNeeded) {
       out = new_sexp();
-      append_defs(indent(out + " = " + te.var + ";\n"));
-      append_defs(indent(Visibility::emit_set(te.visibility)));
+      true_se.append_defs(out + " = " + te.var + ";\n");
+      true_se.append_defs(Visibility::emit_set(te.visibility));
     }
+    append_defs(indent(true_se.output_decls()));
+    append_defs(indent(true_se.output_defs()));
     append_defs("} else {\n");
     del(cond);
 
@@ -78,13 +81,16 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     //
     // 14 September 2005 - John Mellor-Crummey
     //----------------------------------------------------------
-    Expression fe = op_exp(if_falsebody_c(e), rho, Unprotected, false,
+    SubexpBuffer false_se;
+    Expression fe = false_se.op_exp(if_falsebody_c(e), rho, Unprotected, false,
 			   resultStatus);
     if (resultStatus == ResultNeeded) {
-      append_defs(indent(out + " = " + fe.var + ";\n"));
+      false_se.append_defs(out + " = " + fe.var + ";\n");
 
-      append_defs(indent(Visibility::emit_set(fe.visibility)));
+      false_se.append_defs(Visibility::emit_set(fe.visibility));
     }
+    append_defs(indent(false_se.output_decls()));
+    append_defs(indent(false_se.output_defs()));
     append_defs("}\n");
     return Expression(out, CONST, CHECK_VISIBLE, "");
 #else
@@ -107,13 +113,16 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
     assert(cond.del_text.empty());
     append_defs("if (my_asLogicalNoNA(" + cond.var + ")) {\n");
     del(cond);
-    Expression te = op_exp(if_truebody_c(e), rho, Unprotected, false,
-			   resultStatus);
+    SubexpBuffer true_se;
+    Expression te = true_se.op_exp(if_truebody_c(e), rho, Unprotected, false,
+				   resultStatus);
     if (resultStatus == ResultNeeded) {
       out = new_sexp();
-      append_defs(indent(out + " = " + te.var +";\n"));
+      true_se.append_defs(out + " = " + te.var +";\n");
       del(te);
-      append_defs(indent(Visibility::emit_set(te.visibility)));
+      true_se.append_defs(Visibility::emit_set(te.visibility));
+      append_defs(indent(true_se.output_decls()));
+      append_defs(indent(true_se.output_defs()));
       append_defs("} else {\n");
       del(cond);
       append_defs(indent(Visibility::emit_set(INVISIBLE)));
