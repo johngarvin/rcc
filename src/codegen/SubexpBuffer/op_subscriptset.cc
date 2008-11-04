@@ -70,8 +70,11 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   SEXP lhs = CAR(assign_lhs_c(e));
   SEXP array_c = subscript_lhs_c(lhs);
   Expression a_sym = op_literal(CAR(array_c), rho);
+  int unprotcnt = 0;
   Expression a = op_exp(array_c, rho, Protected, true);  // fully evaluated; need to force promise
   Expression r = op_exp(assign_rhs_c(e), rho);
+  if (!a.del_text.empty()) unprotcnt++;
+  if (!r.del_text.empty()) unprotcnt++;
   switch(Rf_length(subscript_subs(lhs))) {
   case 0:
     s = Expression::bogus_exp;
@@ -79,19 +82,22 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
     break;
   case 1:
     s = op_exp(subscript_first_sub_c(lhs), rho);
+    if (!s.del_text.empty()) unprotcnt++;
     subassign = appl3("rcc_subassign_1", a.var, s.var, r.var, Unprotected);
     break;
   default:
     s = op_list(subscript_subs(lhs), rho, false, Protected);
+    if (!s.del_text.empty()) unprotcnt++;
     subassign = appl3("rcc_subassign_cons", a.var, s.var, r.var, Unprotected);
     break;
   }
   // the result of the subassign is unprotected because it is
   // immediately protected by the following defineVar
   append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
-  del(a_sym);
-  del(a);
-  del(s);
+  if (unprotcnt > 0) {
+    append_defs(emit_call1("UNPROTECT", i_to_s(unprotcnt)) + ";\n");
+  }
   r.visibility = INVISIBLE;
+  r.del_text.clear();        // we have already unprotected everything necessary
   return r;
 }
