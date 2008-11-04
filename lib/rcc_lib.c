@@ -197,13 +197,14 @@ SEXP rcc_subassign_varargs(SEXP x, SEXP y, int nsubs, ...) {
   case RAWSXP:
     switch (nsubs) {
     case 0:
-      x = VectorAssign(R_NilValue, x, R_MissingArg, y);
+      x = rcc_VectorAssign(R_NilValue, x, R_MissingArg, y);
       break;
     case 1:
-      x = VectorAssign(R_NilValue, x, va_arg(ap, SEXP), y);
+      x = rcc_VectorAssign(R_NilValue, x, va_arg(ap, SEXP), y);
       break;
-    case 2:
+      /*     case 2:  */
       /* x = rcc_MatrixAssign(R_NilValue, x, subs, y); */
+      /* TODO: write version of MatrixAssign with deconsed "subs" argument */
     default:
       error("RCC error: rcc_subassign_varargs called with more than one subscript");
       /* x = ArrayAssign(R_NilValue, x, subs, y); */

@@ -85,6 +85,7 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
     if (!s.del_text.empty()) unprotcnt++;
     subassign = appl3("rcc_subassign_1", a.var, s.var, r.var, Unprotected);
     break;
+    // TODO: write rcc_subassign_2; need deconsed version of MatrixAssign
   default:
     s = op_list(subscript_subs(lhs), rho, false, Protected);
     if (!s.del_text.empty()) unprotcnt++;
