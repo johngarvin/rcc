@@ -45,7 +45,9 @@
 
 #include <support/Debug.h>
 #include <support/RccError.h>
+#include <support/StringUtils.h>
 
+// we are using OpenAnalysis call graphs instead
 // #include <analysis/call-graph/RccCallGraphAnnotationMap.h>
 // #include <analysis/call-graph/RccCallGraphAnnotation.h>
 
@@ -172,6 +174,10 @@ int main(int argc, char *argv[]) {
     out_filename = path + libname + ".c";
   }
 
+  // The name R_init_<libname> is a signal to the R dynamic loader
+  // telling it to execute the function immediately upon loading.
+  string file_initializer_name = "R_init_" + libname;
+
   // initialize ParseInfo::global_fundefs
   ParseInfo::global_fundefs = new SubexpBuffer(libname + "_f", TRUE);
 
@@ -180,10 +186,10 @@ int main(int argc, char *argv[]) {
 
   // parse
   SEXP program = parse_R_as_function(in_file);
-  bool analysis_ok;
 
+  // perform analysis
+  bool analysis_ok;
   try {
-    // perform analysis
     R_Analyst * an = R_Analyst::get_instance(program);
     an->perform_analysis();
 
@@ -215,96 +221,10 @@ int main(int argc, char *argv[]) {
   // and just look at the list of expressions.
   SEXP r_expressions = curly_body(CAR(fundef_body_c(CAR(assign_rhs_c(program)))));
 
-  // count expressions so we can number them
-  SEXP e = r_expressions;
-  n_exprs = 0;
-  while (e != R_NilValue) {
-    n_exprs++;
-    e = CDR(e);
-  }
+  SubexpBuffer sb;
+  string program_str = sb.op_program(r_expressions, "R_GlobalEnv", file_initializer_name,
+				     output_main_program, output_default_args, analysis_ok);
 
-#ifdef USE_OUTPUT_CODEGEN
-  // output top-level expressions (Output version)
-  string g_decls, g_code, code;
-  for(i=0; i<n_exprs; i++) {
-    string evar = "e" + i_to_s(i);
-    decls += "SEXP " + evar + ";\n";
-    Output exp;
-    if (analysis_ok) {
-      exp = CodeGen::op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
-    } else {
-      // compile trivially
-      exp = CodeGen::op_literal(CAR(r_expressions), "R_GlobalEnv");
-    }
-    string this_exp = exp.decls()
-      + Visibility::emit_set_if_visible(exp.visibility())
-      + exp.code();
-    if (exp.visibility() != INVISIBLE) {
-      string printexpn = emit_assign(evar, exp.handle());
-      string check;
-      if (exp.visibility() == CHECK_VISIBLE) {
-	check = Visibility::emit_check_expn();
-      }
-      printexpn +=
-	emit_logical_if_stmt(check,
-			     emit_call2("PrintValueEnv",
-					evar,
-					"R_GlobalEnv"));
-      this_exp += printexpn;
-    }
-    this_exp += exp.del_text();
-    code += emit_in_braces(this_exp);
-    r_expressions = CDR(r_expressions);
-  }
-  exprs = g_decls + g_code + code;
-  exprs += emit_call1("UNPROTECT", "1");
-#else  // we're using SubexpBuffer codegen
-  // output top-level expressions (Expression version)
-  for(i=0; i<n_exprs; i++, r_expressions = CDR(r_expressions)) {
-    SubexpBuffer subexps;
-    Expression exp;
-    if (is_rcc_assert_def(CAR(r_expressions)) || is_rcc_assertion(CAR(r_expressions))) {
-      // assertions are for the analysis phase;
-      // don't add them to generated code
-      continue;
-    }
-    if (analysis_ok) {
-      try {
-	exp = subexps.op_exp(r_expressions, "R_GlobalEnv");  // op_exp takes a cell
-      } catch (AnalysisException ae) {
-	rcc_warn(ae.what());
-	rcc_warn("analysis encountered difficulties; compiling trivially");
-	clearProperties();
-	analysis_ok = false;
-      }
-    }
-    if (!analysis_ok) {
-      // compile trivially
-      Expression exp1 = subexps.op_literal(CAR(r_expressions), "R_GlobalEnv");      
-      exp = Expression(emit_call2("Rf_eval", exp1.var, "R_GlobalEnv"),
-		       DEPENDENT, CHECK_VISIBLE, exp1.del_text);
-    }
-    string this_exp;
-    this_exp += subexps.output_decls();
-    this_exp += Visibility::emit_set_if_visible(exp.visibility);
-    this_exp += subexps.output_defs();
-    if (exp.visibility != INVISIBLE) {
-      string evar = "e" + i_to_s(i);
-      exec_decls += "SEXP " + evar + ";\n";
-      string pval = emit_call2("PrintValueEnv", evar, "R_GlobalEnv") + ";\n";
-      string printexpn = emit_assign(evar, exp.var);
-      if (exp.visibility == VISIBLE) {
-	printexpn += pval;
-      } else if (exp.visibility == CHECK_VISIBLE) {
-	string check = Visibility::emit_check_expn();
-	printexpn += emit_logical_if_stmt(check, pval);
-      }
-      this_exp += printexpn;
-    }
-    if (!exp.del_text.empty())
-      this_exp += "UNPROTECT(1);\n";
-    exec_code += indent(emit_in_braces(this_exp));
-  }
   if (analysis_debug && analysis_ok) {
     // output call graph in DOT form
     cout << "Dumping call graph in DOT form:" << endl;
@@ -315,12 +235,6 @@ int main(int argc, char *argv[]) {
     OACallGraphAnnotationMap::get_instance()->dump(cout);
   }
 
-#endif
-
-  string finish_code;
-  finish_code += "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) + "); /* c_ */\n";
-  finish_code += "Rprintf(\"\\n\");\n";
-  
   if (ParseInfo::get_problem_flag()) {
     out_filename += ".bad";
     cerr << "Error: one or more problems compiling R code.\n"
@@ -331,67 +245,13 @@ int main(int argc, char *argv[]) {
   if (!out_file) {
     rcc_error("Couldn't open file " + out_filename + " for output");
   }
+
+  out_file << program_str;
   
-  string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
-
-  // output to file
-  out_file << rcc_path_prefix << "rcc_generated_header.h\"\n";
-  out_file << "\n";
-#ifdef CHECK_PROTECT
-  out_file << "#include <assert.h>\n";
-#endif
-
-  ParseInfo::global_fundefs->output_ip();
-  ParseInfo::global_fundefs->finalize();
-
-  ParseInfo::global_constants->output_ip();
-  ParseInfo::global_constants->finalize();
-
-  out_file << ParseInfo::global_fundefs->output_decls();
-  out_file << ParseInfo::global_constants->output_decls();
-
-  // The name R_init_<libname> is a signal to the R dynamic loader
-  // telling it to execute the function immediately upon loading.
-  string file_initializer_name = string("R_init_") + libname;
-
-  string header;
-  header += "\nvoid " + file_initializer_name + "() {\n";
-  for(i=0; i<ParseInfo::global_constants->get_n_inits(); i++) {
-    header += indent(ParseInfo::global_constants->get_init_str() + i_to_s(i) + "();\n");
-  }
-  header += indent("exec();\n");
-  header += indent("finish();\n");
-  header += "}\n";
-  out_file << header;
-
-  out_file << ParseInfo::global_constants->output_defs();
-  out_file << "static void exec() " + emit_in_braces(exec_decls + exec_code) + "\n\n";
-  out_file << "static void finish() " + emit_in_braces(finish_code, false) + "\n\n";
-  out_file << ParseInfo::global_fundefs->output_defs();
-  if (output_main_program) {
-     string arginit = "int myargc;\n";
-     string mainargs = "int argc, char **argv";
-     if (output_default_args) {
-       mainargs = "int argc, char **argv";
-       arginit += string("char *myargv[5];\n") + "myargv[0] = argv[0];\n" + "myargv[1] = \"--gui=none\";\n" + 
-	  "myargv[2] = \"--slave\";\n" + "myargv[3] = \"--vanilla\";\n" + "myargv[4] = NULL;\n" + "myargc = 4;\n";
-     } else {
-       mainargs = "int argc, char **argv";
-       arginit += string("myargc = argc\n;") + "myargv = argv\n;";
-     }
-     string body = arginit + "Rf_initialize_R(myargc, myargv);\n" + "setup_Rmainloop();\n" +
-       file_initializer_name + "();\nreturn 0;\n";
-     out_file << "\nint main(" << mainargs << ") \n{\n" << indent(body) << "}\n"; 
-  }
-
   if (!out_file) {
     rcc_error("Couldn't write to file " + out_filename);
   }
-  if (ParseInfo::get_problem_flag()) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return (ParseInfo::get_problem_flag() ? 1 : 0);
 }
 
 static void arg_err() {

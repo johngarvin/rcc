@@ -190,6 +190,7 @@ rcc_bin_SOURCES =				\
   op_list.cc					\
   op_literal.cc					\
   op_primsxp.cc					\
+  op_program.cc                                 \
   op_promise.cc					\
   op_return.cc					\
   op_set.cc					\
