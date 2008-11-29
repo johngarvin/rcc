@@ -89,6 +89,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     Expression args = op_list(CDR(e), rho, true, Protected);
 #endif
     out = appl4("do_set",
+		to_string(e),
 		"R_NilValue",
 		func.var,
 		args.var,

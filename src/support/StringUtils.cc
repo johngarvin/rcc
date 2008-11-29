@@ -64,7 +64,7 @@ string make_symbol(SEXP e) {
     if (!ParseInfo::symbol_exists(name)) {
       string var = ParseInfo::global_constants->new_sexp_unp_name(name);
       string qname = quote(name);
-      ParseInfo::global_constants->appl(var, Unprotected, "Rf_install", 1, &qname);
+      ParseInfo::global_constants->appl(var, Unprotected, "Rf_install", "", 1, &qname);
       ParseInfo::insert_symbol(name, var);
       return var;
     } else {
@@ -206,6 +206,10 @@ string strip_suffix(string name) {
   } else {
     return name.erase(pos, name.size() - pos);
   }
+}
+
+string comment(string str) {
+  return "/* " + str + " */";
 }
 
 int filename_pos(string str) {

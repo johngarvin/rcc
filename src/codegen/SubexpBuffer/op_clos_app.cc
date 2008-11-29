@@ -84,9 +84,10 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP e,
   } else {
     args1 = op_arglist(this, e, &unprotcnt, rho);
   }
-  string call_str = appl2("lcons", op1.var, args1.var);
+  string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
   string out = appl5("applyClosure ",
+		     to_string(e),
 		     call_str,
 		     op1.var,
 		     args1.var,
@@ -157,10 +158,10 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
     if (!head_exp.del_text.empty()) (*unprotcnt)++;
-    string prom = sb->appl2("mkPROMISE", head_exp.var, rho);
+    string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
   }
-  string out = sb->appl2("cons", head_exp.var, tail_exp.var);
+  string out = sb->appl2("cons", "", head_exp.var, tail_exp.var);
   if (!head_exp.del_text.empty()) (*unprotcnt)++;
   if (!tail_exp.del_text.empty()) (*unprotcnt)++;
   return Expression(out, DEPENDENT, INVISIBLE, unp(out));
@@ -179,7 +180,7 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
     if (!arg_value.del_text.empty()) (*unprotcnt)++;
     arglist = arg_value.var;
 #else  // call by need, the usual R semantics
-    arglist = sb->appl2("promiseArgs", args1var, rho);
+    arglist = sb->appl2("promiseArgs", "", args1var, rho);
     (*unprotcnt)++;
 #endif
   }

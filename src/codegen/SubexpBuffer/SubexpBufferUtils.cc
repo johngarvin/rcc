@@ -22,6 +22,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <iostream>
 #include <string>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
@@ -152,7 +153,12 @@ void SubexpBuffer::output_ip() {
 
 // Outputting function applications
   
-void SubexpBuffer::appl(std::string var, Protection do_protect, std::string func, int argc, ...) {
+void SubexpBuffer::appl(std::string var,
+			Protection do_protect,
+			std::string func,
+			std::string cmnt,
+			int argc, ...)
+{
   va_list param_pt;
   std::string stmt;
     
@@ -165,43 +171,53 @@ void SubexpBuffer::appl(std::string var, Protection do_protect, std::string func
   stmt += ")";
   std::string defs;
   if (do_protect == Protected) {
-    defs += protect_str(stmt) + ";\n";
+    defs += protect_str(stmt);
+  } else {
+    defs += stmt;
   }
-  else
-    defs += stmt + ";\n";
+  if (cmnt.empty()) {
+    defs += ";\n";
+  } else {
+    defs += "; " + comment(cmnt) + "\n";
+  }
   append_defs(defs);
 }
 
-std::string SubexpBuffer::appl1(std::string func, 
+std::string SubexpBuffer::appl1(std::string func,
+				std::string cmnt,
 				std::string arg,
 				Protection resultProtection)
 {
   std::string var = new_sexp_unp();
-  appl (var, resultProtection, func, 1, &arg);
+  appl (var, resultProtection, func, cmnt, 1, &arg);
   return var;
 }
   
-std::string SubexpBuffer::appl2(std::string func, 
+std::string SubexpBuffer::appl2(std::string func,
+				std::string cmnt,
 				std::string arg1, 
 				std::string arg2,
 				Protection resultProtection)
 {
   std::string var = new_sexp_unp();
-  appl (var, resultProtection, func, 2, &arg1, &arg2);
+  appl (var, resultProtection, func, cmnt, 2, &arg1, &arg2);
   return var;
 }
   
 std::string SubexpBuffer::appl3(std::string func, 
+				std::string cmnt,
 				std::string arg1, 
 				std::string arg2, 
 				std::string arg3,
-				Protection resultProtection) {
+				Protection resultProtection)
+{
   std::string var = new_sexp_unp();
-  appl (var, resultProtection, func, 3, &arg1, &arg2, &arg3);
+  appl (var, resultProtection, func, cmnt, 3, &arg1, &arg2, &arg3);
   return var;
 }
 
 std::string SubexpBuffer::appl4(std::string func,
+				std::string cmnt,
 				std::string arg1, 
 				std::string arg2, 
 				std::string arg3, 
@@ -209,11 +225,12 @@ std::string SubexpBuffer::appl4(std::string func,
 				Protection resultProtection) 
 {
   std::string var = new_sexp_unp();
-  appl (var, resultProtection, func, 4, &arg1, &arg2, &arg3, &arg4);
+  appl (var, resultProtection, func, cmnt, 4, &arg1, &arg2, &arg3, &arg4);
   return var;
 }
   
 std::string SubexpBuffer::appl5(std::string func,
+				std::string cmnt,
 				std::string arg1, 
 				std::string arg2, 
 				std::string arg3, 
@@ -222,6 +239,6 @@ std::string SubexpBuffer::appl5(std::string func,
 				Protection resultProtection) 
 {
   std::string var = new_sexp_unp();
-  appl (var, resultProtection, func, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
+  appl (var, resultProtection, func, cmnt, 5, &arg1, &arg2, &arg3, &arg4, &arg5);
   return var;
 }

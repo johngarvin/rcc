@@ -83,7 +83,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
 #else
     value = op_list(e, rho, false, Protected, true);
 #endif
-    v = appl1("PairToVectorList", value.var, Unprotected);
+    v = appl1("PairToVectorList", "", value.var, Unprotected);
     del(value);
     break;
   }

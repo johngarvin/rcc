@@ -115,12 +115,12 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
     string out;
     int unprotcnt = 0;
     if (taggedResult) {
-      out = subexp->appl3("tagged_cons", headExp.var, tag.var, restExp.var, 
+      out = subexp->appl3("tagged_cons", "", headExp.var, tag.var, restExp.var, 
 			  consProt);
       if (!tag.del_text.empty()) unprotcnt++;
     } else {
       string consFn = getConsFunction(lst);
-      out = subexp->appl2(consFn, headExp.var, restExp.var, consProt);
+      out = subexp->appl2(consFn, "", headExp.var, restExp.var, consProt);
     } 
     if (!headExp.del_text.empty()) unprotcnt++;
     if (!restExp.del_text.empty()) unprotcnt++;

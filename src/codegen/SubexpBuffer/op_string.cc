@@ -43,7 +43,7 @@ Expression SubexpBuffer::op_string(SEXP s) {
   for(i=0; i<len; i++) {
     str += string(CHAR(STRING_ELT(s, i)));
   }
-  string out = ParseInfo::global_constants->appl1("mkString", 
+  string out = ParseInfo::global_constants->appl1("mkString", "",
 						  quote(escape(str)));
   return Expression(out, CONST, VISIBLE, "");
 }

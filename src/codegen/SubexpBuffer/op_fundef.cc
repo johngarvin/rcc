@@ -66,7 +66,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 							     rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
     string closure = fi->get_closure();
-    ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
+    ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", to_string(e), 4, &r_args.var, &c_name, &r_code.var, &rho);
     ParseInfo::global_constants->del(formals);
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
@@ -74,7 +74,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     Expression r_args = op_literal(CAR(e), rho);
     Expression r_code = op_literal(CADR(e), rho);
     string closure = fi->get_closure();
-    appl(closure, resultProtection, "mkRCC_CLOSXP", 4, &r_args.var, &c_name, &r_code.var, &rho);
+    appl(closure, resultProtection, "mkRCC_CLOSXP", to_string(e), 4, &r_args.var, &c_name, &r_code.var, &rho);
     del(r_args);
     del(r_code);
     lexicalContext.Pop();

@@ -71,25 +71,30 @@ public:
 
   void appl(std::string var, 
 	    Protection do_protect, 
-	    std::string func, 
+	    std::string func,
+	    std::string cmnt,
 	    int argc, ...);
 
-  std::string appl1(std::string func, 
+  std::string appl1(std::string func,
+		    std::string cmnt,
 		    std::string arg,
 		    Protection resultProtection = Protected);
 
-  std::string appl2(std::string func, 
+  std::string appl2(std::string func,
+		    std::string cmnt,
 		    std::string arg1, 
 		    std::string arg2, 
 		    Protection resultProtection = Protected);
 
-  std::string appl3(std::string func, 
+  std::string appl3(std::string func,
+		    std::string cmnt,
 		    std::string arg1, 
 		    std::string arg2, 
 		    std::string arg3,
 		    Protection resultProtection = Protected);
 
   std::string appl4(std::string func,
+		    std::string cmnt,
 		    std::string arg1, 
 		    std::string arg2, 
 		    std::string arg3, 
@@ -97,6 +102,7 @@ public:
 		    Protection resultProtection = Protected);
 
   std::string appl5(std::string func,
+		    std::string cmnt,
 		    std::string arg1, 
 		    std::string arg2, 
 		    std::string arg3, 
@@ -105,6 +111,7 @@ public:
 		    Protection resultProtection = Protected);
 
   std::string appl6(std::string func,
+		    std::string cmnt,
 		    std::string arg1,
 		    std::string arg2,
 		    std::string arg3,

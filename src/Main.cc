@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
       cerr << endl;
     }
   } else {  // no filename specified
-    in_file_exists = FALSE;
+    in_file_exists = false;
   }
 
   // Initialize R interface

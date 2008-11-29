@@ -111,7 +111,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
     return out;
     break;
   case CHARSXP:
-    return Expression(appl1("mkChar",
+    return Expression(appl1("mkChar", "",
 			    quote(string(CHAR(e))), Unprotected),
 		      CONST, VISIBLE, "");
     break;

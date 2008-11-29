@@ -118,7 +118,7 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
 				   resultStatus);
     if (resultStatus == ResultNeeded) {
       out = new_sexp();
-      true_se.append_defs(out + " = " + te.var +";\n");
+      true_se.append_defs(out + " = " + te.var + ";\n");
       del(te);
       true_se.append_defs(Visibility::emit_set(te.visibility));
       append_defs(indent(true_se.output_decls()));
@@ -127,6 +127,13 @@ Expression SubexpBuffer::op_if(SEXP e, string rho,
       del(cond);
       append_defs(indent(Visibility::emit_set(INVISIBLE)));
       append_defs(indent(out + " = R_NilValue;\n"));
+    } else {
+      del(te);
+      true_se.append_defs(Visibility::emit_set(te.visibility));
+      append_defs(indent(true_se.output_decls()));
+      append_defs(indent(true_se.output_defs()));
+      del(cond);
+      append_defs(indent(Visibility::emit_set(INVISIBLE)));
     }
     append_defs("}\n");
     return Expression(out, CONST, CHECK_VISIBLE, "");

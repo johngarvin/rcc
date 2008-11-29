@@ -30,6 +30,7 @@
 #include <include/R/R_RInternals.h>
 
 std::string to_string(SEXP e);
+std::string to_string_with_cutoff(SEXP e);
 std::string make_symbol(SEXP e);
 std::string make_type(int t);
 std::string indent(std::string str);
@@ -41,6 +42,7 @@ std::string make_c_id(std::string s);
 std::string quote(std::string str);
 std::string unp(std::string str);
 std::string strip_suffix(std::string str);
+std::string comment(std::string str);
 int filename_pos(std::string str);
 
 #endif

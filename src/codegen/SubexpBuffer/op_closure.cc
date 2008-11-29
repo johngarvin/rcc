@@ -49,6 +49,7 @@ Expression SubexpBuffer::op_closure(SEXP e, string rho, Protection resultProtect
       body.dependence == CONST)
   {
     string v = ParseInfo::global_constants->appl3("mkCLOSXP",
+						  to_string(e),
 						  formals.var,
 						  body.var,
 						  rho,
@@ -58,6 +59,7 @@ Expression SubexpBuffer::op_closure(SEXP e, string rho, Protection resultProtect
     return Expression(v, CONST, INVISIBLE, "");
   } else {
     string v = appl3("mkCLOSXP",
+		     to_string(e),
 		     formals.var,
 		     body.var,
 		     rho,

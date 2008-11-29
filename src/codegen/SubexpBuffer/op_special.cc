@@ -71,7 +71,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
 #else
     Expression func = ParseInfo::global_constants->op_primsxp(INTERNAL(fun), rho);
 #endif
-    out = appl4(get_name(PRIMOFFSET(INTERNAL(fun))),
+    out = appl4(get_name(PRIMOFFSET(INTERNAL(fun))), to_string(e),
 		"R_NilValue", func.var, args.var, rho);
     del(func);
     del(args);
@@ -109,9 +109,10 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     Expression op1 = ParseInfo::global_constants->op_primsxp(op, rho);
     Expression args1 = op_list(CDR(e), rho, true, Protected, true);
 #endif
-    string call_str = appl2("lcons", op1.var, args1.var);
+    string call_str = appl2("lcons", "", op1.var, args1.var);
     Expression call = Expression(call_str, CONST, VISIBLE, unp(call_str));
     out = appl4(get_name(PRIMOFFSET(op)),
+		to_string(e),
 		call.var,
 		op1.var,
 		args1.var,

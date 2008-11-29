@@ -89,7 +89,7 @@ Expression SubexpBuffer::op_literal(SEXP e, string rho) {
     return Expression("<<unexpected promise>>", DEPENDENT, INVISIBLE, "");
     break;
   case CHARSXP:
-    v = appl1("mkChar", quote(string(CHAR(e))), Unprotected);
+    v = appl1("mkChar", "", quote(string(CHAR(e))), Unprotected);
     return Expression(v, DEPENDENT, VISIBLE, "");
     break;
   case SPECIALSXP:

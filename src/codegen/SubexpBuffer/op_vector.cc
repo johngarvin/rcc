@@ -45,7 +45,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
     if (len == 1) {
       int value = INTEGER(vec)[0];
       if ( ! ParseInfo::logical_constant_exists(value)) {
-	string var = ParseInfo::global_constants->appl1("ScalarLogical",
+	string var = ParseInfo::global_constants->appl1("ScalarLogical", "",
 							i_to_s(value));
 	ParseInfo::insert_logical_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
@@ -62,7 +62,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
     if (len == 1) {
       int value = INTEGER(vec)[0];
       if (!ParseInfo::integer_constant_exists(value)) {
-	string var = ParseInfo::global_constants->appl1("ScalarInteger",
+	string var = ParseInfo::global_constants->appl1("ScalarInteger", "",
 							i_to_s(value));
 	ParseInfo::insert_integer_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
@@ -79,7 +79,7 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
     if (len == 1) {
       double value = REAL(vec)[0];
       if (!ParseInfo::real_constant_exists(value)) {  // not found
-	string var = ParseInfo::global_constants->appl1("ScalarReal",
+	string var = ParseInfo::global_constants->appl1("ScalarReal", "",
 							d_to_s(value));
 	ParseInfo::insert_real_constant(value, var);
 	return Expression(var, CONST, VISIBLE, "");
@@ -95,8 +95,8 @@ Expression SubexpBuffer::op_vector(SEXP vec) {
   case CPLXSXP:
     if (len == 1) {
       Rcomplex value = COMPLEX(vec)[0];
-      string var = ParseInfo::global_constants->appl1("ScalarComplex",
-					  c_to_s(value));
+      string var = ParseInfo::global_constants->appl1("ScalarComplex", "",
+						      c_to_s(value));
       return Expression(var, CONST, VISIBLE, "");
     } else {
       ParseInfo::flag_problem();

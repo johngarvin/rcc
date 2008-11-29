@@ -78,18 +78,18 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   switch(Rf_length(subscript_subs(lhs))) {
   case 0:
     s = Expression::bogus_exp;
-    subassign = appl2("rcc_subassign_0", a.var, r.var, Unprotected);
+    subassign = appl2("rcc_subassign_0", to_string(e), a.var, r.var, Unprotected);
     break;
   case 1:
     s = op_exp(subscript_first_sub_c(lhs), rho);
     if (!s.del_text.empty()) unprotcnt++;
-    subassign = appl3("rcc_subassign_1", a.var, s.var, r.var, Unprotected);
+    subassign = appl3("rcc_subassign_1", to_string(e), a.var, s.var, r.var, Unprotected);
     break;
     // TODO: write rcc_subassign_2; need deconsed version of MatrixAssign
   default:
     s = op_list(subscript_subs(lhs), rho, false, Protected);
     if (!s.del_text.empty()) unprotcnt++;
-    subassign = appl3("rcc_subassign_cons", a.var, s.var, r.var, Unprotected);
+    subassign = appl3("rcc_subassign_cons", to_string(e), a.var, s.var, r.var, Unprotected);
     break;
   }
   // the result of the subassign is unprotected because it is

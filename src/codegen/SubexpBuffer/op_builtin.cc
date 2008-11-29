@@ -80,7 +80,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       // 14 September 2005 - John Mellor-Crummey
       //----------------------------------------------------------
       Expression x = op_exp(args, rho, Unprotected, TRUE);
-      out = appl3("R_unary", "R_NilValue", op1.var, x.var, resultProtection);
+      out = appl3("R_unary", to_string(args), "R_NilValue", op1.var, x.var, resultProtection);
       del(x);
 
     // R_binary if two non-object arguments
@@ -106,7 +106,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       }
       Expression x = op_exp(args, rho, xprot, TRUE);
       Expression y = op_exp(CDR(args), rho, Unprotected, TRUE);
-      out = appl4("R_binary", "R_NilValue", op1.var, x.var, y.var, 
+      out = appl4("R_binary", to_string(e), "R_NilValue", op1.var, x.var, y.var, 
 		  Unprotected);
       int unprotcnt = 0;
       if (!x.del_text.empty()) unprotcnt++;
@@ -130,6 +130,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?
     out = appl4(get_name(PRIMOFFSET(op)),
+		to_string(e),
 		"R_NilValue ",
 		op1.var,
 		args1.var,

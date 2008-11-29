@@ -114,7 +114,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 			 resultProtection, fullyEvaluatedResult);
       } else {
 	string location = binding->get_location(e, sb);
-	string h = sb->appl1("R_GetVarLocValue", location, Unprotected);
+	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
 	return Expression(h, DEPENDENT, VISIBLE, "");
       }
     } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {
@@ -133,11 +133,11 @@ static Expression op_lookup(SubexpBuffer * sb, string lookup_function,
 			    string symbol, string rho,
 			    Protection resultProtection, bool fullyEvaluatedResult)
 {
-  string value = sb->appl2(lookup_function, symbol, rho, Unprotected);
+  string value = sb->appl2(lookup_function, "", symbol, rho, Unprotected);
   string del_text;
   VisibilityType vis = VISIBLE;
   if (fullyEvaluatedResult) {
-    value = sb->appl2("Rf_eval", value, rho, resultProtection);
+    value = sb->appl2("Rf_eval", "", value, rho, resultProtection);
     vis = CHECK_VISIBLE;
     if (resultProtection == Protected) del_text = unp(value);
   }
@@ -164,9 +164,10 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
     // builtin/special function; symbol containts ptr to definition 
     if (TYPEOF(sym_value) == PROMSXP) {
       string sv = emit_call1("SYMVALUE", make_symbol(e));
-      h = ParseInfo::global_constants->appl2("Rf_eval", sv, "R_GlobalEnv");
+      h = ParseInfo::global_constants->appl2("Rf_eval", "", sv, "R_GlobalEnv");
     } else {
-      h = ParseInfo::global_constants->appl1("SYMVALUE", make_symbol(e), Unprotected);
+      string sv = make_symbol(e);
+      h = ParseInfo::global_constants->appl1("SYMVALUE", "", sv, Unprotected);
     }
   }
   ParseInfo::insert_binding(name, h);
