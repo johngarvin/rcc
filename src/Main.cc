@@ -188,7 +188,6 @@ int main(int argc, char *argv[]) {
   SEXP program = parse_R_as_function(in_file);
 
   // perform analysis
-  bool analysis_ok;
   try {
     R_Analyst * an = R_Analyst::get_instance(program);
     an->perform_analysis();
@@ -205,7 +204,7 @@ int main(int argc, char *argv[]) {
 	st->dump(cout);
       }
     }
-    analysis_ok = true;
+    ParseInfo::set_analysis_ok(true);
   }
   catch (AnalysisException ae) {
     // One phase of analysis rejected a program. Get rid of the
@@ -213,7 +212,7 @@ int main(int argc, char *argv[]) {
     rcc_warn(ae.what());
     rcc_warn("analysis encountered difficulties; compiling trivially");
     clearProperties();
-    analysis_ok = false;
+    ParseInfo::set_analysis_ok(false);
   }
 
   // We had to make our program one big function to use
@@ -223,9 +222,9 @@ int main(int argc, char *argv[]) {
 
   SubexpBuffer sb;
   string program_str = sb.op_program(r_expressions, "R_GlobalEnv", file_initializer_name,
-				     output_main_program, output_default_args, analysis_ok);
+				     output_main_program, output_default_args);
 
-  if (analysis_debug && analysis_ok) {
+  if (analysis_debug && ParseInfo::analysis_ok()) {
     // output call graph in DOT form
     cout << "Dumping call graph in DOT form:" << endl;
     OACallGraphAnnotationMap::get_instance()->dumpdot(cout);

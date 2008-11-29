@@ -114,7 +114,7 @@ public:
 		    Protection resultProtection = Protected);
 
   std::string op_program(SEXP e, std::string rho, std::string func_name,
-			 bool output_main_program, bool output_default_args, bool & analysis_ok);
+			 bool output_main_program, bool output_default_args);
   Expression op_exp(SEXP cell, std::string rho, 
 		    Protection resultProtection = Protected, 
 		    bool fullyEvaluatedResult = false,

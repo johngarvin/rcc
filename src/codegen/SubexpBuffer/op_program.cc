@@ -41,7 +41,7 @@
 using namespace std;
 
 string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
-				bool output_main_program, bool output_default_args, bool & analysis_ok)
+				bool output_main_program, bool output_default_args)
 {
   int i;
   string exec_decls, exec_defs;
@@ -64,18 +64,18 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
       continue;
     }
     
-    if (analysis_ok) {
+    if (ParseInfo::analysis_ok()) {
       try {
 	exp = subexps.op_exp(e, "R_GlobalEnv");  // op_exp takes a cell
       } catch (AnalysisException ae) {
 	rcc_warn(ae.what());
 	rcc_warn("analysis encountered difficulties; compiling trivially");
 	clearProperties();
-	analysis_ok = false;
+	ParseInfo::set_analysis_ok(false);
       }
     }
     
-    if (!analysis_ok) {
+    if (!ParseInfo::analysis_ok()) {
       // compile trivially
       SubexpBuffer sb1;
       Expression exp1 = sb1.op_literal(CAR(e), "R_GlobalEnv");
@@ -151,8 +151,12 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
      string mainargs = "int argc, char **argv";
      if (output_default_args) {
        mainargs = "int argc, char **argv";
-       arginit += string("char *myargv[5];\n") + "myargv[0] = argv[0];\n" + "myargv[1] = \"--gui=none\";\n" + 
-	  "myargv[2] = \"--slave\";\n" + "myargv[3] = \"--vanilla\";\n" + "myargv[4] = NULL;\n" + "myargc = 4;\n";
+       arginit += string("char *myargv[5];\n") +
+	 "myargv[0] = argv[0];\n" +
+	 "myargv[1] = \"--gui=none\";\n" + 
+	 "myargv[2] = \"--slave\";\n" +
+	 "myargv[3] = \"--vanilla\";\n" +
+	 "myargv[4] = NULL;\n" + "myargc = 4;\n";
      } else {
        mainargs = "int argc, char **argv";
        arginit += string("myargc = argc\n;") + "myargv = argv\n;";

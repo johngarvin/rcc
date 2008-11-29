@@ -44,6 +44,9 @@ public:
   static void flag_problem();
   static bool get_problem_flag();
 
+  static void set_analysis_ok(bool x);
+  static bool analysis_ok();
+
   static void set_allow_oo(bool x);
   static bool allow_oo();
 
@@ -126,6 +129,7 @@ private:
   // ----- flags -----
 
   static bool m_problem_flag;
+  static bool m_analysis_ok;
   static bool m_allow_oo;
   static bool m_allow_envir_manip;
   static bool m_allow_special_redef;

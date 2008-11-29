@@ -44,6 +44,7 @@ SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
 
 bool ParseInfo::m_problem_flag = false;
+bool ParseInfo::m_analysis_ok  = true;
 
 bool ParseInfo::m_allow_oo            = true;
 bool ParseInfo::m_allow_envir_manip   = true;
@@ -57,6 +58,14 @@ void ParseInfo::flag_problem() {
 
 bool ParseInfo::get_problem_flag() {
   return m_problem_flag;
+}
+
+void ParseInfo::set_analysis_ok(bool x) {
+  m_analysis_ok = x;
+}
+
+bool ParseInfo::analysis_ok() {
+  return m_analysis_ok;
 }
 
 // whether we have to account for object-oriented programming
