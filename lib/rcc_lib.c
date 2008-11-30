@@ -116,6 +116,10 @@ SEXP rcc_subassign_cons(SEXP x, SEXP subs, SEXP y) {
   else {
     PROTECT(x);
   }
+
+  /* MatrixAssign, etc. mutate the input subs list; prevent them from
+     mutating the original list in the constant pool */
+  subs = duplicate(subs);
   
   switch (TYPEOF(x)) {
   case LGLSXP:
