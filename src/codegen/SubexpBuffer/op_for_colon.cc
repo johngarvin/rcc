@@ -67,7 +67,7 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   SEXP range = CAR(for_range_c(e));
   decls += "SEXP v;\n";
   decls += "double step, begin, end;\n";
-  decls += "Rboolean count_up;";
+  decls += "Rboolean count_up;\n";
   if (!has_di) {
     decls += "double di;\n";
     has_di = TRUE;
@@ -96,7 +96,7 @@ Expression SubexpBuffer::op_for_colon(SEXP e, string rho,
   for_body.append_defs("REAL(v)[0] = di;\n");
   for_body.append_defs(emit_call3("setVar", make_symbol(CAR(sym_c)), "v", rho) + ";\n");
   Expression ans = for_body.op_exp(for_body_c(e), rho, Unprotected, false, resultStatus);
-  append_defs(indent(for_body.output_decls()));
+  append_decls(indent(for_body.output_decls()));
   append_defs(indent(for_body.output_defs()));
   append_defs("}\n");
   append_defs(this_loop.breakLabel() + ":;\n");
