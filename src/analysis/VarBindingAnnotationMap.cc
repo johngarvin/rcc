@@ -99,7 +99,128 @@ void VarBindingAnnotationMap::compute() {
   create_var_bindings();
   populate_symbol_tables();
 }
+
+  /*
+   for each procedure in a top down traversal:
+     for each formal:
+       mention.add(localscope)
+       localscope.add(formal.name)
+     for each mention that is a def:
+       if local ("<-") then:
+         mention.add(localscope)
+         localscope.add(mention.name)
+       else if free ("<<-") then:
+         for each scope s from parent up:
+           if s.includes(mention.name), then:
+             mention.add(s)
+	     localscope.add(mention.name)
+   for each procedure:
+     for each mention that is a use:
+       if local or bottom then:
+         mention.add(localscope)
+         localscope.add(mention.name)
+       if bottom or free then
+         for each scope s from parent up
+           if s.includes(mention.name) then:
+	   // s defines name locally or with some <<- def
+             mention.add(s)
+             localscope.add(mention.name)
+   */
+
+void VarBindingAnnotationMap::create_var_bindings() {
+  FuncInfo * fi;
+  std::set<std::pair<SEXP, LexicalScope *> > free_defs;
+
+  // first pass: formals and local and free defs. Free defs depend on
+  // local defs in lexical ancestors, so the procedure traversal
+  // should be top-down.
+  FOR_EACH_PROC(fi) {
+    assert(fi != 0);
+
+    // create VarBindings for formal args; each one has just one
+    // scope, which is the current procedure
+    for(int i = 1; i <= fi->get_num_args(); i++) {
+      Var * var = getProperty(Var, fi->get_arg(i));
+      VarBinding * binding = new VarBinding();
+      binding->insert(fi->get_scope());
+      get_map()[fi->get_arg(i)] = binding;
+    }
+
+    PROC_FOR_EACH_MENTION(fi, mi) {
+      Var * v = *mi;
+      v = getProperty(Var, v->getMention_c());
+      // TODO: should make sure we always get the data-flow-solved
+      // version of the Var. Shouldn't have to loop through
+      // getProperty!
+      if (v->getUseDefType() == Var::Var_DEF) {
+	VarBinding * scopes = new VarBinding();
+	switch(v->getScopeType()) {
+	case Locality::Locality_LOCAL:
+	  // "<-" def, bound in current scope only
+	  scopes->insert(fi->get_scope());
+	  break;
+	case Locality::Locality_FREE:
+	  // "<<-" def, bound in parent or higher
+	  // start at this scope's parent; iterate upward through ancestors
+	  for (FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
+	    if (defined_local_in_scope(v,a)) {
+	      free_defs.insert(std::pair<SEXP, LexicalScope *>(v->getName(), a->get_scope()));
+	      scopes->insert(a->get_scope());
+	    }
+	  }
+	  break;
+	case Locality::Locality_BOTTOM:
+	  rcc_error("VarBindingAnnotationMap: found def of BOTTOM type");
+	  break;
+	}
+	get_map()[v->getMention_c()] = scopes;
+      }
+    }
+  }
+
+  // second pass: local and free uses. Free uses can refer to scopes
+  // defined by <<- defs anywhere in the program, hence the separate
+  // pass.
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_MENTION(fi, mi) {
+      Var * v = *mi;
+      v = getProperty(Var, v->getMention_c());
+      // TODO: should make sure we always get the data-flow-solved
+      // version of the Var. Shouldn't have to loop through
+      // getProperty!
+      if (v->getUseDefType() == Var::Var_USE) {
+	VarBinding * scopes = new VarBinding();
+	switch(v->getScopeType()) {
+	case Locality::Locality_LOCAL:
+	  scopes->insert(fi->get_scope());
+	  break;
+	case Locality::Locality_BOTTOM:
+	  scopes->insert(fi->get_scope());
+	  // FALLTHROUGH
+	case Locality::Locality_FREE:
+	  for (FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
+	    if (defined_local_in_scope(v,a) ||
+		free_defs.find(std::pair<SEXP, LexicalScope *>(v->getName(), a->get_scope())) != free_defs.end())
+	      {
+		scopes->insert(a->get_scope());
+	      }
+	  }
+	}
+	// for R internal names, add the library scope
+	if (is_library(CAR(v->getMention_c()))) {
+	  scopes->insert(R_Analyst::get_instance()->get_library_scope());
+	}
+	
+	get_map()[v->getMention_c()] = scopes;
+      }
+    }
+  }
+}
   
+#if 0
+  // old version, wrong algorithm. Need more than one pass to handle
+  // uses of names defined with <<-
+
 void VarBindingAnnotationMap::create_var_bindings() {
   FuncInfo * fi;
 
@@ -151,7 +272,8 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	// mention is non-local.
 	//
 	// TODO: in the latest version of R, this is no longer the
-	// case.
+	// case. If we attach RCC to a later version, we need to
+	// change this behavior.
 	if (v->getUseDefType() == Var::Var_DEF && !scopes->is_global()) {
 	  scopes->insert(R_Analyst::get_instance()->get_global_scope());
 	}
@@ -171,6 +293,8 @@ void VarBindingAnnotationMap::create_var_bindings() {
     }  // next mention
   }  // next function
 }
+
+#endif
 
 void VarBindingAnnotationMap::populate_symbol_tables() {
   // for each (mention, VarBinding) pair in our map
@@ -227,5 +351,7 @@ static bool defined_local_in_scope(Var * v, FuncInfo * s) {
       return true;
     }
   }
+
+  // TODO: what about double-arrow defs in other scopes?
   return false;
 }
