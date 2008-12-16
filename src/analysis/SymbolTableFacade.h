@@ -32,7 +32,7 @@
 
 class SymbolTableFacade {
 private:
-  SymbolTableFacade();
+  explicit SymbolTableFacade();
 public:
   virtual ~SymbolTableFacade();
 

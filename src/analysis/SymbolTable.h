@@ -79,7 +79,7 @@ public:
   typedef MyMap_t::size_type                                size_type;
 
 public:
-  SymbolTable();
+  explicit SymbolTable();
   virtual ~SymbolTable();
 
   // -------------------------------------------------------

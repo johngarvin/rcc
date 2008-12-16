@@ -373,7 +373,7 @@ OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
   // params, returning ExprHandles instead of SEXPs
   class R_ParamIterator : public IRCallsiteParamIterator {
   public:
-    R_ParamIterator(SEXP _exp) : m_list_iter(_exp) {
+    explicit R_ParamIterator(SEXP _exp) : m_list_iter(_exp) {
     }
 
     ExprHandle current() const {

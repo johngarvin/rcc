@@ -35,7 +35,7 @@ public:
   typedef std::set<OA::OA_ptr<R_VarRef> > MySetT;
 
 public:
-  R_VarRefSetIterator(OA::OA_ptr<MySetT> vars);
+  explicit R_VarRefSetIterator(OA::OA_ptr<MySetT> vars);
   OA::OA_ptr<R_VarRef> current() const;
   bool isValid() const;
   void operator++();
@@ -51,7 +51,7 @@ class R_VarRefSet {
 public:
   typedef R_VarRefSetIterator::MySetT MySetT;
 
-  R_VarRefSet();
+  explicit R_VarRefSet();
   void insert_ref(OA::OA_ptr<R_BodyVarRef> var);
   void insert_arg(OA::OA_ptr<R_ArgVarRef> var);
   void set_union(const R_VarRefSet & set2);

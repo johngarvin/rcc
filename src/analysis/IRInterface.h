@@ -63,7 +63,7 @@ class R_IRInterface : public virtual OA::Alias::AliasIRInterfaceDefault,
 		      public virtual OA::SSA::SSAIRInterface
 {
 public:
-  R_IRInterface() {}
+  explicit R_IRInterface() {}
   virtual ~R_IRInterface() {}
   
   //--------------------------------------------------------
@@ -340,7 +340,7 @@ OA::CFG::IRStmtType getSexpCfgType(SEXP e);
 /// in a procedure or a loop. Does not descend into compound statements.
 class R_RegionStmtIterator : public OA::IRRegionStmtIterator {
 public:
-  R_RegionStmtIterator(OA::StmtHandle stmt);
+  explicit R_RegionStmtIterator(OA::StmtHandle stmt);
   virtual ~R_RegionStmtIterator();
   
   OA::StmtHandle current() const;
@@ -356,7 +356,7 @@ private:
 // Enumerate statements; descends into compound statements.
 class R_DescendingStmtIterator : public OA::IRStmtIterator {
 public:
-  R_DescendingStmtIterator(OA::StmtHandle stmt);
+  explicit R_DescendingStmtIterator(OA::StmtHandle stmt);
   virtual ~R_DescendingStmtIterator();
 
   OA::StmtHandle current() const;
@@ -376,7 +376,7 @@ private:
 /// Useful when you can't pass a cell to R_RegionStmtIterator.
 class R_RegionStmtListIterator : public OA::IRRegionStmtIterator {
 public:
-  R_RegionStmtListIterator(SEXP ls) : iter(ls) { }
+  explicit R_RegionStmtListIterator(SEXP ls) : iter(ls) { }
   virtual ~R_RegionStmtListIterator() { };
   
   OA::StmtHandle current() const;
@@ -393,7 +393,7 @@ private:
 /// references or definitions, such as SSA construction.
 class R_UseDefAsLeafIterator : public OA::SSA::IRUseDefIterator {
 public:
-  R_UseDefAsLeafIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
+  explicit R_UseDefAsLeafIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
   virtual ~R_UseDefAsLeafIterator();
   
   OA::LeafHandle current() const;
@@ -409,7 +409,7 @@ private:
 /// references or definitions, such as SSA construction.
 class R_UseDefAsMemRefIterator : public OA::MemRefHandleIterator {
 public:
-  R_UseDefAsMemRefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
+  explicit R_UseDefAsMemRefIterator(OA::OA_ptr<R_VarRefSetIterator> _iter);
   virtual ~R_UseDefAsMemRefIterator();
   
   OA::MemRefHandle current() const;
@@ -429,7 +429,7 @@ private:
 
 class R_IRCallsiteIterator : public OA::IRCallsiteIterator {
 public:
-  R_IRCallsiteIterator(OA::StmtHandle _h);
+  explicit R_IRCallsiteIterator(OA::StmtHandle _h);
   virtual ~R_IRCallsiteIterator();
 
   OA::CallHandle current() const;
@@ -453,7 +453,7 @@ private:
 
 class R_IRProgramCallsiteIterator : public OA::IRCallsiteIterator {
 public:
-  R_IRProgramCallsiteIterator(OA::StmtHandle _h);
+  explicit R_IRProgramCallsiteIterator(OA::StmtHandle _h);
   virtual ~R_IRProgramCallsiteIterator();
 
   OA::CallHandle current() const;
@@ -469,7 +469,7 @@ private:
 
 class R_ProcHandleIterator : public OA::ProcHandleIterator {
 public:
-  R_ProcHandleIterator(RAnnot::FuncInfo * fi);
+  explicit R_ProcHandleIterator(RAnnot::FuncInfo * fi);
   ~R_ProcHandleIterator();
   OA::ProcHandle current() const;
   bool isValid() const;
@@ -482,7 +482,7 @@ private:
 
 class R_ExpMemRefHandleIterator : public OA::MemRefHandleIterator {
 public:
-  R_ExpMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
+  explicit R_ExpMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
   OA::MemRefHandle current() const;
   bool isValid() const;
   void operator++();
@@ -497,7 +497,7 @@ class R_SingletonMemRefExprIterator : public virtual OA::MemRefExprIterator,
 				      private virtual R_SingletonIterator<OA::OA_ptr<OA::MemRefExpr> >
 {
 public:
-  R_SingletonMemRefExprIterator(OA::OA_ptr<OA::MemRefExpr> mre);
+  explicit R_SingletonMemRefExprIterator(OA::OA_ptr<OA::MemRefExpr> mre);
   OA::OA_ptr<OA::MemRefExpr> current() const;
   bool isValid() const;
   void operator++();

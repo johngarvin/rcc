@@ -62,7 +62,7 @@ public:
 
 private:
   // singleton: only this class is allowed to instantiate
-  ExpressionInfoAnnotationMap();
+  explicit ExpressionInfoAnnotationMap();
 
   void compute(const MyKeyT & k);
 

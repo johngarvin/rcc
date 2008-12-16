@@ -61,7 +61,7 @@ public:
 /// A VarRef found in code. A CONS cell where the CAR is the symbol.
 class R_BodyVarRef : public R_VarRef {
 public:
-  R_BodyVarRef(SEXP _loc) : m_loc(_loc) {}
+  explicit R_BodyVarRef(SEXP _loc) : m_loc(_loc) {}
   
   // Comparison operators for use in STL containers
   bool operator<(R_VarRef & loc2) const;
@@ -84,7 +84,7 @@ private:
 /// A VarRef found as a formal argument. A CONS cell where the TAG is the symbol.
 class R_ArgVarRef : public R_VarRef {
 public:
-  R_ArgVarRef(SEXP _loc) : m_loc(_loc) {}
+  explicit R_ArgVarRef(SEXP _loc) : m_loc(_loc) {}
   
   // Comparison operators for use in STL containers
   bool operator<(R_VarRef & loc2) const;

@@ -49,7 +49,7 @@ public:
 
 private:
   // private constructor for singleton pattern
-  SideEffectAnnotationMap();
+  explicit SideEffectAnnotationMap();
 
   void compute();
   void compute_oa_side_effect();

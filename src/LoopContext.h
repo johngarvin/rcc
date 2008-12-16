@@ -31,7 +31,7 @@ class LoopContext {
 public:
   static LoopContext *Top();
 public:
-  LoopContext();
+  explicit LoopContext();
   ~LoopContext();
   std::string breakLabel();
   std::string doBreak();

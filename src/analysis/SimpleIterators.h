@@ -47,7 +47,7 @@ typedef R_Iterator<SEXP> R_SEXPIterator;
 /// Singleton iterator for a single statement.
 template<class T> class R_SingletonIterator : public R_Iterator<T> {
 public:
-  R_SingletonIterator(T t);
+  explicit R_SingletonIterator(T t);
 
   virtual T current() const;
   virtual bool isValid() const;
@@ -65,7 +65,7 @@ typedef R_SingletonIterator<SEXP> R_SingletonSEXPIterator;
 /// cons cell; take the CAR to get the data you want.
 class R_ListIterator : public R_SEXPIterator {
 public:
-  R_ListIterator(SEXP _exp);
+  explicit R_ListIterator(SEXP _exp);
   virtual ~R_ListIterator();
   
   SEXP current() const;
@@ -81,7 +81,7 @@ private:
 /// preorder traversal of an R object through CARs and CDRs
 class R_PreorderIterator {
 public:
-  R_PreorderIterator(SEXP exp);
+  explicit R_PreorderIterator(SEXP exp);
   virtual ~R_PreorderIterator();
   
   SEXP current() const;

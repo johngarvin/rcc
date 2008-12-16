@@ -38,8 +38,8 @@ namespace Strictness {
 class DFSetElement {
 public:
   // constructors
-  DFSetElement(OA::OA_ptr<R_VarRef> _loc, StrictnessType _strict);
-  DFSetElement(const DFSetElement& other);
+  explicit DFSetElement(OA::OA_ptr<R_VarRef> _loc, StrictnessType _strict);
+  explicit DFSetElement(const DFSetElement& other);
 
   // access
   OA::OA_ptr<R_VarRef> get_loc() const;

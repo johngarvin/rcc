@@ -47,7 +47,7 @@ public:
 
 private:
   // private constructor for singleton pattern
-  VarBindingAnnotationMap();
+  explicit VarBindingAnnotationMap();
 
   void compute();
   void create_var_bindings();

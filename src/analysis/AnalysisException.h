@@ -31,7 +31,7 @@
 
 class AnalysisException : public std::exception {
 public:
-  AnalysisException(const char * const message);
+  explicit AnalysisException(const char * const message);
   virtual const char * what() const throw();
 private:
   const char * const m_message;

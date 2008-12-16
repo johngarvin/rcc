@@ -38,7 +38,7 @@ class RccCallGraphAnnotation;
 /// Abstract class representing a node of a call graph
 class CallGraphNode {
 public:
-  CallGraphNode();
+  explicit CallGraphNode();
   virtual ~CallGraphNode();
 
   virtual const OA::IRHandle get_handle() const = 0;
@@ -60,7 +60,7 @@ public:
 private:
   // prevent copying
   CallGraphNode & operator=(const CallGraphNode &);
-  CallGraphNode(const CallGraphNode &);
+  explicit CallGraphNode(const CallGraphNode &);
 
   int m_id;
   static int m_max_id;

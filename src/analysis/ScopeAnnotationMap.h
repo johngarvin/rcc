@@ -44,7 +44,7 @@ public:
 
 private:
   // private constructor for singleton pattern
-  ScopeAnnotationMap();
+  explicit ScopeAnnotationMap();
 
   void compute();
 

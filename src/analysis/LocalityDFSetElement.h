@@ -41,8 +41,8 @@ namespace Locality {
 class DFSetElement {
 public:
   // constructors
-  DFSetElement(OA::OA_ptr<R_VarRef> _loc, LocalityType _type);
-  DFSetElement(const DFSetElement& other);
+  explicit DFSetElement(OA::OA_ptr<R_VarRef> _loc, LocalityType _type);
+  explicit DFSetElement(const DFSetElement& other);
 
   // access
   OA::OA_ptr<R_VarRef> get_loc() const;

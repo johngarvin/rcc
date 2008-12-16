@@ -66,7 +66,7 @@ static bool debug;
 /// applied to Var annotation
 class MakeVarRefVisitor : private VarVisitor {
 public:
-  MakeVarRefVisitor() : m_output(), m_fact(VarRefFactory::get_instance()) {}
+  explicit MakeVarRefVisitor() : m_output(), m_fact(VarRefFactory::get_instance()) {}
       
 private:
   void visitUseVar(UseVar * uv) {

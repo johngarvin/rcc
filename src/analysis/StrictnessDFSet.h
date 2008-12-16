@@ -54,8 +54,8 @@ public:
 
   // methods inherited from DataFlowSet
   // construction
-  DFSet();
-  DFSet(const DFSet& other);
+  explicit DFSet();
+  explicit DFSet(const DFSet& other);
   ~DFSet();
   
   // After the assignment operation, the lhs DFSet will point to the

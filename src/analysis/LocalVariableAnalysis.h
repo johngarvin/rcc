@@ -49,7 +49,7 @@ public:
   typedef SEXP MyCallSiteT;
   typedef std::list<MyCallSiteT>::const_iterator const_call_site_iterator;
 
-  LocalVariableAnalysis(const SEXP _stmt);
+  explicit LocalVariableAnalysis(const SEXP _stmt);
 
   void perform_analysis();
 

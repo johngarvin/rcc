@@ -75,7 +75,7 @@ private:
   // ----- implement singleton pattern -----
 
   // private constructor for singleton pattern
-  OACallGraphAnnotationMap();
+  explicit OACallGraphAnnotationMap();
 
   static OACallGraphAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

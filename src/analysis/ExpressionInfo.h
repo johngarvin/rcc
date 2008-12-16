@@ -61,7 +61,7 @@ class ExpressionInfo
   : public AnnotationBase
 {
 public:
-  ExpressionInfo(SEXP sexp);
+  explicit ExpressionInfo(SEXP sexp);
   virtual ~ExpressionInfo();
 
   typedef Var *                     MyVarT;

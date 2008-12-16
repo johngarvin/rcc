@@ -92,7 +92,7 @@ private:
   // ----- implement singleton pattern -----
 
   // private constructor for singleton pattern
-  RccCallGraphAnnotationMap();
+  explicit RccCallGraphAnnotationMap();
 
   static RccCallGraphAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

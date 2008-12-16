@@ -57,7 +57,7 @@ public:
 
 private:
   // private constructor for singleton pattern
-  VarAnnotationMap();
+  explicit VarAnnotationMap();
 
   void compute();
   void compute_all_syntactic_info();

@@ -34,7 +34,7 @@ public:
 
 private:
   /// private constructor for singleton pattern
-  FuncInfoAnnotationMap();
+  explicit FuncInfoAnnotationMap();
 
   /// traverse the program, create a FuncInfo for each function
   /// definition with the whole program as the root

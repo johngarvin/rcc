@@ -43,7 +43,7 @@ public:
 
 private:
   // singleton pattern
-  VarRefFactory();
+  explicit VarRefFactory();
   static VarRefFactory * s_instance;
 
   std::map<SEXP, OA::OA_ptr<R_BodyVarRef> > m_body_refs;

@@ -70,10 +70,10 @@ public:
   // -------------------------------------------------------
 
   // create my own PropertySet
-  PropertySetMgr();
+  explicit PropertySetMgr();
   
   // assume control and ownership of 'x'
-  PropertySetMgr(PropertySet* x);
+  explicit PropertySetMgr(PropertySet* x);
   
   ~PropertySetMgr();
 

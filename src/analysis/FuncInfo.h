@@ -42,7 +42,7 @@
 // iterator macros for convenience and readability. Be sure to declare the variables somewhere above the for loop.
 // Note: don't put initializations in macros except inside for-loop initializers
 
-#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = R_Analyst::get_instance()->get_scope_tree_root(); \
+#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(R_Analyst::get_instance()->get_scope_tree_root()); \
                               fii.IsValid() && ((fi) = fii.Current()) != 0;                                    \
                               ++fii, (fi) = fii.Current())
 #define PROC_FOR_EACH_MENTION(fi, mi) for(RAnnot::FuncInfo::const_mention_iterator mi = (fi)->begin_mentions(); \
@@ -86,7 +86,7 @@ public:
   typedef CallSiteSetT::iterator                           call_site_iterator;
   typedef CallSiteSetT::const_iterator                     const_call_site_iterator;
 public:
-  FuncInfo(FuncInfo* parent, SEXP name, SEXP defn);
+  explicit FuncInfo(FuncInfo* parent, SEXP name, SEXP defn);
   virtual ~FuncInfo();
 
   // -------------------------------------------------------
@@ -200,16 +200,16 @@ private:
 
 class FuncInfoChildIterator: public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {
 public:
-  FuncInfoChildIterator(const FuncInfo *fi, bool firstToLast = true) :
-	NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo>(fi, firstToLast) {};
+  explicit FuncInfoChildIterator(const FuncInfo *fi, bool firstToLast = true) :
+    NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo>(fi, firstToLast) {};
 };
 
 class FuncInfoIterator: public NonUniformDegreeTreeIteratorTmpl<FuncInfo> {
 public:
-  FuncInfoIterator(const FuncInfo* fi, TraversalOrder torder = PreOrder,
-				   NonUniformDegreeTreeEnumType how =
-				     NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES) :
-	NonUniformDegreeTreeIteratorTmpl<FuncInfo>(fi, torder, how) {};
+  explicit FuncInfoIterator(const FuncInfo* fi, TraversalOrder torder = PreOrder,
+			    NonUniformDegreeTreeEnumType how =
+			    NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES) :
+    NonUniformDegreeTreeIteratorTmpl<FuncInfo>(fi, torder, how) {};
 };
 
 }

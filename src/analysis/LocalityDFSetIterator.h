@@ -36,7 +36,7 @@ namespace Locality {
 /// Iterator over each DFSetElement in an DFSet
 class DFSetIterator {
 public:
-  DFSetIterator (OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > _set);
+  explicit DFSetIterator (OA::OA_ptr<std::set<OA::OA_ptr<DFSetElement> > > _set);
   ~DFSetIterator () {}
   
   void operator++();

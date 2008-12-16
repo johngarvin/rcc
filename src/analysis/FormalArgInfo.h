@@ -40,7 +40,7 @@ class FormalArgInfo
   : public AnnotationBase
 {
 public:
-  FormalArgInfo(SEXP cell);
+  explicit FormalArgInfo(SEXP cell);
   virtual ~FormalArgInfo();
 
   static PropertyHndlT handle();

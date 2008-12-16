@@ -38,7 +38,7 @@ namespace RAnnot {
 class FormalArgInfoAnnotationMap : public DefaultAnnotationMap {
 public:
   // constructor/deconstructor
-  FormalArgInfoAnnotationMap();
+  explicit FormalArgInfoAnnotationMap();
   virtual ~FormalArgInfoAnnotationMap();
 
   // singleton

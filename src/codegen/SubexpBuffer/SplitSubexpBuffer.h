@@ -34,7 +34,7 @@
 /// several functions.
 class SplitSubexpBuffer : public SubexpBuffer {
 public:
-  SplitSubexpBuffer(std::string pref = "v", bool is_c = false, int thr = 300, std::string is = "init");
+  explicit SplitSubexpBuffer(std::string pref = "v", bool is_c = false, int thr = 300, std::string is = "init");
 
   static SplitSubexpBuffer global_constants;
 

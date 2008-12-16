@@ -69,7 +69,7 @@ class PrimitiveRequiresContext {
 private:
   set<CCODE> theSet;
 public:
-  PrimitiveRequiresContext(); 
+  explicit PrimitiveRequiresContext(); 
   bool getPrimitiveRequiresContext(CCODE prim);
 };
 

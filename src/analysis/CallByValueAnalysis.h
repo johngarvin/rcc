@@ -33,7 +33,7 @@ namespace RAnnot {
 
 class CallByValueAnalysis {
 public:
-  CallByValueAnalysis();
+  explicit CallByValueAnalysis();
   void perform_analysis();
 
 private:

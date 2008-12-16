@@ -40,7 +40,7 @@
 
 class SubexpBuffer {
 public:
-  SubexpBuffer(std::string pref = "v", bool is_c = false);
+  explicit SubexpBuffer(std::string pref = "v", bool is_c = false);
   virtual ~SubexpBuffer();
   SubexpBuffer &operator=(SubexpBuffer &sb);
 

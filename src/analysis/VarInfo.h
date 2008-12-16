@@ -56,10 +56,10 @@ public:
 
 public:
   // constructor for SymbolTables in LexicalScopes
-  VarInfo(const SEXP name, const LexicalScope * const scope);
+  explicit VarInfo(const SEXP name, const LexicalScope * const scope);
 
   // constructor for special SymbolTable for ambiguous references
-  VarInfo(const SEXP name);
+  explicit VarInfo(const SEXP name);
 
   virtual ~VarInfo();
 

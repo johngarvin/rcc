@@ -33,7 +33,7 @@ namespace RAnnot {
 
 class DefaultAnnotationMap : public AnnotationMap {
 public:
-  DefaultAnnotationMap();
+  explicit DefaultAnnotationMap();
   virtual ~DefaultAnnotationMap();
 
   virtual MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done

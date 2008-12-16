@@ -45,7 +45,7 @@ public:
     DefVar_PHI      // defined by a phi function
   };
 public:
-  DefVar();
+  explicit DefVar();
   virtual ~DefVar();
 
   // source of definition: assignment statement, formal argument, or phi function

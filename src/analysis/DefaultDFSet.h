@@ -47,7 +47,7 @@ class DefaultDFSet : public OA::DataFlow::DataFlowSet {
 public:
 
   // construction
-  DefaultDFSet();
+  explicit DefaultDFSet();
   ~DefaultDFSet();
   
   // After the assignment operation, the lhs DefaultDFSet will point to the

@@ -69,7 +69,7 @@ public:
 
 private:
   /// construct an R_Analyst by providing an SEXP representing the whole program
-  R_Analyst(SEXP _program);
+  explicit R_Analyst(SEXP _program);
 
 private:
   static R_Analyst * m_instance;

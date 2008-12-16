@@ -44,7 +44,7 @@ public:
   typedef OA::OA_ptr<OA::LocSet>     MyVarSetT;
   typedef OA::LocSet::const_iterator MyIterator;
 
-  SideEffect();
+  explicit SideEffect();
   virtual ~SideEffect();
 
   MyVarSetT get_uses();

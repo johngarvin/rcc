@@ -35,9 +35,9 @@ namespace Strictness {
 
 class StrictnessResult {
 public:
-  StrictnessResult(OA::OA_ptr<Strictness::DFSet> args_on_exit,
-		   OA::OA_ptr<NameMentionMultiMap> debuts,
-		   OA::OA_ptr<NameStmtMultiMap> post_debut_stmts)
+  explicit StrictnessResult(OA::OA_ptr<Strictness::DFSet> args_on_exit,
+			    OA::OA_ptr<NameMentionMultiMap> debuts,
+			    OA::OA_ptr<NameStmtMultiMap> post_debut_stmts)
     : m_args_on_exit(args_on_exit),
       m_debuts(debuts),
       m_post_debut_stmts(post_debut_stmts)

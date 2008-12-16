@@ -29,7 +29,7 @@
 
 class Macro {
 public:
-  Macro(const std::string b) : body(b) { }
+  explicit Macro(const std::string b) : body(b) { }
   const std::string call(const int nargs, const std::string args[]) const;
 private:
   const std::string body;
@@ -40,7 +40,7 @@ public:
   static MacroFactory * instance();
   const Macro get_macro(const std::string name) const;
 protected:
-  MacroFactory() {}
+  explicit MacroFactory() {}
 private:
   static MacroFactory * _instance;
   static const std::string m_path;

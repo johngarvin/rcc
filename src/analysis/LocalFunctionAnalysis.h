@@ -32,7 +32,7 @@
 /// definition. Adds annotations to the global AnalysisResults.
 class LocalFunctionAnalysis {
 public:
-  LocalFunctionAnalysis(const SEXP fundef);
+  explicit LocalFunctionAnalysis(const SEXP fundef);
   void perform_analysis();
 private:
   void analyze_args();

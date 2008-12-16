@@ -38,7 +38,7 @@ public:
 private:
   
   // private constructor for singleton
-  ExprTreeBuilder();
+  explicit ExprTreeBuilder();
   static ExprTreeBuilder * s_instance;
 };
 

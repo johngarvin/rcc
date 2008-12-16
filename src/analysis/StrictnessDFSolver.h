@@ -45,7 +45,7 @@ namespace Strictness {
 
 class StrictnessDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
-  StrictnessDFSolver(OA::OA_ptr<R_IRInterface> _rir);
+  explicit StrictnessDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~StrictnessDFSolver();
   OA::OA_ptr<StrictnessResult> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();

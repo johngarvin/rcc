@@ -47,7 +47,7 @@ namespace RAnnot {
 class AnnotationBase
 {
 public:
-  AnnotationBase();
+  explicit AnnotationBase();
   virtual ~AnnotationBase();
   
   // -------------------------------------------------------
