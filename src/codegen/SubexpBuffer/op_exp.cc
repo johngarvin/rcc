@@ -107,7 +107,7 @@ Expression SubexpBuffer::op_exp(SEXP cell, string rho, Protection
     return Expression("<<unexpected promise>>", DEPENDENT, INVISIBLE, "");
     break;
   case LANGSXP:
-    out = op_lang(e, rho, resultProtection, resultStatus);
+    out = op_lang(cell, rho, resultProtection, resultStatus);
     return out;
     break;
   case CHARSXP:

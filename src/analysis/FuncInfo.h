@@ -58,7 +58,7 @@
                                        ni->isValid() && ((node) = ni->current().convert<OA::CFG::Node>()) != FuncInfo::iterator_dummy_node; \
                                        ++*ni)
 #define NODE_FOR_EACH_STATEMENT(node, stmt) for(OA::OA_ptr<OA::CFG::NodeStatementsIteratorInterface> si = (node)->getNodeStatementsIterator(); \
-                                                si->isValid() && ((stmt) = si->current()) != StmtHandle(0);                                    \
+                                                si->isValid() && ((stmt) = si->current()) != OA::StmtHandle(0);  \
                                                 ++*si)
 
 namespace RAnnot {

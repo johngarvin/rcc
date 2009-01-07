@@ -90,21 +90,22 @@ void CallByValueAnalysis::perform_analysis() {
   }
   
   FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_CALL_SITE(fi, csi) {
+    PROC_FOR_EACH_CALL_SITE(fi, csi_c) {
+      SEXP cs = CAR(*csi_c);
       if (debug) {
 	std::cout << "Analyzing call site:" << std::endl;
-	Rf_PrintValue(*csi);
+	Rf_PrintValue(cs);
 	std::cout << std::endl;
       }
       
-      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi);
+      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c);
       
       // if unique callee can be found at compile time, grab it
       FuncInfo * callee;
-      if (is_fundef(call_lhs(*csi))) {
-	callee = getProperty(FuncInfo, CAR(call_lhs(*csi)));
-      } else if (is_var(call_lhs(*csi))) {
-	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, *csi)); // not call_lhs; Var wants the cons cell
+      if (is_fundef(call_lhs(cs))) {
+	callee = getProperty(FuncInfo, CAR(call_lhs(cs)));
+      } else if (is_var(call_lhs(cs))) {
+	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, cs)); // not call_lhs; Var wants the cons cell
 	DefVar * def = vi->single_def_if_exists();
 	if (def == 0) {
 	  continue;
@@ -120,14 +121,14 @@ void CallByValueAnalysis::perform_analysis() {
 	throw AnalysisException("CallByValueAnalysis: non-symbol LHS of procedure call");
       }
 
-      if (callee->get_num_args() != Rf_length(call_args(*csi))) {
+      if (callee->get_num_args() != Rf_length(call_args(cs))) {
 	// TODO: handle default args and "..."
 	throw AnalysisException("CallByValueAnalysis: default args or \"...\"");
       }
 
       // for each arg
       int i = 1;
-      for(R_ListIterator argi(call_args(*csi)); argi.isValid(); argi++, i++) {
+      for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
 
 	// get side effect of the pre-debut part of the callee
@@ -166,7 +167,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  call_expr->set_eager_lazy(i, LAZY);
 	  if (debug) {
 	    std::cout << "dependence between actual arg ";
-	    Rf_PrintValue(actual);
+	    Rf_PrintValue(CAR(actual));
 	    std::cout << "and pre-debut" << std::endl;
 	  }
 	  continue;

@@ -24,11 +24,16 @@
 
 #include <map>
 
+#include <OpenAnalysis/IRInterface/IRHandles.hpp>
+#include <OpenAnalysis/CFG/CFGInterface.hpp>
+
 #include <support/Debug.h>
 #include <support/RccError.h>
 
+#include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/PropertySet.h>
@@ -50,64 +55,44 @@ typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
 // ----- constructor/destructor ----- 
 
 ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
-  : m_map(),
-    m_computation_in_progress(false)
 {
   RCC_DEBUG("RCC_ExpressionInfoAnnotationMap", debug);
 }
 
 ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
   std::map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+  for(iter = get_map().begin(); iter != get_map().end(); ++iter) {
     delete(iter->second);
   }
 }
 
-// ----- demand-driven analysis ----- 
+// ----- computation -----
 
-// Subscripting is here temporarily to allow PutProperty -->
-// PropertySet::insert to work right.
-// TODO: delete this when fully refactored to disallow insertion from outside.
-MyMappedT & ExpressionInfoAnnotationMap::operator[](const MyKeyT & k) {
-  std::map<MyKeyT, MyMappedT>::iterator annot = m_map.find(k);
-  if (annot == m_map.end()) {
-    if (computation_in_progress()) {
-      rcc_error("ExpressionInfoAnnotationMap depends on itself");
+void ExpressionInfoAnnotationMap::compute() {
+  FuncInfo * fi;
+  OA::OA_ptr<OA::CFG::NodeInterface> node;
+  OA::StmtHandle stmt;
+
+  // we need to make expressions out of statements, call sites, and actual arguments
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_NODE(fi, node) {
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
+	// statements
+	ExpressionInfo * annot = make_annot(make_sexp(stmt));
+	for(ExpressionInfo::const_call_site_iterator csi = annot->begin_call_sites(); csi != annot->end_call_sites(); ++csi) {
+	  // call sites
+	  make_annot(*csi);
+	  for(R_ListIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
+	    // actual arguments
+	    make_annot(arg_it.current());
+	  }
+	}
+      }
     }
-    m_computation_in_progress = true;
-    compute(k);
-    m_computation_in_progress = false;
-    return m_map[k];
-  } else {
-    return annot->second; 
   }
 }
 
-/// Perform the computation for the given expression if necessary and
-/// return the requested data.
-MyMappedT ExpressionInfoAnnotationMap::get(const MyKeyT & k) {
-  return (*this)[k];
-}
-  
-/// Expression info is computed piece by piece, so it's never fully computed
-bool ExpressionInfoAnnotationMap::is_computed() const {
-  return false;
-}
-
-bool ExpressionInfoAnnotationMap::computation_in_progress() const {
-  return m_computation_in_progress;
-}
-
-//  ----- iterators ----- 
-
-iterator       ExpressionInfoAnnotationMap::begin()       { return m_map.begin(); }
-const_iterator ExpressionInfoAnnotationMap::begin() const { return m_map.begin(); }
-iterator       ExpressionInfoAnnotationMap::end()       { return m_map.end(); }
-const_iterator ExpressionInfoAnnotationMap::end() const { return m_map.end(); }
-
-// ----- computation -----
-
-void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
+ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
   if (debug) {
     std::cout << "ExpressionInfoAnnotationMap analyzing the following expression:" << std::endl;
     Rf_PrintValue(CAR(k));
@@ -124,8 +109,9 @@ void ExpressionInfoAnnotationMap::compute(const MyKeyT & k) {
   for(cs = lva.begin_call_sites(); cs != lva.end_call_sites(); ++cs) {
     annot->insert_call_site(*cs);
   }
-  
-  m_map[k] = annot;
+
+  get_map()[k] = annot;
+  return annot;
 }
 
 // ----- singleton pattern -----

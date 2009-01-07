@@ -1018,7 +1018,7 @@ R_IRCallsiteIterator::~R_IRCallsiteIterator() {
 }
 
 CallHandle R_IRCallsiteIterator::current() const {
-  return make_call_h(*m_current);
+  return make_call_h(CAR(*m_current));
 }
 
 bool R_IRCallsiteIterator::isValid() const {
@@ -1038,13 +1038,13 @@ void R_IRCallsiteIterator::reset() {
 //--------------------------------------------------------------------
 
 R_IRProgramCallsiteIterator::R_IRProgramCallsiteIterator(StmtHandle _h)
-  : m_annot(getProperty(ExpressionInfo, make_sexp(_h)))    
+  : m_annot(getProperty(ExpressionInfo, make_sexp(_h)))
 {
-  SEXP cs;
+  SEXP csi_c;
   // In the ExpressionInfo's call sites, collect only non-internal calls
-  EXPRESSION_FOR_EACH_CALL_SITE(m_annot, cs) {
-    if (is_var(call_lhs(cs)) && !is_library(call_lhs(cs))) {
-      m_program_call_sites.push_back(cs);
+  EXPRESSION_FOR_EACH_CALL_SITE(m_annot, csi_c) {
+    if (is_var(call_lhs(CAR(csi_c))) && !is_library(call_lhs(CAR(csi_c)))) {
+      m_program_call_sites.push_back(csi_c);
     }
   }
   m_current = m_program_call_sites.begin();
@@ -1054,7 +1054,7 @@ R_IRProgramCallsiteIterator::~R_IRProgramCallsiteIterator() {
 }
 
 CallHandle R_IRProgramCallsiteIterator::current() const {
-  return make_call_h(*m_current);
+  return make_call_h(CAR(*m_current));
 }
 
 bool R_IRProgramCallsiteIterator::isValid() const {

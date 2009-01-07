@@ -149,7 +149,7 @@ std::ostream & ExpressionInfo::dump(std::ostream & os) const {
 
   os << "Begin call sites:" << std::endl;
   EXPRESSION_FOR_EACH_CALL_SITE(this, cs) {
-    dumpSEXP(os, cs);
+    dumpSEXP(os, CAR(cs));
   }
   os << "End call sites" << std::endl;
 

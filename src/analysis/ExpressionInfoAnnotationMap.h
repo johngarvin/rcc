@@ -25,19 +25,19 @@
 #ifndef EXPRESSION_INFO_ANNOTATION_MAP_H
 #define EXPRESSION_INFO_ANNOTATION_MAP_H
 
-// Set of ExpressionInfo annotations. Note that this AnnotationMap is
-// computed built piecewise instead of all at once. Thus it uses a
-// different interface than DefaultAnnotationMap. Note: owns values in
-// map, so they must be deleted in the destructor
+// Set of ExpressionInfo annotations. Note: owns values in map, so
+// they must be deleted in the destructor
 
 #include <map>
 
-#include <analysis/AnnotationMap.h>
+#include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class ExpressionInfoAnnotationMap : public AnnotationMap {
+class ExpressionInfo;
+
+class ExpressionInfoAnnotationMap : public DefaultAnnotationMap {
 public:
   // deconstructor
   virtual ~ExpressionInfoAnnotationMap();
@@ -48,27 +48,13 @@ public:
   // getting the handle causes this map to be created and registered
   static PropertyHndlT handle();
 
-  // demand-driven analysis
-  MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
-  MyMappedT get(const MyKeyT & k);
-  bool is_computed() const;
-  bool computation_in_progress() const;
-
-  // iterators
-  iterator begin();
-  const_iterator begin() const;
-  iterator end();
-  const_iterator end() const;
-
 private:
   // singleton: only this class is allowed to instantiate
   explicit ExpressionInfoAnnotationMap();
 
-  void compute(const MyKeyT & k);
+  void compute();
+  ExpressionInfo * make_annot(const SEXP & k);
 
-  std::map<MyKeyT, MyMappedT> m_map;
-  bool m_computation_in_progress;
-  
   // static members and methods for singleton
   static ExpressionInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

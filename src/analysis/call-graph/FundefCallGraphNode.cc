@@ -67,7 +67,7 @@ namespace RAnnot {
     const CallSiteCallGraphNode * csnode;
     FuncInfo::const_call_site_iterator csi;
     for(csi = fi->begin_call_sites(); csi != fi->end_call_sites(); ++csi) {
-      SEXP cs = *csi;
+      SEXP cs = CAR(*csi);
       csnode = cg->make_call_site_node(cs);
       if (visited_cs.find(csnode) == visited_cs.end()) {
 	visited_cs.insert(csnode);

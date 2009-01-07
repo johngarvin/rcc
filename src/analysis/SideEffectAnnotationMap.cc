@@ -36,17 +36,22 @@
 #include <analysis/SideEffect.h>
 #include <analysis/SimpleIterators.h>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 using namespace OA;
 using namespace HandleInterface;
+
+static bool debug;
 
 namespace RAnnot {
 
 //  ----- constructor/destructor ----- 
   
 SideEffectAnnotationMap::SideEffectAnnotationMap()
-{}
+{
+  RCC_DEBUG("RCC_SideEffect", debug);
+}
   
 SideEffectAnnotationMap::~SideEffectAnnotationMap()
 {}
@@ -89,12 +94,20 @@ void SideEffectAnnotationMap::compute() {
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
+	if (debug) {
+	  std::cout << "making side effect for statement: ";
+	  Rf_PrintValue(CAR(make_sexp(stmt)));
+	}
 	make_side_effect(fi, make_sexp(stmt));
       }  // next statement
     }  // next node
 
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
-      for(R_ListIterator arg_it(*csi); arg_it.isValid(); ++arg_it) {
+      for(R_ListIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
+	if (debug) {
+	  std::cout << "making side effect for actual arg: ";
+	  Rf_PrintValue(CAR(arg_it.current()));
+	}
 	make_side_effect(fi, arg_it.current());
       }
     }
@@ -124,7 +137,7 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
 }
 
 void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP e) {
-  SEXP cs;
+  SEXP cs_c;
   Var * var;
   ExpressionInfo * expr = getProperty(ExpressionInfo, e);
   SideEffect * annot = new SideEffect();
@@ -137,9 +150,9 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 
   // now grab interprocedural uses and defs from m_side_effect
 
-  EXPRESSION_FOR_EACH_CALL_SITE(expr, cs) {
+  EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
     OA_ptr<LocIterator> li;
-    for(li = m_side_effect->getMODIterator(make_call_h(cs)); li->isValid(); ++(*li)) {
+    for(li = m_side_effect->getMODIterator(make_call_h(CAR(cs_c))); li->isValid(); ++(*li)) {
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
@@ -150,7 +163,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 	rcc_error("Unexpected location type");
       }
     }  // next MOD location
-    for(li = m_side_effect->getREFIterator(make_call_h(cs)); li->isValid(); ++(*li)) {
+    for(li = m_side_effect->getREFIterator(make_call_h(CAR(cs_c))); li->isValid(); ++(*li)) {
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
@@ -163,6 +176,10 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
     }  // next REF location
   }  // next call site in expression
   
+  if (debug) {
+    std::cout << "Side effect produced: ";
+    annot->dump(std::cout);
+  }
   get_map()[e] = annot;
 } 
 

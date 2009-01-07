@@ -121,7 +121,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
       build_ud_rhs(stmt, Var::Var_MUST);
     }
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
-    m_call_sites.push_back(e);
+    m_call_sites.push_back(cell);
     if (is_var(CAR(e))) {
       UseVar * var_annot = new UseVar();
       var_annot->setMention_c(e);

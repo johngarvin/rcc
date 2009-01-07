@@ -32,18 +32,19 @@
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/ExpressionInfo.h>   // TODO: remove if EAGER/LAZY is taken out of ExpressionInfo
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 
+#if 0
 #include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/LibraryCallGraphNode.h>
 #include <analysis/call-graph/FundefCallGraphNode.h>
 #include <analysis/call-graph/UnknownValueCallGraphNode.h>
+#endif
 
 #include <support/StringUtils.h>
 #include <support/RccError.h>
@@ -56,13 +57,14 @@ using namespace std;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
+static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
 				   string rho, Protection resultProtection, ResultStatus resultStatus);
 
-Expression SubexpBuffer::op_lang(SEXP e, string rho, 
+Expression SubexpBuffer::op_lang(SEXP cell, string rho, 
 				 Protection resultProtection,
 				 ResultStatus resultStatus)
 {
+  SEXP e = CAR(cell);
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
     // the value is conveniently stored in the symbol, so we can just grab it
@@ -76,7 +78,7 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
     if (cga == 0) {
       // not in call graph; call to internal procedure
       if (is_library(call_lhs(e))) {
-	return op_internal_call(this, library_value(call_lhs(e)), e, rho, resultProtection, resultStatus);
+	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
       } else {
 	rcc_error("Unexpected procedure symbol in neither call graph nor R library");
       }
@@ -94,21 +96,22 @@ Expression SubexpBuffer::op_lang(SEXP e, string rho,
 	    ph = cga->get_singleton_if_exists();
 	    fi = getProperty(FuncInfo, make_sexp(ph));
 	    // TODO: deal with assertions that aren't user-defined symbols
-	    return op_clos_app(closure_exp, CAR(call_args(e)), rho, resultProtection,
+	    // use the real call: pass the cell containing the first argument of eager.call
+	    return op_clos_app(closure_exp, call_args(e), rho, resultProtection,
 			       EAGER);
 	  }
 	}
 	
-	return op_clos_app(closure_exp, e, rho, resultProtection);
+	return op_clos_app(closure_exp, cell, rho, resultProtection);
       } else {
 	Expression func = op_fun_use(e, rho);
-	return op_clos_app(func, e, rho, resultProtection);
+	return op_clos_app(func, cell, rho, resultProtection);
       }
     }
 
 #if 0
 
-code with home-grown call graph
+old code with home-grown call graph
 
     // see if call graph supplies a single definition
     RccCallGraphAnnotation * ann = getProperty(RccCallGraphAnnotation, e);
@@ -120,7 +123,7 @@ code with home-grown call graph
 	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
-	return op_internal_call(this, lib->get_value(), e, rho, resultProtection, resultStatus);
+	return op_internal_call(this, lib->get_value(), cell, rho, resultProtection, resultStatus);
       } else if (const UnknownValueCallGraphNode * uv = dynamic_cast<const UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, call_args(e), rho, resultProtection);
@@ -138,20 +141,21 @@ code with home-grown call graph
     // generate closure and application
     Expression op1;
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
-    return op_clos_app(op1, e, rho, resultProtection);
+    return op_clos_app(op1, cell, rho, resultProtection);
     // eval.c: 395
   }
 }
 
 /// Output a call to a library or builtin bound in the R environment.
-static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP e,
+static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
 				   string rho, Protection resultProtection, ResultStatus resultStatus)
 {
+  SEXP e = CAR(cell);
   Expression ret_val;
   if (TYPEOF(op) == CLOSXP) {
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     // above: false as last argument for unevaluated result. Is this correct?
-    return sb->op_clos_app(func, e, rho, resultProtection);
+    return sb->op_clos_app(func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
     return sb->op_builtin(e, op, rho, resultProtection);
   } else {

@@ -49,7 +49,7 @@ using namespace std;
 //     add v to cons list
 // Ack! No promiseArgs!
 
-static Expression op_arglist(SubexpBuffer * sb, const SEXP e, int * const unprotcnt, const string rho);
+static Expression op_arglist(SubexpBuffer * sb, const SEXP cell, int * const unprotcnt, const string rho);
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
 				 const RAnnot::ExpressionInfo * const ei, 
@@ -63,11 +63,12 @@ static Expression op_promise_args(SubexpBuffer * sb,
 				  string rho);
 
 /// Output an application of a closure to actual arguments.
-Expression SubexpBuffer::op_clos_app(Expression op1, SEXP e,
+Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
 				     string rho,
 				     Protection resultProtection,
 				     EagerLazyT laziness /* = LAZY */)
 {
+  SEXP e = CAR(cell);
   SEXP args = call_args(e);
   int unprotcnt = 0;
 
@@ -82,7 +83,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP e,
     args1 = op_list(args, rho, false, Protected);                      // false: output compiled list
 #endif
   } else {
-    args1 = op_arglist(this, e, &unprotcnt, rho);
+    args1 = op_arglist(this, cell, &unprotcnt, rho);
   }
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
@@ -138,8 +139,9 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP e,
 //   end if
 //   return appl2("cons", head_exp, tail_exp)
 
-static Expression op_arglist(SubexpBuffer * const sb, const SEXP e, int * const unprotcnt, string rho) {
-  RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, e);
+static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string rho) {
+  SEXP e = CAR(cell);
+  RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
   Expression out = op_arglist_rec(sb, call_args(e), ei, 1, unprotcnt, rho);
   return out;
 }
