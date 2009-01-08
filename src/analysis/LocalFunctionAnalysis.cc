@@ -109,10 +109,6 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
       EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	var = getProperty(Var, var->getMention_c());
-	// TODO: should make sure we always get the data-flow-solved
-	// version of the Var. Shouldn't have to loop through
-	// getProperty!
 	fi->insert_mention(var);
       }
       EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
