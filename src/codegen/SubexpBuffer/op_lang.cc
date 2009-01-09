@@ -39,6 +39,8 @@
 #include <analysis/OACallGraphAnnotationMap.h>
 
 #if 0
+// we are using OpenAnalysis call graphs instead
+
 #include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/LibraryCallGraphNode.h>

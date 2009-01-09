@@ -4,7 +4,6 @@ bin_PROGRAMS = rcc.bin
 VPATH =						\
   @top_srcdir@/src				\
   @top_srcdir@/src/analysis			\
-  @top_srcdir@/src/analysis/call-graph          \
   @top_srcdir@/src/codegen			\
   @top_srcdir@/src/codegen/SubexpBuffer		\
   @top_srcdir@/src/matmul			\
@@ -13,6 +12,8 @@ VPATH =						\
   @top_srcdir@/src/support/stacks		\
   @top_srcdir@/src/support/trees
 
+#  @top_srcdir@/src/analysis/call-graph          \
+#
 
 
 rcc_bin_SOURCES =				\
@@ -150,27 +151,6 @@ rcc_bin_SOURCES =				\
   VarRefSet.h					\
   VarVisitor.h                                  \
                                                 \
-  RccCallGraphAnnotation.cc                     \
-  RccCallGraphAnnotation.h                      \
-  RccCallGraphAnnotationMap.cc                  \
-  RccCallGraphAnnotationMap.h                   \
-  CallGraphEdge.cc                              \
-  CallGraphEdge.h                               \
-  CallGraphInfo.cc                              \
-  CallGraphInfo.h                               \
-  CallGraphNode.cc                              \
-  CallGraphNode.h                               \
-  CallSiteCallGraphNode.cc                      \
-  CallSiteCallGraphNode.h                       \
-  CoordinateCallGraphNode.cc                    \
-  CoordinateCallGraphNode.h                     \
-  FundefCallGraphNode.cc                        \
-  FundefCallGraphNode.h                         \
-  LibraryCallGraphNode.cc                       \
-  LibraryCallGraphNode.h                        \
-  UnknownValueCallGraphNode.cc                  \
-  UnknownValueCallGraphNode.h                   \
-						\
   SplitSubexpBuffer.cc SplitSubexpBuffer.h	\
   SubexpBuffer.cc SubexpBuffer.h		\
   SubexpBufferUtils.cc				\
@@ -219,6 +199,32 @@ rcc_bin_SOURCES =				\
   NonUniformDegreeTree.cc			\
   NonUniformDegreeTree.h			\
   NonUniformDegreeTreeTmpl.h
+
+# RCC home-grown call graph
+# Commented out because we are using OpenAnalysis call graphs instead
+
+#  RccCallGraphAnnotation.cc                     \
+#  RccCallGraphAnnotation.h                      \
+#  RccCallGraphAnnotationMap.cc                  \
+#  RccCallGraphAnnotationMap.h                   \
+#  CallGraphEdge.cc                              \
+#  CallGraphEdge.h                               \
+#  CallGraphInfo.cc                              \
+#  CallGraphInfo.h                               \
+#  CallGraphNode.cc                              \
+#  CallGraphNode.h                               \
+#  CallSiteCallGraphNode.cc                      \
+#  CallSiteCallGraphNode.h                       \
+#  CoordinateCallGraphNode.cc                    \
+#  CoordinateCallGraphNode.h                     \
+#  FundefCallGraphNode.cc                        \
+#  FundefCallGraphNode.h                         \
+#  LibraryCallGraphNode.cc                       \
+#  LibraryCallGraphNode.h                        \
+#  UnknownValueCallGraphNode.cc                  \
+#  UnknownValueCallGraphNode.h                   \
+#						
+
 
 #--------------------------------------
 # The use of variables defined by -D below in MY_COMMON_MACROS 
