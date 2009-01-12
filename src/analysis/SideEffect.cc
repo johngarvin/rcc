@@ -45,7 +45,9 @@ typedef SideEffect::MyIterator MyIterator;
 
 // ----- constructor/destructor -----
 
-SideEffect::SideEffect() {
+SideEffect::SideEffect() : m_trivial(false),
+			   m_cheap(false)
+{
   m_uses = new OA::LocSet();
   m_defs = new OA::LocSet();
 }
@@ -53,6 +55,23 @@ SideEffect::SideEffect() {
 SideEffect::~SideEffect() {
 }
 
+// ----- trivial/cheap -----
+
+  void SideEffect::set_trivial(bool x) {
+    m_trivial = x;
+  }
+
+  bool SideEffect::is_trivial() {
+    return m_trivial;
+  }
+
+  void SideEffect::set_cheap(bool x) {
+    m_cheap = x;
+  }
+
+  bool SideEffect::is_cheap() {
+    return m_cheap;
+  }
 
 // ----- insertion -----
 

@@ -47,6 +47,11 @@ public:
   explicit SideEffect();
   virtual ~SideEffect();
 
+  void set_trivial(bool x);
+  bool is_trivial();
+  void set_cheap(bool x);
+  bool is_cheap();
+
   MyVarSetT get_uses();
   MyVarSetT get_defs();
 
@@ -72,6 +77,9 @@ public:
 private:
   MyVarSetT m_uses;
   MyVarSetT m_defs;
+
+  bool m_trivial;
+  bool m_cheap;
 };
 
 }  // end namespace RAnnot

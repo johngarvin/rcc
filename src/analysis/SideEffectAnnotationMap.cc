@@ -142,6 +142,8 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   ExpressionInfo * expr = getProperty(ExpressionInfo, e);
   SideEffect * annot = new SideEffect();
 
+  set_trivial_cheap_status(e, annot);
+
   // first grab local uses and defs
 
   EXPRESSION_FOR_EACH_MENTION(expr, var) {
@@ -182,5 +184,14 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   }
   get_map()[e] = annot;
 } 
+
+  // Given a cell containing a call site and an annotation, set the
+  // trivial and cheap flags appropriately.
+void SideEffectAnnotationMap::set_trivial_cheap_status(SEXP e, SideEffect * annot) {
+  if (is_const(e) || is_var(e)) {
+    annot->set_trivial(true);
+    annot->set_cheap(true);
+  }
+}
 
 } // end namespace RAnnot

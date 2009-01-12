@@ -54,6 +54,7 @@ private:
   void compute();
   void compute_oa_side_effect();
   void make_side_effect(const FuncInfo * const, const SEXP e);
+  void set_trivial_cheap_status(SEXP e, SideEffect * annot);
 
   static SideEffectAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

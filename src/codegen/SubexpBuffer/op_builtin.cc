@@ -122,6 +122,11 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     }
     
   } else {  // common case: call the do_ function
+
+    // output arguments
+    //
+    // note: BUILTINSXP expressions are call-by-value by definition.
+    // Pass true to op_list to evaluate arguments before the call.
 #if USE_OUTPUT_CODEGEN
     Expression args1 = output_to_expression(CodeGen::op_list(args, rho, false, true));
 #else
