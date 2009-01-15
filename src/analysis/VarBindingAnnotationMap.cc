@@ -140,7 +140,6 @@ void VarBindingAnnotationMap::create_var_bindings() {
     // create VarBindings for formal args; each one has just one
     // scope, which is the current procedure
     for(int i = 1; i <= fi->get_num_args(); i++) {
-      Var * var = getProperty(Var, fi->get_arg(i));
       VarBinding * binding = new VarBinding();
       binding->insert(fi->get_scope());
       get_map()[fi->get_arg(i)] = binding;
@@ -184,10 +183,6 @@ void VarBindingAnnotationMap::create_var_bindings() {
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_MENTION(fi, mi) {
       Var * v = *mi;
-      v = getProperty(Var, v->getMention_c());
-      // TODO: should make sure we always get the data-flow-solved
-      // version of the Var. Shouldn't have to loop through
-      // getProperty!
       if (v->getUseDefType() == Var::Var_USE) {
 	VarBinding * scopes = new VarBinding();
 	switch(v->getScopeType()) {
@@ -230,7 +225,6 @@ void VarBindingAnnotationMap::create_var_bindings() {
     // first, create VarBindings for formal args; each one has just
     // one scope, which is the current procedure
     for(int i = 1; i <= fi->get_num_args(); i++) {
-      Var * var = getProperty(Var, fi->get_arg(i));
       VarBinding * binding = new VarBinding();
       binding->insert(fi->get_scope());
       get_map()[fi->get_arg(i)] = binding;
@@ -239,10 +233,6 @@ void VarBindingAnnotationMap::create_var_bindings() {
     // now create bindings for mentions in the function body
     PROC_FOR_EACH_MENTION(fi, mi) {
       Var * v = *mi;
-      v = getProperty(Var, v->getMention_c());
-      // TODO: should make sure we always get the data-flow-solved
-      // version of the Var. Shouldn't have to loop through
-      // getProperty!
       VarBinding * scopes = new VarBinding();
       switch(v->getScopeType()) {
       case Locality::Locality_LOCAL:

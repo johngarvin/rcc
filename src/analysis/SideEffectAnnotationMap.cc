@@ -142,7 +142,8 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   ExpressionInfo * expr = getProperty(ExpressionInfo, e);
   SideEffect * annot = new SideEffect();
 
-  set_trivial_cheap_status(e, annot);
+  annot->set_trivial(expression_is_trivial(e));
+  annot->set_cheap(expression_is_cheap(e));
 
   // first grab local uses and defs
 
@@ -185,13 +186,24 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   get_map()[e] = annot;
 } 
 
-  // Given a cell containing a call site and an annotation, set the
-  // trivial and cheap flags appropriately.
-void SideEffectAnnotationMap::set_trivial_cheap_status(SEXP e, SideEffect * annot) {
-  if (is_const(e) || is_var(e)) {
-    annot->set_trivial(true);
-    annot->set_cheap(true);
-  }
+// an expression is trivially evaluable if it cannot diverge, throw an
+// error/exception, or have any side effect. Used for call-by-value
+// transformation: if the callee is non-strict in some formal
+// argument, then the call-by-value transformation is valid if there
+// is no dependence between pre-debut code and the corresponding
+// actual argument and the actual argument is trivially evaluable.
+bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
+  // TODO: refine to include arithmetic, etc.
+  return (is_const(e) || is_var(e));
+}
+
+// "cheaply evaluable" expressions take a "reasonably short" amount of
+// time to evaluate. This is used for the call-by-value
+// transformation: the transformation may be unprofitable if the
+// callee is nonstrict in the formal argument and the corresponding
+// actual argument is expensive to evaluate.
+bool SideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
+  return (is_const(e) || is_var(e));
 }
 
 } // end namespace RAnnot
