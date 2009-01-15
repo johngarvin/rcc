@@ -136,10 +136,12 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
   m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
 }
 
-void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP e) {
+void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
   SEXP cs_c;
   Var * var;
-  ExpressionInfo * expr = getProperty(ExpressionInfo, e);
+
+  SEXP e = CAR(cell);
+  ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
   SideEffect * annot = new SideEffect();
 
   annot->set_trivial(expression_is_trivial(e));
@@ -183,7 +185,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
     std::cout << "Side effect produced: ";
     annot->dump(std::cout);
   }
-  get_map()[e] = annot;
+  get_map()[cell] = annot;
 } 
 
 // an expression is trivially evaluable if it cannot diverge, throw an

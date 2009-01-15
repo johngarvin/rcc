@@ -57,23 +57,11 @@ CallByValueAnalysis::CallByValueAnalysis() {
   RCC_DEBUG("RCC_CallByValue", debug);
 }
 
-// for each procedure:
-//   make StrictnessDFSolver and perform analysis for each procedure, get StrictnessResult
-//   for each formal arg:
-//     compute, store side effect of pre-debut statements for that formal in FormalArgInfo
-// for each call site:
-//   get unique callee if it exists
-//   for each actual arg:
-//     compute side effect of actual
-//     get pre-debut side effect of callee for this formal (stored in FormalArgInfo)
-//     if intersection is empty:
-//       store the fact that the actual can be called CBV-wise
-//     else if the intersection is nonempty (a dependence exists):
-//       store the fact that we must use CBN
-
 void CallByValueAnalysis::perform_analysis() {
   FuncInfo * fi;
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+
+  // compute pre-debut side effects for each formal arg
 
   FOR_EACH_PROC(fi) {
     StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
@@ -89,6 +77,8 @@ void CallByValueAnalysis::perform_analysis() {
     }
   }
   
+  // analyze call sites (those that can be analyzed) and figure out whether each arg can be made CBV
+
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, csi_c) {
       SEXP cs = CAR(*csi_c);
@@ -130,14 +120,14 @@ void CallByValueAnalysis::perform_analysis() {
       int i = 1;
       for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
-	SEXP actual = argi.current();
-	call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual) ? EAGER : LAZY);
+	SEXP actual_c = argi.current();
+	call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
       }
     }
   }
 }
 
-bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual) {
+bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   // get side effect of the pre-debut part of the callee
   SideEffect * pre_debut = formal->get_pre_debut_side_effect();
   
@@ -146,42 +136,48 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual) {
     pre_debut->dump(cout);
   }
   
-  // if formal is not strict, conservatively say it's not safe
-  if (!formal->is_strict()) {
-    if (debug) {
-      cout << "nonstrict formal arg: ";
-      formal->dump(std::cout);
-      cout << std::endl;
-    }
-    return false;
-  }
-  
   // get the actual argument's side effect
-  SideEffect * arg_side_effect = getProperty(SideEffect, actual);
+  SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
   if (debug) {
     cout << "Actual arg: ";
-    Rf_PrintValue(CAR(actual));
+    Rf_PrintValue(CAR(actual_c));
     cout << "with side effect: ";
     arg_side_effect->dump(cout);
     cout << std::endl;
   }
   
-  // test for intersection
-  if (arg_side_effect->intersects(pre_debut)) {
+  if (formal->is_strict()) {
     if (debug) {
-      std::cout << "dependence between actual arg: ";
-      Rf_PrintValue(CAR(actual));
-      std::cout << "and pre-debut code" << std::endl;
+      std::cout << "Formal is strict:";
+      formal->dump(std::cout);
+      std::cout << std::endl;
+      std::cout << "Testing dependence between actual arg: ";
+      Rf_PrintValue(CAR(actual_c));
+      std::cout << "and pre-debut code: ";
     }
-    return false;
-  }
 
-  // if we get here, good news: no dependence, so we can use eager eval
-  if (debug) {
-    cout << "strict formal arg: ";
-    formal->dump(std::cout);
+    // test for intersection
+    if (arg_side_effect->intersects(pre_debut)) {
+      if (debug) {
+	std::cout << "DEPENDENCE" << std::endl;
+      }
+      return false;
+    } else {
+      if (debug) {
+	std::cout<< "NO DEPENDENCE" << std::endl;
+      }
+      return true;
+    }
+  } else {    // formal is non-strict
+    bool trivial = arg_side_effect->is_trivial();
+    if (debug) {
+      std::cout << "Formal is non-strict: ";
+      formal->dump(std::cout);
+      std::cout << std::endl << "Actual is " << (trivial ? "TRIVIAL" : "NON-TRIVIAL") << std::endl;
+    }
+    // CBV is safe if arg is trivial
+    return trivial;
   }
-  return true;
 }
 
 SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
