@@ -37,6 +37,7 @@ public:
   void perform_analysis();
 
 private:
+  bool is_cbv_safe(RAnnot::FormalArgInfo * formal, SEXP actual);
   RAnnot::SideEffect * compute_pre_debut_side_effect(RAnnot::FuncInfo * fi, RAnnot::FormalArgInfo * formal);
 };
 

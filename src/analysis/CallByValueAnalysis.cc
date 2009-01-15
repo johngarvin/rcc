@@ -130,57 +130,58 @@ void CallByValueAnalysis::perform_analysis() {
       int i = 1;
       for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
 	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
-
-	// get side effect of the pre-debut part of the callee
-	SideEffect * pre_debut = formal->get_pre_debut_side_effect();
-
-	if (debug) {
-	  cout << "Pre-debut side effect: ";
-	  pre_debut->dump(cout);
-	}
-
-	// if formal is not strict, conservatively call it CBN
-	if (!formal->is_strict()) {
-	  if (debug) {
-	    cout << "nonstrict formal arg ";
-	    formal->dump(std::cout);
-	    cout << std::endl;
-	  }
-
-	  call_expr->set_eager_lazy(i, LAZY);
-	  continue;
-	}
-
-	// get the actual argument's side effect
 	SEXP actual = argi.current();
-	SideEffect * arg_side_effect = getProperty(SideEffect, actual);
-	if (debug) {
-	  cout << "Actual arg: ";
-	  Rf_PrintValue(CAR(actual));
-	  cout << "with side effect: ";
-	  arg_side_effect->dump(cout);
-	  cout << std::endl;
-	}
-
-	// test for intersection
-	if (arg_side_effect->intersects(pre_debut)) {
-	  call_expr->set_eager_lazy(i, LAZY);
-	  if (debug) {
-	    std::cout << "dependence between actual arg ";
-	    Rf_PrintValue(CAR(actual));
-	    std::cout << "and pre-debut" << std::endl;
-	  }
-	  continue;
-	}
-	// if we get here, good news: no dependence, so we can use eager eval
-	call_expr->set_eager_lazy(i, EAGER);
-	if (debug) {
-	  cout << "strict formal arg ";
-	  formal->dump(std::cout);
-	}
+	call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual) ? EAGER : LAZY);
       }
     }
   }
+}
+
+bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual) {
+  // get side effect of the pre-debut part of the callee
+  SideEffect * pre_debut = formal->get_pre_debut_side_effect();
+  
+  if (debug) {
+    cout << "Pre-debut side effect: ";
+    pre_debut->dump(cout);
+  }
+  
+  // if formal is not strict, conservatively say it's not safe
+  if (!formal->is_strict()) {
+    if (debug) {
+      cout << "nonstrict formal arg: ";
+      formal->dump(std::cout);
+      cout << std::endl;
+    }
+    return false;
+  }
+  
+  // get the actual argument's side effect
+  SideEffect * arg_side_effect = getProperty(SideEffect, actual);
+  if (debug) {
+    cout << "Actual arg: ";
+    Rf_PrintValue(CAR(actual));
+    cout << "with side effect: ";
+    arg_side_effect->dump(cout);
+    cout << std::endl;
+  }
+  
+  // test for intersection
+  if (arg_side_effect->intersects(pre_debut)) {
+    if (debug) {
+      std::cout << "dependence between actual arg: ";
+      Rf_PrintValue(CAR(actual));
+      std::cout << "and pre-debut code" << std::endl;
+    }
+    return false;
+  }
+
+  // if we get here, good news: no dependence, so we can use eager eval
+  if (debug) {
+    cout << "strict formal arg: ";
+    formal->dump(std::cout);
+  }
+  return true;
 }
 
 SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
