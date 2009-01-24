@@ -41,11 +41,13 @@ typedef ExpressionInfo::call_site_iterator call_site_iterator;
 typedef ExpressionInfo::const_call_site_iterator const_call_site_iterator;
 typedef ExpressionInfo::MyLazyInfoSetT MyLazyInfoSetT;
 
-ExpressionInfo::ExpressionInfo(SEXP sexp)
-  : m_sexp(sexp),
+ExpressionInfo::ExpressionInfo(SEXP cell)
+  : m_cell(cell),
+    m_vars(),
+    m_call_sites(),
     m_strict(false),
     m_trivially_evaluable(false),
-    m_lazy_info(is_call(sexp) ? Rf_length(call_args(sexp)) + 1 : 0) // +1 because indexed from 1
+    m_lazy_info(is_call(CAR(cell)) ? Rf_length(call_args(CAR(cell))) + 1 : 0) // +1 because indexed from 1
 {
 }
 
@@ -56,10 +58,12 @@ ExpressionInfo::~ExpressionInfo()
 
 // set operations
 void ExpressionInfo::insert_var(const MyVarT & x) {
+  assert(x != 0);
   m_vars.push_back(x);
 }
 
 void ExpressionInfo::insert_call_site(const MyCallSiteT & x) {
+  assert(x != 0);
   m_call_sites.push_back(x);
 }
 
@@ -113,20 +117,20 @@ void ExpressionInfo::set_trivially_evaluable(bool x) {
 }
 
 // definition of the expression
-SEXP ExpressionInfo::get_sexp() const {
-  return m_sexp;
+SEXP ExpressionInfo::get_cell() const {
+  return m_cell;
 }
 
-void ExpressionInfo::set_sexp(SEXP x) {
-  m_sexp = x;
+void ExpressionInfo::set_cell(SEXP x) {
+  m_cell = x;
 }
 
 EagerLazyT ExpressionInfo::get_eager_lazy(int arg) const {
-  return m_lazy_info[arg];
+  return m_lazy_info.at(arg);
 }
 
 void ExpressionInfo::set_eager_lazy(int arg, EagerLazyT x) {
-  m_lazy_info[arg] = x;
+  m_lazy_info.at(arg) = x;
 }
 
 
@@ -138,7 +142,7 @@ std::ostream & ExpressionInfo::dump(std::ostream & os) const {
   Var * var;
   SEXP cs;
   beginObjDump(os, ExpressionInfo);
-  SEXP definition = CAR(m_sexp);
+  SEXP definition = CAR(m_cell);
   dumpSEXP(os, definition);
 
   os << "Begin mentions:" << std::endl;

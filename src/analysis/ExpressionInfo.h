@@ -61,7 +61,7 @@ class ExpressionInfo
   : public AnnotationBase
 {
 public:
-  explicit ExpressionInfo(SEXP sexp);
+  explicit ExpressionInfo(SEXP cell);
   virtual ~ExpressionInfo();
 
   typedef Var *                     MyVarT;
@@ -100,8 +100,8 @@ public:
   void set_trivially_evaluable(bool x);
 
   // definition of the expression
-  SEXP get_sexp() const;
-  void set_sexp(SEXP x);
+  SEXP get_cell() const;
+  void set_cell(SEXP x);
 
   EagerLazyT get_eager_lazy(int arg) const;
   void set_eager_lazy(int arg, EagerLazyT x);
@@ -116,7 +116,7 @@ public:
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  SEXP m_sexp;
+  SEXP m_cell;                  // CAR(m_cell) is the expression
   MyVarSetT m_vars;             // mentions in expression
                                 // (contents of set not owned)
   MyCallSiteSetT m_call_sites;  // call sites in expression

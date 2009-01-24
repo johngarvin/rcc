@@ -816,7 +816,7 @@ void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
   switch (getSexpCfgType(exp)) {
   case CFG::SIMPLE:
     if (exp == R_NilValue) {
-      stmt_iter_ptr = new R_ListIterator(exp);  // empty iterator
+      stmt_iter_ptr = new R_ListIterator(R_NilValue);  // empty iterator
     } else {
       stmt_iter_ptr = new R_SingletonSEXPIterator(cell);
     }

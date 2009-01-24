@@ -103,6 +103,7 @@ ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
   lva.perform_analysis();
   LocalVariableAnalysis::const_var_iterator v;
   for(v = lva.begin_vars(); v != lva.end_vars(); ++v) {
+    assert(*v != 0);
     annot->insert_var(*v);
   }
   LocalVariableAnalysis::const_call_site_iterator cs;

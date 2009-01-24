@@ -107,6 +107,7 @@ void VarAnnotationMap::compute_all_syntactic_info() {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
 	EXPRESSION_FOR_EACH_MENTION(expr, var) {
+	  assert(var != 0);
 	  get_map()[var->getMention_c()] = var;
 	}
       }
