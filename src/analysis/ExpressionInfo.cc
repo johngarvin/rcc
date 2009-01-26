@@ -33,17 +33,16 @@
 namespace RAnnot {
 
 // typedefs for readability
-typedef ExpressionInfo::MyVarT MyVarT;
 typedef ExpressionInfo::MyCallSiteT MyCallSiteT;
-typedef ExpressionInfo::var_iterator var_iterator;
-typedef ExpressionInfo::const_var_iterator const_var_iterator;
+typedef ExpressionInfo::const_use_iterator const_use_iterator;
+typedef ExpressionInfo::const_def_iterator const_def_iterator;
 typedef ExpressionInfo::call_site_iterator call_site_iterator;
 typedef ExpressionInfo::const_call_site_iterator const_call_site_iterator;
 typedef ExpressionInfo::MyLazyInfoSetT MyLazyInfoSetT;
 
 ExpressionInfo::ExpressionInfo(SEXP cell)
   : m_cell(cell),
-    m_vars(),
+    m_uses(), m_defs(),
     m_call_sites(),
     m_strict(false),
     m_trivially_evaluable(false),
@@ -57,9 +56,14 @@ ExpressionInfo::~ExpressionInfo()
 }
 
 // set operations
-void ExpressionInfo::insert_var(const MyVarT & x) {
+void ExpressionInfo::insert_use(UseVar * const x) {
   assert(x != 0);
-  m_vars.push_back(x);
+  m_uses.push_back(x);
+}
+
+void ExpressionInfo::insert_def(DefVar * const x) {
+  assert(x != 0);
+  m_defs.push_back(x);
 }
 
 void ExpressionInfo::insert_call_site(const MyCallSiteT & x) {
@@ -68,20 +72,20 @@ void ExpressionInfo::insert_call_site(const MyCallSiteT & x) {
 }
 
 // iterators
-var_iterator ExpressionInfo::begin_vars() {
-  return m_vars.begin();
+const_use_iterator ExpressionInfo::begin_uses() const {
+  return m_uses.begin();
 }
 
-const_var_iterator ExpressionInfo::begin_vars() const {
-  return m_vars.begin();
+const_use_iterator ExpressionInfo::end_uses() const {
+  return m_uses.end();
 }
 
-var_iterator ExpressionInfo::end_vars() {
-  return m_vars.end();
+const_def_iterator ExpressionInfo::begin_defs() const {
+  return m_defs.begin();
 }
 
-const_var_iterator ExpressionInfo::end_vars() const {
-  return m_vars.end();
+const_def_iterator ExpressionInfo::end_defs() const {
+  return m_defs.end();
 }
 
 call_site_iterator ExpressionInfo::begin_call_sites() {
@@ -139,17 +143,24 @@ AnnotationBase * ExpressionInfo::clone() {
 }
 
 std::ostream & ExpressionInfo::dump(std::ostream & os) const {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   SEXP cs;
   beginObjDump(os, ExpressionInfo);
   SEXP definition = CAR(m_cell);
   dumpSEXP(os, definition);
 
-  os << "Begin mentions:" << std::endl;
-  EXPRESSION_FOR_EACH_MENTION(this, var) {
-    var->dump(os);
+  os << "Begin uses:" << std::endl;
+  EXPRESSION_FOR_EACH_USE(this, use) {
+    use->dump(os);
   }
-  os << "End mentions" << std::endl;
+  os << "End uses" << std::endl;
+
+  os << "Begin defs:" << std::endl;
+  EXPRESSION_FOR_EACH_DEF(this, def) {
+    def->dump(os);
+  }
+  os << "End defs" << std::endl;
 
   os << "Begin call sites:" << std::endl;
   EXPRESSION_FOR_EACH_CALL_SITE(this, cs) {

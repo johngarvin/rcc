@@ -58,7 +58,8 @@ DebutDFSolver::~DebutDFSolver()
 /// set, then it's a debut.
 OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
   OA_ptr<CFG::NodeInterface> node;
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   StmtHandle stmt;
 
   m_proc = proc;
@@ -77,12 +78,18 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
-      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(var->getMention_c());
+      EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
+	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(use->getMention_c());
 	if (! in_set->member(ref)) {
-	  debut_map->insert(std::make_pair(ref->get_sexp(), var->getMention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), use->getMention_c()));
 	}
-      }  // next mention
+      }
+      EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
+	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(def->getMention_c());
+	if (! in_set->member(ref)) {
+	  debut_map->insert(std::make_pair(ref->get_sexp(), def->getMention_c()));
+	}
+      }
       in_set = transfer(in_set, stmt).convert<DFSet>();
     }  // next statement
   }  // next CFG node
@@ -175,17 +182,24 @@ DebutDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::Da
 /// it again as result because solver clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> 
 DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
-  EXPRESSION_FOR_EACH_MENTION(annot, var) {
-    // only local name can be debuts
-    //
-    // What about TOP? Since we are solving the
-    // must-have-been-mentioned problem, if it might be local or free
-    // we conservatively say it hasn't been mentioned.
-    if (var->getScopeType() == Locality::Locality_LOCAL) {
-      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(var->getMention_c());
+  // only local name can be debuts
+  //
+  // What about TOP? Since we are solving the
+  // must-have-been-mentioned problem, if it might be local or free
+  // we conservatively say it hasn't been mentioned.
+  EXPRESSION_FOR_EACH_USE(annot, use) {
+    if (use->getScopeType() == Locality::Locality_LOCAL) {
+      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(use->getMention_c());
+      in->insert(mention);
+    }
+  }
+  EXPRESSION_FOR_EACH_DEF(annot, def) {
+    if (def->getScopeType() == Locality::Locality_LOCAL) {
+      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(def->getMention_c());
       in->insert(mention);
     }
   }

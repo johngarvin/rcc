@@ -44,8 +44,10 @@
 
 class LocalVariableAnalysis {
 public:
-  typedef RAnnot::Var * MyVarT;
-  typedef std::list<MyVarT>::const_iterator const_var_iterator;
+  typedef RAnnot::UseVar * MyUseT;
+  typedef RAnnot::DefVar * MyDefT;
+  typedef std::list<MyUseT>::const_iterator const_use_iterator;
+  typedef std::list<MyDefT>::const_iterator const_def_iterator;
   typedef SEXP MyCallSiteT;
   typedef std::list<MyCallSiteT>::const_iterator const_call_site_iterator;
 
@@ -53,8 +55,12 @@ public:
 
   void perform_analysis();
 
-  const_var_iterator begin_vars() const;
-  const_var_iterator end_vars() const;
+  const_use_iterator begin_uses() const;
+  const_use_iterator end_uses() const;
+
+  const_def_iterator begin_defs() const;
+  const_def_iterator end_defs() const;
+
   const_call_site_iterator begin_call_sites() const;
   const_call_site_iterator end_call_sites() const;
 
@@ -66,7 +72,8 @@ private:
   void build_ud_rhs(const SEXP cell, RAnnot::Var::MayMustT may_must_type);
   void build_ud_lhs(const SEXP cell, const SEXP rhs, RAnnot::Var::MayMustT may_must_type, LhsType lhs_type);
   const SEXP m_stmt;
-  std::list<MyVarT> m_vars;
+  std::list<MyUseT> m_uses;
+  std::list<MyDefT> m_defs;
   std::list<MyCallSiteT> m_call_sites;
 };
 

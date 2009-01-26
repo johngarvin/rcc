@@ -75,21 +75,23 @@ SideEffect::~SideEffect() {
 
 // ----- insertion -----
 
-void SideEffect::insert_mention(const FuncInfo * fi, const Var * v) {
+void SideEffect::insert_use_var(const FuncInfo * fi, const UseVar * use) {
   OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, v));
-  if (v->getUseDefType() == Var::Var_USE) {
-    insert_use(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
-  } else {
-    insert_def(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
-  }
+  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, use));
+  insert_use_loc(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
 }
 
-void SideEffect::insert_use(const MyVarT & v) {
+void SideEffect::insert_def_var(const FuncInfo * fi, const DefVar * def) {
+  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
+  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, def));
+  insert_def_loc(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+}
+
+void SideEffect::insert_use_loc(const MyVarT & v) {
   m_uses->insert(v);
 }
 
-void SideEffect::insert_def(const MyVarT & v) {
+void SideEffect::insert_def_loc(const MyVarT & v) {
   m_defs->insert(v);
 }
 

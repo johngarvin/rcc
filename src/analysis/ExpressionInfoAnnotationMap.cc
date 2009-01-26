@@ -101,10 +101,15 @@ ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
   ExpressionInfo * annot = new ExpressionInfo(k);
   LocalVariableAnalysis lva(k);
   lva.perform_analysis();
-  LocalVariableAnalysis::const_var_iterator v;
-  for(v = lva.begin_vars(); v != lva.end_vars(); ++v) {
-    assert(*v != 0);
-    annot->insert_var(*v);
+  LocalVariableAnalysis::const_use_iterator u;
+  for(u = lva.begin_uses(); u != lva.end_uses(); ++u) {
+    assert(*u != 0);
+    annot->insert_use(*u);
+  }
+  LocalVariableAnalysis::const_def_iterator d;
+  for(d = lva.begin_defs(); d != lva.end_defs(); ++d) {
+    assert(*d != 0);
+    annot->insert_def(*d);
   }
   LocalVariableAnalysis::const_call_site_iterator cs;
   for(cs = lva.begin_call_sites(); cs != lva.end_call_sites(); ++cs) {

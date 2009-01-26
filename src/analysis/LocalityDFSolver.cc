@@ -57,33 +57,45 @@ namespace Locality {
 
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
+static OA_ptr<R_VarRef> var_ref_from_use(UseVar * use);
+static OA_ptr<R_VarRef> var_ref_from_def(DefVar * def);
+static void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType locality, OA_ptr<R_VarRef> ref);
 
 // static variable for debugging
 
 static bool debug;
 
+OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
+  return VarRefFactory::get_instance()->make_body_var_ref(use->getMention_c());
+}
+  
+OA_ptr<R_VarRef> var_ref_from_def(DefVar * def) {
+  switch(def->getSourceType()) {
+  case DefVar::DefVar_ASSIGN:
+    return VarRefFactory::get_instance()->make_body_var_ref(def->getMention_c());
+    break;
+  case DefVar::DefVar_FORMAL:
+    return VarRefFactory::get_instance()->make_arg_var_ref(def->getMention_c());
+    break;
+  default:
+    rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
+  }
+}
+
+
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
 class MakeVarRefVisitor : private VarVisitor {
 public:
-  explicit MakeVarRefVisitor() : m_output(), m_fact(VarRefFactory::get_instance()) {}
+  explicit MakeVarRefVisitor() : m_output() {}
       
 private:
-  void visitUseVar(UseVar * uv) {
-    m_output = m_fact->make_body_var_ref(uv->getMention_c());
+  void visitUseVar(UseVar * use) {
+    m_output = var_ref_from_use(use);
   }
   
-  void visitDefVar(DefVar * dv) {
-    switch(dv->getSourceType()) {
-    case DefVar::DefVar_ASSIGN:
-      m_output = m_fact->make_body_var_ref(dv->getMention_c());
-      break;
-    case DefVar::DefVar_FORMAL:
-      m_output = m_fact->make_arg_var_ref(dv->getMention_c());
-      break;
-    default:
-      rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
-    }
+  void visitDefVar(DefVar * def) {
+    m_output = var_ref_from_def(def);
   }
 
 public:
@@ -94,7 +106,6 @@ public:
 
 private:
   OA_ptr<R_VarRef> m_output;
-  VarRefFactory * m_fact;
 };
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
@@ -107,7 +118,8 @@ LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
 /// annotation with its locality information.
 void LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -129,30 +141,37 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
     // statement-level CFG; there should be no more than one statement
     if (si->isValid()) {
 
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
-      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	// get a VarRef
-	OA_ptr<R_VarRef> ref = visitor.visit(var);
-	assert(!ref.ptrEqual(0));
-	// look up the mention's name in in_set to get lattice type
-	OA_ptr<DFSetElement> elem; elem = in_set->find(ref);
-	if (elem.ptrEqual(NULL)) {
-	  rcc_error("LocalityDFSolver: name of a mention not found in mNodeInSetMap");
-	}
+      // DF problem only analyzes uses and may-defs. Locality flags of
+      // must-defs are already determined statically, so don't reset
+      // them!
       
-	// DF problem only analyzes uses and may-defs. Locality flags of
-	// must-defs are already determined statically, so don't reset
-	// them!
-	if (var->getMayMustType() == Var::Var_MAY
-	    || var->getUseDefType() == Var::Var_USE)
-	{
-	  var->setScopeType(elem->get_locality_type());
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      // set locality flag for all uses
+      EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
+	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_use(use));
+	use->setScopeType(elem->get_locality_type());
+      }
+      // set locality flag for may-defs
+      EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
+	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_def(def));
+	if (def->getMayMustType() == Var::Var_MAY) {
+	  def->setScopeType(elem->get_locality_type());
 	}
-      } // next mention
+      }
       // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
       // TODO: add back assertion. Why does this sometimes fail?
     }
   }  // next CFG node
+}
+
+OA_ptr<DFSetElement> LocalityDFSolver::look_up_var_ref(OA_ptr<DFSet> set, OA_ptr<R_VarRef> ref) {
+  assert(!ref.ptrEqual(0));
+  // look up the mention's name in in_set to get lattice type
+  OA_ptr<DFSetElement> elem; elem = set->find(ref);
+  if (elem.ptrEqual(NULL)) {
+    rcc_error("LocalityDFSolver: name of a mention not found in mNodeInSetMap");
+  }
+  return elem;
 }
 
 /// Print out a representation of the in and out sets for each CFG node.
@@ -200,7 +219,8 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
 }
 
 void LocalityDFSolver::initialize_sets() {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -219,22 +239,19 @@ void LocalityDFSolver::initialize_sets() {
       // getProperty will trigger lower-level analysis if necessary
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
 
-      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	OA_ptr<R_VarRef> ref; ref = fact->make_body_var_ref(var->getMention_c());
+      EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
+	OA_ptr<R_VarRef> ref; ref = var_ref_from_use(use);
 
-	// all_top and all_bottom: all variables set to TOP/BOTTOM,
-	// must be initialized for OA data flow analysis
-	OA_ptr<DFSetElement> top; top = new DFSetElement(ref, Locality_TOP);
-	m_all_top->insert(top);
-	OA_ptr<DFSetElement> bottom; bottom = new DFSetElement(ref, Locality_BOTTOM);
-	m_all_bottom->insert(bottom);
+	initialize_set_element(m_all_top, Locality_TOP, ref);
+	initialize_set_element(m_all_bottom, Locality_BOTTOM, ref);
+	initialize_set_element(m_entry_values, Locality_FREE, ref);
+      }
+      EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
+	OA_ptr<R_VarRef> ref; ref = var_ref_from_def(def);
 
-	// entry_values: initial in set for entry node.  Formal
-	// arguments are LOCAL; all other variables are FREE.  We add
-	// all variables as FREE here, then reset the formals as LOCAL
-	// after the per-node and per-statement stuff.
-	OA_ptr<DFSetElement> free; free = new DFSetElement(ref, Locality_FREE);
-	m_entry_values->insert(free);
+	initialize_set_element(m_all_top, Locality_TOP, ref);
+	initialize_set_element(m_all_bottom, Locality_BOTTOM, ref);
+	initialize_set_element(m_entry_values, Locality_FREE, ref);
       }
     } // statements
   } // CFG nodes
@@ -245,6 +262,11 @@ void LocalityDFSolver::initialize_sets() {
   m_all_top->insert_varset(vs, Locality_TOP);
   m_all_bottom->insert_varset(vs, Locality_BOTTOM);
   m_entry_values->insert_varset(vs, Locality_LOCAL);
+}
+
+void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType locality, OA_ptr<R_VarRef> ref) {
+  OA_ptr<DFSetElement> element; element = new DFSetElement(ref, locality);
+  set->insert(element);
 }
 
 /// The in set for the entry node gets the set of entry values (all
@@ -278,17 +300,24 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
 /// clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
-  EXPRESSION_FOR_EACH_MENTION(annot, var) {
-    // if variable was found to be local during statement-level
-    // analysis, add it in
-    if (var->getScopeType() == Locality_LOCAL) {
-      MakeVarRefVisitor visitor;
-      OA_ptr<R_VarRef> var_ref; var_ref = visitor.visit(var);
-      OA_ptr<DFSetElement> use; use = new DFSetElement(var_ref, var->getScopeType());
-      in->replace(use);
+  // if variable was found to be local during statement-level
+  // analysis, add it in
+  EXPRESSION_FOR_EACH_USE(annot, use) {
+    if (use->getScopeType() == Locality_LOCAL) {
+      OA_ptr<R_VarRef> ref; ref = var_ref_from_use(use);
+      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, use->getScopeType());
+      in->replace(elem);
+    }
+  }
+  EXPRESSION_FOR_EACH_DEF(annot, def) { 
+    if (def->getScopeType() == Locality_LOCAL) {
+      OA_ptr<R_VarRef> ref; ref = var_ref_from_def(def);
+      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, def->getScopeType());
+      in->replace(elem);
     }
   }
   return in.convert<DataFlow::DataFlowSet>();

@@ -147,10 +147,6 @@ void VarBindingAnnotationMap::create_var_bindings() {
 
     PROC_FOR_EACH_MENTION(fi, mi) {
       Var * v = *mi;
-      v = getProperty(Var, v->getMention_c());
-      // TODO: should make sure we always get the data-flow-solved
-      // version of the Var. Shouldn't have to loop through
-      // getProperty!
       if (v->getUseDefType() == Var::Var_DEF) {
 	VarBinding * scopes = new VarBinding();
 	switch(v->getScopeType()) {

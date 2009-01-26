@@ -97,7 +97,8 @@ void VarAnnotationMap::compute() {
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
 void VarAnnotationMap::compute_all_syntactic_info() {
-  Var * var;
+  UseVar * use;
+  DefVar * def;
   FuncInfo * fi;
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
@@ -106,10 +107,15 @@ void VarAnnotationMap::compute_all_syntactic_info() {
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-	EXPRESSION_FOR_EACH_MENTION(expr, var) {
-	  assert(var != 0);
-	  get_map()[var->getMention_c()] = var;
+	EXPRESSION_FOR_EACH_USE(expr, use) {
+	  assert(use != 0);
+	  get_map()[use->getMention_c()] = use;
 	}
+	EXPRESSION_FOR_EACH_DEF(expr, def) {
+	  assert(def != 0);
+	  get_map()[def->getMention_c()] = def;
+	}
+	
       }
     }
   }

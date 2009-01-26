@@ -138,7 +138,8 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
 
 void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
   SEXP cs_c;
-  Var * var;
+  UseVar * use;
+  DefVar * def;
 
   SEXP e = CAR(cell);
   ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
@@ -148,22 +149,23 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   annot->set_cheap(expression_is_cheap(e));
 
   // first grab local uses and defs
-
-  EXPRESSION_FOR_EACH_MENTION(expr, var) {
-    annot->insert_mention(fi, var);
+  EXPRESSION_FOR_EACH_USE(expr, use) {
+    annot->insert_use_var(fi, use);
+  }
+  EXPRESSION_FOR_EACH_DEF(expr, def) {
+    annot->insert_def_var(fi, def);
   }
 
   // now grab interprocedural uses and defs from m_side_effect
-
   EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
     OA_ptr<LocIterator> li;
     for(li = m_side_effect->getMODIterator(make_call_h(CAR(cs_c))); li->isValid(); ++(*li)) {
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	annot->insert_def(named_loc);
+	annot->insert_def_loc(named_loc);
       } else if (location->isaUnknown()) {
-	annot->insert_def(location);
+	annot->insert_def_loc(location);
       } else {
 	rcc_error("Unexpected location type");
       }
@@ -172,9 +174,9 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
       OA_ptr<OA::Location> location; location = li->current();
       if (location->isaNamed()) {
 	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	annot->insert_use(named_loc);
+	annot->insert_use_loc(named_loc);
       } else if (location->isaUnknown()) {
-	annot->insert_use(location);
+	annot->insert_use_loc(location);
       } else {
 	rcc_error("Unexpected location type");
       }

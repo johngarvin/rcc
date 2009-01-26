@@ -99,7 +99,8 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
   SEXP cs;
-  Var * var;
+  UseVar * use;
+  DefVar * def;
 
   FuncInfo * fi = getProperty(FuncInfo, m_fundef);
   assert(fi != 0);
@@ -108,8 +109,11 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
-      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	fi->insert_mention(var);
+      EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
+	fi->insert_mention(use);
+      }
+      EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
+	fi->insert_mention(def);
       }
       EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
 	fi->insert_call_site(cs);

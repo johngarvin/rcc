@@ -480,6 +480,8 @@ private:
   RAnnot::FuncInfoIterator * m_fii;
 };
 
+// iterator over all uses and defs
+// This uses two internal iterators: first we iterate through the uses, then the defs
 class R_ExpMemRefHandleIterator : public OA::MemRefHandleIterator {
 public:
   explicit R_ExpMemRefHandleIterator(RAnnot::ExpressionInfo * stmt);
@@ -490,7 +492,8 @@ public:
   
 private:
   RAnnot::ExpressionInfo * m_stmt;
-  RAnnot::ExpressionInfo::const_var_iterator m_iter;
+  RAnnot::ExpressionInfo::const_use_iterator m_use_iter;
+  RAnnot::ExpressionInfo::const_def_iterator m_def_iter;
 };
 
 class R_SingletonMemRefExprIterator : public virtual OA::MemRefExprIterator,

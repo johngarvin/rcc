@@ -33,12 +33,18 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/DefVar.h>
 #include <analysis/EagerLazy.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/UseVar.h>
 
-#define EXPRESSION_FOR_EACH_MENTION(ei, var) for(RAnnot::ExpressionInfo::const_var_iterator vi = (ei)->begin_vars();  \
-						 (vi != (ei)->end_vars()) && (((var) = *vi) != 0);                    \
-						 ++vi)
+#define EXPRESSION_FOR_EACH_USE(ei, use) for(RAnnot::ExpressionInfo::const_use_iterator vi = (ei)->begin_uses();      \
+					     (vi != (ei)->end_uses()) && (((use) = *vi) != 0);                        \
+					     ++vi)
+
+#define EXPRESSION_FOR_EACH_DEF(ei, def) for(RAnnot::ExpressionInfo::const_def_iterator vi = (ei)->begin_defs();      \
+					     (vi != (ei)->end_defs()) && (((def) = *vi) != 0);                        \
+					     ++vi)
 
 #define EXPRESSION_FOR_EACH_CALL_SITE(ei, cs) for(RAnnot::ExpressionInfo::const_call_site_iterator csi = (ei)->begin_call_sites();  \
 						    (csi != (ei)->end_call_sites()) && (((cs) = *csi) != 0);                        \
@@ -64,10 +70,12 @@ public:
   explicit ExpressionInfo(SEXP cell);
   virtual ~ExpressionInfo();
 
-  typedef Var *                     MyVarT;
-  typedef std::list<MyVarT>         MyVarSetT;
-  typedef MyVarSetT::iterator       var_iterator;
-  typedef MyVarSetT::const_iterator const_var_iterator;
+  typedef UseVar *                  MyUseT;
+  typedef DefVar *                  MyDefT;
+  typedef std::list<MyUseT>         MyUseSetT;
+  typedef std::list<MyDefT>         MyDefSetT;
+  typedef MyUseSetT::const_iterator const_use_iterator;
+  typedef MyDefSetT::const_iterator const_def_iterator;
 
   typedef SEXP                           MyCallSiteT;
   typedef std::list<MyCallSiteT>         MyCallSiteSetT;
@@ -77,19 +85,22 @@ public:
   typedef std::vector<EagerLazyT> MyLazyInfoSetT;
 
   // set operations
-  void insert_var(const MyVarT & x);
+  void insert_use(MyUseT const x);
+  void insert_def(MyDefT const x);
   void insert_call_site(const MyCallSiteT & x);
   void insert_eager_lazy(const EagerLazyT x);
 
   // iterators:
-  var_iterator begin_vars();
-  const_var_iterator begin_vars() const;
-  var_iterator end_vars();
-  const_var_iterator end_vars() const;
+
+  MyUseSetT::const_iterator begin_uses() const;
+  MyUseSetT::const_iterator end_uses() const;
+
+  MyDefSetT::const_iterator begin_defs() const;
+  MyDefSetT::const_iterator end_defs() const;
 
   call_site_iterator begin_call_sites();
-  const_call_site_iterator begin_call_sites() const;
   call_site_iterator end_call_sites();
+  const_call_site_iterator begin_call_sites() const;
   const_call_site_iterator end_call_sites() const;
 
   // strictness analysis, etc.
@@ -117,8 +128,10 @@ public:
 
 private:
   SEXP m_cell;                  // CAR(m_cell) is the expression
-  MyVarSetT m_vars;             // mentions in expression
-                                // (contents of set not owned)
+  // mentions in expression
+  // (contents of set not owned)
+  MyUseSetT m_uses;
+  MyDefSetT m_defs;
   MyCallSiteSetT m_call_sites;  // call sites in expression
                                 // (contents of set not owned)
   bool m_strict;                // whether expression can be evaluated

@@ -482,18 +482,15 @@ OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) 
 /// Return a list of all the target memory reference handles that appear
 /// in the given statement.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
-  Var * var;
+  DefVar * def;
   VarRefFactory * fact = VarRefFactory::get_instance();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
-  // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
-  EXPRESSION_FOR_EACH_MENTION(stmt_info, var) {
-    if (var->getUseDefType() == Var::Var_DEF) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(var->getMention_c());
-      defs->insert_ref(bvr);
-    }
+  EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->getMention_c());
+    defs->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
   retval = new R_UseDefAsMemRefIterator(defs->get_iterator());
@@ -504,18 +501,15 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
 /// Return a list of all the source memory reference handles that appear
 /// in the given statement.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
-  Var * var;
+  UseVar * use;
   VarRefFactory * fact = VarRefFactory::get_instance();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
-  // For each variable, insert only if it's a use
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
-  EXPRESSION_FOR_EACH_MENTION(stmt_info, var) {
-    if (var->getUseDefType() == Var::Var_USE) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(var->getMention_c());
-      uses->insert_ref(bvr);
-    }
+  EXPRESSION_FOR_EACH_USE(stmt_info, use) {
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->getMention_c());
+    uses->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
   retval = new R_UseDefAsMemRefIterator(uses->get_iterator());
@@ -634,18 +628,16 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  Var * var;
+  DefVar * def;
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::get_instance();
-  EXPRESSION_FOR_EACH_MENTION(stmt_info, var) {
-    if (var->getUseDefType() == Var::Var_DEF) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(var->getMention_c());
-      defs->insert_ref(bvr);
-    }
+  EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->getMention_c());
+    defs->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
   retval = new R_UseDefAsLeafIterator(defs->get_iterator());
@@ -653,18 +645,16 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  Var * var;
+  UseVar * use;
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   // For each variable, insert only if it's a use
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::get_instance();
-  EXPRESSION_FOR_EACH_MENTION(stmt_info, var) {
-    if (var->getUseDefType() == Var::Var_USE) {
-      OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(var->getMention_c());
-      uses->insert_ref(bvr);
-    }
+  EXPRESSION_FOR_EACH_USE(stmt_info, use) {
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->getMention_c());
+    uses->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
   retval = new R_UseDefAsLeafIterator(uses->get_iterator());
@@ -1104,24 +1094,40 @@ void R_ProcHandleIterator::reset() {
 //------------------------------------------------------------
 
 R_ExpMemRefHandleIterator::R_ExpMemRefHandleIterator(ExpressionInfo * stmt)
-  : m_stmt(stmt), m_iter(stmt->begin_vars())
+  : m_stmt(stmt),
+    m_use_iter(stmt->begin_uses()),
+    m_def_iter(stmt->begin_defs())
 {
 }
 
 MemRefHandle R_ExpMemRefHandleIterator::current() const {
-  return make_mem_ref_h((*m_iter)->getMention_c());
+  MemRefHandle handle;
+  if (m_use_iter != m_stmt->end_uses()) {
+    handle = make_mem_ref_h((*m_use_iter)->getMention_c());
+  } else {
+    handle = make_mem_ref_h((*m_def_iter)->getMention_c());
+  }
+  assert(handle != MemRefHandle(0));
+  return handle;
 }
 
 bool R_ExpMemRefHandleIterator::isValid() const {
-  return (m_iter != m_stmt->end_vars());
+  return (!(m_use_iter == m_stmt->end_uses() &&
+	    m_def_iter == m_stmt->end_defs()));
 }
 
 void R_ExpMemRefHandleIterator::operator++() {
-  ++m_iter;
+  assert(isValid());
+  if (m_use_iter != m_stmt->end_uses()) {
+    ++m_use_iter;
+  } else {
+    ++m_def_iter;
+  }
 }
 
 void R_ExpMemRefHandleIterator::reset() {
-  m_iter = m_stmt->begin_vars();
+  m_use_iter = m_stmt->begin_uses();
+  m_def_iter = m_stmt->begin_defs();
 }
 
 //------------------------------------------------------------

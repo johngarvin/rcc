@@ -51,11 +51,8 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   if (binding->is_single()) {
     string location = binding->get_location(CAR(cell), this);
     assert(!location.empty());
-    // TODO: I was going to get rid of this dynamic_cast on general
-    // principle, but I don't know of a cleaner way here. A visitor
-    // would be ugly.
-    DefVar * var = dynamic_cast<DefVar *>(getProperty(Var, cell));
-    assert(var != 0);
+    Var * var = getProperty(Var, cell);
+    assert(var->getUseDefType() == Var::Var_DEF);
     FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()));
     assert(scope != 0);
     FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());

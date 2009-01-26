@@ -33,8 +33,9 @@
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/DefVar.h>
 #include <analysis/FuncInfo.h>
-#include <analysis/Var.h>
+#include <analysis/UseVar.h>
 
 namespace RAnnot {
 
@@ -55,9 +56,11 @@ public:
   MyVarSetT get_uses();
   MyVarSetT get_defs();
 
-  void insert_mention(const FuncInfo * fi, const Var * v);
-  void insert_use(const MyVarT & v);
-  void insert_def(const MyVarT & v);
+  void insert_use_var(const FuncInfo * fi, const UseVar * use);
+  void insert_def_var(const FuncInfo * fi, const DefVar * def);
+
+  void insert_use_loc(const MyVarT & v);
+  void insert_def_loc(const MyVarT & v);
 
   void add(const SideEffect * x);
 

@@ -45,11 +45,12 @@ using namespace RAnnot;
 
 // ----- type definitions for readability -----
 
-typedef LocalVariableAnalysis::const_var_iterator const_var_iterator;
+typedef LocalVariableAnalysis::const_use_iterator const_use_iterator;
+typedef LocalVariableAnalysis::const_def_iterator const_def_iterator;
 typedef LocalVariableAnalysis::const_call_site_iterator const_call_site_iterator;
 
 LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
-  : m_stmt(_stmt), m_vars()
+  : m_stmt(_stmt), m_uses(), m_defs()
 {}
 
 /// Traverse the given SEXP and set variable annotations with local
@@ -58,8 +59,22 @@ void LocalVariableAnalysis::perform_analysis() {
   build_ud_rhs(m_stmt, Var::Var_MUST);  // we're not in an actual arg to any function, so must-use
 }
 
-const_var_iterator LocalVariableAnalysis::begin_vars() const { return m_vars.begin(); }
-const_var_iterator LocalVariableAnalysis::end_vars() const { return m_vars.end(); }
+const_use_iterator LocalVariableAnalysis::begin_uses() const {
+  return m_uses.begin();
+}
+
+const_use_iterator LocalVariableAnalysis::end_uses() const {
+  return m_uses.end();
+}
+
+const_def_iterator LocalVariableAnalysis::begin_defs() const {
+  return m_defs.begin();
+}
+
+const_def_iterator LocalVariableAnalysis::end_defs() const {
+  return m_defs.end();
+}
+
 const_call_site_iterator LocalVariableAnalysis::begin_call_sites() const { return m_call_sites.begin(); }
 const_call_site_iterator LocalVariableAnalysis::end_call_sites() const { return m_call_sites.end(); }
 
@@ -80,7 +95,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
     var_annot->setMayMustType(Var::Var_MUST);
     var_annot->setScopeType(Locality::Locality_TOP);
-    m_vars.push_back(var_annot);
+    m_uses.push_back(var_annot);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(assign_rhs_c(e), Var::Var_MUST);
@@ -128,7 +143,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
       var_annot->setPositionType(UseVar::UseVar_FUNCTION);
       var_annot->setMayMustType(Var::Var_MUST);
       var_annot->setScopeType(Locality::Locality_TOP);
-      m_vars.push_back(var_annot);
+      m_uses.push_back(var_annot);
     } else {
       build_ud_rhs(e, Var::Var_MUST);
     }
@@ -184,7 +199,7 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
     } else {                                             // may-def
       var_annot->setScopeType(Locality::Locality_TOP);
     }
-    m_vars.push_back(var_annot);
+    m_defs.push_back(var_annot);
   } else if (is_struct_field(e)) {
     build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {

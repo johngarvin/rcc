@@ -71,6 +71,7 @@ private:
 
 private:
   void initialize_sets();
+  OA::OA_ptr<DFSetElement> look_up_var_ref(OA::OA_ptr<DFSet> set, OA::OA_ptr<R_VarRef> ref);
 
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<DFSet> m_all_top;
