@@ -53,6 +53,10 @@ rcc_bin_SOURCES =				\
   DefVar.cc                                     \
   DefVar.h                                      \
   Dependence.h                                  \
+  EscapeInfo.h                                  \
+  EscapeInfo.cc                                 \
+  EscapeInfoAnnotationMap.cc                    \
+  EscapeInfoAnnotationMap.h                     \
   ExpressionInfo.cc                             \
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
