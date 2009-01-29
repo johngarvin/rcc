@@ -155,8 +155,12 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
   SEXP e = CAR(cell);
   Expression ret_val;
   if (TYPEOF(op) == CLOSXP) {
+    // e.g. dnorm takes this path
+    // TODO: detect closures that are wrappers around internal calls
+    // For internals, find call-by-value status like this:
+    //     EagerLazyT func_eager_lazy = (R_FunTab[prim->u.primsxp.offset].eval) % 10 ? EAGER : LAZY;
+
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
-    // above: false as last argument for unevaluated result. Is this correct?
     return sb->op_clos_app(func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
     return sb->op_builtin(e, op, rho, resultProtection);

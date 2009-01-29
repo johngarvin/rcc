@@ -88,7 +88,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
   string out = appl5("applyClosure ",
-		     to_string(e),
+		     "op_clos_app: " + to_string(e),
 		     call_str,
 		     op1.var,
 		     args1.var,

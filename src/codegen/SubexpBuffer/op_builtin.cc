@@ -135,7 +135,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
     // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?
     out = appl4(get_name(PRIMOFFSET(op)),
-		to_string(e),
+		"op_builtin: " + to_string(e),
 		"R_NilValue ",
 		op1.var,
 		args1.var,
