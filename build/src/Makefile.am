@@ -95,6 +95,8 @@ rcc_bin_SOURCES =				\
   LocalityType.h				\
   LocalVariableAnalysis.cc			\
   LocalVariableAnalysis.h			\
+  MemRefExprInterface.cc                        \
+  MemRefExprInterface.h                         \
   NameMentionMultiMap.h                         \
   NameStmtMultiMap.h                            \
   OACallGraphAnnotation.cc                      \
@@ -106,6 +108,8 @@ rcc_bin_SOURCES =				\
   PropertySet.h					\
   PropertySetMgr.cc				\
   PropertySetMgr.h				\
+  RccBasicInterface.cc                          \
+  RccBasicInterface.h                           \
   RequiresContext.cc				\
   RequiresContext.h				\
   ScopeAnnotationMap.cc                         \
