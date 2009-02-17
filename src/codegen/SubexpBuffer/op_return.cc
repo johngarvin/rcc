@@ -55,17 +55,7 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   case 1:
     // pass true as fourth argument to yield fully evaluated result
     value = op_exp(e, rho, Unprotected, true);
-#if 0
-    if (value.dependence == DEPENDENT) {
-      append_defs("PROTECT(" + value.var + ");\n");
-      v = appl2("eval", value.var, rho, Unprotected);
-      append_defs("UNPROTECT_PTR(" + value.var + ");\n");
-    } else {
-      v = value.var;
-    }
-#else
     v = value.var;
-#endif
     del(value);
     break;
   default:

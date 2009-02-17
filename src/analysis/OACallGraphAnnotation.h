@@ -39,7 +39,7 @@ public:
   explicit OACallGraphAnnotation(const OA::OA_ptr<OA::ProcHandleIterator> iter);
   virtual ~OACallGraphAnnotation();
 
-  OA::OA_ptr<OA::ProcHandleIterator> get_iterator() const;
+  const OA::OA_ptr<OA::ProcHandleIterator> get_iterator() const;
 
   const OA::ProcHandle get_singleton_if_exists() const;
 
@@ -52,7 +52,7 @@ public:
   std::ostream & dump(std::ostream & stream) const;
 
 private:
-  OA::OA_ptr<OA::ProcHandleIterator> m_iter;
+  const OA::OA_ptr<OA::ProcHandleIterator> m_iter;
 };
 
 } // end namespace RAnnot

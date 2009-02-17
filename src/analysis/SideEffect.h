@@ -29,21 +29,23 @@
 
 #include <list>
 
-#include <OpenAnalysis/Location/Location.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
+#include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/DefVar.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/UseVar.h>
+#include <analysis/VarInfo.h>
 
 namespace RAnnot {
 
 class SideEffect : public AnnotationBase {
 public:
-  typedef OA::OA_ptr<OA::Location>   MyVarT;
-  typedef OA::OA_ptr<OA::LocSet>     MyVarSetT;
-  typedef OA::LocSet::const_iterator MyIterator;
+  typedef VarInfo *                             MyVarT;
+  typedef std::set<MyVarT>                      MyRawVarSetT;
+  typedef const MyRawVarSetT &                  MyVarSetT;
+  typedef MyRawVarSetT::const_iterator          MyIteratorT;
 
   explicit SideEffect();
   virtual ~SideEffect();
@@ -59,15 +61,15 @@ public:
   void insert_use_var(const FuncInfo * fi, const UseVar * use);
   void insert_def_var(const FuncInfo * fi, const DefVar * def);
 
-  void insert_use_loc(const MyVarT & v);
-  void insert_def_loc(const MyVarT & v);
+  void insert_use(const MyVarT & v);
+  void insert_def(const MyVarT & v);
 
   void add(const SideEffect * x);
 
-  MyIterator begin_uses() const;
-  MyIterator end_uses() const;
-  MyIterator begin_defs() const;
-  MyIterator end_defs() const;
+  MyIteratorT begin_uses() const;
+  MyIteratorT end_uses() const;
+  MyIteratorT begin_defs() const;
+  MyIteratorT end_defs() const;
 
   // returns true if there is any true, anti, or output dependence between the two
   bool intersects(SideEffect * other);
@@ -78,8 +80,8 @@ public:
   std::ostream& dump(std::ostream& os) const;
 
 private:
-  MyVarSetT m_uses;
-  MyVarSetT m_defs;
+  MyRawVarSetT m_uses;
+  MyRawVarSetT m_defs;
 
   bool m_trivial;
   bool m_cheap;

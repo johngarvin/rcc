@@ -23,6 +23,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/AnalysisException.h>
 #include <analysis/VarRefSet.h>
 #include <analysis/LocalityDFSetIterator.h>
 #include <analysis/LocalityType.h>
@@ -37,15 +38,7 @@ DefaultDFSet::DefaultDFSet() {
 
 DefaultDFSet::~DefaultDFSet() { }
 
-// After the assignment operation, the lhs DFSet will point to
-// the same instances of DFSetElement's that the rhs points to.  Use clone
-// if you want separate instances of the DFSetElement's
-DefaultDFSet& DefaultDFSet::operator= (const DefaultDFSet& other) {
-  m_set = other.m_set;
-  return *this;
-}
-
-OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() {
+OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() const {
   OA_ptr<DefaultDFSet> retval;
   retval = new DefaultDFSet(); 
   std::set<OA_ptr<DFSetElement> >::const_iterator defIter;
@@ -55,29 +48,7 @@ OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() {
   }
   return retval;
 }
-  
-void DefaultDFSet::insert(OA_ptr<DFSetElement> h) {
-  m_set->insert(h); 
-}
-  
-void DefaultDFSet::remove(OA_ptr<DFSetElement> h) {
-  remove_and_tell(h); 
-}
 
-int DefaultDFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
-  return (int)((m_set->insert(h)).second); 
-}
-
-int DefaultDFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
-  return (m_set->erase(h)); 
-}
-
-/// Replace any DFSetElement in m_set with the same location as the given use
-void DefaultDFSet::replace(OA_ptr<DFSetElement> use) {
-  m_set->erase(use);
-  m_set->insert(use);
-}
-  
 /// equality: sets are equal if they are the same size and all
 /// elements are equal.
 bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
@@ -110,6 +81,48 @@ bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
   return(true);
 }
 
+void DefaultDFSet::setUniversal() {
+  throw new AnalysisException("Not yet implemented");
+}
+
+void DefaultDFSet::clear() {
+  m_set->clear();
+}
+
+int DefaultDFSet::size() const {
+  return m_set->size();
+}
+
+bool DefaultDFSet::isUniversalSet() const {
+  throw new AnalysisException("Not yet implemented");
+}
+
+bool DefaultDFSet::isEmpty() const {
+  return m_set->empty();
+}
+  
+void DefaultDFSet::insert(OA_ptr<DFSetElement> h) {
+  m_set->insert(h); 
+}
+  
+void DefaultDFSet::remove(OA_ptr<DFSetElement> h) {
+  remove_and_tell(h); 
+}
+
+int DefaultDFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
+  return (int)((m_set->insert(h)).second); 
+}
+
+int DefaultDFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
+  return (m_set->erase(h)); 
+}
+
+/// Replace any DFSetElement in m_set with the same location as the given use
+void DefaultDFSet::replace(OA_ptr<DFSetElement> use) {
+  m_set->erase(use);
+  m_set->insert(use);
+}
+  
 /// Returns true if there is a VarRef in our set with the given name.
 bool DefaultDFSet::includes_name(OA_ptr<R_VarRef> mention) {
   // VarRef's '==' tests if the names are equal, not full equivalence,
@@ -170,6 +183,10 @@ std::string DefaultDFSet::toString() {
   
   oss << "}";
   return oss.str();
+}
+
+void DefaultDFSet::output(IRHandlesIRInterface & pIR) const {
+  // TODO
 }
 
 void DefaultDFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {

@@ -32,14 +32,12 @@
 #include <assert.h>
 
 #include <OpenAnalysis/CFG/ManagerCFG.hpp>
-#include <OpenAnalysis/IRInterface/AliasIRInterfaceDefault.hpp>
+#include <OpenAnalysis/IRInterface/AliasIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/CFGIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/CallGraphIRInterface.hpp>
 #include <OpenAnalysis/IRInterface/InterSideEffectIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/ParamBindingsIRInterface.hpp>
-#include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
-#include <OpenAnalysis/Location/Location.hpp>
 
 #include <include/R/R_RInternals.h>
 
@@ -55,16 +53,19 @@
 // TODO: make this a singleton
 // TODO: split this into separate singleton classes
 /// OpenAnalysis interface to the R AST
-class R_IRInterface : public virtual OA::Alias::AliasIRInterfaceDefault,
-		      public virtual OA::CFG::CFGIRInterfaceDefault,
+class R_IRInterface : public virtual OA::CFG::CFGIRInterfaceDefault,
+		      public virtual OA::Alias::AliasIRInterface,
 		      public virtual OA::CallGraph::CallGraphIRInterface,
 	              public virtual OA::DataFlow::ParamBindingsIRInterface,
-	              public virtual OA::SideEffect::InterSideEffectIRInterfaceDefault,
-		      public virtual OA::SSA::SSAIRInterface
+	              public virtual OA::SideEffect::InterSideEffectIRInterfaceDefault
 {
 public:
   explicit R_IRInterface() {}
   virtual ~R_IRInterface() {}
+
+  //--------------------------------------------------------
+  // Implementing CFG methods from CFGIRInterfaceDefault
+  //--------------------------------------------------------
   
   //--------------------------------------------------------
   // Procedures and call sites
@@ -194,71 +195,13 @@ public:
   /// multiway target condition 
   OA::ExprHandle getUMultiCondition(OA::StmtHandle h, int targetIndex);
 
-  //----------------------------------------------------------------------
-  // Information for building call graphs (CallGraphIRInterface)
-  //----------------------------------------------------------------------
+  //------------------------------------------------------------------
+  // Implementing alias information methods from AliasIRInterface
+  //------------------------------------------------------------------
 
   /// Given a subprogram return an IRStmtIterator for the entire
   /// subprogram
   OA::OA_ptr<OA::IRStmtIterator> getStmtIterator(OA::ProcHandle h);
-
-  /// Return an iterator over all of the callsites in a given stmt
-  OA::OA_ptr<OA::IRCallsiteIterator> getCallsites(OA::StmtHandle h);
-
-  /// Given a procedure call create a memory reference expression
-  /// to describe that call.  For example, a normal call is
-  /// a NamedRef.  A call involving a function ptr is a Deref.
-  OA::OA_ptr<OA::MemRefExpr> getCallMemRefExpr(OA::CallHandle call);
-
-  //--------------------------------------------------------
-  // Information for solving call graph data flow problems
-  // (CallGraphDFProblemIRInterface)
-  //--------------------------------------------------------
-
-  /// Get IRCallsiteParamIterator for a callsite.
-  /// Iterator visits actual parameters in called order.
-  OA::OA_ptr<OA::IRCallsiteParamIterator> getCallsiteParams(OA::CallHandle h);
-
-  /// return the formal parameter that an actual parameter is associated with 
-  OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
-				   OA::ProcHandle callee, OA::ExprHandle param);
- 
-  /// For the given symbol create a Location that indicates statically
-  /// overlapping locations and information about whether the location
-  /// is local or not for the given procedure, local means only visible
-  /// in this procedure
-  OA::OA_ptr<OA::Location> getLocation(OA::ProcHandle p, OA::SymHandle s);
-
-  /// Given an ExprHandle, return an ExprTree 
-  OA::OA_ptr<OA::ExprTree> getExprTree(OA::ExprHandle h);
-
-  /// implementing abstract method from CalleeToCallerVisitorIRInterface
-  /// Given a MemRefHandle return an iterator over
-  /// MemRefExprs that describe this memory reference
-  OA::OA_ptr<OA::MemRefExprIterator> getMemRefExprIterator(OA::MemRefHandle);
-
-  /// implementing abstract method from SideEffectIRInterface
-  /// Return a list of all the target memory reference handles that appear
-  /// in the given statement.
-  OA::OA_ptr<OA::MemRefHandleIterator> getDefMemRefs(OA::StmtHandle);
-
-  /// implementing abstract method from SideEffectIRInterface
-  /// Return a list of all the source memory reference handles that appear
-  /// in the given statement.
-  OA::OA_ptr<OA::MemRefHandleIterator> getUseMemRefs(OA::StmtHandle);
-
-  /// implementing abstract method from InterSideEffectIRInterface
-  /// For the given callee subprocedure symbol return side-effect results
-  /// Can only indicate that the procedure has no side effects, has
-  /// side effects on unknown locations, or on global locations.
-  /// Can't indicate subprocedure has sideeffects on parameters because
-  /// don't have a way to get mapping of formal parameters to actuals
-  /// in caller.
-  OA::OA_ptr<OA::SideEffect::SideEffectStandard> getSideEffect(OA::ProcHandle, OA::SymHandle);
-
-  //------------------------------------------------------------------
-  // Alias information
-  //------------------------------------------------------------------
 
   /// Return an iterator over all the memory reference handles that appear
   /// in the given statement.  Order that memory references are iterated
@@ -282,50 +225,102 @@ public:
   /// given num
   OA::SymHandle getFormalSym(OA::ProcHandle,int);
 
+  /// Return an iterator over all of the callsites in a given stmt
+  OA::OA_ptr<OA::IRCallsiteIterator> getCallsites(OA::StmtHandle h);
+
+  /// Given a procedure call create a memory reference expression
+  /// to describe that call.  For example, a normal call is
+  /// a NamedRef.  A call involving a function ptr is a Deref.
+  OA::OA_ptr<OA::MemRefExpr> getCallMemRefExpr(OA::CallHandle call);
+
   /// Given the callee symbol returns the callee proc handle
   OA::ProcHandle getProcHandle(OA::SymHandle sym);
 
-  /// Given a procedure return associated SymHandle
-  OA::SymHandle getSymHandle(OA::ProcHandle h);
+  /// Given a ProcHandle, return its SymHandle
+  OA::SymHandle getSymHandle(OA::ProcHandle h) const;
+
+  /// Given a MemRefHandle return an iterator over
+  /// MemRefExprs that describe this memory reference
+  OA::OA_ptr<OA::MemRefExprIterator> getMemRefExprIterator(OA::MemRefHandle);
+
+  //------------------------------------------------------------------
+  // CallGraphIRInterface:
+  //
+  // all CallGraphIRInterface methods (getStmtIterator,
+  // getCallsites, getSymHandle, getCallMemRefExpr) implemented above
+  // ------------------------------------------------------------------
 
   //--------------------------------------------------------
-  // Def/use info for SSA (SSAIRInterface)
+  // Implementing methods for parameter binding information from
+  // ParamBindingsIRInterface
   //--------------------------------------------------------
 
-  OA::OA_ptr<OA::SSA::IRUseDefIterator> getDefs(OA::StmtHandle h);
-  OA::OA_ptr<OA::SSA::IRUseDefIterator> getUses(OA::StmtHandle h);
+  /// Get IRCallsiteParamIterator for a callsite.
+  /// Iterator visits actual parameters in called order.
+  OA::OA_ptr<OA::IRCallsiteParamIterator> getCallsiteParams(OA::CallHandle h);
 
-  OA::SymHandle getSymHandle(OA::LeafHandle h);
+  /// return the formal parameter that an actual parameter is associated with 
+  OA::SymHandle getFormalForActual(OA::ProcHandle caller, OA::CallHandle call, 
+				   OA::ProcHandle callee, OA::ExprHandle param);
+ 
+  /// Given an ExprHandle, return an ExprTree 
+  OA::OA_ptr<OA::ExprTree> getExprTree(OA::ExprHandle h);
+
+  // Given a SymHandle, return it as a MemRefExpr
+  OA::OA_ptr<OA::MemRefExpr> convertSymToMemRefExpr(OA::SymHandle sym);
 
   //--------------------------------------------------------
-  // getProcSymHandle: implementing virtual method from
-  // CallGraphIRInterface and SideEffectIRInterface
+  // Implementing methods for interprocedural side effect information
+  // in InterSideEffectIRInterfaceDefault
   //--------------------------------------------------------
 
-  OA::SymHandle getProcSymHandle(OA::ProcHandle h);
+  /// For the given callee subprocedure symbol return side-effect results
+  /// Can only indicate that the procedure has no side effects, has
+  /// side effects on unknown locations, or on global locations.
+  /// Can't indicate subprocedure has sideeffects on parameters because
+  /// don't have a way to get mapping of formal parameters to actuals
+  /// in caller.
+  OA::OA_ptr<OA::SideEffect::SideEffectStandard> 
+  getSideEffect(OA::ProcHandle caller, OA::SymHandle calleesym);  
 
-  //------------------------------------------------------------
-  // Param bindings (ParamBindingsIRInterface)
-  //------------------------------------------------------------
-  
-  bool isParam(OA::SymHandle h);
+  //--------------------------------------------------------
+  // Implementing intraprocedural side effect information methods from
+  // SideEffectIRInterface, base class of InterSideEffectIRInterface
+  // (getStmtIterator, getCallsites, getMemRefExprIterator,
+  // getSymHandle implemented above)
+  // --------------------------------------------------------
+
+  /// Return a list of all the target memory reference handles that appear
+  /// in the given statement.
+  OA::OA_ptr<OA::MemRefHandleIterator> getDefMemRefs(OA::StmtHandle);
+
+  /// Return a list of all the source memory reference handles that appear
+  /// in the given statement.
+  OA::OA_ptr<OA::MemRefHandleIterator> getUseMemRefs(OA::StmtHandle);
+
+  //--------------------------------------------------------
+  // Implementing information for solving call graph data flow
+  // problems (CallGraphDFProblemIRInterface). All methods
+  // (getCallsiteParams, getFormalForActual, getExprTree) implemented
+  // above
+  //--------------------------------------------------------
 
   //------------------------------------------------------------
   // Pretty printing methods from IRHandlesIRInterface
   //------------------------------------------------------------
 
-  void dump(OA::StmtHandle h, ostream &os);
-  void dump(OA::MemRefHandle h, ostream &stream);
+  void dump(OA::StmtHandle h, std::ostream &os);
+  void dump(OA::MemRefHandle h, std::ostream &os);
 
-  std::string toString(OA::ProcHandle h);
-  std::string toString(OA::StmtHandle h);
-  std::string toString(OA::ExprHandle h);
-  std::string toString(OA::OpHandle h);
-  std::string toString(OA::MemRefHandle h);
-  std::string toString(OA::CallHandle h);
-  std::string toString(OA::SymHandle h);
-  std::string toString(OA::ConstSymHandle h);
-  std::string toString(OA::ConstValHandle h);
+  std::string toString(OA::ProcHandle h) const;
+  std::string toString(OA::StmtHandle h) const;
+  std::string toString(OA::ExprHandle h) const;
+  std::string toString(OA::OpHandle h) const;
+  std::string toString(OA::MemRefHandle h) const;
+  std::string toString(OA::CallHandle h) const;
+  std::string toString(OA::SymHandle h) const;
+  std::string toString(OA::ConstSymHandle h) const;
+  std::string toString(OA::ConstValHandle h) const;
 
 };
 
@@ -388,6 +383,9 @@ private:
   R_ListIterator iter;
 };
 
+#if 0
+not required; no SSA in OA
+
 /// Enumerate all the variable uses or variable definitions in a statement.
 /// This is useful for analyses that require information about variable
 /// references or definitions, such as SSA construction.
@@ -403,6 +401,7 @@ public:
 private:
   OA::OA_ptr<R_VarRefSetIterator> m_iter;
 };
+#endif
 
 /// Enumerate all the variable uses or variable definitions in a statement.
 /// This is useful for analyses that require information about variable
@@ -496,15 +495,21 @@ private:
   RAnnot::ExpressionInfo::const_def_iterator m_def_iter;
 };
 
-class R_SingletonMemRefExprIterator : public virtual OA::MemRefExprIterator,
-				      private virtual R_SingletonIterator<OA::OA_ptr<OA::MemRefExpr> >
-{
+class R_ParamBindIterator : public OA::Alias::ParamBindPtrAssignIterator {
 public:
-  explicit R_SingletonMemRefExprIterator(OA::OA_ptr<OA::MemRefExpr> mre);
-  OA::OA_ptr<OA::MemRefExpr> current() const;
+  R_ParamBindIterator(SEXP);
+  ~R_ParamBindIterator();
+
+  /// right hand side
+  OA::OA_ptr<OA::MemRefExpr> currentActual() const;
+  /// left hand side
+  int currentFormalId() const;
   bool isValid() const;
   void operator++();
-  void reset();
+
+private:
+  SEXP m_arg_c;
+  int m_index;
 };
 
 #endif // #ifndef IR_INTERFACE_H

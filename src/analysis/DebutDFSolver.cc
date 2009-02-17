@@ -103,7 +103,7 @@ void DebutDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void DebutDFSolver::dump_node_maps(ostream &os) {
+void DebutDFSolver::dump_node_maps(std::ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<DFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();

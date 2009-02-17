@@ -23,6 +23,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/AnalysisException.h>
 #include <analysis/VarRefSet.h>
 #include <analysis/StrictnessDFSetElement.h>
 #include <analysis/StrictnessDFSetIterator.h>
@@ -42,15 +43,7 @@ DFSet::DFSet(const DFSet& other) : mSet(other.mSet) { }
 
 DFSet::~DFSet() { }
 
-// After the assignment operation, the lhs DFSet will point to
-// the same instances of DFSetElement's that the rhs points to.  Use clone
-// if you want separate instances of the DFSetElement's
-DFSet& DFSet::operator= (const DFSet& other) {
-  mSet = other.mSet; 
-  return *this;
-}
-
-OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
+OA_ptr<DataFlow::DataFlowSet> DFSet::clone() const {
   OA_ptr<DFSet> retval;
   retval = new DFSet(); 
   MySetT::const_iterator defIter;
@@ -61,37 +54,6 @@ OA_ptr<DataFlow::DataFlowSet> DFSet::clone() {
   return retval;
 }
   
-void DFSet::insert(OA_ptr<DFSetElement> h) {
-  mSet->insert(h); 
-}
-  
-void DFSet::remove(OA_ptr<DFSetElement> h) {
-  remove_and_tell(h); 
-}
-
-int DFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
-  return (int)((mSet->insert(h)).second); 
-}
-
-int DFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
-  return (mSet->erase(h)); 
-}
-
-/// Replace any DFSetElement in mSet with the same location as the given use
-void DFSet::replace(OA_ptr<DFSetElement> use) {
-    replace(use->get_loc(), use->get_strictness_type());
-}
-
-/// replace any DFSetElement in mSet with location loc 
-/// with DFSetElement(loc,type)
-void DFSet::replace(OA_ptr<R_VarRef> loc, StrictnessType type) {
-  OA_ptr<DFSetElement> use;
-  use = new DFSetElement(loc, Strictness_TOP);
-  remove(use);
-  use = new DFSetElement(loc,type);
-  insert(use);
-}
-
 /// operator== for an DFSet cannot rely upon the == operator for
 /// the underlying sets, because the == operator of an element of a
 /// DFSet, namely an DFSetElement, only considers the contents of the
@@ -127,6 +89,57 @@ bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   return(true);
 }
 
+void DFSet::setUniversal() {
+  throw new AnalysisException("Not yet implemented");
+}
+
+void DFSet::clear() {
+  mSet->clear();
+}
+
+int DFSet::size() const {
+  return mSet->size();
+}
+
+bool DFSet::isUniversalSet() const {
+  throw new AnalysisException("Not yet implemented");
+}
+
+bool DFSet::isEmpty() const {
+  return mSet->empty();
+}
+
+void DFSet::insert(OA_ptr<DFSetElement> h) {
+  mSet->insert(h); 
+}
+  
+void DFSet::remove(OA_ptr<DFSetElement> h) {
+  remove_and_tell(h); 
+}
+
+int DFSet::insert_and_tell(OA_ptr<DFSetElement> h) {
+  return (int)((mSet->insert(h)).second); 
+}
+
+int DFSet::remove_and_tell(OA_ptr<DFSetElement> h) {
+  return (mSet->erase(h)); 
+}
+
+/// Replace any DFSetElement in mSet with the same location as the given use
+void DFSet::replace(OA_ptr<DFSetElement> use) {
+    replace(use->get_loc(), use->get_strictness_type());
+}
+
+/// replace any DFSetElement in mSet with location loc 
+/// with DFSetElement(loc,type)
+void DFSet::replace(OA_ptr<R_VarRef> loc, StrictnessType type) {
+  OA_ptr<DFSetElement> use;
+  use = new DFSetElement(loc, Strictness_TOP);
+  remove(use);
+  use = new DFSetElement(loc,type);
+  insert(use);
+}
+
 /// find the DFSetElement in this DFSet with the given location (should
 /// be at most one) return a ptr to that DFSetElement
 OA_ptr<DFSetElement> DFSet::find(OA_ptr<R_VarRef> loc) const {
@@ -157,6 +170,9 @@ bool DFSet::includes_name(OA_ptr<R_VarRef> mention) {
   return (!find(mention).ptrEqual(0));
 }
 
+void DFSet::output(IRHandlesIRInterface & pIR) const {
+  // TODO
+}
 
 /// Return a string representing the contents of an DFSet
 std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {

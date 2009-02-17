@@ -67,7 +67,7 @@ void CallByValueAnalysis::perform_analysis() {
     StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
     OA_ptr<StrictnessResult> strictness;
     strictness = strictness_solver->perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
-    if (debug) strictness->dump(cout);
+    if (debug) strictness->dump(std::cout);
     fi->set_strictness(strictness);
     
     // formals are indexed by 1
@@ -132,18 +132,18 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   SideEffect * pre_debut = formal->get_pre_debut_side_effect();
   
   if (debug) {
-    cout << "Pre-debut side effect: ";
-    pre_debut->dump(cout);
+    std::cout << "Pre-debut side effect: ";
+    pre_debut->dump(std::cout);
   }
   
   // get the actual argument's side effect
   SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
   if (debug) {
-    cout << "Actual arg: ";
+    std::cout << "Actual arg: ";
     Rf_PrintValue(CAR(actual_c));
-    cout << "with side effect: ";
-    arg_side_effect->dump(cout);
-    cout << std::endl;
+    std::cout << "with side effect: ";
+    arg_side_effect->dump(std::cout);
+    std::cout << std::endl;
   }
   
   if (formal->is_strict()) {
@@ -205,7 +205,7 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
       OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
 
       // TODO: refactor this. Maybe post_debuts should be a vector of sets, not a multimap
-      pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range = post_debuts->equal_range(TAG(fai->get_sexp()));
+      std::pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range = post_debuts->equal_range(TAG(fai->get_sexp()));
       bool stmt_is_post_debut = false;
       // TODO: we need to differentiate between missing formal
       // (compiler error) and formal with no post-debut side effect

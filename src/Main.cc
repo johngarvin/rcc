@@ -26,8 +26,6 @@
 #include <iostream>
 
 #include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>
-#include <OpenAnalysis/Alias/InterAliasMap.hpp>
-#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
 #include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/DGraphSolverDFP.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>

@@ -44,26 +44,53 @@ class DFSetIterator;
 
 /// Set of StrictnessDFSetElement objects. Inherits from DataFlowSet for
 /// use in CFGDFProblem.
-// Removed "virtual": need clone() to be able to return an DFSet.
-//class DFSet : public virtual OA::DataFlow::DataFlowSet {
-class DFSet : public OA::DataFlow::DataFlowSet {
+class DFSet : public virtual OA::DataFlow::DataFlowSet {
 private:
+  // typedef for readability
   typedef std::set<OA::OA_ptr<DFSetElement> > MySetT;
 
 public:
 
-  // methods inherited from DataFlowSet
   // construction
   explicit DFSet();
   explicit DFSet(const DFSet& other);
   ~DFSet();
   
-  // After the assignment operation, the lhs DFSet will point to the
-  // same instances of DFSetElements that the rhs points to.  Use
-  // clone if you want separate instances of the DFSetElements.
-  DFSet& operator= (const DFSet& other);
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone();
+  // ----- methods inherited from DataFlowSet -----
+
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() const;
   
+  // relationship
+  // param for these can't be const because will have to 
+  // dynamic cast to specific subclass
+  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
+  bool operator !=(OA::DataFlow::DataFlowSet &other) const
+  { return (!(*this==other)); }
+
+  /// Set this set to the universal set
+  void setUniversal();
+
+  /// Remove all elements from this set
+  void clear();
+
+  /// Return the number of elements contained in this set
+  int size() const;
+
+  /// Return true if this is the universal set
+  bool isUniversalSet() const;
+
+  /// Return true if this set is empty
+  bool isEmpty() const;
+  
+  // debugging
+  std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
+  std::string toString();
+  void output(OA::IRHandlesIRInterface& ir) const;
+  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
+  void dump(std::ostream &os);
+
+  // ----- our own methods -----
+
   void insert(OA::OA_ptr<DFSetElement> h);
   void remove(OA::OA_ptr<DFSetElement> h);
   int insert_and_tell(OA::OA_ptr<DFSetElement> h);
@@ -77,19 +104,6 @@ public:
   void replace(OA::OA_ptr<R_VarRef> loc, StrictnessType type);
   void replace(OA::OA_ptr<DFSetElement> ru);
 
-  // relationship
-  // param for these can't be const because will have to 
-  // dynamic cast to specific subclass
-  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
-  bool operator !=(OA::DataFlow::DataFlowSet &other) const
-  { return (!(*this==other)); }
-
-  /// need this one for stl containers
-  bool operator==(const DFSet& other) const 
-  { return DFSet::operator==(const_cast<DFSet&>(other)); }
-
-  bool empty() const { return mSet->empty(); }
-  
   /// Return pointer to a copy of a DFSetElement in this set with matching loc
   /// NULL is returned if no DFSetElement in this set matches loc
   OA::OA_ptr<DFSetElement> find(OA::OA_ptr<R_VarRef> locPtr) const;
@@ -98,13 +112,6 @@ public:
 
   bool includes_name(OA::OA_ptr<R_VarRef> mention);
 
-  // debugging
-  std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
-  std::string toString();
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
-  void dump(std::ostream &os);
-
-  // non-inherited method
   OA::OA_ptr<DFSetIterator> get_iterator() const;
   
 protected:

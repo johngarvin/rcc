@@ -23,8 +23,8 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/CallGraph/ManagerCallGraph.hpp>
-#include <OpenAnalysis/Alias/InterAliasMap.hpp>
-#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
+#include <OpenAnalysis/Alias/Interface.hpp>
+#include <OpenAnalysis/Alias/ManagerFIAliasAliasTag.hpp>
 #include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/DGraphSolverDFP.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
@@ -89,15 +89,14 @@ PropertyHndlT OACallGraphAnnotationMap::m_handle = "OACallGraph";
 /// given a call site, return the list of fundef nodes reachable; compute if necessary
 // overrides DefaultAnnotationMap::get
 MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
-  if (!is_computed()) {
-    compute();
-  }
+  compute_if_necessary();
   
   if (is_valid(k)) {
     return get_map()[k];
   } else {
-    OA_ptr<ProcHandleIterator> iter = m_call_graph->getCalleeProcIter(HandleInterface::make_call_h(k));
+    OA_ptr<ProcHandleIterator> iter; iter = m_call_graph->getCalleeProcIter(HandleInterface::make_call_h(k));
     // only populate map if there's at least one callee (iterator is nonempty)
+    iter->reset();
     if (iter->isValid()) {
       get_map()[k] = new OACallGraphAnnotation(iter);
       return get_map()[k];
@@ -116,14 +115,14 @@ void OACallGraphAnnotationMap::compute() {
   // (1) procedure iterator
   OA_ptr<ProcHandleIterator> proc_iter;
   proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
-
+  assert(!proc_iter.ptrEqual(0));
   // (2) alias information
-  OA_ptr<Alias::ManagerInterAliasMapBasic> alias_man;
-  alias_man = new Alias::ManagerInterAliasMapBasic(interface);
-  m_alias = alias_man->performAnalysis(proc_iter);
+  OA_ptr<Alias::ManagerFIAliasAliasTag> alias_man; alias_man = new Alias::ManagerFIAliasAliasTag(interface);
+  OA_ptr<Alias::Interface> intra_alias; intra_alias = alias_man->performAnalysis(proc_iter);
+  m_alias = new Alias::InterAliasResults(intra_alias);
 
   // build call graph
-  m_call_graph = man.performAnalysis(proc_iter, m_alias);
+  m_call_graph = man.performAnalysis(proc_iter, intra_alias);
   
   // now perform call graph data flow analysis (specifically, interprocedural side effect).
   // We need (3) param bindings and (4) intraprocedural side effect information
@@ -144,18 +143,16 @@ void OACallGraphAnnotationMap::compute() {
 // ----- debugging -----
 
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
-  if (!is_computed()) {
-    compute();
-  }
+  compute_if_necessary();
+
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
   m_call_graph->output(*interface);
   m_side_effect->dump(cout, interface);
 }
 
 void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
-  if (!is_computed()) {
-    compute();
-  }
+  compute_if_necessary();
+  
   //   output graph in DOT form
   OA_ptr<OutputBuilder> dot_builder; dot_builder = new OutputBuilderDOT;
   m_call_graph->configOutput(dot_builder);
@@ -165,16 +162,12 @@ void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
 // ----- access to OA call graph -----
 
 OA_ptr<CallGraph::CallGraphInterface> OACallGraphAnnotationMap::get_OA_call_graph() {
-  if (!is_computed()) {
-    compute();
-  }
+  compute_if_necessary();
   return m_call_graph;
 }
 
 OA_ptr<Alias::InterAliasInterface> OACallGraphAnnotationMap::get_OA_alias() {
-  if (!is_computed()) {
-    compute();
-  }
+  compute_if_necessary();
   return m_alias;
 }
 

@@ -24,10 +24,9 @@
 
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
-#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
-#include <OpenAnalysis/Location/Location.hpp>
-#include <OpenAnalysis/Location/NamedLoc.hpp>
+#include <OpenAnalysis/Alias/AliasTagSet.hpp>
 
+#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/HandleInterface.h>
@@ -120,8 +119,7 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
   OA_ptr<CallGraph::CallGraphInterface> call_graph;
   call_graph = OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
-  OA_ptr<Alias::InterAliasInterface> alias;
-  alias = OACallGraphAnnotationMap::get_instance()->get_OA_alias();
+  m_alias = OACallGraphAnnotationMap::get_instance()->get_OA_alias();
 
   OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
   // param bindings
@@ -133,14 +131,50 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
   intra_man = new OA::SideEffect::ManagerSideEffectStandard(interface);
 
   // compute side effect information
-  m_side_effect = solver.performAnalysis(call_graph, param_bindings, alias, intra_man, DataFlow::ITERATIVE);
+  m_side_effect = solver.performAnalysis(call_graph, param_bindings, m_alias, intra_man, DataFlow::ITERATIVE);
+}
+
+void SideEffectAnnotationMap::add_all_names_used(SideEffect * annot,
+						 OA_ptr<Alias::Interface> alias,
+						 OA_ptr<Alias::AliasTagIterator> tag_iter)
+{
+  for(; tag_iter->isValid(); ++(*tag_iter)) {
+    OA_ptr<MemRefExprIterator> mem_iter = alias->getMemRefExprIterator(tag_iter->current());
+    for (; mem_iter->isValid(); ++(*mem_iter)) {
+      if (mem_iter->current()->isaNamed()) {
+	OA_ptr<NamedRef> ref = mem_iter->current().convert<NamedRef>();
+	annot->insert_use(make_var_info(ref->getSymHandle()));
+      } else {
+	throw new AnalysisException("Not yet implemented");
+      }
+    }
+  }
+}
+
+void SideEffectAnnotationMap::add_all_names_defined(SideEffect * annot,
+						    OA_ptr<Alias::Interface> alias,
+						    OA_ptr<Alias::AliasTagIterator> tag_iter)
+{
+  for(; tag_iter->isValid(); ++(*tag_iter)) {
+    OA_ptr<MemRefExprIterator> mem_iter = alias->getMemRefExprIterator(tag_iter->current());
+    for (; mem_iter->isValid(); ++(*mem_iter)) {
+      if (mem_iter->current()->isaNamed()) {
+	OA_ptr<NamedRef> ref = mem_iter->current().convert<NamedRef>();
+	annot->insert_def(make_var_info(ref->getSymHandle()));
+      } else {
+	throw new AnalysisException("Not yet implemented");
+      }
+    }
+  }
 }
 
 void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
   SEXP cs_c;
   UseVar * use;
   DefVar * def;
+  OA_ptr<Alias::AliasTagIterator> tag_iter;
 
+  OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(make_proc_h(fi->get_sexp()));
   SEXP e = CAR(cell);
   ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
   SideEffect * annot = new SideEffect();
@@ -156,32 +190,13 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
     annot->insert_def_var(fi, def);
   }
 
-  // now grab interprocedural uses and defs from m_side_effect
+  // now grab side effects due to procedure calls: get interprocedural
+  // uses and defs from m_side_effect
   EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
-    OA_ptr<LocIterator> li;
-    for(li = m_side_effect->getMODIterator(make_call_h(CAR(cs_c))); li->isValid(); ++(*li)) {
-      OA_ptr<OA::Location> location; location = li->current();
-      if (location->isaNamed()) {
-	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	annot->insert_def_loc(named_loc);
-      } else if (location->isaUnknown()) {
-	annot->insert_def_loc(location);
-      } else {
-	rcc_error("Unexpected location type");
-      }
-    }  // next MOD location
-    for(li = m_side_effect->getREFIterator(make_call_h(CAR(cs_c))); li->isValid(); ++(*li)) {
-      OA_ptr<OA::Location> location; location = li->current();
-      if (location->isaNamed()) {
-	OA_ptr<NamedLoc> named_loc; named_loc = location.convert<NamedLoc>();
-	annot->insert_use_loc(named_loc);
-      } else if (location->isaUnknown()) {
-	annot->insert_use_loc(location);
-      } else {
-	rcc_error("Unexpected location type");
-      }
-    }  // next REF location
-  }  // next call site in expression
+    CallHandle call_handle = make_call_h(CAR(cs_c));
+    add_all_names_used(annot, alias, m_side_effect->getREFIterator(call_handle));
+    add_all_names_defined(annot, alias, m_side_effect->getMODIterator(call_handle));
+  }
   
   if (debug) {
     std::cout << "Side effect produced: ";

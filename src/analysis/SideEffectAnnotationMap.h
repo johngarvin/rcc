@@ -58,11 +58,19 @@ private:
   bool expression_is_trivial(const SEXP e);
   bool expression_is_cheap(const SEXP e);
 
+  void add_all_names_used(SideEffect * annot,
+			  OA::OA_ptr<OA::Alias::Interface> alias,
+			  OA::OA_ptr<OA::Alias::AliasTagIterator> tag_iter);
+  void add_all_names_defined(SideEffect * annot,
+			     OA::OA_ptr<OA::Alias::Interface> alias,
+			     OA::OA_ptr<OA::Alias::AliasTagIterator> tag_iter);
+
   static SideEffectAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
   static void create();
 
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect;
+  OA::OA_ptr<OA::Alias::InterAliasInterface> m_alias;
 };
 
 }  // end namespace RAnnot

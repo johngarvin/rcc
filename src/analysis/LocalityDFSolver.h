@@ -48,7 +48,7 @@ public:
   ~LocalityDFSolver() {}
   void perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();
-  void dump_node_maps(ostream &os);
+  void dump_node_maps(std::ostream &os);
   //------------------------------------------------------------------
   // Implementing the callbacks for CFGDFProblem
   //------------------------------------------------------------------

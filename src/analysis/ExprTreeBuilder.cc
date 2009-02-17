@@ -23,6 +23,8 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/Analyst.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/MemRefExprInterface.h>
+#include <analysis/RccBasicInterface.h>
 #include <analysis/Utils.h>
 
 #include <support/Debug.h>
@@ -40,24 +42,31 @@ ExprTreeBuilder::ExprTreeBuilder() {
   RCC_DEBUG("RCC_ExprTree", debug);
 }
 
-OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
+OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
+  //  throw new AnalysisException("Not yet implemented");
+  SEXP e = CAR(cell);
   OA_ptr<ExprTree> tree; tree = new ExprTree();
 
-  if (debug) std::cout << "Begin ExprTreeBuilder::build" << std::endl;
+  if (debug) std::cout << "Begin ExprTreeBuilder::build_c" << std::endl;
 
   if (is_const(e)) {
-    OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(make_const_val_h(e));
+    //    OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(make_const_val_h(e));
+    OA_ptr<ConstValBasicInterface> val = RccBasicInterface::make_const_val(e);
+    OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(val);
     tree->addNode(n);
   } else if (is_var(e)) {
     if (debug) std::cout << "ExprTreeBuilder: building var" << std::endl;
     // TODO: is MemRefNode/MemRefHandle right?
     // Note: a ConstSymHandle doesn't belong here; that represents a constant bound to a symbol
-    OA_ptr<ExprTree::MemRefNode> n; n = new ExprTree::MemRefNode(make_mem_ref_h(e));
+    //    OA_ptr<ExprTree::MemRefNode> n; n = new ExprTree::MemRefNode(make_mem_ref_h(e));
+    OA_ptr<ExprTree::MemRefNode> n; n = new ExprTree::MemRefNode(MemRefExprInterface::convert_sexp_c(cell));
     tree->addNode(n);
   } else if (is_assign(e)) {
-    OA_ptr<ExprTree::OpNode> assign; assign = new ExprTree::OpNode(make_op_h(e));
-    OA_ptr<ExprTree> lhs = build(CAR(assign_lhs_c(e)));
-    OA_ptr<ExprTree> rhs = build(CAR(assign_rhs_c(e)));
+    //    OA_ptr<ExprTree::OpNode> assign; assign = new ExprTree::OpNode(make_op_h(e));
+    OA_ptr<OpBasicInterface> op = RccBasicInterface::make_op(e);
+    OA_ptr<ExprTree::OpNode> assign; assign = new ExprTree::OpNode(op);
+    OA_ptr<ExprTree> lhs = build_c(assign_lhs_c(e));
+    OA_ptr<ExprTree> rhs = build_c(assign_rhs_c(e));
     tree->addNode(assign);
     tree->copyAndConnectSubTree(assign, lhs);
     tree->copyAndConnectSubTree(assign, rhs);
@@ -75,19 +84,22 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
       std::cout << "ExprTreeBuilder: building subscript ";
       Rf_PrintValue(e);
     }
-    OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(make_op_h(e));
+    //    OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(make_op_h(e));
+    OA_ptr<OpBasicInterface> op; op = RccBasicInterface::make_op(e);
+    OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(op);
     if (debug) {
       std::cout << "adding node ";
       bracket->dump(std::cout, iface);
     }
     tree->addNode(bracket);
-    OA_ptr<ExprTree> lhs = build(CAR(subscript_lhs_c(e)));
+
+    OA_ptr<ExprTree> lhs = build_c(subscript_lhs_c(e));
     if (debug) {
       std::cout << "copying and connecting ";
       lhs->dump(std::cout, iface);
     }
     tree->copyAndConnectSubTree(bracket, lhs);
-    OA_ptr<ExprTree> rhs = build(CAR(subscript_first_sub_c(e)));
+    OA_ptr<ExprTree> rhs = build_c(subscript_first_sub_c(e));
     if (debug) {
       std::cout << "tree = "; tree->dump(std::cout, iface);
       std::cout << "copying and connecting "; rhs->dump(std::cout, iface);
@@ -112,10 +124,10 @@ OA_ptr<ExprTree> ExprTreeBuilder::build(SEXP e) {
     if (debug) std::cout << "ExprTreeBuilder: function call" << std::endl;
     OA_ptr<ExprTree::CallNode> call; call = new ExprTree::CallNode(make_call_h(e));
     tree->addNode(call);
-    OA_ptr<ExprTree> lhs = build(call_lhs(e));
+    OA_ptr<ExprTree> lhs = build_c(e);
     tree->copyAndConnectSubTree(call, lhs);
     for(SEXP arg = call_args(e); arg != R_NilValue; arg = CDR(arg)) {
-      OA_ptr<ExprTree> arg_tree = build(CAR(arg));
+      OA_ptr<ExprTree> arg_tree = build_c(arg);
       tree->copyAndConnectSubTree(call, arg_tree);
     }
   } else {

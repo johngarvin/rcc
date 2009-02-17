@@ -52,18 +52,30 @@ private:
 
 public:
 
-  // methods inherited from DataFlowSet
+  // ----- methods inherited from DataFlowSet -----
   // construction
   explicit DFSet();
   explicit DFSet(const DFSet& other);
   ~DFSet();
   
-  // After the assignment operation, the lhs DFSet will point to the
-  // same instances of DFSetElements that the rhs points to.  Use
-  // clone if you want separate instances of the DFSetElements.
-  DFSet& operator= (const DFSet& other);
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone();
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() const;
   
+  // relationship
+  // param for these can't be const because will have to 
+  // dynamic cast to specific subclass
+  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
+  bool operator !=(OA::DataFlow::DataFlowSet &other) const
+  { return (!(*this==other)); }
+
+  void setUniversal();
+  void clear();
+
+  int size() const;
+  bool isUniversalSet() const;
+  bool isEmpty() const;
+
+  // ----- our own methods -----  
+
   void insert(OA::OA_ptr<DFSetElement> h);
   void remove(OA::OA_ptr<DFSetElement> h);
   int insert_and_tell(OA::OA_ptr<DFSetElement> h);
@@ -77,19 +89,6 @@ public:
   void replace(OA::OA_ptr<R_VarRef> loc, LocalityType locality_type);
   void replace(OA::OA_ptr<DFSetElement> ru);
 
-  // relationship
-  // param for these can't be const because will have to 
-  // dynamic cast to specific subclass
-  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
-  bool operator !=(OA::DataFlow::DataFlowSet &other) const
-  { return (!(*this==other)); }
-
-  /// need this one for stl containers
-  bool operator==(const DFSet& other) const 
-  { return DFSet::operator==(const_cast<DFSet&>(other)); }
-
-  bool empty() const { return mSet->empty(); }
-  
   /// Return pointer to a copy of a DFSetElement in this set with matching loc
   /// NULL is returned if no DFSetElement in this set matches loc
   OA::OA_ptr<DFSetElement> find(OA::OA_ptr<R_VarRef> locPtr) const;
@@ -97,12 +96,12 @@ public:
   void insert_varset(OA::OA_ptr<R_VarRefSet> vars, LocalityType type);
 
   // debugging
+  void output(OA::IRHandlesIRInterface & pIR) const;
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   std::string toString();
   void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   void dump(std::ostream &os);
 
-  // non-inherited method
   OA::OA_ptr<DFSetIterator> get_iterator() const;
   
 protected:

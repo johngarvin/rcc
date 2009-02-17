@@ -40,16 +40,19 @@ namespace RAnnot {
 // ----- typedefs for readability -----
 
 typedef SideEffect::MyVarT MyVarT;
+typedef SideEffect::MyRawVarSetT MyRawVarSetT;
 typedef SideEffect::MyVarSetT MyVarSetT;
-typedef SideEffect::MyIterator MyIterator;
+typedef SideEffect::MyIteratorT MyIteratorT;
+
+// ----- static functions -----
+
+static bool sets_intersect(MyVarSetT s, MyVarSetT t);
 
 // ----- constructor/destructor -----
 
 SideEffect::SideEffect() : m_trivial(false),
 			   m_cheap(false)
 {
-  m_uses = new OA::LocSet();
-  m_defs = new OA::LocSet();
 }
 
 SideEffect::~SideEffect() {
@@ -78,37 +81,36 @@ SideEffect::~SideEffect() {
 void SideEffect::insert_use_var(const FuncInfo * fi, const UseVar * use) {
   OA::ProcHandle proc = make_proc_h(fi->get_sexp());
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, use));
-  insert_use_loc(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  insert_use(make_var_info(symbol));
 }
 
 void SideEffect::insert_def_var(const FuncInfo * fi, const DefVar * def) {
   OA::ProcHandle proc = make_proc_h(fi->get_sexp());
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, def));
-  insert_def_loc(R_Analyst::get_instance()->get_interface()->getLocation(proc, symbol));
+  insert_def(make_var_info(symbol));
 }
 
-void SideEffect::insert_use_loc(const MyVarT & v) {
-  m_uses->insert(v);
+void SideEffect::insert_use(const MyVarT & v) {
+  m_uses.insert(v);
 }
 
-void SideEffect::insert_def_loc(const MyVarT & v) {
-  m_defs->insert(v);
+void SideEffect::insert_def(const MyVarT & v) {
+  m_defs.insert(v);
 }
 
   // ----- set operators -----
 
 void SideEffect::add(const SideEffect * x) {
-  OA::LocSet::const_iterator it;
+  MyIteratorT it;
   for(it = x->begin_uses(); it != x->end_uses(); ++it) {
-    m_uses->insert(*it);
+    m_uses.insert(*it);
   }
   for(it = x->begin_defs(); it != x->end_defs(); ++it) {
-    m_defs->insert(*it);
+    m_defs.insert(*it);
   }
 }
 
 // ----- getters -----
-
 MyVarSetT SideEffect::get_uses() {
   return m_uses;
 }
@@ -119,31 +121,38 @@ MyVarSetT SideEffect::get_defs() {
 
 // ----- iterators -----
 
-MyIterator SideEffect::begin_uses() const {
-  return m_uses->begin();
+MyIteratorT SideEffect::begin_uses() const {
+  return m_uses.begin();
 }
 
-MyIterator SideEffect::end_uses() const {
-  return m_uses->end();
+MyIteratorT SideEffect::end_uses() const {
+  return m_uses.end();
 }
 
-MyIterator SideEffect::begin_defs() const {
-  return m_defs->begin();
+MyIteratorT SideEffect::begin_defs() const {
+  return m_defs.begin();
 }
 
-MyIterator SideEffect::end_defs() const {
-  return m_defs->end();
+MyIteratorT SideEffect::end_defs() const {
+  return m_defs.end();
 }
 
 // ----- ask whether this SideEffect intersects with another -----
 
+bool sets_intersect(MyVarSetT s, MyVarSetT t) {
+  for(MyIteratorT iter = s.begin(); iter != s.end(); ++iter) {
+    if (t.find(*iter) != t.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool SideEffect::intersects(SideEffect * other) {
-  OA::OA_ptr<OA::LocSet> true_dep; true_dep = intersectLocSets(*get_defs(), *other->get_uses());
-  OA::OA_ptr<OA::LocSet> anti_dep; anti_dep = intersectLocSets(*get_uses(), *other->get_defs());
-  OA::OA_ptr<OA::LocSet> output_dep; output_dep = intersectLocSets(*get_defs(), *other->get_defs());
-  return (!(true_dep->empty() &&
-	    anti_dep->empty() &&
-	    output_dep->empty()));
+  bool true_dep = sets_intersect(get_defs(), other->get_uses());
+  bool anti_dep = sets_intersect(get_uses(), other->get_defs());
+  bool output_dep = sets_intersect(get_defs(), other->get_defs());
+  return (true_dep || anti_dep || output_dep);
 }
 
 // ----- handle, cloning for Annotation -----
@@ -161,12 +170,12 @@ AnnotationBase * SideEffect::clone() {
 std::ostream& SideEffect::dump(std::ostream& os) const {
   beginObjDump(os, SideEffect);
   os << "Begin uses:" << std::endl;
-  for(MyIterator it = begin_uses(); it != end_uses(); ++it) {
+  for(MyIteratorT it = begin_uses(); it != end_uses(); ++it) {
     (*it)->dump(os);
   }
   os << "End uses" << std::endl;
   os << "Begin defs:" << std::endl;
-  for(MyIterator it = begin_defs(); it != end_defs(); ++it) {
+  for(MyIteratorT it = begin_defs(); it != end_defs(); ++it) {
     (*it)->dump(os);
   }
   os << "End defs" << std::endl;

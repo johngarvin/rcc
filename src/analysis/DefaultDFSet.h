@@ -41,21 +41,62 @@ typedef R_VarRef DFSetElement;
 
 /// Set of DFSetElement objects. Inherits from DataFlowSet for
 /// use in CFGDFProblem.
-// Removed "virtual": need clone() to be able to return a DefaultDFSet.
-//class DefaultDFSet : public virtual OA::DataFlow::DataFlowSet {
-class DefaultDFSet : public OA::DataFlow::DataFlowSet {
+class DefaultDFSet : public virtual OA::DataFlow::DataFlowSet {
 public:
 
   // construction
   explicit DefaultDFSet();
   ~DefaultDFSet();
   
-  // After the assignment operation, the lhs DefaultDFSet will point to the
-  // same instances of DFSetElements that the rhs points to.  Use
-  // clone if you want separate instances of the DFSetElements.
-  DefaultDFSet& operator= (const DefaultDFSet& other);
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone();
+  /// Create a copy of this set
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() const;
+
+  // relationship
+  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
+  bool operator !=(OA::DataFlow::DataFlowSet &other) const
+  { return (!(*this==other)); }
+
+  /// need this one for stl containers
+  //  bool operator==(const DefaultDFSet& other) const 
+  //  { return DefaultDFSet::operator==(const_cast<DefaultDFSet&>(other)); }
+
+  //************************************************************
+  // Modifier Methods
+  //************************************************************
   
+  /// Set this set to the universal set
+  void setUniversal();
+  
+  /// Remove all elements from this set
+  void clear();
+
+  //************************************************************
+  // Information Methods
+  //************************************************************
+  
+  /// Return the number of elements contained in this set
+  int size() const;
+  
+  /// Return true if this is the universal set
+  bool isUniversalSet() const;
+  
+  /// Return true if this set is empty
+  bool isEmpty() const;
+  
+
+  //************************************************************
+  // Output and Debugging Methods
+  //************************************************************
+  void output(OA::IRHandlesIRInterface& ir) const;
+  
+  /// Output succinct description of set's contents
+  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
+  void dump(std::ostream &os);
+  
+  //------------------------------------------------------------------
+  // Our own methods
+  //------------------------------------------------------------------
+
   void insert(OA::OA_ptr<DFSetElement> h);
   void remove(OA::OA_ptr<DFSetElement> h);
   int insert_and_tell(OA::OA_ptr<DFSetElement> h);
@@ -68,23 +109,11 @@ public:
   /// insert the new element
   void replace(OA::OA_ptr<DFSetElement> ru);
 
-  // relationship
-  // these implement virtual methods from DataFlowSet.
-  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
-  bool operator !=(OA::DataFlow::DataFlowSet &other) const
-  { return (!(*this==other)); }
-
-  /// need this one for stl containers
-  bool operator==(const DefaultDFSet& other) const 
-  { return DefaultDFSet::operator==(const_cast<DefaultDFSet&>(other)); }
-
   bool member(const OA::OA_ptr<DFSetElement> element) const
   { return (m_set->find(element) != m_set->end()); }
 
   bool includes_name(OA::OA_ptr<R_VarRef> mention);
 
-  bool empty() const { return m_set->empty(); }
-  
   void insert_varset(OA::OA_ptr<R_VarRefSet> vars);
 
   OA::OA_ptr<DefaultDFSet> intersect(OA::OA_ptr<DefaultDFSet> other);
@@ -94,8 +123,6 @@ public:
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   std::string toString();
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
-  void dump(std::ostream &os);
 
 private:
   OA::OA_ptr<std::set<OA::OA_ptr<R_VarRef> > > m_set;

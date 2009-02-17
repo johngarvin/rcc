@@ -41,23 +41,21 @@ public:
   virtual ~LexicalScope();
 
   virtual const std::string get_name() const = 0;
-
   RAnnot::SymbolTable * get_symbol_table() const;
-
+  virtual bool has_children() const = 0;
   void dump(std::ostream & os) const;
 private:
   RAnnot::SymbolTable * m_st;
 };
 
 class InternalLexicalScope : public LexicalScope {
-  // singleton pattern
-private:
-  explicit InternalLexicalScope();
 public:
   static InternalLexicalScope * get_instance();
-
   const std::string get_name() const;
+  bool has_children() const;
 private:
+  // singleton pattern
+  explicit InternalLexicalScope();
   static InternalLexicalScope * s_instance;
 };
 
@@ -66,19 +64,20 @@ public:
   explicit FundefLexicalScope(SEXP fundef);
   SEXP get_sexp() const;
   const std::string get_name() const;
+  bool has_children() const;
 private:
   SEXP m_sexp;
+  bool m_has_chidren;
 };
 
 class UnboundLexicalScope : public LexicalScope {
-  // singleton pattern
-private:
-  explicit UnboundLexicalScope();
 public:
   static UnboundLexicalScope * get_instance();
-
   const std::string get_name() const;
+  bool has_children() const;
 private:
+  // singleton pattern
+  explicit UnboundLexicalScope();
   static UnboundLexicalScope * s_instance;
 };
 

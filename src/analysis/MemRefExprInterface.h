@@ -1,4 +1,6 @@
-// Copyright (c) 2007 Rice University
+// -*- Mode: C++ -*-
+//
+// Copyright (c) 2009 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -14,32 +16,26 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: ExprTreeBuilder.h
+// File: MemRefExprInterface.h
 //
-// Builds an OA::ExprTree given an SEXP.
+// Interface for creating OA MemRefExprs out of SEXPs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#ifndef MEM_REF_EXPR_INTERFACE_H
+#define MEM_REF_EXPR_INTERFACE_H
+
+#include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include <OpenAnalysis/ExprTree/ExprTree.hpp>
 
 #include <include/R/R_RInternals.h>
 
-#ifndef EXPR_TREE_BUILDER_H
-#define EXPR_TREE_BUILDER_H
-
-class ExprTreeBuilder {
-public:
-  OA::OA_ptr<OA::ExprTree> build_c(SEXP e);
-
-public:
-  static ExprTreeBuilder * get_instance();
-
-private:
+class MemRefExprInterface {
   
-  // private constructor for singleton
-  explicit ExprTreeBuilder();
-  static ExprTreeBuilder * s_instance;
+public:
+  static OA::OA_ptr<OA::MemRefExpr> convert_sexp_c(SEXP cell);
+  static OA::OA_ptr<OA::MemRefExpr> convert_mem_ref_handle(OA::MemRefHandle mrh);
+  static OA::OA_ptr<OA::MemRefExpr> convert_sym_handle(OA::SymHandle sh);
 };
 
 #endif

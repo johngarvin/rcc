@@ -32,17 +32,20 @@ namespace RAnnot {
 
 OACallGraphAnnotation::OACallGraphAnnotation(const OA::OA_ptr<OA::ProcHandleIterator> iter)
   : m_iter(iter) 
-{}
+{
+  assert(!m_iter.ptrEqual(0));
+}
 
 OACallGraphAnnotation::~OACallGraphAnnotation()
 {}
 
-OA::OA_ptr<OA::ProcHandleIterator> OACallGraphAnnotation::get_iterator() const {
+const OA::OA_ptr<OA::ProcHandleIterator> OACallGraphAnnotation::get_iterator() const {
   return m_iter;
 }
 
 const OA::ProcHandle OACallGraphAnnotation::get_singleton_if_exists() const {
   OA::ProcHandle ph;
+  assert(!m_iter.ptrEqual(0));
   m_iter->reset();
   if (m_iter->isValid()) {
     ph = m_iter->current();

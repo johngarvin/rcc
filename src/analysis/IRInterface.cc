@@ -28,7 +28,6 @@
 #include <OpenAnalysis/SideEffect/InterSideEffectInterface.hpp>
 #include <OpenAnalysis/SideEffect/InterSideEffectStandard.hpp>
 #include <OpenAnalysis/SideEffect/SideEffectStandard.hpp>
-#include <OpenAnalysis/Alias/ManagerInterAliasMapBasic.hpp>
 #include <OpenAnalysis/Alias/Interface.hpp>
 
 #include <analysis/AnalysisException.h>
@@ -41,6 +40,8 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/HellProcedure.h>
 #include <analysis/LexicalScope.h>
+#include <analysis/MemRefExprInterface.h>
+#include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SymbolTableFacade.h>
@@ -58,6 +59,8 @@
 using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
+
+static OA_ptr<MemRefExprIterator> make_singleton_mre_iterator(OA_ptr<MemRefExpr> mre);
 
 //--------------------------------------------------------
 // Procedures and call sites
@@ -321,9 +324,9 @@ ExprHandle R_IRInterface::getUMultiCondition(StmtHandle h, int targetIndex) {
   return 0;
 }
 
-//----------------------------------------------------------------------
-// Information for building call graphs
-//----------------------------------------------------------------------
+//------------------------------------------------------------
+// AliasIRInterface
+//------------------------------------------------------------
 
 /// Given a subprogram return an IRStmtIterator for the entire
 /// subprogram
@@ -333,6 +336,58 @@ OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
   OA_ptr<IRRegionStmtIterator> ptr;
   ptr = new R_DescendingStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
   return ptr;
+}
+
+/// Return an iterator over all the memory reference handles that appear
+/// in the given statement.  Order that memory references are iterated
+/// over can be arbitrary.
+OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
+  ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
+  OA_ptr<MemRefHandleIterator> iter; iter = new R_ExpMemRefHandleIterator(ei);
+  return iter;
+}
+
+/// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
+/// pairs where there is a source and target such that target
+OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIterator(StmtHandle stmt) {
+  // we have no PTR_ASSIGN_STMTs, so return an empty iterator
+  class EmptyPAPSIterator : public Alias::PtrAssignPairStmtIterator {
+    OA_ptr<MemRefExpr> currentSource() const { throw AnalysisException("compiler bug: currentSource called on empty iterator"); }
+    OA_ptr<MemRefExpr> currentTarget() const { throw AnalysisException("compiler bug: currentSource called on empty iterator"); }
+    bool isValid() const { return false; }
+    void operator++() { }
+  };
+  OA_ptr<Alias::PtrAssignPairStmtIterator> empty; empty = new EmptyPAPSIterator();
+  return empty;
+}
+
+/// Return an iterator over <int, MemRefExpr> pairs
+/// where the integer represents which formal parameter 
+/// and the MemRefExpr describes the corresponding actual argument. 
+OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
+  OA_ptr<Alias::ParamBindPtrAssignIterator> retval; retval = new R_ParamBindIterator(make_sexp(call));
+  return retval;
+}
+
+/// Return the symbol handle for the nth formal parameter to proc
+/// Number starts at 0 and implicit parameters should be given
+/// a number in the order as well.  This number should correspond
+/// to the number provided in getParamBindPtrAssign pairs
+/// Should return SymHandle(0) if there is no formal parameter for 
+/// given num
+SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
+  if (proc == HellProcedure::get_instance()) {
+    // TODO: is this the right thing to do?
+    return SymHandle(0);
+  }
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(proc));
+  if (n >= fi->get_num_args()) {
+    return SymHandle(0);
+  } else {
+    SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
+    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
+    return make_sym_h(vi);
+  }
 }
 
 /// Return an iterator over all of the callsites in a given stmt
@@ -354,16 +409,71 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(e));
     VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
-    mre = new NamedRef(MemRefExpr::USE, sym);
-    //    mre = new Deref(MemRefExpr::USE, mre);
+    return MemRefExprInterface::convert_sym_handle(sym);
+    // TODO: make sharper distinction
   } else {
     mre = new UnknownRef(MemRefExpr::USE);
   }
   return mre;
 }
 
+/// Given the callee symbol returns the callee proc handle
+ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
+  VarInfo * vi = make_var_info(sym);
+  VarInfo::const_iterator iter = vi->begin_defs();
+  if (iter == vi->end_defs()) {
+    rcc_warn("getProcHandle: procedure symbol has no definitions");
+    return HellProcedure::get_instance();
+  }
+  //  std::cout << to_string((*iter)->getRhs_c());
+  //  std::cout << to_string(CAR((*iter)->getRhs_c()));
+  ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
+  if (++iter != vi->end_defs()) {  // if more than one def
+    return HellProcedure::get_instance();
+  }
+  return retval;
+}
+
+/// Given a procedure return associated SymHandle
+SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
+  /// TODO: R procedures are first class. We need to find a way to
+  /// handle more than one procedure bound to the same name in the same
+  /// scope. For now we're just giving the first name assigned.
+  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+  if (h == HellProcedure::get_instance()) {
+    return SymHandle(0);
+  }
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
+  SEXP name = fi->get_first_name_c();
+  if (VarAnnotationMap::get_instance()->is_valid(name)) {
+    VarInfo * sym = symbol_table->find_entry(fi, getProperty(Var, name));
+    if (sym->size_defs() == 1) {
+      return make_sym_h(sym);
+    } else {
+      // fail gracefully if there's more than one definition
+      throw AnalysisException("getSymHandle: more than one definition of procedure");
+    }
+  } else {
+    // the global-scope procedure and anonymous functions won't have a Var annotation.
+    // In this case, return 0.
+    return SymHandle(0);
+  }
+}
+
+/// Given a MemRefHandle return an iterator over
+/// MemRefExprs that describe this memory reference
+///
+/// Michelle says there's only one MemRefExpr per MemRefHandle in
+/// almost all cases. Here, just return a singleton iterator
+/// containing the MemRefExpr.
+OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) {
+  OA_ptr<MemRefExprIterator> iter;
+  OA_ptr<MemRefExpr> mre = MemRefExprInterface::convert_mem_ref_handle(h);
+  return make_singleton_mre_iterator(mre);
+}
+
 //----------------------------------------------------------------------
-// Information for solving call graph data flow problems
+// ParamBindingsIRInterface
 //----------------------------------------------------------------------
 
 OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
@@ -377,7 +487,7 @@ OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
     }
 
     ExprHandle current() const {
-      return make_expr_h(CAR(m_list_iter.current()));
+      return make_expr_h(m_list_iter.current());
     }
 
     bool isValid() const {
@@ -409,12 +519,12 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
 
   // param is the nth actual arg of call: find n
-  SEXP actual = make_sexp(param);
+  SEXP actual_c = make_sexp(param);
   SEXP args = call_args(make_sexp(call));
   int n = 1;
   R_ListIterator li(args);
   for( ; li.isValid(); ++li) {
-    if (CAR(li.current()) == actual) break;
+    if (li.current() == actual_c) break;
     n++;
   }
   if (!li.isValid()) {
@@ -425,57 +535,66 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(callee));
   // hack to deal with varargs (used in .rcc.assert.exp, etc.)
   // TODO: figure out what to do
-  if (n > fi->get_num_args() || TAG(fi->get_arg(n)) == R_DotsSymbol) {
+  if (n > fi->get_num_args()) {
     return SymHandle(0);
   }
-  VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, fi->get_arg(n)));
+
+  SEXP formal_c = fi->get_arg(n);
+
+  if (TAG(formal_c) == R_DotsSymbol) {
+    return make_sym_h(new VarInfo(formal_c));
+  }
+
+  VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, formal_c));
   return make_sym_h(vi);
 }
 
-OA_ptr<OA::Location> R_IRInterface::getLocation(ProcHandle p, SymHandle s) {
-  OA_ptr<OA::Location> loc;
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(p));
-  VarInfo * vi = make_var_info(s);
-  // NamedLoc constructor wants to know if the location is global (can
-  // be seen in the scope of other procedures) or local (limited to
-  // this scope). We conservatively say that it can only be local if
-  // the procedure has no children (because a child procedure might
-  // refer to this one's "local" variables).
-  bool location_is_local = (vi->has_scope() &&
-			    vi->get_scope() == fi->get_scope() &&
-			    !fi->has_children());
-  loc = new NamedLoc(s, location_is_local);
-  // TODO: need to give information about possible overlap
-  return loc;
-}
-
 OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {
-  return ExprTreeBuilder::get_instance()->build(make_sexp(h));
+  return ExprTreeBuilder::get_instance()->build_c(make_sexp(h));
 }
   
-/// from CalleeToCallerVisitorIRInterface
-/// Given a MemRefHandle return an iterator over
-/// MemRefExprs that describe this memory reference
+OA_ptr<MemRefExpr> R_IRInterface::convertSymToMemRefExpr(SymHandle sym) {
+  // note: when ManagerParamBindings uses this, it requires the result
+  // to be a Deref.
+  OA_ptr<MemRefExpr> base = MemRefExprInterface::convert_sym_handle(sym);
+  OA_ptr<MemRefExpr> retval; retval = new Deref(MemRefExpr::DEF, base);   // TODO: is DEF right?
+  return retval;
+}
+
+// getSideEffect
+/// For the given callee subprocedure symbol return side-effect results
+/// Can only indicate that the procedure has no side effects, has
+/// side effects on unknown locations, or on global locations.
+/// Can't indicate subprocedure has sideeffects on parameters because
+/// don't have a way to get mapping of formal parameters to actuals
+/// in caller.
 ///
-/// Michelle says there's only one MemRefExpr per MemRefHandle in
-/// almost all cases. Here, just return a singleton iterator
-/// containing the MemRefExpr.
-OA_ptr<MemRefExprIterator> R_IRInterface::getMemRefExprIterator(MemRefHandle h) {
-  OA_ptr<MemRefExprIterator> iter;
-  SEXP cell = make_sexp(h);
-  if (is_var(CAR(cell))) {
-    // TODO: make this easier
-    FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
-    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
-    OA_ptr<MemRefExpr> mre; mre = new NamedRef(MemRefExpr::USE, make_sym_h(vi));
-    //    mre = new AddressOf(MemRefExpr::USE, mre);
-    iter = new R_SingletonMemRefExprIterator(mre);
+/// Note: ManagerInterSideEffectStandard only uses this method for undefined callees.
+OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee)
+{
+  assert(caller != HellProcedure::get_instance());
+  OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
+  OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
+  OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
+  VarInfo * vi = make_var_info(callee);
+  if (vi->is_internal()) {
+    // assuming internal procedures have no effect on names in userland
+    OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard(OACallGraphAnnotationMap::get_instance()->get_OA_alias().convert<Alias::Interface>());
+    retval->emptyLMOD();
+    retval->emptyMOD();
+    retval->emptyLDEF();
+    retval->emptyDEF();
+    retval->emptyLUSE();
+    retval->emptyUSE();
+    retval->emptyLREF();
+    retval->emptyREF();
+    return retval;
   } else {
-    rcc_warn("getMemRefExprIterator: non-var " + to_string(CAR(cell)));
-    OA_ptr<MemRefExpr> mre = mre = new UnknownRef(MemRefExpr::USE);
-    iter = new R_SingletonMemRefExprIterator(mre);
+    // extremely conservative;
+    // InterSideEffectIRInterfaceDefault::getSideEffect returns a new
+    // SideEffectStandard, indicating side effects on unknown locations
+    return InterSideEffectIRInterfaceDefault::getSideEffect(caller, callee);
   }
-  return iter;
 }
 
 /// from SideEffectIRInterface
@@ -516,113 +635,7 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
   return retval;
 }
 
-/// from InterSideEffectIRInterface
-/// For the given callee subprocedure symbol return side-effect results
-/// Can only indicate that the procedure has no side effects, has
-/// side effects on unknown locations, or on global locations.
-/// Can't indicate subprocedure has sideeffects on parameters because
-/// don't have a way to get mapping of formal parameters to actuals
-/// in caller.
-///
-/// Note: ManagerInterSideEffectStandard only uses this method for undefined callees.
-OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle caller, SymHandle callee) {
-  assert(caller != HellProcedure::get_instance());
-  OA_ptr<R_IRInterface> this_copy; this_copy = new R_IRInterface(*this);
-  OA_ptr<SideEffectIRInterface> se_this; se_this = this_copy.convert<SideEffectIRInterface>();
-  OA_ptr<AliasIRInterface> alias_this; alias_this = this_copy.convert<AliasIRInterface>();
-  VarInfo * vi = make_var_info(callee);
-  if (vi->is_internal()) {
-    // assuming internal procedures have no effect on names in userland
-    OA_ptr<SideEffect::SideEffectStandard> retval; retval = new SideEffect::SideEffectStandard();
-    retval->emptyLMOD();
-    retval->emptyMOD();
-    retval->emptyLDEF();
-    retval->emptyDEF();
-    retval->emptyLUSE();
-    retval->emptyUSE();
-    retval->emptyLREF();
-    retval->emptyREF();
-    return retval;
-  } else {
-    // extremely conservative;
-    // InterSideEffectIRInterfaceDefault::getSideEffect returns a new
-    // SideEffectStandard, indicating side effects on unknown locations
-    return InterSideEffectIRInterfaceDefault::getSideEffect(caller, callee);
-  }
-}
-
-//------------------------------------------------------------
-// Alias information
-//------------------------------------------------------------
-
-/// Return an iterator over all the memory reference handles that appear
-/// in the given statement.  Order that memory references are iterated
-/// over can be arbitrary.
-OA_ptr<MemRefHandleIterator> R_IRInterface::getAllMemRefs(StmtHandle stmt) {
-  ExpressionInfo * ei = getProperty(ExpressionInfo, make_sexp(stmt));
-  OA_ptr<MemRefHandleIterator> iter; iter = new R_ExpMemRefHandleIterator(ei);
-  return iter;
-}
-
-/// If this is a PTR_ASSIGN_STMT then return an iterator over MemRefHandle
-/// pairs where there is a source and target such that target
-OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIterator(StmtHandle stmt) {
-  // we have no PTR_ASSIGN_STMTs, so return null
-  OA_ptr<Alias::PtrAssignPairStmtIterator> empty;
-  return empty;
-}
-
-/// Return an iterator over <int, MemRefExpr> pairs
-/// where the integer represents which formal parameter 
-/// and the MemRefExpr describes the corresponding actual argument. 
-OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
-  // TODO
-  throw AnalysisException("getParamBindPtrAssignIterator: Alias interface not yet implemented");
-  OA_ptr<Alias::ParamBindPtrAssignIterator> dummy;
-  return dummy;
-}
-
-/// Return the symbol handle for the nth formal parameter to proc
-/// Number starts at 0 and implicit parameters should be given
-/// a number in the order as well.  This number should correspond
-/// to the number provided in getParamBindPtrAssign pairs
-/// Should return SymHandle(0) if there is no formal parameter for 
-/// given num
-SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
-  if (proc == HellProcedure::get_instance()) {
-    // TODO: is this the right thing to do?
-    return SymHandle(0);
-  }
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(proc));
-  if (n >= fi->get_num_args()) {
-    return SymHandle(0);
-  } else {
-    SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
-    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
-    return make_sym_h(vi);
-  }
-}
-
-/// Given the callee symbol returns the callee proc handle
-ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
-  VarInfo * vi = make_var_info(sym);
-  VarInfo::const_iterator iter = vi->begin_defs();
-  if (iter == vi->end_defs()) {
-    rcc_warn("getProcHandle: procedure symbol has no definitions");
-    return HellProcedure::get_instance();
-  }
-  ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
-  if (++iter != vi->end_defs()) {  // if more than one def
-    return HellProcedure::get_instance();
-  }
-  return retval;
-}
-
-/// Given a procedure return associated SymHandle
-SymHandle R_IRInterface::getSymHandle(ProcHandle h) {
-  return getProcSymHandle(h);
-}
-
+#if 0
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
 //--------------------------------------------------------
@@ -660,50 +673,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   retval = new R_UseDefAsLeafIterator(uses->get_iterator());
   return retval;
 }
-
-
-//--------------------------------------------------------
-// Symbol Handles
-//--------------------------------------------------------
-
-/// TODO: R procedures are first class. We need to find a way to
-/// handle more than one procedure bound to the same name in the same
-/// scope. For now we're just giving the first name assigned.
-SymHandle R_IRInterface::getProcSymHandle(ProcHandle h) {
-  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
-  if (h == HellProcedure::get_instance()) {
-    return SymHandle(0);
-  }
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
-  SEXP name = fi->get_first_name_c();
-  if (VarAnnotationMap::get_instance()->is_valid(name)) {
-    VarInfo * sym = symbol_table->find_entry(fi, getProperty(Var, name));
-    if (sym->size_defs() == 1) {
-      return make_sym_h(sym);
-    } else {
-      // fail gracefully if there's more than one definition
-      throw AnalysisException("getProcSymHandle: more than one definition of procedure");
-    }
-  } else {
-    // the global-scope procedure and anonymous functions won't have a Var annotation.
-    // In this case, return 0.
-    return SymHandle(0);
-  }
-}
-
-SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
-  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
-  FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(make_sexp(h)));
-  return make_sym_h(symbol_table->find_entry(fi, getProperty(Var, make_sexp(h))));
-}
-
-//------------------------------------------------------------
-// Param bindings (ParamBindingsIRInterface)
-//------------------------------------------------------------
-
-bool R_IRInterface::isParam(OA::SymHandle h) {
-  return make_var_info(h)->is_param();
-}
+#endif
 
 //------------------------------------------------------------
 // Dump routines for debugging
@@ -723,7 +693,7 @@ void R_IRInterface::dump(MemRefHandle h, ostream &stream) {
   stream << toString(h);
 }
 
-std::string R_IRInterface::toString(ProcHandle h) {
+std::string R_IRInterface::toString(ProcHandle h) const {
   if (h == ProcHandle(0)) {
     return "ProcHandle(0)";
   } else if (h == HellProcedure::get_instance()) {
@@ -734,36 +704,36 @@ std::string R_IRInterface::toString(ProcHandle h) {
   }
 }
 
-std::string R_IRInterface::toString(StmtHandle h) {
+std::string R_IRInterface::toString(StmtHandle h) const {
   return to_string(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(ExprHandle h) {
+std::string R_IRInterface::toString(ExprHandle h) const {
   return to_string(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(OpHandle h) {
+std::string R_IRInterface::toString(OpHandle h) const {
   return to_string(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(MemRefHandle h) {
+std::string R_IRInterface::toString(MemRefHandle h) const {
   return to_string(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(SymHandle h) {
+std::string R_IRInterface::toString(SymHandle h) const {
   VarInfo * vi = make_var_info(h);
   return to_string(vi->get_name()) + "@" + vi->get_scope()->get_name();
 }
 
-std::string R_IRInterface::toString(ConstSymHandle h) {
+std::string R_IRInterface::toString(ConstSymHandle h) const {
   return "*ConstSymHandle*";
 }
 
-std::string R_IRInterface::toString(ConstValHandle h) {
+std::string R_IRInterface::toString(ConstValHandle h) const {
   return to_string(make_sexp(h));
 }
 
-std::string R_IRInterface::toString(CallHandle h) {
+std::string R_IRInterface::toString(CallHandle h) const {
   return to_string(make_sexp(h));
 }
 
@@ -936,6 +906,7 @@ void R_RegionStmtListIterator::reset() {
   iter.reset(); 
 }
 
+#if 0
 //--------------------------------------------------------------------
 // R_UseDefAsLeafIterator
 //--------------------------------------------------------------------
@@ -963,6 +934,7 @@ void R_UseDefAsLeafIterator::operator++() {
 void R_UseDefAsLeafIterator::reset() {
   m_iter->reset();
 }
+#endif
 
 //------------------------------------------------------------
 // R_UseDefAsMemRefIterator
@@ -1082,7 +1054,7 @@ bool R_ProcHandleIterator::isValid() const {
 }
 
 void R_ProcHandleIterator::operator++() {
-  return ++(*m_fii);
+  ++(*m_fii);
 }
 
 void R_ProcHandleIterator::reset() {
@@ -1131,26 +1103,36 @@ void R_ExpMemRefHandleIterator::reset() {
 }
 
 //------------------------------------------------------------
-// R_SingletonMemRefExprIterator
+// R_ParamBindIterator
 //------------------------------------------------------------
 
-R_SingletonMemRefExprIterator::R_SingletonMemRefExprIterator(OA_ptr<MemRefExpr> mre)
-  : R_SingletonIterator<OA_ptr<MemRefExpr> >(mre)
-{
+R_ParamBindIterator::R_ParamBindIterator(SEXP call) : m_arg_c(call_args(call)), m_index(0) {}
+
+R_ParamBindIterator::~R_ParamBindIterator() {}
+
+OA_ptr<MemRefExpr> R_ParamBindIterator::currentActual() const {
+  return MemRefExprInterface::convert_sexp_c(m_arg_c);
 }
 
-OA_ptr<MemRefExpr> R_SingletonMemRefExprIterator::current() const {
-  return R_SingletonIterator<OA_ptr<MemRefExpr> >::current();
+int R_ParamBindIterator::currentFormalId() const {
+  return m_index;
 }
 
-bool R_SingletonMemRefExprIterator::isValid() const {
-  return R_SingletonIterator<OA_ptr<MemRefExpr> >::isValid();  
+bool R_ParamBindIterator::isValid() const {
+  return (m_arg_c != R_NilValue);
 }
 
-void R_SingletonMemRefExprIterator::operator++() {
-  R_SingletonIterator<OA_ptr<MemRefExpr> >::operator++();
+void R_ParamBindIterator::operator++() {
+  m_arg_c = CDR(m_arg_c);
+  m_index++;
 }
 
-void R_SingletonMemRefExprIterator::reset() {
-  R_SingletonIterator<OA_ptr<MemRefExpr> >::reset();
+
+/// Create new set containing only the given mem ref; return an
+/// iterator to the singleton set
+OA_ptr<MemRefExprIterator> make_singleton_mre_iterator(OA_ptr<MemRefExpr> mre) {
+  OA_ptr<set<OA_ptr<MemRefExpr> > > s; s = new set<OA_ptr<MemRefExpr> >();
+  s->insert(mre);
+  OA_ptr<MemRefExprIterator> iter; iter = new MemRefExprIterator(s);
+  return iter;
 }

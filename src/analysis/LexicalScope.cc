@@ -76,11 +76,18 @@ const std::string InternalLexicalScope::get_name() const {
   return "<Internal scope>";
 }
 
+bool InternalLexicalScope::has_children() const {
+  // Internal scopes are lexical parents of all user code.
+  return true;
+}
+
 //------------------------------------------------------------
 // FundefLexicalScope
 //------------------------------------------------------------
 
-FundefLexicalScope::FundefLexicalScope(SEXP sexp) : m_sexp(sexp) {
+FundefLexicalScope::FundefLexicalScope(SEXP sexp) 
+  : m_sexp(sexp)
+{
 }
 
 SEXP FundefLexicalScope::get_sexp() const {
@@ -90,6 +97,11 @@ SEXP FundefLexicalScope::get_sexp() const {
 const std::string FundefLexicalScope::get_name() const {
   FuncInfo * fi = getProperty(FuncInfo, get_sexp());
   return var_name(CAR(fi->get_first_name_c()));
+}
+
+bool FundefLexicalScope::has_children() const {
+  FuncInfo * fi = getProperty(FuncInfo, get_sexp());
+  return fi->has_children();
 }
 
 //------------------------------------------------------------
@@ -110,4 +122,8 @@ UnboundLexicalScope * UnboundLexicalScope::get_instance() {
 
 const std::string UnboundLexicalScope::get_name() const {
   return "<Unbound>";
+}
+
+bool UnboundLexicalScope::has_children() const {
+  return false;
 }

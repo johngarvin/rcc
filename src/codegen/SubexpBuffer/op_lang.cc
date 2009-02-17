@@ -40,7 +40,6 @@
 
 #if 0
 // we are using OpenAnalysis call graphs instead
-
 #include <analysis/call-graph/RccCallGraphAnnotation.h>
 #include <analysis/call-graph/CallGraphNode.h>
 #include <analysis/call-graph/LibraryCallGraphNode.h>
@@ -61,6 +60,8 @@ using namespace HandleInterface;
 
 static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
 				   string rho, Protection resultProtection, ResultStatus resultStatus);
+
+static bool debug = false;
 
 Expression SubexpBuffer::op_lang(SEXP cell, string rho, 
 				 Protection resultProtection,

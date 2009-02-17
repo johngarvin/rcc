@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: HandleInterface.h
+// File: HandleInterface.cc
 //
 // Conversions back and forth between OA handles and SEXPs. Intended
 // to put all the reinterpret_casts in one place.
