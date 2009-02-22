@@ -361,9 +361,12 @@ OA_ptr<Alias::PtrAssignPairStmtIterator> R_IRInterface::getPtrAssignStmtPairIter
   return empty;
 }
 
-/// Return an iterator over <int, MemRefExpr> pairs
+/// OA: Return an iterator over <int, MemRefExpr> pairs
 /// where the integer represents which formal parameter 
-/// and the MemRefExpr describes the corresponding actual argument. 
+/// and the MemRefExpr describes the corresponding actual argument.
+///
+/// RCC: does not include constants because they are irrelevant to
+/// alias analysis.
 OA_ptr<Alias::ParamBindPtrAssignIterator> R_IRInterface::getParamBindPtrAssignIterator(CallHandle call) {
   OA_ptr<Alias::ParamBindPtrAssignIterator> retval; retval = new R_ParamBindIterator(make_sexp(call));
   return retval;
@@ -1106,25 +1109,36 @@ void R_ExpMemRefHandleIterator::reset() {
 // R_ParamBindIterator
 //------------------------------------------------------------
 
-R_ParamBindIterator::R_ParamBindIterator(SEXP call) : m_arg_c(call_args(call)), m_index(0) {}
+R_ParamBindIterator::R_ParamBindIterator(const SEXP call) {
+  // fill in m_pairs
+  int i = 0;
+  SEXP arg_c = call_args(call);
+  while (arg_c != R_NilValue) {
+    if (!is_const(CAR(arg_c))) {
+      m_pairs.push_back(std::pair<int, OA_ptr<MemRefExpr> >(i, MemRefExprInterface::convert_sexp_c(arg_c)));
+    }
+    arg_c = CDR(arg_c);
+    i++;
+  }
+  m_iter = m_pairs.begin();
+}
 
 R_ParamBindIterator::~R_ParamBindIterator() {}
 
 OA_ptr<MemRefExpr> R_ParamBindIterator::currentActual() const {
-  return MemRefExprInterface::convert_sexp_c(m_arg_c);
+  return m_iter->second;
 }
 
 int R_ParamBindIterator::currentFormalId() const {
-  return m_index;
+  return m_iter->first;
 }
 
 bool R_ParamBindIterator::isValid() const {
-  return (m_arg_c != R_NilValue);
+  return (m_iter != m_pairs.end());
 }
 
 void R_ParamBindIterator::operator++() {
-  m_arg_c = CDR(m_arg_c);
-  m_index++;
+  ++m_iter;
 }
 
 

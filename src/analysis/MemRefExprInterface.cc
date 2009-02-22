@@ -49,6 +49,8 @@ OA_ptr<MemRefExpr> MemRefExprInterface::convert_sexp_c(SEXP cell) {
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
     VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
     mre = MemRefExprInterface::convert_sym_handle(make_sym_h(vi));
+    //  } else if (is_const(CAR(cell))) {
+    //    mre = new ConstVarRef(make_const_h(cell));
   } else if (is_call(CAR(cell))) {
     mre = new UnnamedRef(MemRefExpr::USE, make_expr_h(cell));
     // TODO: if ref is strictly local, do this:

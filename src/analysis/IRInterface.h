@@ -495,6 +495,12 @@ private:
   RAnnot::ExpressionInfo::const_def_iterator m_def_iter;
 };
 
+/// implements the iterator Alias::getParamBindAssignPtrIterator
+/// wants. Each element returned is a pair containing an index
+/// representing which formal argument and a MemRefExpr for the
+/// corresponding actual arg. We do not include constants because they
+/// are irrelevant for alias analysis (and MemRefExpr doesn't have a
+/// derived class for constants anyway).
 class R_ParamBindIterator : public OA::Alias::ParamBindPtrAssignIterator {
 public:
   R_ParamBindIterator(SEXP);
@@ -508,8 +514,9 @@ public:
   void operator++();
 
 private:
-  SEXP m_arg_c;
-  int m_index;
+  typedef std::vector<std::pair<int, OA::OA_ptr<OA::MemRefExpr> > > PairListT;
+  PairListT m_pairs;
+  PairListT::const_iterator m_iter;
 };
 
 #endif // #ifndef IR_INTERFACE_H
