@@ -49,12 +49,13 @@ using namespace std;
 //     add v to cons list
 // Ack! No promiseArgs!
 
-static Expression op_arglist(SubexpBuffer * sb, const SEXP cell, int * const unprotcnt, const string rho);
+static Expression op_arglist(SubexpBuffer * sb, const SEXP cell, int * const unprotcnt, string & laziness_string, const string rho);
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
 				 const RAnnot::ExpressionInfo * const ei, 
 				 const int n,
 				 int * const unprotcnt,
+				 EagerLazyT laziness[],
 				 const string rho);
 static Expression op_promise_args(SubexpBuffer * sb,
 				  string args1var,
@@ -71,6 +72,7 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
   SEXP e = CAR(cell);
   SEXP args = call_args(e);
   int unprotcnt = 0;
+  std::string laziness_string;  // string of E's and L's, one for each arg, saying whether it's eager or lazy
 
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
@@ -82,13 +84,14 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
 #else
     args1 = op_list(args, rho, false, Protected);                      // false: output compiled list
 #endif
+    laziness_string = "eager";
   } else {
-    args1 = op_arglist(this, cell, &unprotcnt, rho);
+    args1 = op_arglist(this, cell, &unprotcnt, laziness_string, rho);
   }
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
   string out = appl5("applyClosure ",
-		     "op_clos_app: " + to_string(e),
+		     "op_clos_app: " + to_string(e) + " " + laziness_string,
 		     call_str,
 		     op1.var,
 		     args1.var,
@@ -139,29 +142,36 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
 //   end if
 //   return appl2("cons", head_exp, tail_exp)
 
-static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string rho) {
+static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string & laziness_string, string rho) {
   SEXP e = CAR(cell);
+  int argc = Rf_length(call_args(e));
+  EagerLazyT laziness[argc];
   RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
-  Expression out = op_arglist_rec(sb, call_args(e), ei, 1, unprotcnt, rho);
+  Expression out = op_arglist_rec(sb, call_args(e), ei, 0, unprotcnt, laziness, rho);
+  for(int i=0; i<argc; i++) {
+    laziness_string += (laziness[i] == EAGER ? "E" : "L");
+  }
   return out;
 }
 
 static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const RAnnot::ExpressionInfo * const ei, 
-				 const int n, int * const unprotcnt, const string rho)
+				 const int n, int * const unprotcnt, EagerLazyT laziness[], const string rho)
 {
   if (args == R_NilValue) {
     return Expression::nil_exp;
   }
-  
-  Expression tail_exp = op_arglist_rec(sb, CDR(args), ei, n+1, unprotcnt, rho);
+
+  Expression tail_exp = op_arglist_rec(sb, CDR(args), ei, n+1, unprotcnt, laziness, rho);
   Expression head_exp;
   if (ei->get_eager_lazy(n) == EAGER) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
+    laziness[n] = EAGER;
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
     if (!head_exp.del_text.empty()) (*unprotcnt)++;
     string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
+    laziness[n] = LAZY;
   }
   string out = sb->appl2("cons", "", head_exp.var, tail_exp.var);
   if (!head_exp.del_text.empty()) (*unprotcnt)++;

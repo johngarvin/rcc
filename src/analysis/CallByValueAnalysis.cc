@@ -117,9 +117,9 @@ void CallByValueAnalysis::perform_analysis() {
       }
 
       // for each arg
-      int i = 1;
+      int i = 0;
       for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
-	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i));
+	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
 	SEXP actual_c = argi.current();
 	call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
       }

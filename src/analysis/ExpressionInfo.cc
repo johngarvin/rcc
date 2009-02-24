@@ -46,7 +46,7 @@ ExpressionInfo::ExpressionInfo(SEXP cell)
     m_call_sites(),
     m_strict(false),
     m_trivially_evaluable(false),
-    m_lazy_info(is_call(CAR(cell)) ? Rf_length(call_args(CAR(cell))) + 1 : 0) // +1 because indexed from 1
+    m_lazy_info(is_call(CAR(cell)) ? Rf_length(call_args(CAR(cell))) : 0)
 {
 }
 

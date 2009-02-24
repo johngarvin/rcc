@@ -114,6 +114,7 @@ public:
   SEXP get_cell() const;
   void set_cell(SEXP x);
 
+  // indexed from 0
   EagerLazyT get_eager_lazy(int arg) const;
   void set_eager_lazy(int arg, EagerLazyT x);
 
@@ -145,7 +146,7 @@ private:
 				// for each actual arg whether it can
 				// be evaulated eagerly for
 				// performance or must conservatively
-				// be called lazy. Indexed from 1.
+				// be called lazy. Indexed from 0.
 };
 
 }
