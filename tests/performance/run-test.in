@@ -1,21 +1,25 @@
 #!/bin/csh 
 # @configure_input@
-setenv Rplain /local/software/other-R/R-2.4.0/bin/R
-setenv Rnan   /local/software/other-R/R-2.4.0-nan-optimization/bin/R
-setenv Rmod   /local/software/other-R/R-2.4.0-mod-optimization/bin/R
+
+#setenv Rplain /local/software/other-R/R-2.4.0/bin/R
+#setenv Rnan   /local/software/other-R/R-2.4.0-nan-optimization/bin/R
+#setenv Rmod   /local/software/other-R/R-2.4.0-mod-optimization/bin/R
+
+setenv Rplain /home/garvin/research/rcompiler-install/R-2.1.1/bin/R
 setenv PATH @RCC_BIN_PATH@:${PATH}
 setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
+
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the R interpreter..."
 	${Rplain} --slave < $f >  `basename $f .r`.interpreted
 	${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
-    echo "  with the R interpreter with NaN optimization..."
-	${Rnan}   --slave < $f >  `basename $f .r`.interpreted
-	${Rnan} CMD Rprof Rprof.out | grep "^Total run time"
-    echo "  with the R interpreter with mod optimization..."
-	${Rmod}   --slave < $f >  `basename $f .r`.interpreted
-	${Rmod} CMD Rprof Rprof.out | grep "^Total run time"
+#    echo "  with the R interpreter with NaN optimization..."
+#	${Rnan}   --slave < $f >  `basename $f .r`.interpreted
+#	${Rnan} CMD Rprof Rprof.out | grep "^Total run time"
+#    echo "  with the R interpreter with mod optimization..."
+#	${Rmod}   --slave < $f >  `basename $f .r`.interpreted
+#	${Rmod} CMD Rprof Rprof.out | grep "^Total run time"
     echo "  compiling $f with rcc..."
 	rcc $f
     echo "  compiling " `basename $f .r`.c "with rcc-cc..."

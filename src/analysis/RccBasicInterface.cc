@@ -30,45 +30,45 @@ namespace RccBasicInterface {
 
 ConstVal::ConstVal(SEXP e) : m_sexp(e) { }
 
-  bool ConstVal::operator< (ConstValBasicInterface & other_iface) {
-    ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
-    return (m_sexp < other.m_sexp);
-  }
+bool ConstVal::operator< (ConstValBasicInterface & other_iface) {
+  ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
+  return (m_sexp < other.m_sexp);
+}
+  
+bool ConstVal::operator==(ConstValBasicInterface & other_iface) {
+  ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
+  return (m_sexp == other.m_sexp);
+}
 
-  bool ConstVal::operator==(ConstValBasicInterface & other_iface) {
-    ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
-    return (m_sexp == other.m_sexp);
-  }
+bool ConstVal::operator!=(ConstValBasicInterface & other_iface) {
+  ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
+  return (m_sexp != other.m_sexp);
+}
 
-  bool ConstVal::operator!=(ConstValBasicInterface & other_iface) {
-    ConstVal & other = dynamic_cast<ConstVal &>(other_iface);
-    return (m_sexp != other.m_sexp);
-  }
+std::string ConstVal::toString() {
+  return to_string(m_sexp);
+}
 
-  std::string ConstVal::toString() {
-    return to_string(m_sexp);
-  }
+Op::Op(SEXP e) : m_sexp(e) { }
 
-  Op::Op(SEXP e) : m_sexp(e) { }
+bool Op::operator< (OpBasicInterface & other_iface) {
+  Op & other = dynamic_cast<Op &>(other_iface);
+  return (m_sexp < other.m_sexp);
+}
 
-  bool Op::operator< (OpBasicInterface & other_iface) {
-    Op & other = dynamic_cast<Op &>(other_iface);
-    return (m_sexp < other.m_sexp);
-  }
+bool Op::operator==(OpBasicInterface & other_iface) {
+  Op & other = dynamic_cast<Op &>(other_iface);
+  return (m_sexp == other.m_sexp);
+}
 
-  bool Op::operator==(OpBasicInterface & other_iface) {
-    Op & other = dynamic_cast<Op &>(other_iface);
-    return (m_sexp == other.m_sexp);
-  }
+bool Op::operator!=(OpBasicInterface & other_iface) {
+  Op & other = dynamic_cast<Op &>(other_iface);
+  return (m_sexp != other.m_sexp);
+}
 
-  bool Op::operator!=(OpBasicInterface & other_iface) {
-    Op & other = dynamic_cast<Op &>(other_iface);
-    return (m_sexp != other.m_sexp);
-  }
-
-  std::string Op::toString() {
-    return to_string(m_sexp);
-  }
+std::string Op::toString() {
+  return to_string(m_sexp);
+}
 
 OA_ptr<ConstValBasicInterface> make_const_val(SEXP e) {
   OA_ptr<ConstValBasicInterface> retval; retval = new ConstVal(e);
