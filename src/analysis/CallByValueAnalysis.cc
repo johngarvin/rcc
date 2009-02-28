@@ -164,7 +164,7 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
       return false;
     } else {
       if (debug) {
-	std::cout<< "NO DEPENDENCE" << std::endl;
+	std::cout << "NO DEPENDENCE" << std::endl;
       }
       return true;
     }

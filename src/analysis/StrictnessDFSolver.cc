@@ -112,6 +112,7 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
       }
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
 	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref(use->getMention_c());
+	// insert in debut-set if the name is in the in-set and TOP.
 	if (in_set->includes_name(ref) &&
 	    in_set->find(ref)->get_strictness_type() == Strictness_TOP)
 	{
@@ -141,10 +142,11 @@ OA_ptr<NameStmtMultiMap> StrictnessDFSolver::compute_post_debut_map(OA_ptr<DFSet
     OA_ptr<R_VarRef> formal; formal = formal_it->current()->get_loc();
     CFG_FOR_EACH_NODE(m_cfg, node) {
       OA_ptr<DFSet> in_set = m_solver->getInSet(node).convert<DFSet>();
+      OA_ptr<DFSet> out_set = in_set;
       NODE_FOR_EACH_STATEMENT(node, stmt) {
-	in_set = transfer(in_set, stmt).convert<DFSet>();
+	out_set = transfer(out_set, stmt).convert<DFSet>();
 	// if formal is USED at this point, add stmt to map
-	if (in_set->find(formal)->get_strictness_type() == Strictness_USED) {
+	if (out_set->find(formal)->get_strictness_type() == Strictness_USED) {
 	  post_debut_map->insert(std::make_pair(TAG(formal->get_sexp()), stmt));
 	  if (debug) {
 	    std::cout << "Found post-debut statement:" << std::endl;

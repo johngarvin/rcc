@@ -114,6 +114,8 @@ rcc_bin_SOURCES =				\
   RequiresContext.h				\
   ScopeAnnotationMap.cc                         \
   ScopeAnnotationMap.h                          \
+  Settings.cc                                   \
+  Settings.h                                    \
   SideEffect.cc                                 \
   SideEffect.h                                  \
   SideEffectAnnotationMap.cc                    \

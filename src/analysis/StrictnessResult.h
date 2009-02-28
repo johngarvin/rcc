@@ -37,14 +37,11 @@ class StrictnessResult {
 public:
   explicit StrictnessResult(OA::OA_ptr<Strictness::DFSet> args_on_exit,
 			    OA::OA_ptr<NameMentionMultiMap> debuts,
-			    OA::OA_ptr<NameStmtMultiMap> post_debut_stmts)
-    : m_args_on_exit(args_on_exit),
-      m_debuts(debuts),
-      m_post_debut_stmts(post_debut_stmts)
-    {}
-  OA::OA_ptr<Strictness::DFSet> get_args_on_exit() const { return m_args_on_exit; }
-  OA::OA_ptr<NameMentionMultiMap> get_debuts() const { return m_debuts; }
-  OA::OA_ptr<NameStmtMultiMap> get_post_debut_stmts() const { return m_post_debut_stmts; }
+			    OA::OA_ptr<NameStmtMultiMap> post_debut_stmts);
+
+  OA::OA_ptr<Strictness::DFSet> get_args_on_exit() const;
+  OA::OA_ptr<NameMentionMultiMap> get_debuts() const;
+  OA::OA_ptr<NameStmtMultiMap> get_post_debut_stmts() const;
 
   void dump(std::ostream & os);
 private:
