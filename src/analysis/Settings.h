@@ -44,7 +44,7 @@ class Settings {
 
   // Singleton pattern
 public:
-  Settings * get_instance();
+  static Settings * get_instance();
 private:
   Settings() : m_for_loop_range_deforestation(true),
 	       m_subscript_assignment(true),

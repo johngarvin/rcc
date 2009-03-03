@@ -31,6 +31,7 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 
 #include <support/StringUtils.h>
@@ -163,7 +164,7 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
 
   Expression tail_exp = op_arglist_rec(sb, CDR(args), ei, n+1, unprotcnt, laziness_string, rho);
   Expression head_exp;
-  if (ei->get_eager_lazy(n) == EAGER) {
+  if (ei->get_eager_lazy(n) == EAGER && Settings::get_instance()->get_strictness()) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
     laziness_string += "E";
   } else {

@@ -32,6 +32,7 @@
 #include <include/R/R_Defn.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/Settings.h>
 #include <support/StringUtils.h>
 #include <CodeGen.h>
 #include <GetName.h>
@@ -64,7 +65,7 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #endif
   SEXP args = CDR(e);
   // special case for arithmetic operations
-  if (PRIMFUN(op) == (CCODE)do_arith) {
+  if (PRIMFUN(op) == (CCODE)do_arith && Settings::get_instance()->get_special_case_arithmetic()) {
 
     // R_unary if there's one argument and it's a non-object
     if (args != R_NilValue

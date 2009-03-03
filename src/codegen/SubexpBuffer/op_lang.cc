@@ -32,11 +32,12 @@
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/Utils.h>
-#include <analysis/VarBinding.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OACallGraphAnnotationMap.h>
+#include <analysis/Settings.h>
+#include <analysis/Utils.h>
+#include <analysis/VarBinding.h>
 
 #if 0
 // we are using OpenAnalysis call graphs instead
@@ -76,40 +77,45 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
 
-    // see if symbol is in call graph
-    OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
-    if (cga == 0) {
-      // not in call graph; call to internal procedure
-      if (is_library(call_lhs(e))) {
-	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
+    if (Settings::get_instance()->get_call_graph()) {
+      // see if symbol is in call graph
+      OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
+      if (cga == 0) {
+	// not in call graph; call to internal procedure
+	if (is_library(call_lhs(e))) {
+	  return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
+	} else {
+	  rcc_error("Unexpected procedure symbol in neither call graph nor R library");
+	}
       } else {
-	rcc_error("Unexpected procedure symbol in neither call graph nor R library");
+	OA::ProcHandle ph = cga->get_singleton_if_exists();
+	if (ph != OA::ProcHandle(0)) {  // singleton exists
+	  FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
+	  Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
+	  
+	  // check for eager assertion
+	  if (CDR(call_args(e)) != R_NilValue) {
+	    SEXP second_arg = CADR(call_args(e));
+	    if (is_rcc_assert_exp(e) && is_var(second_arg) && var_name(second_arg) == "eager.call") {
+	      cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
+	      ph = cga->get_singleton_if_exists();
+	      fi = getProperty(FuncInfo, make_sexp(ph));
+	      // TODO: deal with assertions that aren't user-defined symbols
+	      // use the real call: pass the cell containing the first argument of eager.call
+	      return op_clos_app(closure_exp, call_args(e), rho, resultProtection,
+				 EAGER);
+	    }
+	  }
+	  
+	  return op_clos_app(closure_exp, cell, rho, resultProtection);
+	} else {
+	  Expression func = op_fun_use(e, rho);
+	  return op_clos_app(func, cell, rho, resultProtection);
+	}
       }
     } else {
-      OA::ProcHandle ph = cga->get_singleton_if_exists();
-      if (ph != OA::ProcHandle(0)) {  // singleton exists
-	FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
-	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-
-	// check for eager assertion
-	if (CDR(call_args(e)) != R_NilValue) {
-	  SEXP second_arg = CADR(call_args(e));
-	  if (is_rcc_assert_exp(e) && is_var(second_arg) && var_name(second_arg) == "eager.call") {
-	    cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
-	    ph = cga->get_singleton_if_exists();
-	    fi = getProperty(FuncInfo, make_sexp(ph));
-	    // TODO: deal with assertions that aren't user-defined symbols
-	    // use the real call: pass the cell containing the first argument of eager.call
-	    return op_clos_app(closure_exp, call_args(e), rho, resultProtection,
-			       EAGER);
-	  }
-	}
-	
-	return op_clos_app(closure_exp, cell, rho, resultProtection);
-      } else {
-	Expression func = op_fun_use(e, rho);
-	return op_clos_app(func, cell, rho, resultProtection);
-      }
+      Expression func = op_fun_use(e, rho);
+      return op_clos_app(func, cell, rho, resultProtection);
     }
 
 #if 0
@@ -139,7 +145,6 @@ old code with home-grown call graph
     }
 
 #endif
-
   } else {  // left side is not a symbol
     // generate closure and application
     Expression op1;

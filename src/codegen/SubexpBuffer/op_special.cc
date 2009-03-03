@@ -31,6 +31,7 @@
 #include <include/R/R_Defn.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <support/StringUtils.h>
 #include <CodeGen.h>
@@ -87,7 +88,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     return op_if(e, rho, resultStatus);
 #endif
   } else if (PRIMFUN(op) == (CCODE)do_for) {
-    if (is_for_colon(e)) {
+    if (is_for_colon(e) && Settings::get_instance()->get_for_loop_range_deforestation()) {
       return op_for_colon(e, rho, resultStatus);
     } else {
       return op_for(e, rho, resultStatus);
