@@ -51,11 +51,12 @@
 
 #include <CodeGenUtils.h>
 #include <CodeGen.h>
+#include <CommandLineArgs.h>
+#include <CScope.h>
+#include <LoopContext.h>
+#include <Main.h>
 #include <Output.h>
 #include <ParseInfo.h>
-#include <LoopContext.h>
-#include <CScope.h>
-#include <Main.h>
 
 using namespace std;
 using namespace RAnnot;
@@ -65,96 +66,48 @@ static bool output_main_program = true;
 static bool output_default_args = true;
 static bool analysis_debug;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char * argv[]) {
   RCC_DEBUG("RCC_Main", analysis_debug);
 
   int i;
-  char *fullname_c;
-  string fullname, libname, out_filename, path, exec_decls, exec_code;
-  bool in_file_exists, out_file_exists = false;
+  //  char *fullname_c;
+  string libname, path, exec_decls, exec_code, fullname, out_filename;
+  //  bool in_file_exists, out_file_exists = false;
   FILE *in_file;
   int n_exprs;
 
   // for getopt
-  int c;
-  extern char *optarg;
-  extern int optind, opterr, optopt;
+  //  int c;
+  //  extern char *optarg;
+  //  extern int optind, opterr, optopt;
+
+  CommandLineArgs args(argc, argv);
 
   // initialize ParseInfo buffers except global_fundefs.
   // Function definitions initialized after we have the library name.
   ParseInfo::global_constants = new SplitSubexpBuffer("c", true);
   ParseInfo::global_labels = new SubexpBuffer("l");
 
-  // get options
-  while(1) {
-    c = getopt(argc, argv, "admo:");
-    if (c == -1) {
-      break;
-    }
-    switch(c) {
-    case 'a':
-      output_default_args = false;
-      break;
-    case 'd':
-      // print debugging information
-      analysis_debug = true;
-      break;
-    case 'm':
-      // don't output a main program
-      output_main_program = false;
-      break;
-    case 'o':
-      // specify output file
-      out_file_exists = true;
-      out_filename = string(optarg);
-      break;
-    case '?':
-      arg_err();
-      break;
-    case ':':
-      arg_err();
-      break;
-    default:
-      rcc_error("Unknown error: getopt() returned " + i_to_s(c));
-      break;
-    }
-  }
-
-  // get filename, if it exists
-  if (optind < argc) {
-    in_file_exists = true;
-    fullname_c = argv[optind++];
-    if (optind < argc) {
-      cerr << "Warning: ignoring extra arguments: ";
-      while (optind < argc) {
-	cerr << argv[optind++] << " ";
-      }
-      cerr << endl;
-    }
-  } else {  // no filename specified
-    in_file_exists = false;
-  }
-
   // Initialize R interface
   init_R();
 
+  fullname = args.get_fullname();
   // set in_file, libname, and path depending on what we're given
-  if (in_file_exists) {
-    in_file = fopen(fullname_c, "r");
+  if (args.get_in_file_exists()) {
+    in_file = fopen(fullname.c_str(), "r");
     if (in_file == NULL) {
       string program = argv[0];
 
-      string::size_type dot = program.rfind (".",program.length());
-      if (dot != 0) program = program.substr(0,dot);
+      string::size_type dot = program.rfind(".", program.length());
+      if (dot != 0) program = program.substr(0, dot);
 
-      string::size_type slash = program.rfind ("/",program.length());
-      if (slash != 0) program = program.substr(slash+1,program.length());
+      string::size_type slash = program.rfind("/", program.length());
+      if (slash != 0) program = program.substr(slash+1, program.length());
 
       // TODO: use rcc_error instead
-      cerr << program << ": unable to open input file \"" << fullname_c << "\"" << endl;
+      cerr << program << ": unable to open input file \"" << fullname << "\"" << endl;
       exit(-1);
     }
-    fullname = string(fullname_c);
     int pos = filename_pos(fullname);
     path = fullname.substr(0,pos);
     string filename = fullname.substr(pos, fullname.size() - pos);
@@ -168,8 +121,10 @@ int main(int argc, char *argv[]) {
   }
 
   // set output filename if no "-o filename" option was found
-  if (!out_file_exists) {
+  if (!args.get_out_file_exists()) {
     out_filename = path + libname + ".c";
+  } else {
+    out_filename = args.get_out_filename();
   }
 
   // The name R_init_<libname> is a signal to the R dynamic loader
@@ -249,11 +204,6 @@ int main(int argc, char *argv[]) {
     rcc_error("Couldn't write to file " + out_filename);
   }
   return (ParseInfo::get_problem_flag() ? 1 : 0);
-}
-
-static void arg_err() {
-  cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file]\n";
-  exit(1);
 }
 
 // initialize statics in SubexpBuffer

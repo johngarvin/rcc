@@ -43,6 +43,8 @@ rcc_bin_SOURCES =				\
   Assertion.h					\
   CallByValueAnalysis.cc                        \
   CallByValueAnalysis.h                         \
+  CommandLineArgs.cc                            \
+  CommandLineArgs.h                             \
   Debug.h                                       \
   DebutDFSolver.cc                              \
   DebutDFSolver.h                               \
