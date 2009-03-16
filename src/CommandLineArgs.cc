@@ -25,6 +25,8 @@
 #include <string>
 #include <iostream>
 
+#include <analysis/Settings.h>
+
 #include <support/RccError.h>
 #include <support/StringUtils.h>
 
@@ -47,7 +49,7 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
 
     // get options
   while(1) {
-    c = getopt(argc, argv, "admo:");
+    c = getopt(argc, argv, "adf:mo:");
     if (c == -1) {
       break;
     }
@@ -58,6 +60,10 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
     case 'd':
       // print debugging information
       m_analysis_debug = true;
+      break;
+    case 'f':
+      // option flag specified
+      add_f_option(std::string(optarg));
       break;
     case 'm':
       // don't output a main program
@@ -104,6 +110,37 @@ bool CommandLineArgs::get_out_file_exists() { return m_out_file_exists; }
 std::string CommandLineArgs::get_out_filename() { return m_out_filename; }
 bool CommandLineArgs::get_in_file_exists() { return m_in_file_exists; }
 std::string CommandLineArgs::get_fullname() { return m_fullname; }
+
+void CommandLineArgs::add_f_option(std::string option) {
+  Settings * settings = Settings::get_instance();
+  bool flag;
+  size_t prefix_size = 3; // size of "no-" modifier
+
+  // -ffoo    means make foo true
+  // -fno-foo means make foo false
+  if (option.substr(0, prefix_size) == "no-") {
+    flag = false;
+    option.erase(0, prefix_size);
+  } else {
+    flag = true;
+  }
+
+  if (option == "for_loop_range_deforestation") {
+    settings->set_for_loop_range_deforestation(flag);
+  } else if (option == "subscript_assignment") {
+    settings->set_subscript_assignment(flag);
+  } else if (option == "strictness") {
+    settings->set_strictness(flag);
+  } else if (option == "special_case_arithmetic") {
+    settings->set_special_case_arithmetic(flag);
+  } else if (option == "call_graph") {
+    settings->set_call_graph(flag);
+  } else if (option == "lookup_elimination") {
+    settings->set_lookup_elimination(flag);
+  } else {
+    arg_err();
+  }
+}
 
 static void arg_err() {
   std::cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file]\n";

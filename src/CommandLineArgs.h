@@ -40,6 +40,8 @@ public:
   std::string get_fullname();
 
 private:
+  void add_f_option(std::string option);
+
   bool m_output_main_program;
   bool m_output_default_args;
   bool m_analysis_debug;
