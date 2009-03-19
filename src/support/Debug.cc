@@ -16,23 +16,14 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: Debug.h
+// File: Debug.cc
 //
 // Turn on and off debugging output.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef RCC_DEBUG_H
-#define RCC_DEBUG_H
+#include "Debug.h"
 
-#include <iostream>
+const std::ostream & Debug::cout = std::cout;
+const std::ostream & Debug::cerr = std::cerr;
 
-#define RCC_DEBUG(RCC_DEBUG_str, RCC_DEBUG_debug) RCC_DEBUG_debug = (getenv(RCC_DEBUG_str) != 0)
-
-class Debug {
-public:
-  static const std::ostream & cout;
-  static const std::ostream & cerr;
-};
-
-#endif // RCC_DEBUG_H
