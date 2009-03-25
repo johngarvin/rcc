@@ -34,10 +34,12 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
 #include <analysis/Utils.h>
+#include <analysis/VarBinding.h>
 
 #include <support/StringUtils.h>
 #include <support/RccError.h>
 
+#include <CodeGenUtils.h>
 #include <Visibility.h>
 #include <ParseInfo.h>
 
@@ -128,10 +130,29 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
   }
 
+  // add code to get the location for each argument
+  string arg_location_code;
+  string arg_cell = "args";
+  VarBinding * binding;
+  for(SEXP p = args; p != R_NilValue; p = CDR(p)) {
+    binding = getProperty(VarBinding, p);
+    string location = binding->get_location(TAG(p), this_buf);
+    arg_location_code += "R_varloc_t " + emit_assign(location, emit_call1("get_R_location", arg_cell));
+    arg_cell = emit_call1("CDR", arg_cell);
+  }
+
+  // arg_cell = "args"
+  // for each arg:
+  //   add "R_varloc_t " + emit_assign(newvar, arg_cell)
+  //   remember that newvar is the location for this name
+  //   arg_cell = emit_assign("CDR", arg_cell)
+  // end for
+
   Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
 					   "newenv", Unprotected, true, 
 					   ResultNeeded);
   f += indent(indent("{\n"));
+  f += indent(indent(indent(arg_location_code)));
   f += indent(indent(indent(out_subexps.output() +
 			    Visibility::emit_set(outblock.visibility))));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));

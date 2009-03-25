@@ -293,3 +293,7 @@ SEXP make_thunked_promise(SEXP value) {
   SET_PRVALUE(promise, value);
   return promise;
 }
+
+R_varloc_t get_R_location(SEXP arg_c) {
+  return (R_varloc_t)arg_c;
+}
