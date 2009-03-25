@@ -735,6 +735,10 @@ SEXP do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #undef YDIMS_ET_CETERA
 
+#if 0
+
+original version that uses integer mod and div
+
 SEXP do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP a, r, dims, dimnames, dimnamesnames=R_NilValue,
@@ -841,6 +845,145 @@ SEXP do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
     errorcall(call, _("argument is not a matrix"));
     return call;/* never used; just for -Wall */
 }
+
+#endif
+
+SEXP do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP a, r, dims, dimnames, dimnamesnames=R_NilValue,
+	ndimnamesnames, rnames, cnames;
+    int i, ldim, len = 0, ncol=0, nrow=0;
+    int j, k;
+
+    checkArity(op, args);
+    a = CAR(args);
+
+    if (isVector(a)) {
+	dims = getAttrib(a, R_DimSymbol);
+	ldim = length(dims);
+	rnames = R_NilValue;
+	cnames = R_NilValue;
+	switch(ldim) {
+	case 0:
+	    nrow = len = length(a);
+	    ncol = 1;
+	    rnames = getAttrib(a, R_NamesSymbol);
+	    break;
+	case 1:
+	    nrow = len = length(a);
+	    ncol = 1;
+	    dimnames = getAttrib(a, R_DimNamesSymbol);
+	    if (dimnames != R_NilValue) {
+		rnames = VECTOR_ELT(dimnames, 0);
+		dimnamesnames = getAttrib(dimnames, R_NamesSymbol);
+	    }
+	    break;
+	case 2:
+	    ncol = ncols(a);
+	    nrow = nrows(a);
+	    len = length(a);
+	    dimnames = getAttrib(a, R_DimNamesSymbol);
+	    if (dimnames != R_NilValue) {
+		rnames = VECTOR_ELT(dimnames, 0);
+		cnames = VECTOR_ELT(dimnames, 1);
+		dimnamesnames = getAttrib(dimnames, R_NamesSymbol);
+	    }
+	    break;
+	default:
+	    goto not_matrix;
+	}
+    }
+    else
+	goto not_matrix;
+    PROTECT(r = allocVector(TYPEOF(a), len));
+    switch (TYPEOF(a)) {
+    case LGLSXP:
+    case INTSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  INTEGER(r)[i] = INTEGER(a)[j + k * nrow];
+	  i++;
+	}
+      }
+      break;
+    case REALSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  REAL(r)[i] = REAL(a)[j + k * nrow];
+	  i++;
+	}
+      }
+      break;
+    case CPLXSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  COMPLEX(r)[i] = COMPLEX(a)[j + k * nrow];
+	  i++;
+	}
+      }
+      break;
+    case STRSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  SET_STRING_ELT(r, i, STRING_ELT(a, j + k * nrow));
+	  i++;
+	}
+      }
+      break;
+    case VECSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  SET_VECTOR_ELT(r, i, VECTOR_ELT(a, j + k * nrow));
+	  i++;
+	}
+      }
+      break;
+    case RAWSXP:
+      i = 0;
+      for (j = 0; j < nrow; j++) {
+	for (k = 0; k < ncol; k++) {
+	  RAW(r)[i] = RAW(a)[j + k * nrow];
+	  i++;
+	}
+      }
+      break;
+    default:
+	goto not_matrix;
+    }
+    PROTECT(dims = allocVector(INTSXP, 2));
+    INTEGER(dims)[0] = ncol;
+    INTEGER(dims)[1] = nrow;
+    setAttrib(r, R_DimSymbol, dims);
+    UNPROTECT(1);
+    if(rnames != R_NilValue || cnames != R_NilValue) {
+	PROTECT(dimnames = allocVector(VECSXP, 2));
+	SET_VECTOR_ELT(dimnames, 0, cnames);
+	SET_VECTOR_ELT(dimnames, 1, rnames);
+	if(!isNull(dimnamesnames)) {
+	    PROTECT(ndimnamesnames = allocVector(VECSXP, 2));
+	    SET_STRING_ELT(ndimnamesnames, 1, STRING_ELT(dimnamesnames, 0));
+	    SET_STRING_ELT(ndimnamesnames, 0,
+			   (ldim == 2) ? STRING_ELT(dimnamesnames, 1):
+			   R_BlankString);
+	    setAttrib(dimnames, R_NamesSymbol, ndimnamesnames);
+	    UNPROTECT(1);
+	}
+	setAttrib(r, R_DimNamesSymbol, dimnames);
+	UNPROTECT(1);
+    }
+    copyMostAttrib(a, r);
+    UNPROTECT(1);
+    return r;
+ not_matrix:
+    errorcall(call, _("argument is not a matrix"));
+    return call;/* never used; just for -Wall */
+}
+
 
 /*
  New version of aperm, using strides for speed.
