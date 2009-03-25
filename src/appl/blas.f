@@ -726,12 +726,13 @@ c
    60             CONTINUE
                END IF
                DO 80, L = 1, K
-                  IF( B( L, J ).NE.ZERO )THEN
+* if commented out for NA/NaN correctness (garvin)
+*                  IF( B( L, J ).NE.ZERO )THEN
                      TEMP = ALPHA*B( L, J )
                      DO 70, I = 1, M
                         C( I, J ) = C( I, J ) + TEMP*A( I, L )
    70                CONTINUE
-                  END IF
+*                  END IF
    80          CONTINUE
    90       CONTINUE
          ELSE

@@ -395,6 +395,12 @@ static void matprod(double *x, int nrx, int ncx,
 	/* Don't trust the BLAS to handle NA/NaNs correctly: PR#4582
 	 * The test is only O(n) here
 	 */
+
+      /* hack by garvin: I hacked BLAS to handle NA/NaNs correctly.
+       * Now we _are_ trusting BLAS.
+       */
+
+#if 0
 	for (i = 0; i < nrx*ncx; i++)
 	    if (ISNAN(x[i])) {have_na = TRUE; break;}
 	if (!have_na)
@@ -409,6 +415,7 @@ static void matprod(double *x, int nrx, int ncx,
 		    z[i + k * nrx] = sum;
 		}
 	} else
+#endif
 	    F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one,
 			    x, &nrx, y, &nry, &zero, z, &nrx);
     } else /* zero-extent operations should return zeroes */
