@@ -108,10 +108,13 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
     } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
       FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
       if (fi->is_arg(e)) {
-	// have to produce a lookup here; we don't know whether we need to evalaute a promise
-	// TODO: handle this case
-	return op_lookup(sb, lookup_function, make_symbol(e), rho,
-			 resultProtection, fullyEvaluatedResult);
+	string location = binding->get_location(e, sb);
+	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
+	if (fullyEvaluatedResult) {
+	  h = sb->appl2("Rf_eval", "", h, rho, resultProtection);
+	}
+	string del_text = (resultProtection == Protected ? unp(h) : "");
+	return Expression(h, DEPENDENT, VISIBLE, del_text);
       } else {
 	string location = binding->get_location(e, sb);
 	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
