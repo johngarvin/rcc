@@ -121,7 +121,32 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 	  append_defs("PROTECT(" + out + ");\n");
       }
     }
-    
+    // special case for OSR'd version of do_transpose
+  } else if (PRIMFUN(op) == (CCODE)do_transpose) { /* && Settings::get_instance()->get_transpose_osr()) { */
+#if USE_OUTPUT_CODEGEN
+    Expression args1 = output_to_expression(CodeGen::op_list(args, rho, false, true));
+#else
+    Expression args1 = op_list(args, rho, false, Protected, true);
+#endif
+    // TODO:
+    // here: don't we need to check whether args1 is dependent? Also op1?
+    out = appl4("do_transpose_osr",
+		"op_builtin (transpose osr): " + to_string(e),
+		"R_NilValue ",
+		op1.var,
+		args1.var,
+		rho, Unprotected);
+    int unprotcnt = 0;
+    if (!args1.del_text.empty()) unprotcnt++;
+    if (unprotcnt > 0) 
+      append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
+    if (resultProtection == Protected) {
+      if (unprotcnt > 0) 
+	append_defs("SAFE_PROTECT(" + out + ");\n");
+      else
+	append_defs("PROTECT(" + out + ");\n");
+    }
+
   } else {  // common case: call the do_ function
 
     // output arguments
