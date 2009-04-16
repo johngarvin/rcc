@@ -153,7 +153,11 @@ VarInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, VarInfo);
   dumpSEXP(os, m_name);
-  dumpObj(os, m_scope);
+  if (has_scope()) {
+    dumpObj(os, m_scope);
+  } else {
+    os << "no scope specified (VarInfo in ambiguous symbol table)" << std::endl;
+  }
   const_iterator it;
   for(it = begin_defs(); it != end_defs(); ++it) {
     DefVar * def = *it;
