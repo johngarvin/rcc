@@ -113,7 +113,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	if (fullyEvaluatedResult) {
 	  h = sb->appl2("Rf_eval", "", h, rho, resultProtection);
 	}
-	string del_text = (resultProtection == Protected ? unp(h) : "");
+	string del_text = (fullyEvaluatedResult && resultProtection == Protected ? unp(h) : "");
 	return Expression(h, DEPENDENT, VISIBLE, del_text);
       } else {
 	string location = binding->get_location(e, sb);

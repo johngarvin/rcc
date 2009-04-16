@@ -90,6 +90,11 @@ void CallByValueAnalysis::perform_analysis() {
       
       ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c);
       
+      // if internal name (not user-redefined), do a simpler analysis:
+      //   if actual is trivial, then eager
+      //   else if library is on "strict and side effect free" list, then eager
+      //   else lazy
+
       // if unique callee can be found at compile time, grab it
       FuncInfo * callee;
       if (is_fundef(call_lhs(cs))) {
@@ -98,9 +103,8 @@ void CallByValueAnalysis::perform_analysis() {
 	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, cs)); // not call_lhs; Var wants the cons cell
 	DefVar * def = vi->single_def_if_exists();
 	if (def == 0) {
+	  // procedures with no more than one user definition or undefined: no analysis, be conservative
 	  continue;
-	  // TODO: what should be done here? Need to handle library procedures with side effects
-	  // and procedures with more than one definition.
 	}
 	if (is_fundef(CAR(def->getRhs_c()))) {
 	  callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
@@ -131,14 +135,12 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   // get side effect of the pre-debut part of the callee
   SideEffect * pre_debut = formal->get_pre_debut_side_effect();
   
+  // get the actual argument's side effect
+  SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
+
   if (debug) {
     std::cout << "Pre-debut side effect: ";
     pre_debut->dump(std::cout);
-  }
-  
-  // get the actual argument's side effect
-  SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
-  if (debug) {
     std::cout << "Actual arg: ";
     Rf_PrintValue(CAR(actual_c));
     std::cout << "with side effect: ";
@@ -146,41 +148,49 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
     std::cout << std::endl;
   }
   
-  if (formal->is_strict()) {
-    if (debug) {
-      std::cout << "Formal is strict:";
-      formal->dump(std::cout);
-      std::cout << std::endl;
-      std::cout << "Testing dependence between actual arg: ";
-      Rf_PrintValue(CAR(actual_c));
-      std::cout << "and pre-debut code: ";
-    }
+  if (arg_side_effect->is_trivial()) {
 
-    // test for intersection
-    if (arg_side_effect->intersects(pre_debut)) {
-      if (debug) {
-	std::cout << "DEPENDENCE" << std::endl;
-      }
-      return false;
-    } else {
-      if (debug) {
-	std::cout << "NO DEPENDENCE" << std::endl;
-      }
-      return true;
-    }
-  } else {    // formal is non-strict
-    bool trivial = arg_side_effect->is_trivial();
     if (debug) {
-      std::cout << "Formal is non-strict: ";
-      formal->dump(std::cout);
-      std::cout << std::endl << "Actual is " << (trivial ? "TRIVIAL" : "NON-TRIVIAL") << std::endl;
+      std::cout << "Actual is trivial" << std::endl;
     }
-    // CBV is safe if arg is trivial
-    return trivial;
+      
+    return true;
+  } else {
+    if (formal->is_strict()) {
+
+      if (debug) {
+	std::cout << "Formal is strict:";
+	formal->dump(std::cout);
+	std::cout << std::endl;
+	std::cout << "Testing dependence between actual arg: ";
+	Rf_PrintValue(CAR(actual_c));
+	std::cout << "and pre-debut code: ";
+      }
+      
+      // test for intersection
+      if (arg_side_effect->intersects(pre_debut)) {
+	if (debug) {
+	  std::cout << "DEPENDENCE" << std::endl;
+	}
+	return false;
+      } else {
+	if (debug) {
+	  std::cout << "NO DEPENDENCE" << std::endl;
+	}
+	return true;
+      }
+    } else {    // formal is non-strict
+      if (debug) {
+	std::cout << "Formal is non-trivial, non-strict: ";
+	formal->dump(std::cout);
+      }
+      // CBV is safe if arg is trivial
+      return false;
+    }
   }
 }
-
-SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
+  
+  SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
   assert(fi != 0);
   assert(fai != 0);
 

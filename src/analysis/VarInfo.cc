@@ -156,7 +156,7 @@ VarInfo::dump(std::ostream& os) const
   if (has_scope()) {
     dumpObj(os, m_scope);
   } else {
-    os << "no scope specified (VarInfo in ambiguous symbol table)" << std::endl;
+    os << "<ambiguous: no scope specified>" << std::endl;
   }
   const_iterator it;
   for(it = begin_defs(); it != end_defs(); ++it) {
