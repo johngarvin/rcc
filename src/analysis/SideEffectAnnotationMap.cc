@@ -193,6 +193,12 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   // now grab side effects due to procedure calls: get interprocedural
   // uses and defs from m_side_effect
   EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
+    // for now, conservatively say that any library call may cause an
+    // "action" side effect (such as printing to the screen)
+    if (is_var(call_lhs(CAR(cs_c))) && is_library(call_lhs(CAR(cs_c)))) {
+      annot->set_action(true);
+    }
+    
     CallHandle call_handle = make_call_h(CAR(cs_c));
     add_all_names_used(annot, alias, m_side_effect->getREFIterator(call_handle));
     add_all_names_defined(annot, alias, m_side_effect->getMODIterator(call_handle));

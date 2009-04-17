@@ -55,6 +55,9 @@ public:
   void set_cheap(bool x);
   bool is_cheap();
 
+  void set_action(bool x);
+  bool get_action();
+
   MyVarSetT get_uses();
   MyVarSetT get_defs();
 
@@ -80,6 +83,9 @@ public:
   std::ostream& dump(std::ostream& os) const;
 
 private:
+  // whether there is an "action" side effect, such as writing to the screen
+  bool m_action;
+
   MyRawVarSetT m_uses;
   MyRawVarSetT m_defs;
 

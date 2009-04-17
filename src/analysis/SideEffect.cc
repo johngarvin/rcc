@@ -76,6 +76,10 @@ SideEffect::~SideEffect() {
     return m_cheap;
   }
 
+  void SideEffect::set_action(bool x) {
+    m_action = x;
+  }
+
 // ----- insertion -----
 
 void SideEffect::insert_use_var(const FuncInfo * fi, const UseVar * use) {
@@ -111,6 +115,11 @@ void SideEffect::add(const SideEffect * x) {
 }
 
 // ----- getters -----
+
+bool SideEffect::get_action() {
+  return m_action;
+}
+  
 MyVarSetT SideEffect::get_uses() {
   return m_uses;
 }
@@ -149,6 +158,10 @@ bool sets_intersect(MyVarSetT s, MyVarSetT t) {
 }
 
 bool SideEffect::intersects(SideEffect * other) {
+  if (get_action() || other->get_action()) {
+    return true;
+  }
+
   bool true_dep = sets_intersect(get_defs(), other->get_uses());
   bool anti_dep = sets_intersect(get_uses(), other->get_defs());
   bool output_dep = sets_intersect(get_defs(), other->get_defs());
