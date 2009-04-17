@@ -34,6 +34,7 @@
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/OACallGraphAnnotation.h>
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SideEffect.h>
 #include <analysis/SideEffectAnnotationMap.h>
@@ -90,42 +91,60 @@ void CallByValueAnalysis::perform_analysis() {
       
       ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c);
       
-      // if internal name (not user-redefined), do a simpler analysis:
-      //   if actual is trivial, then eager
-      //   else if library is on "strict and side effect free" list, then eager
-      //   else lazy
-
-      // if unique callee can be found at compile time, grab it
-      FuncInfo * callee;
-      if (is_fundef(call_lhs(cs))) {
-	callee = getProperty(FuncInfo, CAR(call_lhs(cs)));
-      } else if (is_var(call_lhs(cs))) {
-	VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, cs)); // not call_lhs; Var wants the cons cell
-	DefVar * def = vi->single_def_if_exists();
-	if (def == 0) {
-	  // procedures with no more than one user definition or undefined: no analysis, be conservative
-	  continue;
+      // if the callee is a library that's not user-redefined...
+      if (is_var(call_lhs(cs)) && 
+	  is_library(call_lhs(cs)) &&
+	  getProperty(OACallGraphAnnotation, cs) == 0)
+      {
+	// for each arg, safe to make eager if it's trivial
+	int i = 0;
+	for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
+	  SEXP actual_c = argi.current();
+	  if (getProperty(SideEffect, actual_c)->is_trivial()) {
+	    call_expr->set_eager_lazy(i, EAGER);
+	  } else {
+	    call_expr->set_eager_lazy(i, LAZY);
+	  }
 	}
-	if (is_fundef(CAR(def->getRhs_c()))) {
-	  callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	// TODO: add case to check if callee is strict or side effect free
+      } else {  // user-defined, not a library
+
+	// if unique callee can be found at compile time, grab it
+	FuncInfo * callee;
+	if (is_fundef(call_lhs(cs))) {
+	  callee = getProperty(FuncInfo, CAR(call_lhs(cs)));
+	} else if (is_var(call_lhs(cs))) {
+	  VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, cs)); // not call_lhs; Var wants the cons cell
+	  DefVar * def = vi->single_def_if_exists();
+	  if (def == 0) {
+	    // procedures with no more than one user definition or undefined: no analysis, be conservative
+	    rcc_warn("No CBV information for procedure with zero or more than one definition");
+	    continue;
+	  }
+	  if (is_fundef(CAR(def->getRhs_c()))) {
+	    callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	  } else {
+	    rcc_error("Callee name defined as a non-fundef");
+	    continue;
+	  }
 	} else {
+	  rcc_warn("No CBV information for non-symbol LHS of procedure call");
 	  continue;
 	}
-      } else {
-	throw AnalysisException("CallByValueAnalysis: non-symbol LHS of procedure call");
-      }
-
-      if (callee->get_num_args() != Rf_length(call_args(cs))) {
-	// TODO: handle default args and "..."
-	throw AnalysisException("CallByValueAnalysis: default args or \"...\"");
-      }
-
-      // for each arg
-      int i = 0;
-      for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
-	FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
-	SEXP actual_c = argi.current();
-	call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
+	
+	if (callee->get_num_args() != Rf_length(call_args(cs))) {
+	  // TODO: handle default args and "..."
+	  rcc_warn("No CBV information for default args or \"...\"");
+	  continue;
+	}
+	
+	// for each arg
+	int i = 0;
+	for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
+	  FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
+	  SEXP actual_c = argi.current();
+	  call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
+	}
       }
     }
   }
