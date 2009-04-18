@@ -30,6 +30,7 @@
 #include <include/R/R_Defn.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/ScopeAnnotationMap.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 
@@ -107,7 +108,8 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       }
     } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
       FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
-      if (fi->is_arg(e)) {
+      // if scope is local, use pointer to location
+      if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell))) {
 	string location = binding->get_location(e, sb);
 	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
 	if (fullyEvaluatedResult) {
@@ -115,20 +117,16 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	}
 	string del_text = (fullyEvaluatedResult && resultProtection == Protected ? unp(h) : "");
 	return Expression(h, DEPENDENT, VISIBLE, del_text);
-      } else {
-	string location = binding->get_location(e, sb);
-	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
-	return Expression(h, DEPENDENT, VISIBLE, "");
       }
     } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {
       rcc_error("Attempted to use an unbound variable");
     } else {
       rcc_error("Unknown derived type of LexicalScope found");
     }
-  } else {   // more than one possible scope
-    return op_lookup(sb, lookup_function, make_symbol(e), rho,
-		     resultProtection, fullyEvaluatedResult);
   }
+
+  // if no other cases apply
+  return op_lookup(sb, lookup_function, make_symbol(e), rho, resultProtection, fullyEvaluatedResult);
 }
 
 /// output a lookup of a name in the given environment

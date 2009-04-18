@@ -35,7 +35,6 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
-#include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SideEffect.h>
 #include <analysis/SideEffectAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
