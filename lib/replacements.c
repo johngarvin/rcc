@@ -1229,6 +1229,197 @@ int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level, SEXP call)
 	return(which);
 }
 
+/* Replacement for ArrayAssign in subassign.c */
+SEXP rcc_ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+{
+    int i, j, ii, iy, jj, k=0, n, ny, which;
+    int **subs, *indx, *bound, *offset;
+    SEXP dims, tmp;
+    double ry;
+    char *vmax = vmaxget();
+
+    PROTECT(dims = getAttrib(x, R_DimSymbol));
+    if (dims == R_NilValue || (k = LENGTH(dims)) != length(s))
+	error(_("incorrect number of subscripts"));
+
+    subs = (int**)R_alloc(k, sizeof(int*));
+    indx = (int*)R_alloc(k, sizeof(int));
+    bound = (int*)R_alloc(k, sizeof(int));
+    offset = (int*)R_alloc(k, sizeof(int));
+
+    ny = LENGTH(y);
+
+    /* Expand the list of subscripts. */
+    /* s is protected, so no GC problems here */
+
+    tmp = s;
+    for (i = 0; i < k; i++) {
+	SETCAR(tmp, arraySubscript(i, CAR(tmp), dims, getAttrib,
+				   (STRING_ELT), x));
+	tmp = CDR(tmp);
+    }
+
+    n = 1;
+    tmp = s;
+    for (i = 0; i < k; i++) {
+	indx[i] = 0;
+	subs[i] = INTEGER(CAR(tmp));
+	bound[i] = LENGTH(CAR(tmp));
+	n *= bound[i];
+	tmp = CDR(tmp);
+    }
+
+    if (n > 0 && ny == 0)
+	errorcall(call, _("nothing to replace with"));
+    if (n > 0 && n % ny)
+	errorcall(call, _("number of items to replace is not a multiple of replacement length"));
+
+    if (ny > 1) { /* check for NAs in indices */
+	for (i = 0; i < k; i++)
+	    for (j = 0; j < bound[i]; j++)
+		if (subs[i][j] == NA_INTEGER)
+		    error(_("NAs are not allowed in subscripted assignments"));
+    }
+
+    offset[0] = 1;
+    for (i = 1; i < k; i++)
+	offset[i] = offset[i - 1] * INTEGER(dims)[i - 1];
+
+
+    /* Here we make sure that the LHS has been coerced into */
+    /* a form which can accept elements from the RHS. */
+
+    which = SubassignTypeFix(&x, &y, 0, 1, call);/* = 100 * TYPEOF(x) + TYPEOF(y);*/
+
+    if (ny == 0) {
+	UNPROTECT(1);
+	return(x);
+    }
+
+    PROTECT(x);
+
+    /* When array elements are being permuted the RHS */
+    /* must be duplicated or the elements get trashed. */
+    /* FIXME : this should be a shallow copy for list */
+    /* objects.  A full duplication is wasteful. */
+
+    if (x == y)
+	PROTECT(y = duplicate(y));
+    else
+	PROTECT(y);
+
+    /* Note that we are now committed.  Since we are mutating */
+    /* existing objects any changes we make now are permanent. */
+    /* Beware! */
+
+    for (i = 0; i < n; i++) {
+	ii = 0;
+	for (j = 0; j < k; j++) {
+	    jj = subs[j][indx[j]];
+	    if (jj == NA_INTEGER) goto next_i;
+	    ii += (jj - 1) * offset[j];
+	}
+
+	switch (which) {
+
+	case 1010:	/* logical   <- logical	  */
+	case 1310:	/* integer   <- logical	  */
+	/* case 1013:	   logical   <- integer	  */
+	case 1313:	/* integer   <- integer	  */
+
+	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
+	    break;
+
+	case 1410:	/* real	     <- logical	  */
+	case 1413:	/* real	     <- integer	  */
+
+	    iy = INTEGER(y)[i % ny];
+	    if (iy == NA_INTEGER)
+		REAL(x)[ii] = NA_REAL;
+	    else
+		REAL(x)[ii] = iy;
+	    break;
+
+	/* case 1014:	   logical   <- real	  */
+	/* case 1314:	   integer   <- real	  */
+	case 1414:	/* real	     <- real	  */
+
+	    REAL(x)[ii] = REAL(y)[i % ny];
+	    break;
+
+	case 1510:	/* complex   <- logical	  */
+	case 1513:	/* complex   <- integer	  */
+
+	    iy = INTEGER(y)[i % ny];
+	    if (iy == NA_INTEGER) {
+		COMPLEX(x)[ii].r = NA_REAL;
+		COMPLEX(x)[ii].i = NA_REAL;
+	    }
+	    else {
+		COMPLEX(x)[ii].r = iy;
+		COMPLEX(x)[ii].i = 0.0;
+	    }
+	    break;
+
+	case 1514:	/* complex   <- real	  */
+
+	    ry = REAL(y)[i % ny];
+	    if (ISNA(ry)) {
+		COMPLEX(x)[ii].r = NA_REAL;
+		COMPLEX(x)[ii].i = NA_REAL;
+	    }
+	    else {
+		COMPLEX(x)[ii].r = ry;
+		COMPLEX(x)[ii].i = 0.0;
+	    }
+	    break;
+
+	/* case 1015:	   logical   <- complex	  */
+	/* case 1315:	   integer   <- complex	  */
+	/* case 1415:	   real	     <- complex	  */
+	case 1515:	/* complex   <- complex	  */
+
+	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
+	    break;
+
+	case 1610:	/* character <- logical	  */
+	case 1613:	/* character <- integer	  */
+	case 1614:	/* character <- real	  */
+	case 1615:	/* character <- complex	  */
+	case 1616:	/* character <- character */
+	/* case 1016:	   logical   <- character */
+	/* case 1316:	   integer   <- character */
+	/* case 1416:	   real	     <- character */
+	/* case 1516:	   complex   <- character */
+
+	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
+	    break;
+
+	case 1919: /* vector <- vector */
+
+	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
+	    break;
+
+	default:
+	    error(_("incompatible types (%d) in array subset assignment"), 
+		  which);
+	}
+    next_i:
+	;
+	if (n > 1) {
+	    j = 0;
+	    while (++indx[j] >= bound[j]) {
+		indx[j] = 0;
+		j = (j + 1) % k;
+	    }
+	}
+    }
+    UNPROTECT(3);
+    vmaxset(vmax);
+    return x;
+}
+
+
 SEXP DeleteListElements(SEXP x, SEXP which)
 {
     SEXP include, xnew, xnames, xnewnames;

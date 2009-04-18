@@ -166,15 +166,20 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
   Expression head_exp;
   if (ei->get_eager_lazy(n) == EAGER && Settings::get_instance()->get_strictness()) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
-    laziness_string += "E";
+    laziness_string = "E" + laziness_string;
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
     if (!head_exp.del_text.empty()) (*unprotcnt)++;
     string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
-    laziness_string += "L";
+    laziness_string = "L" + laziness_string;
   }
-  string out = sb->appl2("cons", "", head_exp.var, tail_exp.var);
+  string out;
+  if (TAG(args) == R_NilValue) {
+    out = sb->appl2("cons", "", head_exp.var, tail_exp.var);
+  } else {
+    out = sb->appl3("tagged_cons", "", head_exp.var, make_symbol(TAG(args)), tail_exp.var);
+  }
   if (!head_exp.del_text.empty()) (*unprotcnt)++;
   if (!tail_exp.del_text.empty()) (*unprotcnt)++;
   return Expression(out, DEPENDENT, INVISIBLE, unp(out));

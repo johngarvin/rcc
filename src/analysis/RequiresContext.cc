@@ -147,6 +147,7 @@ static bool expressionRequiresContext(SEXP e)
     return expressionRequiresContext(PREXPR(e));
   case LANGSXP:
     if (TYPEOF(call_lhs(e)) == SYMSXP) {
+      // TODO: why do we assume any call is to a library here? --garvin
       return expressionRequiresContext(library_value(call_lhs(e)));
     } else {
       return expressionRequiresContext(call_lhs(e));

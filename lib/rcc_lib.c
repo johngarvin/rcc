@@ -45,7 +45,7 @@ void my_init_memory(SEXP mem, int n) {
      */
     mem[i].gengc_next_node = NULL;
     mem[i].gengc_prev_node = NULL;
-    mem[i].sxpinfo.gcgen = -1000;
+    mem[i].sxpinfo.gcgen = -1;
   }
 }
 
@@ -132,16 +132,16 @@ SEXP rcc_subassign_cons(SEXP x, SEXP subs, SEXP y) {
   case RAWSXP:
     switch (length(subs)) {
     case 0:
-      x = VectorAssign(R_NilValue, x, R_MissingArg, y);
+      x = rcc_VectorAssign(R_NilValue, x, R_MissingArg, y);
       break;
     case 1:
-      x = VectorAssign(R_NilValue, x, CAR(subs), y);
+      x = rcc_VectorAssign(R_NilValue, x, CAR(subs), y);
       break;
     case 2:
-      x = MatrixAssign(R_NilValue, x, subs, y);
+      x = rcc_MatrixAssign(R_NilValue, x, subs, y);
       break;
     default:
-      x = ArrayAssign(R_NilValue, x, subs, y);
+      x = rcc_ArrayAssign(R_NilValue, x, subs, y);
       break;
     }
     break;
