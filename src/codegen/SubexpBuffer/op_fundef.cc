@@ -96,13 +96,13 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
   header = "SEXP " + func_name + "(";
-  header += "SEXP args, SEXP env)";
+  header += "SEXP args, SEXP newenv)";
   ParseInfo::global_fundefs->decls += header + ";\n";
   f += header + " {\n";
 #ifdef CHECK_PROTECT
   f += indent("int topval = R_PPStackTop;\n");
 #endif
-  f += indent("SEXP newenv;\n");
+//   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
   FuncInfo *fi = lexicalContext.Top();
@@ -111,23 +111,26 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent("RCNTXT context;\n");
   }
 
-  Expression formals = env_subexps.op_list(args, "env", true, Protected);
+  //  Expression formals = env_subexps.op_list(args, "env", true, Protected);
   string actuals = "args";
   env_subexps.output_ip();
   env_subexps.finalize();
   f += indent(env_subexps.output_decls());
   f += indent(env_subexps.output_defs());
-  f += indent("PROTECT(newenv =\n");
-  f += indent(indent("Rf_NewEnvironment(\n"
-		     + indent(formals.var) + ",\n"
-		     + indent(actuals) + ",\n"
-		     + indent("env") + "));\n"));
+//   f += indent("PROTECT(newenv =\n");
+//   f += indent(indent("Rf_NewEnvironment(\n"
+// 		     + indent(formals.var) + ",\n"
+// 		     + indent(actuals) + ",\n"
+// 		     + indent("env") + "));\n"));
 
   if (fi->requires_context()) {
     f += indent("if (SETJMP(context.cjmpbuf)) {\n");
     f += indent(indent("PROTECT(out = R_ReturnedValue);\n"));
     f += indent("} else {\n");
-    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, env, R_NilValue, R_NilValue);\n"));
+    f += indent(indent("begincontext(&context, CTXT_RETURN, R_NilValue, newenv, newenv, R_NilValue, R_NilValue);\n"));
+    // TODO: 5th arg of begincontext should be old environment. Emit
+    // another parameter to the current function to pass it in if we
+    // require context.
   }
 
   // add code to get the location for each argument
@@ -163,8 +166,8 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     f += indent("endcontext(&context);\n");
   }
 
-  f += indent(formals.del_text);
-  f += indent("UNPROTECT(1); /* newenv */\n");
+  //  f += indent(formals.del_text);
+  //  f += indent("UNPROTECT(1); /* newenv */\n");
 #ifdef CHECK_PROTECT
   f += indent("assert(topval == R_PPStackTop);\n");
 #endif

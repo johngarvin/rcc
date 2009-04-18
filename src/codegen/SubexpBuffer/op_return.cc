@@ -84,10 +84,6 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   if (fi && fi->requires_context())  
     append_defs("endcontext(&context);\n"); 
 
-  //---------------------------
-  // unprotect newenv
-  //---------------------------
-  append_defs("UNPROTECT(1); /* newenv */\n");
 #ifdef CHECK_PROTECT
   append_defs("assert(topval == R_PPStackTop);\n");
 #endif
