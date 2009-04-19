@@ -598,14 +598,13 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
    **** to avoid code drift. */
 
 /* Changes from applyClosure:
-   1. doesn't create a new environment (done ahead of time in the applyRccClosure caller)
-   2. doesn't do object-oriented stuff with usemethod
-   3. doesn't create a new context or end it after the call
-   4. doesn't print debugging output of the function body
-   5. doesn't do hashing even if HASHING is defined
-   6. doesn't set a setjmp/longjmp target for explicit returns (we're
+   1. doesn't do object-oriented stuff with usemethod
+   2. doesn't create a new context or end it after the call
+   3. doesn't print debugging output of the function body
+   4. doesn't do hashing even if HASHING is defined
+   5. doesn't set a setjmp/longjmp target for explicit returns (we're
       assuming all calls to 'return' are compiled)
-   7. calls RCC_FUNSXP_CFUN instead of eval-ing a function body
+   6. calls RCC_FUNSXP_CFUN instead of eval-ing a function body
  */
 
 SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
@@ -630,9 +629,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	hashed.  */
 
     PROTECT(actuals = matchArgs(formals, arglist));
-#if 0
     PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
-#endif
 
     /*  Use the default code for unbound formals.  FIXME: It looks like
 	this code should preceed the building of the environment so that
@@ -753,7 +750,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PROTECT(tmp = eval(body, newrho));
     }
 #else
-    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, savedrho));
+    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, newrho));
 #endif
 
 #if 0
@@ -764,7 +761,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
-    UNPROTECT(2);
+    UNPROTECT(3);
     return (tmp);
 }
 
@@ -800,7 +797,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP funsxp, formals, actuals, savedrho;
-    volatile  SEXP newrho;
+    //    volatile  SEXP newrho;
     SEXP f, a, tmp;
     RCNTXT cntxt;
 
