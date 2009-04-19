@@ -110,12 +110,14 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
       // if scope is local, use pointer to location
       if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell))) {
+	Var * var = getProperty(Var, cell);
 	string location = binding->get_location(e, sb);
 	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
-	if (fullyEvaluatedResult) {
+	bool need_eval = fullyEvaluatedResult || var->is_first_on_some_path();
+	if (need_eval) {
 	  h = sb->appl2("Rf_eval", "", h, rho, resultProtection);
 	}
-	string del_text = (fullyEvaluatedResult && resultProtection == Protected ? unp(h) : "");
+	string del_text = (need_eval && resultProtection == Protected ? unp(h) : "");
 	return Expression(h, DEPENDENT, VISIBLE, del_text);
       }
     } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {

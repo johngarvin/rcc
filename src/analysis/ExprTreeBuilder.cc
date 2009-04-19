@@ -43,7 +43,6 @@ ExprTreeBuilder::ExprTreeBuilder() {
 }
 
 OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
-  //  throw new AnalysisException("Not yet implemented");
   SEXP e = CAR(cell);
   OA_ptr<ExprTree> tree; tree = new ExprTree();
 
@@ -84,7 +83,6 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
       std::cout << "ExprTreeBuilder: building subscript ";
       Rf_PrintValue(e);
     }
-    //    OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(make_op_h(e));
     OA_ptr<OpBasicInterface> op; op = RccBasicInterface::make_op(e);
     OA_ptr<ExprTree::OpNode> bracket; bracket = new ExprTree::OpNode(op);
     if (debug) {
@@ -124,12 +122,6 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
     if (debug) std::cout << "ExprTreeBuilder: function call" << std::endl;
     OA_ptr<ExprTree::CallNode> call; call = new ExprTree::CallNode(make_call_h(e));
     tree->addNode(call);
-    OA_ptr<ExprTree> lhs = build_c(e);
-    tree->copyAndConnectSubTree(call, lhs);
-    for(SEXP arg = call_args(e); arg != R_NilValue; arg = CDR(arg)) {
-      OA_ptr<ExprTree> arg_tree = build_c(arg);
-      tree->copyAndConnectSubTree(call, arg_tree);
-    }
   } else {
     assert(0);
   }
