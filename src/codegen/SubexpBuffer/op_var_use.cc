@@ -31,6 +31,7 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/ScopeAnnotationMap.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 
@@ -107,6 +108,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
     } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
+      if (Settings::get_instance()->get_lookup_elimination() == false) {
+	return op_lookup(sb, lookup_function, make_symbol(e), rho, resultProtection, fullyEvaluatedResult);
+      }
+
       FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
       // if scope is local, use pointer to location
       if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell))) {

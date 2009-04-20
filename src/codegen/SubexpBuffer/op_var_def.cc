@@ -32,6 +32,7 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/DefVar.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <analysis/Var.h>
 #include <analysis/VarBinding.h>
@@ -47,6 +48,11 @@ using namespace RAnnot;
 
 Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   string symbol = make_symbol(CAR(cell));
+  if (Settings::get_instance()->get_lookup_elimination() == false) {
+    append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
+    return Expression(rhs, DEPENDENT, INVISIBLE, "");
+  }
+
   VarBinding * binding = getProperty(VarBinding, cell);
   if (binding->is_single()) {
     string location = binding->get_location(CAR(cell), this);

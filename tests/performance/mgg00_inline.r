@@ -1,6 +1,6 @@
 source(file.path(Sys.getenv("RCC_R_INCLUDE_PATH"), "well_behaved.r"))
 
-set.seed(17) # provide repeatable behavior for a test -- johnmc
+set.seed(17) # provide repeatable behavior for a regression test -- johnmc
 
 #######
 #
@@ -41,7 +41,7 @@ geneInits <- list(mustar.rstar = cbind(c(0, -2, 2), c(0, 1, 1)),
                   M = 1,
                   am = 2,
                   bm = 0.5)
- 
+
 
 #Zscore <- c(rnorm(320, 0, 1), rnorm(40, -2, 1), rnorm(40, 2, 1))
 #zscore <- rnorm(400, 0, 1)
@@ -123,6 +123,13 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
 
     ####         1. First to simulate the indicator vector ss, r    ####
 
+    cat("calling sim.ss.fun(\n", "\nisim=", isim, "\np0=", p0,
+    "\nmu.star=", mu.star, "\nr.star=", r.star, "\nr=", r, "\nss=",
+    ss, "\nkk0=", kk0, "\nkk=", kk, "\nnj=", nj, "\nM=", M, 
+    "\nzZscore=", zZscore, "\nb=", b, "\nb1=", b1, 
+    "\nsigmaBsquare=", sigmaBsquare, "\nsigmaBsquare1=", sigmaBsquare1, 
+    "\nn=", n, "\nN=", N, "\n)\n")
+
     mu.ss.sim <- sim.ss.fun(isim, p0, mu.star, r.star, r, ss, kk0, kk, nj, M, zZscore, b, b1, sigmaBsquare, sigmaBsquare1, sigmaSsquare, n, N)
     mu.star   <- mu.ss.sim$mu.star
     r.star    <- mu.ss.sim$r.star
@@ -135,6 +142,7 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
     kk0.vec[isim] <- kk0
     kk.vec[isim]  <- kk
     r.mat[isim,]  <- r
+    cat("mu.ss.sim = (", mu.star, r.star, ss, r, nj, kk0, kk, ")\n")
     cat("kk0, kk is ", kk0, kk, "\n")
      
     ####         2. Second step is to simulate p0                   ####
@@ -162,10 +170,26 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
 
     ####         7. 7th step to simulate indicator II
     II <- rep(2, (kk-kk0))
+
+    cat("computing II step 1: rep(", "\nkk=", kk, "\nkk0=", kk0,
+    "\n)\nyields II =", II, "\n")
+
     II <- sim.II.fun(mu.star, kk0, kk, b1, sigmaBsquare1)
+
+    cat("computing II step 2: sim.II.fun(", "\nmu.star=", mu.star, 
+    "\nkk0=", kk0, "\nkk=", kk, "\nb1=", b1, "\nsigmaBsquare1=", sigmaBsquare1, 
+    "\n)\n yields II=",II,"\n")
     
     ####         8. 8th step to simulate b1    
+
+    cat("simulating b1: sim.b1.fun(", "\nmu.star=", mu.star, 
+    "\nkk0=", kk0, "\nkk=", kk, "\nII=", II, "\nsigmaBsquare1=", sigmaBsquare1, 
+    "\nb1.1=", b1.1, "\nsigmaCsquare=", sigmaCsquare, "\n)\n")
+
     b1 <- sim.b1.fun(mu.star, kk0, kk, II, sigmaBsquare1, b1.1, sigmaCsquare)
+
+    cat("b1 simulation result=", b1, "\n")
+
     b1.vec[isim] <- b1
     
     ####         9. 9th step to simulate sigmaBsquare1
@@ -409,14 +433,29 @@ sim.II.fun <- function(mu.star, kk0, kk, b1, sigmaBsquare1) {
   kk1 <- (kk - kk0)
 
   prob     <- matrix(0, kk1, 2)
+  cat("   in sim.II.fun: 1 prob=",prob,"\n")
+
+  cat("   in sim.II.fun: 1 prob: dnorm(",
+  "\nkk0=", kk0, 
+  "\nkk=", kk, 
+  "\nmu.star[(kk0+1):kk]=", mu.star[(kk0+1):kk], 
+  "\n-b1=", -b1, 
+  "\nsqrt(sigmaBsquare1)=", sqrt(sigmaBsquare1),
+  "\n")
+
   prob[,1] <- dnorm(mu.star[(kk0+1):kk], -b1, sqrt(sigmaBsquare1))
+  cat("   in sim.II.fun: 2 prob=",prob,"\n")
   prob[,2] <- dnorm(mu.star[(kk0+1):kk],  b1, sqrt(sigmaBsquare1))
+  cat("   in sim.II.fun: 3 prob=",prob,"\n")
   prob[,1] <- prob[,1] /(prob[,1] + prob[,2])
+  cat("   in sim.II.fun: 4 prob=",prob,"\n")
   prob[,2] <- 1 - prob[,1]
+  cat("   in sim.II.fun: 5 prob=",prob,"\n")
 
   II <- rep(2, kk1)
   for (i in 1:kk1) {
     II[i] <- rbinom(1, 1, prob[i,2])
+    cat("   in sim.II.fun: II[",i,"]=",II[i],"\n")
     if (II[i] == 0) {
       II[i] <- -1
     }
@@ -475,10 +514,10 @@ sim.M.fun <- function(M, ss, kk, am, bm) {
 Zscore <- c(rnorm(320,0,1),rnorm(40,-2,1), rnorm(40,2,1))
 zscore <- rnorm(400,0,1)
 zZscore <- c(zscore,Zscore)
+#cat("Zscore=",Zscore,"\nzscore=",zscore,"\nzZscore=",zZscore)
 
 Rprof()
 simSim1 <- mixGibbsGene.fun (300, zZscore, 400, 400, geneInits)
-#simSim1 <- mixGibbsGene.fun (300, zZscore, 400, 400, geneInits)
 Rprof(NULL)
 
 
