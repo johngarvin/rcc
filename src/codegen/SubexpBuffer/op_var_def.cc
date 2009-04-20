@@ -56,16 +56,12 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()));
     assert(scope != 0);
     FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());
-    // if redefining a parameter, we don't have a location, so emit a defineVar.
-    if (fi->is_arg(CAR(cell))) {
-      // TODO: be able to cache redefinitions of formal args
-      append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
-      return Expression(rhs, DEPENDENT, INVISIBLE, "");
-    } else if (var->is_first_on_some_path()) {
+    if (var->is_first_on_some_path() && !fi->is_arg(CAR(cell))) {
+      // first mention of a local var (not a formal), so emit defineVar
       append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
       return Expression(rhs, DEPENDENT, INVISIBLE, "");
     } else {
-      // name has been defined previously
+      // name has been defined previously, either as a formal or by assignment
       append_defs(emit_call2("R_SetVarLocValue", location, rhs) + ";\n");
       return Expression(rhs, DEPENDENT, INVISIBLE, "");
     }
@@ -74,6 +70,3 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     return Expression(rhs, DEPENDENT, INVISIBLE, "");
   }
 }
-
-// TODO: if we can prove the variable is already declared by another def
-//      append_defs(emit_call2("R_SetVarLocValue", location, rhs) + ";\n");
