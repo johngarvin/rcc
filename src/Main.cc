@@ -70,16 +70,9 @@ int main(int argc, char * argv[]) {
   RCC_DEBUG("RCC_Main", analysis_debug);
 
   int i;
-  //  char *fullname_c;
   string libname, path, exec_decls, exec_code, fullname, out_filename;
-  //  bool in_file_exists, out_file_exists = false;
   FILE *in_file;
   int n_exprs;
-
-  // for getopt
-  //  int c;
-  //  extern char *optarg;
-  //  extern int optind, opterr, optopt;
 
   CommandLineArgs args(argc, argv);
 

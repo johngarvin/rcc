@@ -180,10 +180,10 @@ static Expression op_internal(SubexpBuffer * sb, SEXP e, SEXP env_val, string na
     // builtin/special function; symbol containts ptr to definition 
     if (TYPEOF(sym_value) == PROMSXP) {
       string sv = emit_call1("SYMVALUE", make_symbol(e));
-      h = ParseInfo::global_constants->appl2("Rf_eval", "", sv, "R_GlobalEnv");
+      h = ParseInfo::global_constants->appl2("Rf_eval", "op_internal (eval): " + make_symbol(e) + " type = " + i_to_s(TYPEOF(sym_value)), sv, "R_GlobalEnv");
     } else {
       string sv = make_symbol(e);
-      h = ParseInfo::global_constants->appl1("SYMVALUE", "", sv, Unprotected);
+      h = ParseInfo::global_constants->appl1("SYMVALUE", "op_internal (no eval): " + sv + " type = " + i_to_s(TYPEOF(sym_value)), sv, Unprotected);
     }
   }
   ParseInfo::insert_binding(name, h);

@@ -143,6 +143,6 @@ void CommandLineArgs::add_f_option(std::string option) {
 }
 
 static void arg_err() {
-  std::cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-l] [-m] [-o output-file]\n";
+  std::cerr << "Usage: rcc [input-file] [-a] [-c] [-d] [-f option...] [-l] [-m] [-o output-file]\n";
   exit(1);
 }

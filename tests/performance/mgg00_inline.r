@@ -123,12 +123,12 @@ mixGibbsGene.fun <- function(nsim, zZscore, n, N, inits) {
 
     ####         1. First to simulate the indicator vector ss, r    ####
 
-    cat("calling sim.ss.fun(\n", "\nisim=", isim, "\np0=", p0,
-    "\nmu.star=", mu.star, "\nr.star=", r.star, "\nr=", r, "\nss=",
-    ss, "\nkk0=", kk0, "\nkk=", kk, "\nnj=", nj, "\nM=", M, 
-    "\nzZscore=", zZscore, "\nb=", b, "\nb1=", b1, 
-    "\nsigmaBsquare=", sigmaBsquare, "\nsigmaBsquare1=", sigmaBsquare1, 
-    "\nn=", n, "\nN=", N, "\n)\n")
+#    cat("calling sim.ss.fun(\n", "\nisim=", isim, "\np0=", p0,
+#    "\nmu.star=", mu.star, "\nr.star=", r.star, "\nr=", r, "\nss=",
+#    ss, "\nkk0=", kk0, "\nkk=", kk, "\nnj=", nj, "\nM=", M, 
+#    "\nzZscore=", zZscore, "\nb=", b, "\nb1=", b1, 
+#    "\nsigmaBsquare=", sigmaBsquare, "\nsigmaBsquare1=", sigmaBsquare1, 
+#    "\nn=", n, "\nN=", N, "\n)\n")
 
     mu.ss.sim <- sim.ss.fun(isim, p0, mu.star, r.star, r, ss, kk0, kk, nj, M, zZscore, b, b1, sigmaBsquare, sigmaBsquare1, sigmaSsquare, n, N)
     mu.star   <- mu.ss.sim$mu.star

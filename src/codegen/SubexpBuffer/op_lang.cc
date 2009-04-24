@@ -114,8 +114,13 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	}
       }
     } else {
-      Expression func = op_fun_use(e, rho);
-      return op_clos_app(func, cell, rho, resultProtection);
+      // no call graph
+      if (is_library(call_lhs(e))) {
+	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
+      } else {
+	Expression func = op_fun_use(e, rho);
+	return op_clos_app(func, cell, rho, resultProtection);
+      }
     }
 
 #if 0
