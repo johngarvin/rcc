@@ -125,17 +125,17 @@ void CommandLineArgs::add_f_option(std::string option) {
     flag = true;
   }
 
-  if (option == "for_loop_range_deforestation") {
+  if (option == "for-loop-range-deforestation") {
     settings->set_for_loop_range_deforestation(flag);
-  } else if (option == "subscript_assignment") {
+  } else if (option == "subscript-assignment") {
     settings->set_subscript_assignment(flag);
   } else if (option == "strictness") {
     settings->set_strictness(flag);
-  } else if (option == "special_case_arithmetic") {
+  } else if (option == "special-case-arithmetic") {
     settings->set_special_case_arithmetic(flag);
-  } else if (option == "call_graph") {
+  } else if (option == "call-graph") {
     settings->set_call_graph(flag);
-  } else if (option == "lookup_elimination") {
+  } else if (option == "lookup-elimination") {
     settings->set_lookup_elimination(flag);
   } else {
     arg_err();

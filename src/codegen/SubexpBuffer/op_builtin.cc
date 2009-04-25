@@ -105,8 +105,9 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       if (is_constant_expr(CAR(args))) {
 	xprot = Unprotected;
       }
-      Expression x = op_exp(args, rho, xprot, false);
-      Expression y = op_exp(CDR(args), rho, Unprotected, false);
+      // pass true as 4th arg here: R_binary needs args already evaluated
+      Expression x = op_exp(args, rho, xprot, true);
+      Expression y = op_exp(CDR(args), rho, Unprotected, true);
       out = appl4("R_binary", to_string(e), "R_NilValue", op1.var, x.var, y.var, 
 		  Unprotected);
       int unprotcnt = 0;

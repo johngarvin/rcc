@@ -10,18 +10,44 @@ setenv Rplain /home/garvin/research/rcompiler-install/R-2.1.1/bin/R
 setenv PATH @RCC_BIN_PATH@:${PATH}
 setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
 
+setenv opt ''
+
+if ($1 == 'full') then
+    setenv opt $1
+    shift
+endif
+
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the original R interpreter..."
-	${Rplain} --slave < $f >  `basename $f .r`.interpreted
-	${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
+    ${Rplain} --slave < $f >  `basename $f .r`.interpreted
+    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
     echo "  running and timing $f with the modified R interpreter..."
-	${Rplain} --slave < $f >  `basename $f .r`.interpreted
-	${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
-    echo "  compiling $f with rcc..."
+    ${Rplain} --slave < $f >  `basename $f .r`.interpreted
+    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
+    if ($opt == 'full') then
+	foreach f1 ( no-for-loop-range-deforestation for-loop-range-deforestation )
+	    foreach f2 ( no-subscript-assignment subscript-assignment )
+		foreach f3 ( no-strictness strictness )
+		    foreach f4 ( no-call-graph call-graph )
+			foreach f5 ( no-lookup-elimination lookup-elimination )
+			    echo "  compiling $f with rcc -f $f1 -f $f2 -f $f3 -f $f4 -f $f5 ..."
+			    rcc -f $f1 -f $f2 -f $f3 -f $f4 -f $f5 $f
+			    echo "  compiling " `basename $f .r`.c "with rcc-cc..."
+			    rcc-cc -o `basename $f .r` -g `basename $f .r`.c
+			    echo "  running " `basename $f .r` "with rcc-run..." 
+			    time rcc-run `basename $f .r` >  `basename $f .r`.compiled
+			end
+		    end
+		end
+	    end
+	end
+    else
+	echo "  compiling $f with rcc ..."
 	rcc $f
-    echo "  compiling " `basename $f .r`.c "with rcc-cc..."
+	echo "  compiling " `basename $f .r`.c "with rcc-cc..."
 	rcc-cc -o `basename $f .r` -g `basename $f .r`.c
-    echo "  running " `basename $f .r` "with rcc-run..." 
+	echo "  running " `basename $f .r` "with rcc-run..." 
 	time rcc-run `basename $f .r` >  `basename $f .r`.compiled
+    endif
 end

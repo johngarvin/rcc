@@ -118,20 +118,11 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	Var * var = getProperty(Var, cell);
 	string location = binding->get_location(e, sb);
 
-	bool need_eval = fullyEvaluatedResult || var->is_first_on_some_path();
-	string h;
- 	if (need_eval) {
-	  h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
-	  sb->append_defs(emit_logical_if_stmt(emit_call1("TYPEOF", h) + " == PROMSXP", emit_assign(h, emit_call2("Rf_eval", h, rho))));
-	  if (resultProtection == Protected) {
-	    sb->append_defs(emit_call1("PROTECT", h) + ";\n");
-	  }
- 	  sb->append_defs(emit_call2("R_SetVarLocValue", location, h) + ";\n");
-	} else {
-	  h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
-	}
-	string del_text = (need_eval && resultProtection == Protected ? unp(h) : "");
-	return Expression(h, DEPENDENT, VISIBLE, del_text);
+	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
+	sb->append_defs(emit_logical_if_stmt(emit_call1("TYPEOF", h) + " == PROMSXP",
+					     emit_in_braces(emit_assign(h, emit_call2("Rf_eval", h, rho)) +
+							    emit_call2("R_SetVarLocValue", location, h) + ";\n")));
+	return Expression(h, DEPENDENT, VISIBLE, "");
       }
     } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {
       rcc_error("Attempted to use an unbound variable");
