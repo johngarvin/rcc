@@ -40,8 +40,9 @@
 #include <support/RccError.h>
 
 #include <CodeGenUtils.h>
-#include <Visibility.h>
+#include <Metrics.h>
 #include <ParseInfo.h>
+#include <Visibility.h>
 
 using namespace std;
 using namespace RAnnot;
@@ -55,6 +56,8 @@ std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name,
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   Protection resultProtection)
 {
+  Metrics::get_instance()->inc_procedures();
+
   FuncInfo *fi = getProperty(FuncInfo, fndef);
   lexicalContext.Push(fi);
   SEXP e = CDR(fndef); // skip over "function" symbol

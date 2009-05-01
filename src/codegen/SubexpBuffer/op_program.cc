@@ -18,7 +18,7 @@
 
 // File: op_program.cc
 //
-// Output an RCC-generated program.
+// Output an RCC-generated program. At this point analysis has been performed.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -33,6 +33,7 @@
 
 #include <CheckProtect.h>
 #include <CodeGenUtils.h>
+#include <Metrics.h>
 #include <ParseInfo.h>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
@@ -43,6 +44,7 @@ using namespace std;
 string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
 				bool output_main_program, bool output_default_args)
 {
+  string program;
   int i;
   string exec_decls, exec_defs;
 
@@ -112,8 +114,6 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   finish_code += "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) + "); /* c_ */\n";
   finish_code += "Rprintf(\"\\n\");\n";
   
-  string program;
-
   string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
 
   // output
@@ -165,5 +165,19 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
        func_name + "();\nreturn 0;\n";
      program += "\nint main(" + mainargs + ") \n{\n" + indent(body) + "}\n"; 
   }
+
+  // output metrics
+  const Metrics * m = Metrics::get_instance();
+  string metrics;
+  metrics += comment("Compile-time metrics:") + "\n";
+  metrics += comment("procedures: "                     + i_to_s(m->get_procedures())) + "\n";
+  metrics += comment("builtin calls: "                  + i_to_s(m->get_builtin_calls())) + "\n";
+  metrics += comment("special calls: "                  + i_to_s(m->get_special_calls())) + "\n";
+  metrics += comment("library calls: "                  + i_to_s(m->get_library_calls())) + "\n";
+  metrics += comment("calls to symbols in call graph: " + i_to_s(m->get_user_calls())) + "\n";
+  metrics += comment("calls to unknown symbols: "       + i_to_s(m->get_unknown_symbol_calls())) + "\n";
+  metrics += comment("calls to non-symbols: "           + i_to_s(m->get_non_symbol_calls())) + "\n";
+  program = metrics + program;
+  
   return program;
 }

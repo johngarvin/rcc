@@ -100,6 +100,8 @@ rcc_bin_SOURCES =				\
   LocalVariableAnalysis.h			\
   MemRefExprInterface.cc                        \
   MemRefExprInterface.h                         \
+  Metrics.cc                                    \
+  Metrics.h                                     \
   NameMentionMultiMap.h                         \
   NameStmtMultiMap.h                            \
   OACallGraphAnnotation.cc                      \

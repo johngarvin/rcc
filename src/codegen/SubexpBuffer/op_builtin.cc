@@ -36,6 +36,7 @@
 #include <support/StringUtils.h>
 #include <CodeGen.h>
 #include <GetName.h>
+#include <Metrics.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 
@@ -57,6 +58,8 @@ bool is_constant_expr(SEXP s) {
 Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho, 
 				    Protection resultProtection)
 {
+  Metrics::get_instance()->inc_builtin_calls();
+
   string out;
 #ifdef USE_OUTPUT_CODEGEN
   Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));

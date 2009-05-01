@@ -40,20 +40,21 @@
 #include <analysis/VarBinding.h>
 
 #if 0
-// we are using OpenAnalysis call graphs instead
-#include <analysis/call-graph/RccCallGraphAnnotation.h>
-#include <analysis/call-graph/CallGraphNode.h>
-#include <analysis/call-graph/LibraryCallGraphNode.h>
-#include <analysis/call-graph/FundefCallGraphNode.h>
-#include <analysis/call-graph/UnknownValueCallGraphNode.h>
+  // we are using OpenAnalysis call graphs instead
+  #include <analysis/call-graph/RccCallGraphAnnotation.h>
+  #include <analysis/call-graph/CallGraphNode.h>
+  #include <analysis/call-graph/LibraryCallGraphNode.h>
+  #include <analysis/call-graph/FundefCallGraphNode.h>
+  #include <analysis/call-graph/UnknownValueCallGraphNode.h>
 #endif
 
 #include <support/StringUtils.h>
 #include <support/RccError.h>
 
-#include <Visibility.h>
-#include <ParseInfo.h>
 #include <CodeGen.h>
+#include <Metrics.h>
+#include <ParseInfo.h>
+#include <Visibility.h>
 
 using namespace std;
 using namespace RAnnot;
@@ -92,11 +93,12 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	if (ph != OA::ProcHandle(0)) {  // singleton exists
 	  FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
 	  Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-	  
+	  Metrics::get_instance()->inc_user_calls();
 	  // check for eager assertion
 	  if (CDR(call_args(e)) != R_NilValue) {
 	    SEXP second_arg = CADR(call_args(e));
 	    if (is_rcc_assert_exp(e) && is_var(second_arg) && var_name(second_arg) == "eager.call") {
+	      // redo call graph lookup with the real name
 	      cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
 	      ph = cga->get_singleton_if_exists();
 	      fi = getProperty(FuncInfo, make_sexp(ph));
@@ -109,6 +111,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	  
 	  return op_clos_app(closure_exp, cell, rho, resultProtection);
 	} else {
+	  Metrics::get_instance()->inc_unknown_symbol_calls();
 	  Expression func = op_fun_use(e, rho);
 	  return op_clos_app(func, cell, rho, resultProtection);
 	}
@@ -118,6 +121,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       if (is_library(call_lhs(e))) {
 	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
       } else {
+	Metrics::get_instance()->inc_unknown_symbol_calls();
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, cell, rho, resultProtection);
       }
@@ -151,6 +155,8 @@ old code with home-grown call graph
 
 #endif
   } else {  // left side is not a symbol
+    Metrics::get_instance()->inc_non_symbol_calls();
+    
     // generate closure and application
     Expression op1;
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
@@ -171,6 +177,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
     // For internals, find call-by-value status like this:
     //     EagerLazyT func_eager_lazy = (R_FunTab[prim->u.primsxp.offset].eval) % 10 ? EAGER : LAZY;
 
+    Metrics::get_instance()->inc_library_calls();
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     return sb->op_clos_app(func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {

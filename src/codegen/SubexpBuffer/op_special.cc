@@ -36,6 +36,7 @@
 #include <support/StringUtils.h>
 #include <CodeGen.h>
 #include <GetName.h>
+#include <Metrics.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 
@@ -103,6 +104,7 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     return op_return(CDR(e), rho);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
+    Metrics::get_instance()->inc_special_calls();
 #ifdef USE_OUTPUT_CODEGEN
     Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
     Expression args1 = output_to_expression(CodeGen::op_list(CDR(e), rho, true, true));

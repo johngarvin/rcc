@@ -91,6 +91,10 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   return result;
 }
 
+// TODO: why not use data from DebutDFSolver? Just need to account for
+// slight differences: uses vs. all mentions, formal args vs. both formal
+// and assigned variables
+
 // Compute debuts. A mention is a debut iff it's a use and it's the
 // first mention on some path. In data-flow terms, a mention is a
 // debut if it is a use and it is TOP on entry. If it's not TOP on
