@@ -137,7 +137,9 @@ void LocalFunctionAnalysis::analyze_strictness() {
   OA_ptr<Strictness::DFSetIterator> it = strict_set->get_iterator();
   for (it->reset(); it->isValid(); ++*it) {
     FormalArgInfo * annot = getProperty(FormalArgInfo, it->current()->get_loc()->get_sexp());
+    if (debug) annot->dump(std::cerr);
     if (it->current()->get_strictness_type() == Strictness::Strictness_USED) {
+      if (debug) std::cerr << "arg is strict" << std::endl;
       annot->set_is_strict(true);
     }
   }

@@ -36,9 +36,10 @@
 
 #include <support/StringUtils.h>
 
-#include <Visibility.h>
-#include <CodeGenUtils.h>
 #include <CodeGen.h>
+#include <CodeGenUtils.h>
+#include <Metrics.h>
+#include <Visibility.h>
 
 using namespace std;
 
@@ -72,7 +73,7 @@ static Expression op_promise_args(SubexpBuffer * sb,
 Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
 				     string rho,
 				     Protection resultProtection,
-				     EagerLazyT laziness /* = LAZY */)
+				     EagerLazyT laziness)
 {
   SEXP e = CAR(cell);
   SEXP args = call_args(e);
@@ -167,12 +168,14 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
   if (ei->get_eager_lazy(n) == EAGER && Settings::get_instance()->get_strictness()) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
     laziness_string = "E" + laziness_string;
+    Metrics::get_instance()->inc_eager_actual_args();
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
     if (!head_exp.del_text.empty()) (*unprotcnt)++;
     string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
     laziness_string = "L" + laziness_string;
+    Metrics::get_instance()->inc_lazy_actual_args();
   }
   string out;
   if (TAG(args) == R_NilValue) {

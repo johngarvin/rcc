@@ -49,8 +49,8 @@ public:
 //   int strict_formal_args;
 //   int nonstrict_formal_args;
 
-//   int eager_actual_args;
-//   int lazy_actual_args;
+  INT_GETTER_INCREMENTER(eager_actual_args)
+  INT_GETTER_INCREMENTER(lazy_actual_args)
 
 //   int single_arrow_assignments;
 //   int double_arrow_assignments;
@@ -71,7 +71,9 @@ private:
 	      m_library_calls(0),
 	      m_user_calls(0),
 	      m_unknown_symbol_calls(0),
-	      m_non_symbol_calls(0)
+	      m_non_symbol_calls(0),
+	      m_eager_actual_args(0),
+	      m_lazy_actual_args(0)
   {}
 private:
   static Metrics * s_instance;

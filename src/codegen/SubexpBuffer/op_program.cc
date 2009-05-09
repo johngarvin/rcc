@@ -177,6 +177,8 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   metrics += comment("calls to symbols in call graph: " + i_to_s(m->get_user_calls())) + "\n";
   metrics += comment("calls to unknown symbols: "       + i_to_s(m->get_unknown_symbol_calls())) + "\n";
   metrics += comment("calls to non-symbols: "           + i_to_s(m->get_non_symbol_calls())) + "\n";
+  metrics += comment("eager actual args: "              + i_to_s(m->get_eager_actual_args())) + "\n";
+  metrics += comment("lazy actual args: "               + i_to_s(m->get_lazy_actual_args())) + "\n";
   program = metrics + program;
   
   return program;

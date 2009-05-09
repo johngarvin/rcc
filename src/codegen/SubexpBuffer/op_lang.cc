@@ -102,13 +102,13 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	      cga = getProperty(OACallGraphAnnotation, CAR(call_args(e)));
 	      ph = cga->get_singleton_if_exists();
 	      fi = getProperty(FuncInfo, make_sexp(ph));
+	      closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	      // TODO: deal with assertions that aren't user-defined symbols
 	      // use the real call: pass the cell containing the first argument of eager.call
-	      return op_clos_app(closure_exp, call_args(e), rho, resultProtection,
-				 EAGER);
+	      //string all_strict = std::string("S", fi->get_num_args());
+	      return op_clos_app(closure_exp, call_args(e), rho, resultProtection, EAGER);
 	    }
-	  }
-	  
+	  }	  
 	  return op_clos_app(closure_exp, cell, rho, resultProtection);
 	} else {
 	  Metrics::get_instance()->inc_unknown_symbol_calls();

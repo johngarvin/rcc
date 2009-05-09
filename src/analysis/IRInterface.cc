@@ -413,6 +413,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
     VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
     return MemRefExprInterface::convert_sym_handle(sym);
+    // TODO: do something different if this is a parameter.
     // TODO: make sharper distinction
   } else {
     mre = new UnknownRef(MemRefExpr::USE);
@@ -423,6 +424,10 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
 /// Given the callee symbol returns the callee proc handle
 ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   VarInfo * vi = make_var_info(sym);
+  if (vi->is_param()) {
+    rcc_error("getProcHandle: tried to get ProcHandle of procedure symbol parameter");
+    return HellProcedure::get_instance();
+  }
   VarInfo::const_iterator iter = vi->begin_defs();
   if (iter == vi->end_defs()) {
     rcc_warn("getProcHandle: procedure symbol has no definitions");
@@ -432,6 +437,7 @@ ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   //  std::cout << to_string(CAR((*iter)->getRhs_c()));
   ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
   if (++iter != vi->end_defs()) {  // if more than one def
+    rcc_warn("getProcHandle: procedure symbol has more than one definition");
     return HellProcedure::get_instance();
   }
   return retval;
