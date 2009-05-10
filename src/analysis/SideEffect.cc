@@ -51,7 +51,8 @@ static bool sets_intersect(MyVarSetT s, MyVarSetT t);
 // ----- constructor/destructor -----
 
 SideEffect::SideEffect() : m_trivial(false),
-			   m_cheap(false)
+			   m_cheap(false),
+			   m_action(false)
 {
 }
 
@@ -158,7 +159,7 @@ bool sets_intersect(MyVarSetT s, MyVarSetT t) {
 }
 
 bool SideEffect::intersects(SideEffect * other) {
-  if (get_action() || other->get_action()) {
+  if (get_action() && other->get_action()) {
     return true;
   }
 
@@ -192,6 +193,9 @@ std::ostream& SideEffect::dump(std::ostream& os) const {
     (*it)->dump(os);
   }
   os << "End defs" << std::endl;
+  os << "Trivial: " << m_trivial << std::endl;
+  os << "Cheap: " << m_cheap << std::endl;
+  os << "Action: " << m_action << std::endl;
   endObjDump(os, SideEffect);
 }
 

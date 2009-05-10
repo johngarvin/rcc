@@ -83,6 +83,8 @@ PropertyHndlT SideEffectAnnotationMap::m_handle = "SideEffect";
 
 // compute all Var annotation information
 void SideEffectAnnotationMap::compute() {
+  init_non_action_libs();
+
   FuncInfo * fi;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
@@ -193,9 +195,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   // now grab side effects due to procedure calls: get interprocedural
   // uses and defs from m_side_effect
   EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
-    // for now, conservatively say that any library call may cause an
-    // "action" side effect (such as printing to the screen)
-    if (is_var(call_lhs(CAR(cs_c))) && is_library(call_lhs(CAR(cs_c)))) {
+    if (expression_may_have_action(CAR(cs_c))) {
       annot->set_action(true);
     }
     
@@ -229,6 +229,39 @@ bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
 // actual argument is expensive to evaluate.
 bool SideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
   return (is_const(e) || is_var(e));
+}
+
+// true if the expression may perform a visible action, such as
+// printing something to the screen.
+bool SideEffectAnnotationMap::expression_may_have_action(const SEXP e) {
+  if (is_var(call_lhs(e)) && is_library(call_lhs(e))) {
+    // conservatively say true if not in the "safe" set
+    return (m_non_action_libs.find(var_name(call_lhs(e))) == m_non_action_libs.end());
+  } else {
+    return false;
+  }
+}
+
+// add library procedures that don't produce actions
+void SideEffectAnnotationMap::init_non_action_libs() {
+  m_non_action_libs.insert("+");
+  m_non_action_libs.insert("-");
+  m_non_action_libs.insert("*");
+  m_non_action_libs.insert("/");
+  m_non_action_libs.insert("%*%");
+  m_non_action_libs.insert("c");
+  m_non_action_libs.insert("rep");
+  m_non_action_libs.insert("length");
+  m_non_action_libs.insert("sum");
+  m_non_action_libs.insert("vector");
+  m_non_action_libs.insert("matrix");
+  m_non_action_libs.insert("(");
+  m_non_action_libs.insert(":");
+  m_non_action_libs.insert("[");
+  m_non_action_libs.insert("sqrt");
+  m_non_action_libs.insert("mean");
+  m_non_action_libs.insert("t");
+  m_non_action_libs.insert("log");
 }
 
 } // end namespace RAnnot

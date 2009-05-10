@@ -20,8 +20,8 @@ endif
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the original R interpreter..."
-    ${Rplain} --slave < $f >  `basename $f .r`.interpreted
-    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
+    ${Rorig} --slave < $f >  `basename $f .r`.interpreted
+    ${Rorig} CMD Rprof Rprof.out | grep "^Total run time"
     echo "  running and timing $f with the modified R interpreter..."
     ${Rplain} --slave < $f >  `basename $f .r`.interpreted
     ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"

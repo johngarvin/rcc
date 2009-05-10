@@ -25,6 +25,8 @@
 #ifndef SIDE_EFFECT_ANNOTATION_MAP_H
 #define SIDE_EFFECT_ANNOTATION_MAP_H
 
+#include <set>
+
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/SideEffect/InterSideEffectStandard.hpp>
 
@@ -55,8 +57,11 @@ private:
   void compute_oa_side_effect();
   void make_side_effect(const FuncInfo * const, const SEXP e);
 
+  void init_non_action_libs();
+
   bool expression_is_trivial(const SEXP e);
   bool expression_is_cheap(const SEXP e);
+  bool expression_may_have_action(const SEXP e);
 
   void add_all_names_used(SideEffect * annot,
 			  OA::OA_ptr<OA::Alias::Interface> alias,
@@ -71,6 +76,7 @@ private:
 
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect;
   OA::OA_ptr<OA::Alias::InterAliasInterface> m_alias;
+  std::set<std::string> m_non_action_libs;
 };
 
 }  // end namespace RAnnot
