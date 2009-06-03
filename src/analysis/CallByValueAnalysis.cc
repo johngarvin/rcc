@@ -208,10 +208,10 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   }
 }
   
-  SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
+SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
   assert(fi != 0);
   assert(fai != 0);
-
+  
   SideEffect * pre_debut = new SideEffect();
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;

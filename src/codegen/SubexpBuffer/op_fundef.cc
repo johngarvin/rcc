@@ -31,6 +31,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
 #include <analysis/Utils.h>
@@ -47,10 +48,11 @@
 using namespace std;
 using namespace RAnnot;
 
-std::string make_fundef(SubexpBuffer * this_buf, std::string func_name, 
+string make_fundef(SubexpBuffer * this_buf, std::string func_name, 
 			SEXP fndef);
-std::string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, 
+string make_fundef_c(SubexpBuffer * this_buf, std::string func_name, 
 			  SEXP fndef);
+string output_strictness(SEXP args);
 
 /// Output a function definition.
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
@@ -76,7 +78,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
   } else {   // not the global environment
-    Expression r_args = op_literal(CAR(e), rho);
+    Expression r_args = op_list(CAR(e), rho, true, Protected);
     Expression r_code = op_literal(CADR(e), rho);
     string closure = fi->get_closure();
     appl(closure, resultProtection, "mkRCC_CLOSXP", to_string(e), 4, &r_args.var, &c_name, &r_code.var, &rho);
@@ -98,10 +100,13 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   string f, header;
   SubexpBuffer out_subexps;
   SubexpBuffer env_subexps;
+
+  string strictness = comment("strictness: " + output_strictness(args));  // string of S and N: whether each formal is strict
+
   header = "SEXP " + func_name + "(";
   header += "SEXP args, SEXP newenv)";
   ParseInfo::global_fundefs->decls += header + ";\n";
-  f += header + " {\n";
+  f += header + " { " + strictness + " \n";
 #ifdef CHECK_PROTECT
   f += indent("int topval = R_PPStackTop;\n");
 #endif
@@ -146,13 +151,6 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     arg_location_code += "R_varloc_t " + emit_assign(location, emit_call1("get_R_location", arg_cell));
     arg_cell = emit_call1("CDR", arg_cell);
   }
-
-  // arg_cell = "args"
-  // for each arg:
-  //   add "R_varloc_t " + emit_assign(newvar, arg_cell)
-  //   remember that newvar is the location for this name
-  //   arg_cell = emit_assign("CDR", arg_cell)
-  // end for
 
   Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
 					   "newenv", Unprotected, true, 
@@ -302,3 +300,16 @@ string make_fundef(string func_name, SEXP fndef) {
   return f;
 }
 #endif
+
+string output_strictness(SEXP args) {
+  string str;
+  while(args != R_NilValue) {
+    if (getProperty(FormalArgInfo, args)->is_strict()) {
+      str += "S";
+    } else {
+      str += "N";
+    }
+    args = CDR(args);
+  }
+  return str;
+}

@@ -65,7 +65,7 @@ SideEffect::~SideEffect() {
     m_trivial = x;
   }
 
-  bool SideEffect::is_trivial() {
+  bool SideEffect::is_trivial() const {
     return m_trivial;
   }
 
@@ -73,7 +73,7 @@ SideEffect::~SideEffect() {
     m_cheap = x;
   }
 
-  bool SideEffect::is_cheap() {
+  bool SideEffect::is_cheap() const {
     return m_cheap;
   }
 
@@ -113,19 +113,20 @@ void SideEffect::add(const SideEffect * x) {
   for(it = x->begin_defs(); it != x->end_defs(); ++it) {
     m_defs.insert(*it);
   }
+  m_action = m_action || x->get_action();
 }
 
 // ----- getters -----
 
-bool SideEffect::get_action() {
+bool SideEffect::get_action() const {
   return m_action;
 }
   
-MyVarSetT SideEffect::get_uses() {
+MyVarSetT SideEffect::get_uses() const {
   return m_uses;
 }
 
-MyVarSetT SideEffect::get_defs() {
+MyVarSetT SideEffect::get_defs() const {
   return m_defs;
 }
 

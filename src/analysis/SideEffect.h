@@ -51,15 +51,15 @@ public:
   virtual ~SideEffect();
 
   void set_trivial(bool x);
-  bool is_trivial();
+  bool is_trivial() const;
   void set_cheap(bool x);
-  bool is_cheap();
+  bool is_cheap() const;
 
   void set_action(bool x);
-  bool get_action();
+  bool get_action() const;
 
-  MyVarSetT get_uses();
-  MyVarSetT get_defs();
+  MyVarSetT get_uses() const;
+  MyVarSetT get_defs() const;
 
   void insert_use_var(const FuncInfo * fi, const UseVar * use);
   void insert_def_var(const FuncInfo * fi, const DefVar * def);
