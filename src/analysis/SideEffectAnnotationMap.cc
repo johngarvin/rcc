@@ -262,6 +262,7 @@ void SideEffectAnnotationMap::init_non_action_libs() {
   m_non_action_libs.insert("mean");
   m_non_action_libs.insert("t");
   m_non_action_libs.insert("log");
+  m_non_action_libs.insert("append");
 }
 
 } // end namespace RAnnot

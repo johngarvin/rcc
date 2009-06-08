@@ -90,48 +90,48 @@ PropertyHndlT VarAnnotationMap::m_handle = "Var";
 
 // compute all Var annotation information
 void VarAnnotationMap::compute() {
-  compute_all_syntactic_info();
-  compute_all_locality_info();
+  FuncInfo * fi;
+  FOR_EACH_PROC(fi) {
+    compute_proc(fi);
+  }
 }
   
+void VarAnnotationMap::compute_proc(FuncInfo * fi) {
+  compute_proc_syntactic_info(fi);
+  compute_proc_locality_info(fi);
+}
+
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
-void VarAnnotationMap::compute_all_syntactic_info() {
+void VarAnnotationMap::compute_proc_syntactic_info(FuncInfo * fi) {
   UseVar * use;
   DefVar * def;
-  FuncInfo * fi;
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
 
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_NODE(fi, node) {
-      NODE_FOR_EACH_STATEMENT(node, stmt) {
-	ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-	EXPRESSION_FOR_EACH_USE(expr, use) {
-	  assert(use != 0);
-	  get_map()[use->getMention_c()] = use;
-	}
-	EXPRESSION_FOR_EACH_DEF(expr, def) {
-	  assert(def != 0);
-	  get_map()[def->getMention_c()] = def;
-	}
-	
+  PROC_FOR_EACH_NODE(fi, node) {
+    NODE_FOR_EACH_STATEMENT(node, stmt) {
+      ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
+      EXPRESSION_FOR_EACH_USE(expr, use) {
+	assert(use != 0);
+	get_map()[use->getMention_c()] = use;
       }
+      EXPRESSION_FOR_EACH_DEF(expr, def) {
+	assert(def != 0);
+	get_map()[def->getMention_c()] = def;
+      }
+      
     }
   }
 }
 
 /// compute variable locality (bound/free) for each function
-void VarAnnotationMap::compute_all_locality_info() {
+void VarAnnotationMap::compute_proc_locality_info(FuncInfo * fi) {
   R_Analyst * an = R_Analyst::get_instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
-  FuncInfo * fi;
-
-  FOR_EACH_PROC(fi) {
-    ProcHandle ph = make_proc_h(fi->get_sexp());
-    OA_ptr<MyCFG> cfg = fi->get_cfg();
-    compute_locality_info(interface, ph, cfg);
-  }
+  ProcHandle ph = make_proc_h(fi->get_sexp());
+  OA_ptr<MyCFG> cfg = fi->get_cfg();
+  compute_locality_info(interface, ph, cfg);
 }
 
 /// For a given procedure, solve the locality data flow problem; put

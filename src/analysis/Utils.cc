@@ -74,21 +74,70 @@ SEXP assign_rhs_c(const SEXP e) {
 }
 
 //--------------------------------------------------------------------
-// function definitions
+// function definitions and closures
 //--------------------------------------------------------------------
 
 bool is_fundef(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("function"));
 }
 
-SEXP fundef_args_c(const SEXP e) {
+SEXP fundef_args(const SEXP e) {
   assert(is_fundef(e));
-  return CDR(e);
+  return CADR(e);
 }
 
 SEXP fundef_body_c(const SEXP e) {
   assert(is_fundef(e));
   return CDDR(e);
+}
+
+
+bool is_closure(const SEXP e) {
+  return (TYPEOF(e) == CLOSXP);
+}
+
+SEXP closure_args(const SEXP e) {
+  return FORMALS(e);
+}
+
+SEXP closure_body(const SEXP e) {
+  return BODY(e);
+}
+
+SEXP closure_body_c(const SEXP e) {
+  return Rf_cons(BODY(e), R_NilValue);
+}
+
+// procedure: here defined as either a call to 'function' or a closure
+bool is_procedure(const SEXP e) {
+  return (is_fundef(e) || is_closure(e));
+}
+
+SEXP procedure_args(const SEXP e) {
+  assert(is_procedure(e));
+  if (is_fundef(e)) {
+    return fundef_args(e);
+  } else {
+    return closure_args(e);
+  }
+}
+
+SEXP procedure_body(const SEXP e) {
+  assert(is_procedure(e));
+  if (is_fundef(e)) {
+    return CAR(fundef_body_c(e));
+  } else {
+    return closure_body(e);
+  }
+}
+
+SEXP procedure_body_c(const SEXP e) {
+  assert(is_procedure(e));
+  if (is_fundef(e)) {
+    return fundef_body_c(e);
+  } else {
+    return closure_body_c(e);
+  }
 }
 
 //--------------------------------------------------------------------

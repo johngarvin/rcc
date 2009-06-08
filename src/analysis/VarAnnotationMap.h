@@ -44,6 +44,8 @@ class R_IRInterface;
 
 namespace RAnnot {
 
+class FuncInfo;
+
 class VarAnnotationMap : public DefaultAnnotationMap {
 public:
   // destructor
@@ -60,8 +62,13 @@ private:
   explicit VarAnnotationMap();
 
   void compute();
-  void compute_all_syntactic_info();
-  void compute_all_locality_info();
+  
+public:
+  void compute_proc(RAnnot::FuncInfo * fi);
+
+private:
+  void compute_proc_syntactic_info(RAnnot::FuncInfo * fi);
+  void compute_proc_locality_info(RAnnot::FuncInfo * fi);
   void compute_locality_info(OA::OA_ptr<R_IRInterface> interface,
 			     OA::ProcHandle proc,
 			     OA::OA_ptr<OA::CFG::CFGInterface> cfg);

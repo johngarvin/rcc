@@ -28,11 +28,13 @@
 
 #include <include/R/R_RInternals.h>
 
+#include <analysis/FuncInfo.h>
+
 /// Discovers local information about the given function
 /// definition. Adds annotations to the global AnalysisResults.
 class LocalFunctionAnalysis {
 public:
-  explicit LocalFunctionAnalysis(const SEXP fundef);
+  explicit LocalFunctionAnalysis(RAnnot::FuncInfo * const fi);
   void perform_analysis();
 private:
   void analyze_args();
@@ -40,7 +42,7 @@ private:
   void analyze_strictness();
   void analyze_debuts();
   
-  const SEXP m_fundef;
+  RAnnot::FuncInfo * const m_fi;
 };
 
 #endif

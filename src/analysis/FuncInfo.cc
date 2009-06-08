@@ -128,7 +128,7 @@ bool FuncInfo::requires_context() const
 
 SEXP FuncInfo::get_args() const
 { 
-  return CAR(fundef_args_c(m_sexp)); 
+  return procedure_args(m_sexp);
 }
 
 bool FuncInfo::is_arg(SEXP sym) const
@@ -307,7 +307,7 @@ void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x) {
 Moved to Analyst; circular dependence
 
 void FuncInfo::analyze_args() {
-  SEXP args = CAR(fundef_args_c(m_sexp));
+  SEXP args = fundef_args(m_sexp);
   const SEXP ddd = Rf_install("...");
   bool has_var_args = false;
   int n_args = 0;

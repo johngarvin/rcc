@@ -83,6 +83,7 @@ private:
   LexicalScope * m_global_scope;
   
   void build_local_function_info();
+  void collect_libraries();
 };
 
 #endif

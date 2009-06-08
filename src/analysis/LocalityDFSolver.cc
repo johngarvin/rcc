@@ -257,7 +257,7 @@ void LocalityDFSolver::initialize_sets() {
   } // CFG nodes
   
   // set all formals LOCAL instead of FREE on entry
-  SEXP arglist = CAR(fundef_args_c(make_sexp(m_proc)));
+  SEXP arglist = procedure_args(make_sexp(m_proc));
   OA_ptr<R_VarRefSet> vs = R_VarRefSet::refs_from_arglist(arglist);
   m_all_top->insert_varset(vs, Locality_TOP);
   m_all_bottom->insert_varset(vs, Locality_BOTTOM);

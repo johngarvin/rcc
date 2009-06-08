@@ -40,8 +40,16 @@ SEXP assign_lhs_c(const SEXP e);
 SEXP assign_rhs_c(const SEXP e);
 
 bool is_fundef(const SEXP e);
-SEXP fundef_args_c(const SEXP e);
+SEXP fundef_args(const SEXP e);
 SEXP fundef_body_c(const SEXP e);
+bool is_closure(const SEXP e);
+SEXP closure_args(const SEXP e);
+SEXP closure_body(const SEXP e);
+SEXP closure_body_c(const SEXP e);
+bool is_procedure(const SEXP e);
+SEXP procedure_args(const SEXP e);
+SEXP procedure_body(const SEXP e);
+SEXP procedure_body_c(const SEXP e);
 
 bool is_struct_field(const SEXP e);
 SEXP struct_field_lhs_c(const SEXP e);

@@ -53,8 +53,11 @@ private:
   explicit ExpressionInfoAnnotationMap();
 
   void compute();
+
+public:
   ExpressionInfo * make_annot(const SEXP & k);
 
+private:
   // static members and methods for singleton
   static ExpressionInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;

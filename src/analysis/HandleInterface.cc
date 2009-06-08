@@ -41,7 +41,7 @@ static const SEXP as_sexp(const OA::irhandle_t h);
 // interface functions
 
 OA::ProcHandle make_proc_h(const SEXP e) {
-  assert(is_fundef(e));
+  assert(is_procedure(e));
   return OA::ProcHandle(as_handle(e));
 }
 

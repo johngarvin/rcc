@@ -95,7 +95,7 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 ///  easily with "...", default arguments, etc.) The second is the
 ///  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
-  SEXP args = CAR(fundef_args_c(fndef));
+  SEXP args = fundef_args(fndef);
 
   string f, header;
   SubexpBuffer out_subexps;
@@ -180,7 +180,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 /// Like make_fundef but for directly-called functions.
 string make_fundef_c(SubexpBuffer * this_buf, string func_name, SEXP fndef) 
 {
-  SEXP args = CAR(fundef_args_c(fndef));
+  SEXP args = fundef_args(fndef);
 
   string f, header;
   SubexpBuffer out_subexps;

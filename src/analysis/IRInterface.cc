@@ -71,7 +71,7 @@ static OA_ptr<MemRefExprIterator> make_singleton_mre_iterator(OA_ptr<MemRefExpr>
 OA_ptr<IRRegionStmtIterator> R_IRInterface::procBody(ProcHandle h) {
   assert(h != HellProcedure::get_instance());
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
+  ptr = new R_RegionStmtIterator(make_stmt_h(procedure_body_c(make_sexp(h))));
   return ptr;
 }
 
@@ -215,7 +215,12 @@ OA_ptr<IRRegionStmtIterator> R_IRInterface::trueBody(StmtHandle h) {
 /// under the "else" clause).
 OA_ptr<IRRegionStmtIterator> R_IRInterface::elseBody(StmtHandle h) {
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_RegionStmtIterator(make_stmt_h(if_falsebody_c(CAR(make_sexp(h)))));
+  SEXP else_body = if_falsebody_c(CAR(make_sexp(h)));
+  if (else_body == R_NilValue) {
+    ptr = new R_RegionStmtListIterator(R_NilValue);  // empty iterator
+  } else {
+    ptr = new R_RegionStmtIterator(make_stmt_h(else_body));
+  }
   return ptr;
 }
 
@@ -334,7 +339,7 @@ OA_ptr<IRStmtIterator> R_IRInterface::getStmtIterator(ProcHandle h) {
   assert(h != HellProcedure::get_instance());
   // unlike procBody, here we want an iterator that descends into compound statements.
   OA_ptr<IRRegionStmtIterator> ptr;
-  ptr = new R_DescendingStmtIterator(make_stmt_h(fundef_body_c(make_sexp(h))));
+  ptr = new R_DescendingStmtIterator(make_stmt_h(procedure_body_c(make_sexp(h))));
   return ptr;
 }
 
@@ -781,6 +786,10 @@ void R_RegionStmtIterator::reset() {
 /// is the actual expression.
 void R_RegionStmtIterator::build_stmt_list(StmtHandle stmt) {
   SEXP cell = make_sexp(stmt);
+  if (cell == R_NilValue) {
+    return;
+  }
+  assert(is_cons(cell));
   SEXP exp = CAR(cell);
   switch (getSexpCfgType(exp)) {
   case CFG::SIMPLE:
@@ -859,6 +868,10 @@ void R_DescendingStmtIterator::reset() {
 
 void R_DescendingStmtIterator::build_stmt_list(SEXP exp_c) {
   assert(exp_c != 0);
+  if (exp_c == R_NilValue) {
+    return;
+  }
+  assert(is_cons(exp_c));
   SEXP exp = CAR(exp_c);
   switch(getSexpCfgType(exp)) {
   case CFG::COMPOUND:

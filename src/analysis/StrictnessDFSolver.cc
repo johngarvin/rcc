@@ -77,7 +77,7 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   m_proc = proc;
   m_cfg = cfg;
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
-  SEXP formals = CAR(fundef_args_c(make_sexp(m_proc)));
+  SEXP formals = procedure_args(make_sexp(m_proc));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals), Strictness_TOP);
 

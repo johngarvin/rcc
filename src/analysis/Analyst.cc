@@ -23,6 +23,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <algorithm>
+#include <set>
 
 #include <ParseInfo.h>
 
@@ -31,11 +32,13 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/CallByValueAnalysis.h>
+#include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
+#include <analysis/VarAnnotationMap.h>
 
 #include "Analyst.h"
 
@@ -95,9 +98,37 @@ void R_Analyst::perform_analysis() {
 /// mentioned, etc.
 void R_Analyst::build_local_function_info() {
   FuncInfo * fi;
-  FOR_EACH_PROC(fi) {
-    LocalFunctionAnalysis lfa(fi->get_sexp());
+  FOR_EACH_PROC_AND_LIB(fi) {
+    LocalFunctionAnalysis lfa(fi);
     lfa.perform_analysis();
+  }
+  collect_libraries();
+}
+
+void R_Analyst::collect_libraries() {
+  FuncInfo * fi;
+  std::set<SEXP> libs;
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_CALL_SITE(fi, csi) {
+      SEXP lhs = call_lhs(CAR(*csi));
+      if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
+	FuncInfo * new_fi; new_fi = new FuncInfo(0, library_value(lhs), library_value(lhs));
+	new_fi->perform_analysis();
+	putProperty(FuncInfo, library_value(lhs), new_fi);
+	libs.insert(library_value(lhs));
+      }
+    }
+  }
+  for(std::set<SEXP>::const_iterator iter = libs.begin(); iter != libs.end(); ++iter) {
+    FuncInfo * fi = getProperty(FuncInfo, *iter);
+    OA::OA_ptr<OA::CFG::NodeInterface> node;
+    OA::StmtHandle stmt;
+    PROC_FOR_EACH_NODE(fi, node) {
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
+	ExpressionInfoAnnotationMap::get_instance()->make_annot(make_sexp(stmt));
+      }
+    }
+    VarAnnotationMap::get_instance()->compute_proc(fi);
   }
 }
 

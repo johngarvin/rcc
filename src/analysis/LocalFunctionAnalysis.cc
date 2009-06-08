@@ -50,14 +50,12 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-void collect_mentions_and_call_sites(OA_ptr<CFG::CFGInterface> cfg);
-
 static bool debug;
 
-LocalFunctionAnalysis::LocalFunctionAnalysis(const SEXP fundef)
-  : m_fundef(fundef)
+LocalFunctionAnalysis::LocalFunctionAnalysis(FuncInfo * const fi)
+  : m_fi(fi)
 {
-  assert(is_fundef(fundef));
+  assert(fi != 0);
   RCC_DEBUG("RCC_LocalFunctionAnalysis", debug);
 }
 
@@ -71,7 +69,7 @@ void LocalFunctionAnalysis::perform_analysis() {
 }
 
 void LocalFunctionAnalysis::analyze_args() {
-  SEXP args = CAR(fundef_args_c(m_fundef));
+  SEXP args = m_fi->get_args();
   const SEXP ddd = Rf_install("...");
   bool has_var_args = false;
   int n_args = 0;
@@ -88,10 +86,8 @@ void LocalFunctionAnalysis::analyze_args() {
       has_var_args = true;
     }
   }
-  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-  assert(fi != 0);
-  fi->set_num_args(n_args);
-  fi->set_has_var_args(has_var_args);
+  m_fi->set_num_args(n_args);
+  m_fi->set_has_var_args(has_var_args);
 }
 
 /// Find each mention (use or def) and call site in the function
@@ -102,21 +98,19 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
   UseVar * use;
   DefVar * def;
 
-  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-  assert(fi != 0);
-  PROC_FOR_EACH_NODE(fi, node) {
+  PROC_FOR_EACH_NODE(m_fi, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       assert(stmt_annot != 0);
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
-	fi->insert_mention(use);
+	m_fi->insert_mention(use);
       }
       EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
-	fi->insert_mention(def);
+	m_fi->insert_mention(def);
       }
       EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
-	fi->insert_call_site(cs);
+	m_fi->insert_call_site(cs);
       }
     }
   }
@@ -125,13 +119,10 @@ void LocalFunctionAnalysis::collect_mentions_and_call_sites() {
 // solve the strictness data flow problem and update the information
 // in the formal argument annotations
 void LocalFunctionAnalysis::analyze_strictness() {
-  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-  assert(fi != 0);
-  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
+  OA_ptr<CFG::CFGInterface> cfg; cfg = m_fi->get_cfg();
   assert(!cfg.ptrEqual(0));
-  assert(m_fundef != 0);
   Strictness::StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<Strictness::StrictnessResult> strict; strict = strict_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  OA_ptr<Strictness::StrictnessResult> strict; strict = strict_solver.perform_analysis(make_proc_h(m_fi->get_sexp()), cfg);
   OA_ptr<Strictness::DFSet> strict_set = strict->get_args_on_exit();
   if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
   OA_ptr<Strictness::DFSetIterator> it = strict_set->get_iterator();
@@ -148,12 +139,10 @@ void LocalFunctionAnalysis::analyze_strictness() {
 // find the set of debuts of each name (those that are the
 // first mention of that name on some path)
 void LocalFunctionAnalysis::analyze_debuts() {
-  FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-  assert(fi != 0);
-  OA_ptr<CFG::CFGInterface> cfg; cfg = fi->get_cfg();
+  OA_ptr<CFG::CFGInterface> cfg; cfg = m_fi->get_cfg();
   assert(!cfg.ptrEqual(0));
   DebutDFSolver debut_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(make_proc_h(m_fundef), cfg);
+  OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(make_proc_h(m_fi->get_sexp()), cfg);
   typedef NameMentionMultiMap::const_iterator Iterator;
   for (Iterator name = debut_map->begin(); name != debut_map->end(); name++) {
     Iterator start = debut_map->lower_bound(name->first);

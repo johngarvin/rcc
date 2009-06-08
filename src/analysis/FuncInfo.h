@@ -34,6 +34,7 @@
 #include <support/trees/NonUniformDegreeTreeTmpl.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/LexicalScope.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/StrictnessResult.h>
@@ -43,8 +44,11 @@
 // Note: don't put initializations in macros except inside for-loop initializers
 
 #define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(R_Analyst::get_instance()->get_scope_tree_root()); \
-                              fii.IsValid() && ((fi) = fii.Current()) != 0;                                    \
+                              fii.IsValid() && ((fi) = fii.Current()) != 0;                                                      \
                               ++fii, (fi) = fii.Current())
+#define FOR_EACH_PROC_AND_LIB(fi) for(RAnnot::FuncInfoAnnotationMap::const_iterator fii = FuncInfoAnnotationMap::get_instance()->begin();         \
+				      fii != FuncInfoAnnotationMap::get_instance()->end() && ((fi) = dynamic_cast<FuncInfo *>(fii->second)) != 0; \
+				      ++fii)
 #define PROC_FOR_EACH_MENTION(fi, mi) for(RAnnot::FuncInfo::const_mention_iterator mi = (fi)->begin_mentions(); \
                                           mi != (fi)->end_mentions();                                           \
                                           ++mi)

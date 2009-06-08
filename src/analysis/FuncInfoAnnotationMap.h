@@ -49,6 +49,9 @@ private:
   /// pointer to the parent lexical scope.
   void build_scope_tree_rec(SEXP e, FuncInfo * parent);
 
+  /// Get FuncInfos for libraries called in the program
+  void collect_libraries();
+
   static FuncInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
   static void create();

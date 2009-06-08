@@ -109,7 +109,7 @@ bool PrimitiveRequiresContext::getPrimitiveRequiresContext(CCODE prim)
 
 bool functionRequiresContext(SEXP fundef)
 {
-  SEXP code = CAR(fundef_body_c(fundef));
+  SEXP code = CAR(procedure_body_c(fundef));
   bool result = expressionRequiresContext(code);
   return result;
 }
