@@ -218,8 +218,13 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 // is no dependence between pre-debut code and the corresponding
 // actual argument and the actual argument is trivially evaluable.
 bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
-  // TODO: refine to include arithmetic, etc.
-  return (is_const(e) || is_var(e));
+  if (is_const(e) || is_var(e) || is_subscript(e)) {
+    return true;
+  } else if (is_paren_exp(e)) {
+    return expression_is_trivial(CAR(paren_body_c(e)));
+  } else {
+    return false;
+  }
 }
 
 // "cheaply evaluable" expressions take a "reasonably short" amount of
