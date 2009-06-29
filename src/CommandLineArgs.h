@@ -33,6 +33,7 @@ public:
   
   bool get_output_main_program();
   bool get_output_default_args();
+  bool get_require_cheapness();
   bool get_analysis_debug();
   bool get_out_file_exists();
   std::string get_out_filename();
@@ -44,6 +45,7 @@ private:
 
   bool m_output_main_program;
   bool m_output_default_args;
+  bool m_require_cheapness;
   bool m_analysis_debug;
   bool m_out_file_exists;
   std::string m_out_filename;

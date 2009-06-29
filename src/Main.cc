@@ -74,7 +74,8 @@ int main(int argc, char * argv[]) {
   FILE *in_file;
   int n_exprs;
 
-  CommandLineArgs args(argc, argv);
+  CommandLineArgs * args = new CommandLineArgs(argc, argv);
+  ParseInfo::set_command_line_args(args);
 
   // initialize ParseInfo buffers except global_fundefs.
   // Function definitions initialized after we have the library name.
@@ -84,9 +85,9 @@ int main(int argc, char * argv[]) {
   // Initialize R interface
   init_R();
 
-  fullname = args.get_fullname();
+  fullname = args->get_fullname();
   // set in_file, libname, and path depending on what we're given
-  if (args.get_in_file_exists()) {
+  if (args->get_in_file_exists()) {
     in_file = fopen(fullname.c_str(), "r");
     if (in_file == NULL) {
       string program = argv[0];
@@ -114,10 +115,10 @@ int main(int argc, char * argv[]) {
   }
 
   // set output filename if no "-o filename" option was found
-  if (!args.get_out_file_exists()) {
+  if (!args->get_out_file_exists()) {
     out_filename = path + libname + ".c";
   } else {
-    out_filename = args.get_out_filename();
+    out_filename = args->get_out_filename();
   }
 
   // The name R_init_<libname> is a signal to the R dynamic loader

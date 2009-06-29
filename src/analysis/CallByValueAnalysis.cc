@@ -23,6 +23,8 @@
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
+#include <ParseInfo.h>
+
 #include <support/Debug.h>
 #include <support/RccError.h>
 
@@ -166,12 +168,14 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
     std::cout << std::endl;
   }
   
-  if (arg_side_effect->is_trivial()) {
-
+  if (arg_side_effect->is_trivial() /* &&
+      ( ! ParseInfo::get_command_line_args()->get_require_cheapness() ||
+      arg_side_effect->is_cheap())) */ )
+  {
     if (debug) {
       std::cout << "Actual is trivial" << std::endl;
     }
-      
+    
     return true;
   } else {
     if (formal->is_strict()) {

@@ -37,6 +37,7 @@ static void arg_err();
 CommandLineArgs::CommandLineArgs(int argc, char * argv[]) 
   : m_output_main_program(true),
     m_output_default_args(true),
+    m_require_cheapness(false),
     m_analysis_debug(false),
     m_out_file_exists(false),
     m_out_filename(""),
@@ -49,13 +50,19 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
 
     // get options
   while(1) {
-    c = getopt(argc, argv, "adf:mo:");
+    c = getopt(argc, argv, "acdf:mo:");
     if (c == -1) {
       break;
     }
     switch(c) {
     case 'a':
       m_output_default_args = false;
+      break;
+    case 'c':
+      // make sure call-by-value transformation is "cheap"; that is,
+      // don't do call-by-value optimization in cases where running
+      // time might increase
+      m_require_cheapness = true;
       break;
     case 'd':
       // print debugging information
@@ -105,6 +112,7 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
 
 bool CommandLineArgs::get_output_main_program() { return m_output_main_program; }
 bool CommandLineArgs::get_output_default_args() { return m_output_default_args; }
+bool CommandLineArgs::get_require_cheapness() { return m_require_cheapness; }
 bool CommandLineArgs::get_analysis_debug() { return m_analysis_debug; }
 bool CommandLineArgs::get_out_file_exists() { return m_out_file_exists; }
 std::string CommandLineArgs::get_out_filename() { return m_out_filename; }

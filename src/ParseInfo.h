@@ -29,6 +29,8 @@
 #include <string>
 #include <set>
 
+#include <CommandLineArgs.h>
+
 // forward declarations
 class SubexpBuffer;
 class SplitSubexpBuffer;
@@ -40,6 +42,9 @@ public:
   static SubexpBuffer * global_fundefs;
   static SplitSubexpBuffer * global_constants;
   static SubexpBuffer * global_labels;
+
+  static void set_command_line_args(CommandLineArgs * cl_args);
+  static CommandLineArgs * get_command_line_args();
 
   static void flag_problem();
   static bool get_problem_flag();
@@ -125,6 +130,7 @@ private:
   // bindings of global library functions/variables
   static std::map<std::string, std::string> m_binding_map;
 
+  static CommandLineArgs * m_cl_args;
 
   // ----- flags -----
 

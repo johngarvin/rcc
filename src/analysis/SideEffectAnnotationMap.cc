@@ -195,7 +195,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   // now grab side effects due to procedure calls: get interprocedural
   // uses and defs from m_side_effect
   EXPRESSION_FOR_EACH_CALL_SITE(expr, cs_c) {
-    if (expression_may_have_action(CAR(cs_c))) {
+    if (call_may_have_action(CAR(cs_c))) {
       annot->set_action(true);
     }
     
@@ -220,8 +220,13 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
   if (is_const(e) || is_var(e) || is_subscript(e)) {
     return true;
-  } else if (is_paren_exp(e)) {
-    return expression_is_trivial(CAR(paren_body_c(e)));
+  } else if (is_call(e) && ! call_may_have_action(e)) {
+    for(SEXP x = call_args(e); x != R_NilValue; x = CDR(x)) {
+      if (! expression_is_trivial(CAR(x))) {
+	return false;
+      }
+    }
+    return true;
   } else {
     return false;
   }
@@ -236,18 +241,19 @@ bool SideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
   return (is_const(e) || is_var(e));
 }
 
-// true if the expression may perform a visible action, such as
-// printing something to the screen.
-bool SideEffectAnnotationMap::expression_may_have_action(const SEXP e) {
+// true if the library call may perform a visible action, such as
+// 'print' printing something to the screen.
+bool SideEffectAnnotationMap::call_may_have_action(const SEXP e) {
   if (is_var(call_lhs(e)) && is_library(call_lhs(e))) {
     // conservatively say true if not in the "safe" set
     return (m_non_action_libs.find(var_name(call_lhs(e))) == m_non_action_libs.end());
   } else {
-    return false;
+    return true;
   }
 }
 
-// add library procedures that don't produce actions
+// add library procedures that don't produce actions when called
+// TODO: what about errors/exceptions?
 void SideEffectAnnotationMap::init_non_action_libs() {
   m_non_action_libs.insert("+");
   m_non_action_libs.insert("-");

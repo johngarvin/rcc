@@ -61,7 +61,7 @@ private:
 
   bool expression_is_trivial(const SEXP e);
   bool expression_is_cheap(const SEXP e);
-  bool expression_may_have_action(const SEXP e);
+  bool call_may_have_action(const SEXP e);
 
   void add_all_names_used(SideEffect * annot,
 			  OA::OA_ptr<OA::Alias::Interface> alias,

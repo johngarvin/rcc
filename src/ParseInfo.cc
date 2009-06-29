@@ -43,6 +43,8 @@ SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
 
+CommandLineArgs * ParseInfo::m_cl_args = 0;
+
 bool ParseInfo::m_problem_flag = false;
 bool ParseInfo::m_analysis_ok  = true;
 
@@ -51,6 +53,14 @@ bool ParseInfo::m_allow_envir_manip   = true;
 bool ParseInfo::m_allow_special_redef = true;
 bool ParseInfo::m_allow_builtin_redef = true;
 bool ParseInfo::m_allow_library_redef = true;
+
+void ParseInfo::set_command_line_args(CommandLineArgs * x) {
+  m_cl_args = x;
+}
+
+CommandLineArgs * ParseInfo::get_command_line_args() {
+  return m_cl_args;
+}
 
 void ParseInfo::flag_problem() {
   m_problem_flag = true;
