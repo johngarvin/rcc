@@ -220,6 +220,9 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
   if (is_const(e) || is_var(e) || is_subscript(e)) {
     return true;
+    /*
+      doesn't account for calls that throw errors/exceptions
+
   } else if (is_call(e) && ! call_may_have_action(e)) {
     for(SEXP x = call_args(e); x != R_NilValue; x = CDR(x)) {
       if (! expression_is_trivial(CAR(x))) {
@@ -227,6 +230,7 @@ bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
       }
     }
     return true;
+    */
   } else {
     return false;
   }
@@ -259,6 +263,13 @@ void SideEffectAnnotationMap::init_non_action_libs() {
   m_non_action_libs.insert("-");
   m_non_action_libs.insert("*");
   m_non_action_libs.insert("/");
+  m_non_action_libs.insert("^");
+  m_non_action_libs.insert("==");
+  m_non_action_libs.insert("!=");
+  m_non_action_libs.insert("<");
+  m_non_action_libs.insert(">");
+  m_non_action_libs.insert("<=");
+  m_non_action_libs.insert(">=");
   m_non_action_libs.insert("%*%");
   m_non_action_libs.insert("c");
   m_non_action_libs.insert("rep");
@@ -274,6 +285,7 @@ void SideEffectAnnotationMap::init_non_action_libs() {
   m_non_action_libs.insert("t");
   m_non_action_libs.insert("log");
   m_non_action_libs.insert("append");
+  m_non_action_libs.insert("$");
 }
 
 } // end namespace RAnnot

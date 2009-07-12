@@ -61,25 +61,25 @@ SideEffect::~SideEffect() {
 
 // ----- trivial/cheap -----
 
-  void SideEffect::set_trivial(bool x) {
-    m_trivial = x;
-  }
+void SideEffect::set_trivial(bool x) {
+  m_trivial = x;
+}
+  
+bool SideEffect::is_trivial() const {
+  return m_trivial;
+}
 
-  bool SideEffect::is_trivial() const {
-    return m_trivial;
-  }
+void SideEffect::set_cheap(bool x) {
+  m_cheap = x;
+}
 
-  void SideEffect::set_cheap(bool x) {
-    m_cheap = x;
-  }
+bool SideEffect::is_cheap() const {
+  return m_cheap;
+}
 
-  bool SideEffect::is_cheap() const {
-    return m_cheap;
-  }
-
-  void SideEffect::set_action(bool x) {
-    m_action = x;
-  }
+void SideEffect::set_action(bool x) {
+  m_action = x;
+}
 
 // ----- insertion -----
 
