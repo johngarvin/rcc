@@ -37,6 +37,9 @@
 
 #include <codegen/SubexpBuffer/Expression.h>
 
+namespace RAnnot {
+  class FuncInfo;
+}
 
 class SubexpBuffer {
 public:
@@ -160,7 +163,10 @@ public:
 		    Protection resultProtection);
   Expression op_subscriptset(SEXP e, std::string rho, 
 			     Protection resultProtection);
-  Expression op_clos_app(Expression op1, SEXP args, std::string rho,
+  Expression op_clos_app(RAnnot::FuncInfo * fi_if_known,
+			 Expression op1,
+			 SEXP args,
+			 std::string rho,
 			 Protection resultProtection,
 			 EagerLazyT laziness = LAZY);
   Expression op_closure(SEXP e, std::string rho, Protection resultProtection);

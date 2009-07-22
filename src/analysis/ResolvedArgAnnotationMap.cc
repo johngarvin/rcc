@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2003-2009 Rice University
+// Copyright (c) 2009 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,28 +16,52 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: ArgMatcher.cc
+// File: ResolvedArgAnnotationMap.cc
 //
-// Matches actual arguments with formal arguments, resolving named
-// arguments and default arguments.
+// Maps each call site to a description of its arguments with named
+// arguments and default arguments resolved.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "ArgMatcher.h"
+#include "ResolvedArgAnnotationMap.h"
 
-ArgMatcher::ArgMatcher(SEXP formals, SEXP supplied) : m_formals(formals), m_supplied(supplied)
-{
+namespace RAnnot {
+
+ResolvedArgAnnotationMap::ResolvedArgAnnotationMap() {
 }
 
-SEXP ArgMatcher::match() {
-  SEXP actuals;
-
-  actuals = Rf_matchArgs(m_formals, m_supplied);
-  resolve_defaults(m_formals, actuals);
-  return actuals;
+ResolvedArgAnnotationMap::get_instance() {
+  if (s_instance == 0) {
+    s_instance = new ResolvedArgAnnotationMap();
+    analysisResults.add(s_handle, s_instance);
+  }
+  return s_instance;
 }
 
-void ArgMatcher::resolve_defaults(SEXP formals, SEXP actuals) {
+ResolvedArgAnnotationMap::handle() {
+  if (s_instance == 0) {
+    s_instance = new ResolvedArgAnnotationMap();
+    analysisResults.add(s_handle, s_instance);
+  }
+  return s_handle;
+}
+
+ResolvedArgAnnotationMap::compute() {
+  FuncInfo * fi;
+  ExpressionInfo * cs;
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_CALL_SITE(fi, cs) {
+      // get unique callee if it exists and get its formal arguments
+      SEXP formals = ...;
+      SEXP actuals = call_args(CAR(cs->get_cell()));
+      actuals = Rf_matchArgs(formals, actuals);
+      actuals = resolve_defaults(formals, actuals);
+      m_map[cs] = new ResolvedArgs(actuals);
+    }
+  }
+}
+
+ResolvedArgAnnotationMap::resolve_defaults(SEXP formals, SEXP actuals) {
   SEXP f, a;
   /*  Use the default code for unbound formals. */
   
@@ -55,3 +79,5 @@ void ArgMatcher::resolve_defaults(SEXP formals, SEXP actuals) {
     a = CDR(a);
   }
 }
+
+} // namespace RAnnot

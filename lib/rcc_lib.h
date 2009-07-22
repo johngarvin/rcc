@@ -48,3 +48,5 @@ R_varloc_t get_R_location(SEXP arg_c);
 /*  Make a promise in already-evaluated form. The promise's value is
     the given value; body and environment are null */
 SEXP make_thunked_promise(SEXP value);
+
+SEXP applyClosureNoMatching(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv);

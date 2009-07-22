@@ -134,7 +134,7 @@ private:
   MyUseSetT m_uses;
   MyDefSetT m_defs;
   MyCallSiteSetT m_call_sites;  // call sites in expression
-                                // (contents of set not owned)
+                                //   (contents of set not owned)
   bool m_strict;                // whether expression can be evaluated
                                 //   ahead of time without causing
                                 //   side effects, diverging, or
@@ -143,10 +143,12 @@ private:
                                 //   and guaranteed to be cheap to
                                 //   evaluate
   MyLazyInfoSetT m_lazy_info;   // if this expression is a call site,
-				// for each actual arg whether it can
-				// be evaulated eagerly for
-				// performance or must conservatively
-				// be called lazy. Indexed from 0.
+				//   for each actual arg whether it can
+				//   be evaulated eagerly for
+				//   performance or must conservatively
+				//   be called lazy. Indexed from 0.
+  SEXP m_resolved_args;         // arguments in the correct order with
+				//   default args filled in
 };
 
 }

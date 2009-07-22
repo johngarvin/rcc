@@ -513,7 +513,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     return ans;
 }
 
-#endif
+#endif  /* #if 0 */
 
 /* Replacement for static VectorAssign in subassign.c */
 SEXP rcc_VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
@@ -1604,4 +1604,140 @@ SEXP do_transpose_osr(SEXP call, SEXP op, SEXP args, SEXP rho)
  not_matrix:
     errorcall(call, _("argument is not a matrix"));
     return call;/* never used; just for -Wall */
+}
+
+/* Apply SEXP op of type CLOSXP to actuals */
+/* This version doesn't match arguments. It assumes arguments are all
+   present and given in the correct order. */
+SEXP applyClosureNoMatching(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
+{
+    SEXP body, formals, savedrho;
+    volatile  SEXP newrho;
+    SEXP f, a, tmp;
+    RCNTXT cntxt;
+    if (TYPEOF(op) == RCC_CLOSXP) {
+      return applyPlainRccClosure(call, op, arglist, rho, suppliedenv);
+    }
+
+    /* formals = list of formal parameters */
+    /* actuals = values to be bound to formals */
+    /* arglist = the tagged list of arguments */
+
+    formals = FORMALS(op);
+    body = BODY(op);
+    savedrho = CLOENV(op);
+
+    /*  Set up a context with the call in it so error has access to it */
+
+    begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
+
+    /*  Build a list which matches the actual (unevaluated) arguments
+	to the formal paramters.  Build a new environment which
+	contains the matched pairs.  Ideally this environment sould be
+	hashed.  */
+
+    PROTECT(newrho = NewEnvironment(formals, arglist, savedrho));
+
+    /*  Fix up any extras that were supplied by usemethod. */
+
+    if (suppliedenv != R_NilValue) {
+	for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
+	    for (a = arglist; a != R_NilValue; a = CDR(a))
+		if (TAG(a) == TAG(tmp))
+		    break;
+	    if (a == R_NilValue)
+		/* Use defineVar instead of earlier version that added
+                   bindings manually */
+		defineVar(TAG(tmp), CAR(tmp), newrho);
+	}
+    }
+
+    /*  Terminate the previous context and start a new one with the
+        correct environment. */
+
+    endcontext(&cntxt);
+
+    /*  If we have a generic function we need to use the sysparent of
+	the generic as the sysparent of the method because the method
+	is a straight substitution of the generic.  */
+
+    if( R_GlobalContext->callflag == CTXT_GENERIC )
+	begincontext(&cntxt, CTXT_RETURN, call,
+		     newrho, R_GlobalContext->sysparent, arglist, op);
+    else
+	begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+
+    /* The default return value is NULL.  FIXME: Is this really needed
+       or do we always get a sensible value returned?  */
+
+    tmp = R_NilValue;
+
+    /* Debugging */
+
+    SET_DEBUG(newrho, DEBUG(op));
+    if (DEBUG(op)) {
+	Rprintf("debugging in: ");
+	PrintValueRec(call,rho);
+	/* Is the body a bare symbol (PR#6804) */
+	if (!isSymbol(body) & !isVectorAtomic(body)){
+		/* Find out if the body is function with only one statement. */
+		if (isSymbol(CAR(body)))
+			tmp = findFun(CAR(body), rho);
+		else
+			tmp = eval(CAR(body), rho);
+		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+		   && !strcmp( PRIMNAME(tmp), "for")
+		   && !strcmp( PRIMNAME(tmp), "{")
+		   && !strcmp( PRIMNAME(tmp), "repeat")
+		   && !strcmp( PRIMNAME(tmp), "while")
+			)
+			goto regdb;
+	}
+	Rprintf("debug: ");
+	PrintValue(body);
+	do_browser(call,op,arglist,newrho);
+    }
+
+ regdb:
+
+    /*  It isn't completely clear that this is the right place to do
+	this, but maybe (if the matchArgs above reverses the
+	arguments) it might just be perfect.  */
+
+#ifdef  HASHING
+#define HASHTABLEGROWTHRATE  1.2
+    {
+	SEXP R_NewHashTable(int, double);
+	SEXP R_HashFrame(SEXP);
+	int nargs = length(arglist);
+	HASHTAB(newrho) = R_NewHashTable(nargs, HASHTABLEGROWTHRATE);
+	newrho = R_HashFrame(newrho);
+    }
+#endif
+#undef  HASHING
+
+    /*  Set a longjmp target which will catch any explicit returns
+	from the function body.  */
+
+    if ((SETJMP(cntxt.cjmpbuf))) {
+	if (R_ReturnedValue == R_RestartToken) {
+	    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+	    R_ReturnedValue = R_NilValue;  /* remove restart token */
+	    PROTECT(tmp = eval(body, newrho));
+	}
+	else
+	    PROTECT(tmp = R_ReturnedValue);
+    }
+    else {
+	PROTECT(tmp = eval(body, newrho));
+    }
+
+    endcontext(&cntxt);
+
+    if (DEBUG(op)) {
+	Rprintf("exiting from: ");
+	PrintValueRec(call, rho);
+    }
+    UNPROTECT(3);
+    return (tmp);
 }

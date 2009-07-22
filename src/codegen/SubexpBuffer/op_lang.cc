@@ -106,14 +106,14 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	      // TODO: deal with assertions that aren't user-defined symbols
 	      // use the real call: pass the cell containing the first argument of eager.call
 	      //string all_strict = std::string("S", fi->get_num_args());
-	      return op_clos_app(closure_exp, call_args(e), rho, resultProtection, EAGER);
+	      return op_clos_app(fi, closure_exp, call_args(e), rho, resultProtection, EAGER);
 	    }
-	  }	  
-	  return op_clos_app(closure_exp, cell, rho, resultProtection);
+	  }
+	  return op_clos_app(fi, closure_exp, cell, rho, resultProtection);
 	} else {
 	  Metrics::get_instance()->inc_unknown_symbol_calls();
 	  Expression func = op_fun_use(e, rho);
-	  return op_clos_app(func, cell, rho, resultProtection);
+	  return op_clos_app(0, func, cell, rho, resultProtection);
 	}
       }
     } else {
@@ -123,7 +123,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       } else {
 	Metrics::get_instance()->inc_unknown_symbol_calls();
 	Expression func = op_fun_use(e, rho);
-	return op_clos_app(func, cell, rho, resultProtection);
+	return op_clos_app(0, func, cell, rho, resultProtection);
       }
     }
 
@@ -160,7 +160,7 @@ old code with home-grown call graph
     // generate closure and application
     Expression op1;
     op1 = op_exp(e, rho, Unprotected);  // evaluate LHS
-    return op_clos_app(op1, cell, rho, resultProtection);
+    return op_clos_app(0, op1, cell, rho, resultProtection);
     // eval.c: 395
   }
 }
@@ -179,7 +179,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
 
     Metrics::get_instance()->inc_library_calls();
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
-    return sb->op_clos_app(func, cell, rho, resultProtection);
+    return sb->op_clos_app(0, func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
     return sb->op_builtin(e, op, rho, resultProtection);
   } else {

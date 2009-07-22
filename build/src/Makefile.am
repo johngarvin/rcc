@@ -28,6 +28,7 @@ rcc_bin_SOURCES =				\
   ParseInfo.cc ParseInfo.h			\
   CScope.cc CScope.h				\
   CheckProtect.h				\
+  ArgMatcher.cc ArgMatcher.h                    \
 						\
   AnalysisException.cc                          \
   AnalysisException.h                           \

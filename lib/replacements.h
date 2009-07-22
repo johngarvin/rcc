@@ -9,3 +9,4 @@ int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level, SEXP call);
 SEXP EnlargeVector(SEXP x, R_len_t newlen);
 SEXP DeleteListElements(SEXP x, SEXP which);
 SEXP do_transpose_osr(SEXP call, SEXP op, SEXP args, SEXP rho);
+SEXP applyClosureNoMatching(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv);

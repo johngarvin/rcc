@@ -31,11 +31,13 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfo.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/Settings.h>
 #include <analysis/Utils.h>
 
 #include <support/StringUtils.h>
 
+#include <ArgMatcher.h>
 #include <CodeGen.h>
 #include <CodeGenUtils.h>
 #include <Metrics.h>
@@ -70,7 +72,9 @@ static Expression op_promise_args(SubexpBuffer * sb,
 				  string rho);
 
 /// Output an application of a closure to actual arguments.
-Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
+Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
+				     Expression op1,
+				     SEXP cell,
 				     string rho,
 				     Protection resultProtection,
 				     EagerLazyT laziness)
@@ -80,23 +84,31 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
   int unprotcnt = 0;
   string laziness_string;  // string of E's and L's, one for each arg, saying whether it's eager or lazy
 
-  // Unlike most R internal functions, applyClosure actually uses its
-  // 'call' argument, so we can't just make it R_NilValue.
-
   Expression args1;
+
+//   if (fi_if_known != 0) {
+//     ArgMatcher matcher(fi_if_known->get_args(), args);
+//     args = matcher.match();
+//   }
+
   if (laziness == EAGER) {
 #ifdef USE_OUTPUT_CODEGEN
-    args1 = output_to_expression(CodeGen::op_list(args, rho, false));  // false: output compiled list
+    args1 = output_to_expression(CodeGen::op_list(args, rho, false));  // pass false to output compiled list
 #else
-    args1 = op_list(args, rho, false, Protected);                      // false: output compiled list
+    args1 = op_list(args, rho, false, Protected);                      // pass false to output compiled list
 #endif
     laziness_string = "eager";
   } else {
-    args1 = op_arglist(this, cell, &unprotcnt, laziness_string, rho);
+    RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
+    args1 = op_arglist_rec(this, args, ei, 0, &unprotcnt, laziness_string, rho);
   }
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
-  string out = appl5("applyClosure ",
+  //  string apply_closure_string = fi_if_known == 0 ? "applyClosure " : "applyClosureNoMatching ";
+  string apply_closure_string = "applyClosure ";  // temporary until matching args
+  // Unlike most R internal functions, applyClosure actually uses its
+  // 'call' argument, so we can't just make it R_NilValue.
+  string out = appl5(apply_closure_string,
 		     "op_clos_app: " + to_string(e) + " " + laziness_string,
 		     call_str,
 		     op1.var,
@@ -150,7 +162,6 @@ Expression SubexpBuffer::op_clos_app(Expression op1, SEXP cell,
 
 static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string & laziness_string, string rho) {
   SEXP e = CAR(cell);
-  int argc = Rf_length(call_args(e));
   RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
   Expression out = op_arglist_rec(sb, call_args(e), ei, 0, unprotcnt, laziness_string, rho);
   return out;

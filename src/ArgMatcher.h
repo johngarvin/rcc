@@ -29,6 +29,10 @@ class ArgMatcher {
 public:
   explicit ArgMatcher(SEXP formals, SEXP supplied);
   SEXP match();
+  
+private:
+  void resolve_defaults(SEXP formals, SEXP actuals);
+
 private:
   SEXP m_formals;
   SEXP m_supplied;

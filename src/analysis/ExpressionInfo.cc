@@ -47,6 +47,7 @@ ExpressionInfo::ExpressionInfo(SEXP cell)
     m_strict(false),
     m_trivially_evaluable(false),
     m_lazy_info(is_call(CAR(cell)) ? Rf_length(call_args(CAR(cell))) : 0)
+    // TODO: with resolved args, use # of formal args, not actuals
 {
 }
 
