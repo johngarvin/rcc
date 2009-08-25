@@ -31,6 +31,10 @@
 #include "rcc_lib.h"
 #include "replacements.h"
 
+int max(int x, int y) {
+  return (x > y ? x : y);
+}
+
 void my_init_memory(SEXP mem, int n) {
   int i;
   for (i = 0; i < n; i++) {

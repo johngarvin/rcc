@@ -36,6 +36,11 @@ public:
   virtual ~EscapeInfo();
 
   bool may_escape();
+
+  void set_may_escape(bool x);
+
+  AnnotationBase * clone();
+  std::ostream & dump(std::ostream &) const;
 private:
   bool m_may_escape;
 };

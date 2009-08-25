@@ -23,6 +23,7 @@
  *  Author: John Garvin (garvin@cs.rice.edu)
  */
 
+int max(int x, int y);
 void my_init_memory(SEXP mem, int n);
 SEXP tagged_cons(SEXP car, SEXP tag, SEXP cdr);
 Rcomplex mk_complex(double r, double i);

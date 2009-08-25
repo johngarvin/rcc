@@ -22,10 +22,19 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/CFG/CFG.hpp>
+
 #include <support/Debug.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/Analyst.h>
+#include <analysis/EscapeInfo.h>
+#include <analysis/FuncInfo.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/SymbolTable.h>
+#include <analysis/Var.h>
+#include <analysis/VarInfo.h>
+#include <analysis/VarBinding.h>
 
 #include "EscapeInfoAnnotationMap.h"
 
@@ -55,6 +64,44 @@ EscapeInfoAnnotationMap::~EscapeInfoAnnotationMap() {
 // ----- computation -----
 
 void EscapeInfoAnnotationMap::compute() {
+  FuncInfo * fi;
+  Var * var;
+  OA::OA_ptr<OA::CFG::Node> node;
+  OA::StmtHandle stmt;
+
+  // find whether each variable escapes
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_MENTION(fi, var) {
+      VarBinding * binding;
+      SEXP mention_c = (*var)->getMention_c();
+      binding = getProperty(VarBinding, mention_c);
+      if (binding->is_single() && *(binding->begin()) == fi->get_scope()) {
+	// cannot escape
+	get_map()[mention_c] = new EscapeInfo(false);
+      } else {
+	// may escape
+	get_map()[mention_c] = new EscapeInfo(true);
+      }
+    }
+  }
+
+  // find whether each procedure has any escaping variables in its scope
+  FOR_EACH_PROC(fi) {
+    if (!fi->has_children()) {
+      get_map()[fi->get_sexp()] = new EscapeInfo(false);
+    } else {
+      EscapeInfo * annot = new EscapeInfo(false);
+      SymbolTable * st = fi->get_scope()->get_symbol_table();
+      for(SymbolTable::const_iterator sym = st->begin(); sym != st->end(); sym++) {
+	for(VarInfo::const_iterator def = sym->second->begin_defs(); def != sym->second->end_defs(); def++) {
+	  if (dynamic_cast<EscapeInfo *>(get_map()[(*def)->getMention_c()])->may_escape()) {
+	    annot->set_may_escape(true);
+	  }
+	}
+      }
+      get_map()[fi->get_sexp()] = annot;
+    }
+  }
 }
 
 
