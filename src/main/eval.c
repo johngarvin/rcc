@@ -797,7 +797,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP funsxp, formals, actuals, savedrho;
-    //    volatile  SEXP newrho;
+    volatile  SEXP newrho;
     SEXP f, a, tmp;
     RCNTXT cntxt;
 
@@ -818,9 +818,11 @@ SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppl
 	hashed.  */
 
     PROTECT(actuals = matchArgs(formals, arglist));
-#if 0
-    PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
 #endif
+
+    PROTECT(newrho = NewEnvironment(formals, arglist, savedrho));
+
+#if 0
 
     /*  Use the default code for unbound formals.  FIXME: It looks like
 	this code should preceed the building of the environment so that
@@ -942,7 +944,7 @@ SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppl
 	PROTECT(tmp = eval(body, newrho));
     }
 #else
-    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (arglist, savedrho));
+    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (arglist, newrho));
 #endif
 
 #if 0
@@ -953,7 +955,7 @@ SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppl
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
-    UNPROTECT(1);
+    UNPROTECT(2);
     return (tmp);
 }
 

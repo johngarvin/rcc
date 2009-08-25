@@ -119,9 +119,10 @@ SEXP mkRCC_FUNSXP(CCODE cfun, SEXP bodyexpr)
 SEXP mkRCC_CLOSXP(SEXP formals, CCODE cfun, SEXP bodyexpr, SEXP rho)
 {
     SEXP c;
+    SEXP fun;
     PROTECT(formals);
-    PROTECT(bodyexpr);
     PROTECT(rho);
+    fun = PROTECT(mkRCC_FUNSXP(cfun, bodyexpr));
     c = allocSExp(RCC_CLOSXP);
 
 #ifdef not_used_CheckFormals
@@ -138,7 +139,7 @@ SEXP mkRCC_CLOSXP(SEXP formals, CCODE cfun, SEXP bodyexpr, SEXP rho)
        || isByteCode(bodyexpr)
 #endif
        )
-      RCC_CLOSXP_SET_FUN(c, mkRCC_FUNSXP(cfun, bodyexpr));
+      RCC_CLOSXP_SET_FUN(c, fun);
     else
         error(_("invalid body argument for \"function\"\n\
 Should NEVER happen; please bug.report() [mkRCC_CLOSXP]"));

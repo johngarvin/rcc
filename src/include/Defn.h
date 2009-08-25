@@ -724,6 +724,7 @@ R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho);
 /* Other Internally Used Functions */
 
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
+R_size_t Rf_allocVectorGetSize(SEXPTYPE, R_len_t);
 void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
 void checkArity(SEXP, SEXP);
 void CheckFormals(SEXP);

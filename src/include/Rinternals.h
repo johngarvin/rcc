@@ -494,6 +494,31 @@ SEXP Rf_StringFromReal(double, int*);
 SEXP Rf_StringFromComplex(Rcomplex, int*);
 SEXP Rf_EnsureString(SEXP);
 
+    /*
+typedef struct AllocInfoStruct {
+    SEXPTYPE type;
+    R_len_t length;
+} AllocInfo;
+    */
+typedef struct AllocStackStruct {
+    SEXP space;
+    R_len_t size;
+    SEXP (*allocateVector)(struct AllocStackStruct * allocator, SEXPTYPE type, R_len_t length);
+    SEXP (*allocateNode)(struct AllocStackStruct * allocator, SEXP * protect_on_gc);
+    struct AllocStackStruct * next;
+} AllocStack;
+  /* AllocStack * allocStackTop; */
+typedef SEXP (*AllocVectorFunction)(AllocStack * allocator, SEXPTYPE type, R_len_t length);
+typedef SEXP (*AllocNodeFunction)(AllocStack * allocator, SEXP * protect_on_gc);
+void pushAllocStack(SEXP space,
+		    R_len_t size,
+		    AllocVectorFunction alloc_vector_function,
+		    AllocNodeFunction alloc_node_function);
+void popAllocStack();
+SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length);
+SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
+SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);
+SEXP allocNodeHeap(AllocStack * allocator, SEXP * protect_on_gc);
 
 /* Other Internally Used Functions */
 
@@ -502,7 +527,10 @@ SEXP Rf_allocMatrix(SEXPTYPE, int, int);
 SEXP Rf_allocSExp(SEXPTYPE);
 SEXP Rf_allocString(int);
 SEXP Rf_allocVector(SEXPTYPE, R_len_t);
+void Rf_allocVectorInPlace(SEXPTYPE, R_len_t, SEXP);
 SEXP Rf_allocList(int);
+SEXP Rf_allocListHeap(int);
+void Rf_allocListInPlace(SEXP);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_applyRccClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_asChar(SEXP);
@@ -515,7 +543,10 @@ SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
 SEXP Rf_classgets(SEXP, SEXP);
 Rboolean Rf_conformable(SEXP, SEXP);
+void Rf_allocSExpNonConsInPlace(SEXPTYPE, SEXP);
 SEXP Rf_cons(SEXP, SEXP);
+SEXP Rf_consHeap(SEXP, SEXP);
+void Rf_consInPlace(SEXP, SEXP, SEXP);
 void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
@@ -924,10 +955,14 @@ int R_system(char *);
 #ifndef R_NO_REMAP
 #define allocArray		Rf_allocArray
 #define allocList		Rf_allocList
+#define allocListHeap           Rf_allocListHeap
+#define allocListInPlace        Rf_allocListInPlace
 #define allocMatrix		Rf_allocMatrix
 #define allocSExp		Rf_allocSExp
 #define allocString		Rf_allocString
 #define allocVector		Rf_allocVector
+#define allocVectorGetSize      Rf_allocVectorGetSize
+#define allocVectorInPlace      Rf_allocVectorInPlace
 #define applyClosure		Rf_applyClosure
 #define applyRccClosure		Rf_applyRccClosure
 #define arraySubscript		Rf_arraySubscript
@@ -948,6 +983,8 @@ int R_system(char *);
 #define ComplexFromString	Rf_ComplexFromString
 #define conformable		Rf_conformable
 #define cons			Rf_cons
+#define consHeap                Rf_consHeap
+#define consInPlace             Rf_consInPlace
 #define copyListMatrix		Rf_copyListMatrix
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib

@@ -51,6 +51,10 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
 
+SEXP old_allocVector(SEXPTYPE type, R_len_t length);
+
+int global_stack_debug = FALSE;
+
 /* malloc uses size_t.  We are assuming here that size_t is at least
    as large as unsigned long.  Changed from int at 1.6.0 to (i) allow
    2-4Gb objects on 32-bit system and (ii) objects limited only by
@@ -333,6 +337,7 @@ static R_size_t R_NodesInUse = 0;
   SEXP un__n__ = (s); \
   SEXP next = NEXT_NODE(un__n__); \
   SEXP prev = PREV_NODE(un__n__); \
+  if (!next || !prev) error(_("UNSNAP_NODE: non-heap object in heap")); \
   SET_NEXT_NODE(prev, next); \
   SET_PREV_NODE(next, prev); \
 } while(0)
@@ -425,9 +430,12 @@ static R_size_t R_NodesInUse = 0;
    to be in a local variable of the caller named named
    forwarded_nodes. */
 
+/* added clause not to forward if GC pointer is null;
+   prevents stack allocated objects from being added to heap --garvin */
+
 #define FORWARD_NODE(s) do { \
   SEXP fn__n__ = (s); \
-  if (fn__n__ && ! NODE_IS_MARKED(fn__n__)) { \
+  if (fn__n__ && ! NODE_IS_MARKED(fn__n__) && PREV_NODE(fn__n__) != NULL) { \
     MARK_NODE(fn__n__); \
     UNSNAP_NODE(fn__n__); \
     SET_NEXT_NODE(fn__n__, forwarded_nodes); \
@@ -1512,6 +1520,9 @@ void InitMemory()
 #ifdef NEW_CONDITION_HANDLING
     R_HandlerStack = R_RestartStack = R_NilValue;
 #endif
+
+    pushAllocStack(NULL, -1, &allocVectorHeap, &allocNodeHeap);
+    /* default allocator uses the regular old heap */
 }
 
 /* Since memory allocated from the heap is non-moving, R_alloc just
@@ -1582,18 +1593,47 @@ char *S_realloc(char *p, long new, long old, int size)
     return q;
 }
 
-/* "allocSExp" allocate a SEXPREC */
-/* call gc if necessary */
+static AllocStack * allocStackTop = NULL;
+
+void pushAllocStack(SEXP space,
+		    R_len_t size,
+		    AllocVectorFunction alloc_vector_function,
+		    AllocNodeFunction alloc_node_function)
+{
+    AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
+    elem->space = space;
+    elem->size = size;
+    elem->allocateVector = alloc_vector_function;
+    elem->allocateNode = alloc_node_function;
+    elem->next = allocStackTop;
+    allocStackTop = elem;
+}
+
+void popAllocStack()
+{
+    if (allocStackTop != NULL) {
+	AllocStack * temp = allocStackTop;
+	allocStackTop = temp->next;
+	free(temp);
+    }
+    else {
+	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
+    }
+}
 
 SEXP allocSExp(SEXPTYPE t)
 {
     SEXP s;
+    /*
     if (FORCE_GC || NO_FREE_NODES()) {
 	R_gc_internal(0);
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
     GET_FREE_NODE(s);
+    */
+    SEXP protect_on_gc[1] = {NULL};
+    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = t;
     CAR(s) = R_NilValue;
@@ -1603,7 +1643,7 @@ SEXP allocSExp(SEXPTYPE t)
     return s;
 }
 
-static SEXP allocSExpNonCons(SEXPTYPE t)
+static SEXP allocSExpNonConsHeap()
 {
     SEXP s;
     if (FORCE_GC || NO_FREE_NODES()) {
@@ -1612,16 +1652,30 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
 	    mem_err_cons();
     }
     GET_FREE_NODE(s);
+    return s;
+}
+
+static void allocSExpNonConsInPlace(SEXPTYPE t, SEXP s)
+{
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = t;
     TAG(s) = R_NilValue;
     ATTRIB(s) = R_NilValue;
+}
+
+static SEXP allocSExpNonCons(SEXPTYPE t)
+{
+    SEXP s;
+/*     s = allocSExpNonConsHeap(); */
+    SEXP protect_on_gc[1] = {NULL};
+    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    allocSExpNonConsInPlace(t, s);
     return s;
 }
 
 /* cons is defined directly do avoid the need to protect its arguments
    unless a GC will actually occur. */
-SEXP cons(SEXP car, SEXP cdr)
+SEXP old_cons(SEXP car, SEXP cdr)
 {
     SEXP s;
     if (FORCE_GC || NO_FREE_NODES()) {
@@ -1639,6 +1693,61 @@ SEXP cons(SEXP car, SEXP cdr)
     CDR(s) = cdr;
     TAG(s) = R_NilValue;
     ATTRIB(s) = R_NilValue;
+    return s;
+}
+
+SEXP cons(SEXP car, SEXP cdr)
+{
+    SEXP s;
+
+    SEXP protect_on_gc[3] = {car, cdr, NULL};
+    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    consInPlace(car, cdr, s);
+    return s;
+}
+
+SEXP consHeap(SEXP car, SEXP cdr)
+{
+    SEXP s;
+    if (FORCE_GC || NO_FREE_NODES()) {
+	PROTECT(car);
+	PROTECT(cdr);
+	R_gc_internal(0);
+	UNPROTECT(2);
+	if (NO_FREE_NODES())
+	    mem_err_cons();
+    }
+    GET_FREE_NODE(s);
+    CDR(s) = cdr;     /* so that we can connect cells */
+    return s;
+}
+
+void consInPlace(SEXP car, SEXP cdr, SEXP s)
+{
+    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    TYPEOF(s) = LISTSXP;
+    CAR(s) = car;
+    CDR(s) = cdr;
+    TAG(s) = R_NilValue;
+    ATTRIB(s) = R_NilValue;
+}
+
+/* protect_on_gc is a NULL-terminated list of SEXPs to PROTECT if a GC
+   will be triggered */
+SEXP allocNodeHeap(AllocStack * allocator, SEXP * protect_on_gc)
+{
+    SEXP s;
+    if (FORCE_GC || NO_FREE_NODES()) {
+	int n;
+	for (n = 0; *protect_on_gc != NULL; protect_on_gc++, n++) {
+	    PROTECT(*protect_on_gc);
+	}
+	R_gc_internal(0);
+	UNPROTECT(n);
+	if (NO_FREE_NODES())
+	    mem_err_cons();
+    }
+    GET_FREE_NODE(s);
     return s;
 }
 
@@ -1664,6 +1773,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 {
     SEXP v, n, newrho;
 
+    /*
     if (FORCE_GC || NO_FREE_NODES()) {
       PROTECT(namelist);
       PROTECT(valuelist);
@@ -1674,6 +1784,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 	mem_err_cons();
     }
     GET_FREE_NODE(newrho);
+    */
+    SEXP protect_on_gc[4] = {namelist, valuelist, rho, NULL};
+    newrho = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(newrho) = ENVSXP;
     FRAME(newrho) = valuelist;
@@ -1696,6 +1809,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 SEXP mkPROMISE(SEXP expr, SEXP rho)
 {
     SEXP s;
+    /*
     if (FORCE_GC || NO_FREE_NODES()) {
       PROTECT(expr);
       PROTECT(rho);
@@ -1705,6 +1819,10 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
 	mem_err_cons();
     }
     GET_FREE_NODE(s);
+    */
+    SEXP protect_on_gc[3] = {expr, rho, NULL};
+    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = PROMSXP;
     PRCODE(s) = expr;
@@ -1728,6 +1846,19 @@ SEXP allocString(int length)
 /* Allocate a vector object on the heap */
 
 SEXP allocVector(SEXPTYPE type, R_len_t length)
+{
+    SEXP s;
+    R_size_t size;
+    if (type == NILSXP) {
+	return R_NilValue;
+    }
+    
+    s = allocStackTop->allocateVector(allocStackTop, type, length);
+    allocVectorInPlace(type, length, s);
+    return s;
+}
+
+SEXP old_allocVector(SEXPTYPE type, R_len_t length)
 {
     SEXP s;     /* For the generational collector it would be safer to
 		   work in terms of a VECSEXP here, but that would
@@ -1894,15 +2025,482 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     return s;
 }
 
+SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
+{
+    SEXP s;     /* For the generational collector it would be safer to
+		   work in terms of a VECSEXP here, but that would
+		   require several casts below... */
+    R_len_t i;
+    R_size_t size = 0, alloc_size, old_R_VSize;
+    int node_class;
+
+    if (length < 0 )
+	errorcall(R_GlobalContext->call,
+		  _("negative length vectors are not allowed"));
+    /* number of vector cells to allocate */
+    switch (type) {
+    case NILSXP:
+	return R_NilValue;
+    case RAWSXP:
+	size = BYTE2VEC(length);
+	break;
+    case CHARSXP:
+	size = BYTE2VEC(length + 1);
+	break;
+    case LGLSXP:
+    case INTSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(int))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = INT2VEC(length);
+	}
+	break;
+    case REALSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(double))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = FLOAT2VEC(length);
+	}
+	break;
+    case CPLXSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(Rcomplex))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = COMPLEX2VEC(length);
+	}
+	break;
+    case STRSXP:
+    case EXPRSXP:
+    case VECSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(SEXP))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = PTR2VEC(length);
+	}
+	break;
+    case LANGSXP:
+	if(length == 0) return R_NilValue;
+	s = allocListHeap(length);       /* alloc */
+	TYPEOF(s) = LANGSXP;
+	return s;
+    case LISTSXP:
+	return allocListHeap(length);    /* alloc */
+    default:
+	error(_("invalid type/length (%d/%d) in vector allocation"), 
+	      type, length);
+    }
+
+    if (size <= NodeClassSize[1]) {
+      node_class = 1;
+      alloc_size = NodeClassSize[1];
+    }
+    else {
+      node_class = LARGE_NODE_CLASS;
+      alloc_size = size;
+      for (i = 2; i < NUM_SMALL_NODE_CLASSES; i++) {
+	if (size <= NodeClassSize[i]) {
+	  node_class = i;
+	  alloc_size = NodeClassSize[i];
+	  break;
+	}
+      }
+    }
+
+    /* save current R_VSize to roll back adjustment if malloc fails */
+    old_R_VSize = R_VSize;
+
+    /* we need to do the gc here so allocSExp doesn't! */
+    if (FORCE_GC || NO_FREE_NODES() || VHEAP_FREE() < alloc_size) {
+	R_gc_internal(alloc_size);
+	if (NO_FREE_NODES())
+	    mem_err_cons();
+	if (VHEAP_FREE() < alloc_size)
+	    mem_err_heap(size);
+    }
+
+    if (size > 0) {
+	if (node_class < NUM_SMALL_NODE_CLASSES) {
+	    CLASS_GET_FREE_NODE(node_class, s);      /* alloc */
+	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+	    SET_NODE_CLASS(s, node_class);
+	    R_SmallVallocSize += alloc_size;
+	}
+	else {
+	    Rboolean success = FALSE;
+	    s = NULL; /* initialize to suppress warning */
+	    if (size < (R_SIZE_T_MAX / sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
+		s = malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));   /* alloc */
+		if (s == NULL) {
+		    /* If we are near the address space limit, we
+		       might be short of address space.  So return
+		       all unused objects to malloc and try again. */
+		    R_gc_internal(alloc_size);
+		    s = malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));  /* alloc */
+		}
+		if (s != NULL) success = TRUE;
+	    }
+	    if (! success) {
+		/* reset the vector heap limit */
+		R_VSize = old_R_VSize;
+		errorcall(R_NilValue, _("cannot allocate vector of size %lu Kb"),
+			  (size * sizeof(VECREC))/1024);
+	    }
+	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+	    SET_NODE_CLASS(s, LARGE_NODE_CLASS);
+	    R_LargeVallocSize += size;
+	    R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
+	    R_NodesInUse++;
+	    SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
+	}
+    }
+    else {
+	GC_PROT(s = allocSExpNonConsHeap(type));
+    }
+
+    LENGTH(s) = length;
+    NAMED(s) = 0;
+
+    /* The following prevents disaster in the case */
+    /* that an uninitialised string vector is marked */
+    /* Direct assignment is OK since the node was just allocated and */
+    /* so is at least as new as R_NilValue and R_BlankString */
+    if (type == EXPRSXP || type == VECSXP) {
+	SEXP *data = STRING_PTR(s);
+	for (i = 0; i < length; i++)
+	    data[i] = R_NilValue;
+    }
+    else if(type == STRSXP) {
+	SEXP *data = STRING_PTR(s);
+	for (i = 0; i < length; i++)
+	    data[i] = R_BlankString;
+    }
+    else if (type == CHARSXP)
+	CHAR(s)[length] = 0;
+    return s;
+}
+
+SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
+{
+    R_size_t size = allocVectorGetSize(type, length);
+    if (allocator->size == -1) { /* -1 means heap allocator */
+	error("allocVectorStack called on heap allocator");
+    }
+    if (size > allocator->size) {
+	if (global_stack_debug) {
+	    fprintf(stderr, "allocVectorStack: not enough stack space, using parent space\n");
+	}
+	return allocator->next->allocateVector(allocator->next, type, length); /* parent */
+    } else {
+	SEXP space = allocator->space;
+	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+	SET_NEXT_NODE(space, NULL);
+	SET_PREV_NODE(space, NULL);
+	allocator->space = (SEXP)(((R_size_t)allocator->space) + size);
+	allocator->size -= size;
+	if (global_stack_debug) {
+	    fprintf(stderr, "allocVectorStack allocated %u bytes; %u bytes available in this allocator\n", size, allocator->size);
+	}
+	return space;
+    }
+}
+
+SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
+{
+    const R_size_t node_size = sizeof(SEXPREC);
+    
+    if (allocator == NULL) {
+	error("allocNodeStack called on null allocator");
+    }
+    if (node_size > allocator->size) {
+	if (global_stack_debug) {
+	    fprintf(stderr, "allocNodeStack warning: not enough stack space, using parent space\n");
+	}
+	SEXP protect_on_gc[1] = {NULL};
+	return (*allocator->next->allocateNode)(allocator->next, protect_on_gc); /* parent */
+    } else {
+	SEXP space = allocator->space;
+	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+	SET_NEXT_NODE(space, NULL);
+	SET_PREV_NODE(space, NULL);
+	allocator->space++;  /* space is an SEXP, so incrementing ptr will add size of node */
+	allocator->size -= node_size;
+	if (global_stack_debug) {
+	  fprintf(stderr,"allocNodeStack allocated %u bytes; %u bytes available in this allocator\n", node_size, allocator->size);
+	}
+	return space;
+    }
+}
+    
+
+/* to heap allocate:
+ *     push(NULL, &allocVectorHeap);
+ *     ...allocVector(type, length)...
+ */
+
+/* to locally allocate:
+ *     s = allocate space
+ *     push(s, &allocStack);
+ *     ...allocVector(type, length)...
+ */
+
+/*     allocVector(type, length) {
+ *         if type is nil, return R_NilValue
+ *         s = allocStackTop->function(type, length);
+ *         allocVectorInPlace(type, length, s);
+ *     }
+ */
+    
+/* return size in bytes of space to be allocated. Does not allocate anything.  */
+R_size_t allocVectorGetSize(SEXPTYPE type, R_len_t length)
+{
+    R_len_t i;
+    R_size_t size = 0; /* size in VECRECs */
+    int node_class;
+
+    if (length < 0 )
+	errorcall(R_GlobalContext->call,
+		  _("negative length vectors are not allowed"));
+    /* number of vector cells to allocate */
+    switch (type) {
+    case NILSXP:
+	return 0;
+    case RAWSXP:
+	size = BYTE2VEC(length);
+	break;
+    case CHARSXP:
+	size = BYTE2VEC(length + 1);
+	break;
+    case LGLSXP:
+    case INTSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(int))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = INT2VEC(length);
+	}
+	break;
+    case REALSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(double))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = FLOAT2VEC(length);
+	}
+	break;
+    case CPLXSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(Rcomplex))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = COMPLEX2VEC(length);
+	}
+	break;
+    case STRSXP:
+    case EXPRSXP:
+    case VECSXP:
+	if (length <= 0)
+	    size = 0;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(SEXP))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    size = PTR2VEC(length);
+	}
+	break;
+    case LANGSXP:
+    case LISTSXP:
+	return length * sizeof(SEXPREC);
+    default:
+	error(_("invalid type/length (%d/%d) in vector allocation"), 
+	      type, length);
+    }
+
+    if (size <= NodeClassSize[1]) {
+      node_class = 1;
+    }
+    else {
+      node_class = LARGE_NODE_CLASS;
+      for (i = 2; i < NUM_SMALL_NODE_CLASSES; i++) {
+	if (size <= NodeClassSize[i]) {
+	  node_class = i;
+	  break;
+	}
+      }
+    }
+
+    if (size > 0) {
+	if (node_class < NUM_SMALL_NODE_CLASSES) {
+	    return NODE_SIZE(node_class);
+	}
+	else {
+	    if (size < (R_SIZE_T_MAX / sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
+		return(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));
+	    }
+	    else {
+		errorcall(R_NilValue, _("cannot allocate vector of size %lu Kb"),
+			  (size * sizeof(VECREC))/1024);
+	    }
+	}
+    }
+    else {
+	return sizeof(SEXPREC);
+    }
+}
+
+void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s)
+{
+    R_len_t i;
+    Rboolean positive_size = FALSE;
+
+    if (length < 0 )
+	errorcall(R_GlobalContext->call,
+		  _("negative length vectors are not allowed"));
+    /* number of vector cells to allocate */
+    switch (type) {
+    case NILSXP:
+	return;
+    case RAWSXP:
+	positive_size = (BYTE2VEC(length) > 0);
+	break;
+    case CHARSXP:
+	positive_size = (BYTE2VEC(length + 1) > 0);
+	break;
+    case LGLSXP:
+    case INTSXP:
+	if (length <= 0)
+	    positive_size = FALSE;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(int))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    positive_size = TRUE;
+	}	
+	break;
+    case REALSXP:
+	if (length <= 0)
+	    positive_size = FALSE;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(double))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    positive_size = TRUE;
+	}
+	break;
+    case CPLXSXP:
+	if (length <= 0)
+	    positive_size = FALSE;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(Rcomplex))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    positive_size = TRUE;
+	}
+	break;
+    case STRSXP:
+    case EXPRSXP:
+    case VECSXP:
+	if (length <= 0)
+	    positive_size = FALSE;
+	else {
+	    if (length > R_SIZE_T_MAX / sizeof(SEXP))
+		errorcall(R_GlobalContext->call,
+			  _("cannot allocate vector of length %d"), length);
+	    positive_size = TRUE;
+	}
+	break;
+    case LANGSXP:
+	allocListInPlace(s);
+	TYPEOF(s) = LANGSXP;
+	return;
+    case LISTSXP:
+	allocListInPlace(s);
+	return;
+    default:
+	error(_("invalid type/length (%d/%d) in vector allocation"), 
+	      type, length);
+    }
+    
+    if (positive_size) {
+	ATTRIB(s) = R_NilValue;
+	TYPEOF(s) = type;
+    } else {
+	allocSExpNonConsInPlace(type, s);
+    }
+    LENGTH(s) = length;
+    NAMED(s) = 0;
+
+
+    /* The following prevents disaster in the case */
+    /* that an uninitialised string vector is marked */
+    /* Direct assignment is OK since the node was just allocated and */
+    /* so is at least as new as R_NilValue and R_BlankString */
+    if (type == EXPRSXP || type == VECSXP) {
+	SEXP *data = STRING_PTR(s);
+	for (i = 0; i < length; i++)
+	    data[i] = R_NilValue;
+    }
+    else if(type == STRSXP) {
+	SEXP *data = STRING_PTR(s);
+	for (i = 0; i < length; i++)
+	    data[i] = R_BlankString;
+    }
+    else if (type == CHARSXP)
+	CHAR(s)[length] = 0;
+}
+  
 SEXP allocList(int n)
 {
+    /* TODO: two passes through the list. Too much of an efficiency hit? */
     int i;
+    SEXP result = R_NilValue;
+/*     result = allocListHeap(n); */
+    for (i = 0; i < n; i++) {
+	/* protect CDR (result), but CAR is always R_NilValue and doesn't need protection */
+	SEXP prev_result = result;
+	SEXP protect_on_gc[2] = {result, NULL};
+	result = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+	CDR(result) = prev_result;
+    }
+
+    allocListInPlace(result);
+    return result;
+}
+
+SEXP allocListHeap(int n)
+{
+    int i;    
     SEXP result;
     result = R_NilValue;
     for (i = 0; i < n; i++) {
-	result = CONS(R_NilValue, result);
+      	result = consHeap(R_NilValue, result);
     }
     return result;
+}
+
+void allocListInPlace(SEXP s)
+{
+    while (s != R_NilValue) {
+	consInPlace(R_NilValue, CDR(s), s);
+	s = CDR(s);
+    }
 }
 
 /* "gc" a mark-sweep or in-place generational garbage collector */
