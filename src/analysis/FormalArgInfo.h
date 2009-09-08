@@ -78,7 +78,6 @@ private:
   SEXP m_sexp;     // TAG(m_sexp) is the name of the argument
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
-  // (actually, "strictness" means a stronger condition: function diverges if this arg diverges)
   SEXP m_default;  // default arg if it exists; otherwise 0
   SEXP m_name;     // SYMSXP: the name of the argument if it exists
   SideEffect * m_pre_debut_side_effect;  // names used/defined by pre-debut statements for this formal

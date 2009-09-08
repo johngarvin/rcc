@@ -181,7 +181,7 @@ static string emit_call_internal_va(string fname, va_list args)
     if (arg) call += *arg;
 
     // subsequent arguments preceded by a comma
-    arg = va_arg(args, string *);
+    if (arg) arg = va_arg(args, string *);
     while (arg != NULL) {
       call += ", " + *arg;
       arg = va_arg(args, string *);

@@ -83,7 +83,6 @@ Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
   SEXP args = call_args(e);
   int unprotcnt = 0;
   string laziness_string;  // string of E's and L's, one for each arg, saying whether it's eager or lazy
-
   Expression args1;
 
 //   if (fi_if_known != 0) {
@@ -201,7 +200,8 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
 
 /// Output the actual argument list as a list of promises to be passed to applyClosure
 static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
-				  int * unprotcnt, string rho) {
+				  int * unprotcnt, string rho)
+{
   string arglist;
   string cleanup;
   if (args == R_NilValue) {

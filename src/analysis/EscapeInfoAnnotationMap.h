@@ -26,6 +26,7 @@
 #define ESCAPE_INFO_ANNOTATION_MAP_H
 
 #include <analysis/DefaultAnnotationMap.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 

@@ -22,6 +22,11 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+// This map has both variable mentions and function definitions as
+// keys. A mention mapped to a true EscapeInfo means the variable
+// escapes its scope. A fundef mapped to a true EscapeInfo means one
+// or more variables in that scope escape.
+
 #include <OpenAnalysis/CFG/CFG.hpp>
 
 #include <support/Debug.h>
@@ -79,7 +84,7 @@ void EscapeInfoAnnotationMap::compute() {
 	// cannot escape
 	get_map()[mention_c] = new EscapeInfo(false);
       } else {
-	// may escape
+	// this assignment may cause the variable to escape
 	get_map()[mention_c] = new EscapeInfo(true);
       }
     }
@@ -94,12 +99,20 @@ void EscapeInfoAnnotationMap::compute() {
       SymbolTable * st = fi->get_scope()->get_symbol_table();
       for(SymbolTable::const_iterator sym = st->begin(); sym != st->end(); sym++) {
 	for(VarInfo::const_iterator def = sym->second->begin_defs(); def != sym->second->end_defs(); def++) {
-	  if (dynamic_cast<EscapeInfo *>(get_map()[(*def)->getMention_c()])->may_escape()) {
+	  if ((*def)->getSourceType() == DefVar::DefVar_ASSIGN &&
+	      get_map()[(*def)->getMention_c()] != 0 &&
+	      dynamic_cast<EscapeInfo *>(get_map()[(*def)->getMention_c()])->may_escape())
+	  {
 	    annot->set_may_escape(true);
 	  }
 	}
       }
+      // annotate fundef as escaping/nonescaping
       get_map()[fi->get_sexp()] = annot;
+      // annotate each formal the same as its fundef
+      for(SEXP args = fi->get_args(); args != R_NilValue; args = CDR(args)) {
+	get_map()[args] = annot;
+      }
     }
   }
 }

@@ -115,7 +115,7 @@ public:
   /// get the cell containing the formal arg at the given position. Indexed from 1.
   SEXP get_arg(int position) const;
 
-  // find the numerical position of the formal with the given name. Indexed from 1.
+  /// find the numerical position of the formal with the given name. Indexed from 1.
   int find_arg_position(char* name) const;
 
   SEXP get_sexp() const;

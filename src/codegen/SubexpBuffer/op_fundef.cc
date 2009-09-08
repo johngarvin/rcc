@@ -31,6 +31,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/EscapeInfo.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
@@ -73,7 +74,15 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 							     rho, true, Protected);
     Expression r_code = ParseInfo::global_constants->op_literal(CADR(e), rho);
     string closure = fi->get_closure();
-    ParseInfo::global_constants->appl(closure, resultProtection, "mkRCC_CLOSXP", to_string(e), 4, &r_args.var, &c_name, &r_code.var, &rho);
+    ParseInfo::global_constants->appl(closure,
+				      resultProtection,
+				      "mkRCC_CLOSXP",
+				      to_string(e),
+				      4,
+				      &r_args.var,
+				      &c_name,
+				      &r_code.var,
+				      &rho);
     ParseInfo::global_constants->del(formals);
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
@@ -95,6 +104,8 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 ///  easily with "...", default arguments, etc.) The second is the
 ///  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
+  const string size = i_to_s(4096);
+
   SEXP args = fundef_args(fndef);
 
   string f, header;
@@ -103,6 +114,10 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 
   string strictness = comment("strictness: " + output_strictness(args));  // string of S and N: whether each formal is strict
 
+  bool stack_alloc_env = !(getProperty(EscapeInfo, fndef)->may_escape());
+
+  bool stack_alloc_obj = false; // needs points-to analysis
+
   header = "SEXP " + func_name + "(";
   header += "SEXP args, SEXP newenv)";
   ParseInfo::global_fundefs->decls += header + ";\n";
@@ -110,26 +125,22 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 #ifdef CHECK_PROTECT
   f += indent("int topval = R_PPStackTop;\n");
 #endif
-//   f += indent("SEXP newenv;\n");
   f += indent("SEXP out;\n");
 
   FuncInfo *fi = lexicalContext.Top();
-
+  
   if (fi->requires_context()) {
     f += indent("RCNTXT context;\n");
   }
+  if (stack_alloc_obj) {
+    f += indent("SEXP stack;\n");
+  }
 
-  //  Expression formals = env_subexps.op_list(args, "env", true, Protected);
   string actuals = "args";
   env_subexps.output_ip();
   env_subexps.finalize();
   f += indent(env_subexps.output_decls());
   f += indent(env_subexps.output_defs());
-//   f += indent("PROTECT(newenv =\n");
-//   f += indent(indent("Rf_NewEnvironment(\n"
-// 		     + indent(formals.var) + ",\n"
-// 		     + indent(actuals) + ",\n"
-// 		     + indent("env") + "));\n"));
 
   if (fi->requires_context()) {
     f += indent("if (SETJMP(context.cjmpbuf)) {\n");
@@ -152,6 +163,13 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
     arg_cell = emit_call1("CDR", arg_cell);
   }
 
+  // emit stack allocation
+  if (stack_alloc_obj) {
+    f += indent(emit_assign("stack", "(SEXP)" + emit_call1("alloca", size)));
+    f += indent(emit_call4("pushAllocStack", "stack", size, "&allocVectorStack", "&allocNodeStack") + ";\n");
+  }
+
+  // emit the function body
   Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
 					   "newenv", Unprotected, true, 
 					   ResultNeeded);
@@ -162,13 +180,15 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
+  if (stack_alloc_obj) {
+    f += indent(emit_call0("popAllocStack") + ";\n");
+  }
+
   if (fi->requires_context()) {
     f += indent("}\n");
     f += indent("endcontext(&context);\n");
   }
 
-  //  f += indent(formals.del_text);
-  //  f += indent("UNPROTECT(1); /* newenv */\n");
 #ifdef CHECK_PROTECT
   f += indent("assert(topval == R_PPStackTop);\n");
 #endif

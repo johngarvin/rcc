@@ -27,6 +27,7 @@
 #define ANNOTATION_ESCAPE_INFO_H
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
@@ -41,6 +42,8 @@ public:
 
   AnnotationBase * clone();
   std::ostream & dump(std::ostream &) const;
+
+  static PropertyHndlT handle();
 private:
   bool m_may_escape;
 };

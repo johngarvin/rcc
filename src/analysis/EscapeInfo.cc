@@ -23,27 +23,35 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <analysis/EscapeInfoAnnotationMap.h>
+
 #include <support/RccError.h>
 
 #include "EscapeInfo.h"
 
 namespace RAnnot {
 
-  EscapeInfo::EscapeInfo(bool x) : m_may_escape(x) {}
-  EscapeInfo::~EscapeInfo() {}
+EscapeInfo::EscapeInfo(bool x) : m_may_escape(x) {}
+EscapeInfo::~EscapeInfo() {}
+  
+bool EscapeInfo::may_escape() {
+  return m_may_escape;
+}
 
-  bool EscapeInfo::may_escape() {
-    return m_may_escape;
-  }
+void EscapeInfo::set_may_escape(bool x) {
+  m_may_escape = x;
+}
 
-  void EscapeInfo::set_may_escape(bool x) {
-    m_may_escape = x;
-  }
+AnnotationBase * EscapeInfo::clone() {
+  return 0;
+}
 
-  AnnotationBase * EscapeInfo::clone() {
-    return 0;
-  }
+std::ostream & EscapeInfo::dump(std::ostream &) const {
+  // TODO
+}
 
-  std::ostream & EscapeInfo::dump(std::ostream &) const {
-  }
+PropertyHndlT EscapeInfo::handle() {
+  return EscapeInfoAnnotationMap::handle();
+}
+  
 }
