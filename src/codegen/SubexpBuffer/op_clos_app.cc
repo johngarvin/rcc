@@ -103,17 +103,24 @@ Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
   }
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
-  //  string apply_closure_string = fi_if_known == 0 ? "applyClosure " : "applyClosureNoMatching ";
-  string apply_closure_string = "applyClosure ";  // temporary until matching args
+  string apply_closure_string = "applyClosureOpt ";
+  string options;
+  if (fi_if_known != 0) {
+    options = "AC_RCC | AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD";
+  } else {
+    options = "AC_DEFAULT";
+  }
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
-  string out = appl5(apply_closure_string,
+  string out = appl6(apply_closure_string,
 		     "op_clos_app: " + to_string(e) + " " + laziness_string,
 		     call_str,
 		     op1.var,
 		     args1.var,
 		     rho,
-		     "R_NilValue", Unprotected);
+		     "R_NilValue",
+		     options,
+		     Unprotected);
   if (!op1.del_text.empty()) unprotcnt++;
   if (!args1.del_text.empty()) unprotcnt++;
   if (unprotcnt > 0)
