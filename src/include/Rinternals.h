@@ -532,6 +532,16 @@ SEXP Rf_allocList(int);
 SEXP Rf_allocListHeap(int);
 void Rf_allocListInPlace(SEXP);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
+typedef enum {
+    AC_RCC = 1,
+    AC_MATCH_ARGS = 2,
+    AC_CONTEXT = 4,
+    AC_ENVIRONMENT = 8,
+    AC_USEMETHOD = 16,
+    AC_STACK = 32,
+    AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
+} ApplyClosureOptions;
+SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions);
 SEXP Rf_applyRccClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_asChar(SEXP);
 Rcomplex Rf_asComplex(SEXP);
@@ -964,6 +974,7 @@ int R_system(char *);
 #define allocVectorGetSize      Rf_allocVectorGetSize
 #define allocVectorInPlace      Rf_allocVectorInPlace
 #define applyClosure		Rf_applyClosure
+#define applyClosureOpt         Rf_applyClosureOpt
 #define applyRccClosure		Rf_applyRccClosure
 #define arraySubscript		Rf_arraySubscript
 #define asChar			Rf_asChar

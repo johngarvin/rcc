@@ -434,7 +434,7 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 
 /* Apply SEXP op of type CLOSXP to actuals */
 
-SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
+SEXP applyClosureOld(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP body, formals, actuals, savedrho;
     volatile  SEXP newrho;
@@ -588,6 +588,242 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	PrintValueRec(call, rho);
     }
     UNPROTECT(3);
+    return (tmp);
+}
+
+/*
+typedef enum {
+    AC_RCC = 1,
+    AC_MATCH_ARGS = 2,
+    AC_CONTEXT = 4,
+    AC_ENVIRONMENT = 8,
+    AC_USEMETHOD = 16,
+    AC_STACK = 32,
+    AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
+} ApplyClosureOptions;
+*/
+
+SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
+{
+  return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT);
+}
+
+/* Apply SEXP op of type CLOSXP to actuals */
+
+SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options)
+{
+    SEXP body, formals, actuals, savedrho, funsxp;
+    volatile  SEXP newrho;
+    SEXP f, a, tmp;
+    RCNTXT cntxt;
+    SEXP stack_space;
+    int nprotect = 0;
+
+    if (TYPEOF(op) == RCC_CLOSXP) {
+      options |= AC_RCC;
+    }
+
+    /* formals = list of formal parameters */
+    /* actuals = values to be bound to formals */
+    /* arglist = the tagged list of arguments */
+
+    if (options & AC_RCC) {
+	formals = RCC_CLOSXP_FORMALS(op);
+	funsxp = RCC_CLOSXP_FUN(op);
+	savedrho = RCC_CLOSXP_CLOENV(op);
+    } else {
+	formals = FORMALS(op);
+	body = BODY(op);
+	savedrho = CLOENV(op);
+    }
+    
+    /*  Set up a context with the call in it so error has access to it */
+    
+    if (options & AC_CONTEXT) {
+	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
+    }
+
+    /*  Build a list which matches the actual (unevaluated) arguments
+	to the formal paramters.  Build a new environment which
+	contains the matched pairs.  Ideally this environment sould be
+	hashed.  */
+    
+    if (options & AC_STACK) {
+	const int size = 4096;
+	stack_space = alloca(size);
+	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
+	/* stack allocate matchArgs list, environment, promises */
+    }
+
+    if (options & AC_MATCH_ARGS) {
+      PROTECT(actuals = matchArgs(formals, arglist));
+      nprotect++;
+    } else {
+      actuals = arglist;
+    }
+    
+    if (options & AC_ENVIRONMENT) {
+      PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
+      nprotect++;
+    } else {
+      newrho = savedrho;
+    }
+
+    /*  Use the default code for unbound formals.  FIXME: It looks like
+	this code should preceed the building of the environment so that
+        this will also go into the hash table.  */
+
+    /* This piece of code is destructively modifying the actuals list,
+       which is now also the list of bindings in the frame of newrho.
+       This is one place where internal structure of environment
+       bindings leaks out of envir.c.  It should be rewritten
+       eventually so as not to break encapsulation of the internal
+       environment layout.  We can live with it for now since it only
+       happens immediately after the environment creation.  LT */
+
+    if (options & AC_MATCH_ARGS) {
+	f = formals;
+	a = actuals;
+	while (f != R_NilValue) {
+	    if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
+		SETCAR(a, mkPROMISE(CAR(f), newrho));
+		SET_MISSING(a, 2);
+	    }
+	    f = CDR(f);
+	    a = CDR(a);
+	}
+    }
+
+    if (options & AC_STACK) {
+	pushAllocStack(NULL, -1, &allocVectorHeap, &allocNodeHeap);
+	/* heap allocate objects created in function body */
+    }
+
+    /*  Fix up any extras that were supplied by usemethod. */
+
+    if (options & AC_USEMETHOD) {
+	if (suppliedenv != R_NilValue) {
+	    for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
+		for (a = actuals; a != R_NilValue; a = CDR(a))
+		    if (TAG(a) == TAG(tmp))
+			break;
+		if (a == R_NilValue)
+		    /* Use defineVar instead of earlier version that added
+		       bindings manually */
+		    defineVar(TAG(tmp), CAR(tmp), newrho);
+	    }
+	}
+    }
+
+    /*  Terminate the previous context and start a new one with the
+        correct environment. */
+
+    if (options & AC_CONTEXT) {
+	endcontext(&cntxt);
+    }
+
+    /*  If we have a generic function we need to use the sysparent of
+	the generic as the sysparent of the method because the method
+	is a straight substitution of the generic.  */
+
+    if (options & AC_CONTEXT) {
+	if( R_GlobalContext->callflag == CTXT_GENERIC )
+	    begincontext(&cntxt, CTXT_RETURN, call,
+			 newrho, R_GlobalContext->sysparent, arglist, op);
+	else
+	    begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+    }
+
+    /* The default return value is NULL.  FIXME: Is this really needed
+       or do we always get a sensible value returned?  */
+
+    tmp = R_NilValue;
+
+    /* Debugging */
+
+    if (!(options & AC_RCC)) {  /* can't get body of an RCC_CLOSXP */
+	SET_DEBUG(newrho, DEBUG(op));
+	if (DEBUG(op)) {
+	    Rprintf("debugging in: ");
+	    PrintValueRec(call,rho);
+	    /* Is the body a bare symbol (PR#6804) */
+	    if (!isSymbol(body) & !isVectorAtomic(body)){
+		/* Find out if the body is function with only one statement. */
+		if (isSymbol(CAR(body)))
+		    tmp = findFun(CAR(body), rho);
+		else
+		    tmp = eval(CAR(body), rho);
+		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+		   && !strcmp( PRIMNAME(tmp), "for")
+		   && !strcmp( PRIMNAME(tmp), "{")
+		   && !strcmp( PRIMNAME(tmp), "repeat")
+		   && !strcmp( PRIMNAME(tmp), "while")
+		   )
+		    goto regdb;
+	    }
+	    Rprintf("debug: ");
+	    PrintValue(body);
+	    do_browser(call,op,arglist,newrho);
+	}
+    }
+    
+ regdb:
+
+    /*  It isn't completely clear that this is the right place to do
+	this, but maybe (if the matchArgs above reverses the
+	arguments) it might just be perfect.  */
+
+#ifdef  HASHING
+#define HASHTABLEGROWTHRATE  1.2
+    {
+	SEXP R_NewHashTable(int, double);
+	SEXP R_HashFrame(SEXP);
+	int nargs = length(arglist);
+	HASHTAB(newrho) = R_NewHashTable(nargs, HASHTABLEGROWTHRATE);
+	newrho = R_HashFrame(newrho);
+    }
+#endif
+#undef  HASHING
+
+    /*  Set a longjmp target which will catch any explicit returns
+	from the function body.  */
+
+    if ((options & AC_CONTEXT) && (SETJMP(cntxt.cjmpbuf))) {
+	    if (R_ReturnedValue == R_RestartToken) {
+		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		R_ReturnedValue = R_NilValue;  /* remove restart token */
+		if (options & AC_RCC) {
+		    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, newrho));
+		} else {
+		    PROTECT(tmp = eval(body, newrho));
+		}
+	    } else {
+		PROTECT(tmp = R_ReturnedValue);
+	    }
+    } else {
+	if (options & AC_RCC) {
+	    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, newrho));
+	} else {
+	    PROTECT(tmp = eval(body, newrho));
+	}
+    }
+    nprotect++;
+    
+    if (options & AC_CONTEXT) {
+	endcontext(&cntxt);
+    }
+
+    if (DEBUG(op)) {
+	Rprintf("exiting from: ");
+	PrintValueRec(call, rho);
+    }
+
+    if (options & AC_STACK) {
+	popAllocStack();  /* heap */
+	popAllocStack();  /* stack space for closure */
+    }
+
+    UNPROTECT(nprotect);
     return (tmp);
 }
 

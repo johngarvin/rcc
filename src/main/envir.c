@@ -1370,6 +1370,10 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 {
     int hashcode;
     SEXP frame, c;
+
+    /* if rho != env of nearest context (define is nonlocal) do
+       something to say we are escaping */
+
     R_DirtyImage = 1;
     if (rho != R_BaseNamespace && rho != R_NilValue) {
 #ifdef USE_GLOBAL_CACHE
