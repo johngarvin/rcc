@@ -264,11 +264,13 @@ typedef struct {
 /* This table can be found in ../main/names.c */
 typedef struct {
     char   *name;    /* print name */
-	char   *cfun_name; /* string name of c function */
+    char   *cfun_name; /* string name of c function */
     CCODE  cfun;     /* c-code address */
     int	   code;     /* offset within c-code */
     int	   eval;     /* evaluate args? */
     int	   arity;    /* function arity */
+    int    points;   /* whether return value may point to arguments */
+    int    escape;   /* whether arguments may escape via assignment */
     PPinfo gram;     /* pretty-print info */
 } FUNTAB;
 
@@ -286,6 +288,9 @@ typedef struct {
 #define PRIMNAME(x)	(R_FunTab[(x)->u.primsxp.offset].name)
 #define PRIMVAL(x)	(R_FunTab[(x)->u.primsxp.offset].code)
 #define PRIMARITY(x)	(R_FunTab[(x)->u.primsxp.offset].arity)
+#define PRIMPOINTS(x,n) (((R_FunTab[(x)->u.primsxp.offset].points) >> (1-(n)))%2)
+#define PRIMESCAPE(x,n) (((R_FunTab[(x)->u.primsxp.offset].escape) >> (1-(n)))%2)
+/* note: PRIMPOINTS and PRIMESCAPE count from 1 */
 #define PPINFO(x)	(R_FunTab[(x)->u.primsxp.offset].gram)
 #define PRIMPRINT(x)	(((R_FunTab[(x)->u.primsxp.offset].eval)/100)%10)
 
