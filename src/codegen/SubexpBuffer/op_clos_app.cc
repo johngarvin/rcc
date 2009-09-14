@@ -30,6 +30,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/EscapeInfo.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/Settings.h>
@@ -44,6 +45,7 @@
 #include <Visibility.h>
 
 using namespace std;
+using namespace RAnnot;
 
 // op_arglist:
 //   for each arg a
@@ -60,7 +62,7 @@ static Expression op_arglist(SubexpBuffer * sb,
 			     const string rho);
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
-				 const RAnnot::ExpressionInfo * const ei, 
+				 const ExpressionInfo * const ei, 
 				 const int n,
 				 int * const unprotcnt,
 				 string & laziness_string,
@@ -72,7 +74,7 @@ static Expression op_promise_args(SubexpBuffer * sb,
 				  string rho);
 
 /// Output an application of a closure to actual arguments.
-Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
+Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 				     Expression op1,
 				     SEXP cell,
 				     string rho,
@@ -98,18 +100,23 @@ Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
 #endif
     laziness_string = "eager";
   } else {
-    RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
+    ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
     args1 = op_arglist_rec(this, args, ei, 0, &unprotcnt, laziness_string, rho);
   }
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
   string apply_closure_string = "applyClosureOpt ";
+
   string options;
-  if (fi_if_known != 0) {
-    options = "AC_RCC | AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD";
-  } else {
+  if (fi_if_known == 0) {
     options = "AC_DEFAULT";
+  } else {
+    options = "AC_RCC | AC_MATCH_ARGS | AC_ENVIRONMENT | AC_USEMETHOD";
+    if (!getProperty(EscapeInfo, fi_if_known->get_sexp())->may_escape()) {
+      options += " | AC_STACK";
+    }
   }
+
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
   string out = appl6(apply_closure_string,
@@ -168,12 +175,12 @@ Expression SubexpBuffer::op_clos_app(RAnnot::FuncInfo * fi_if_known,
 
 static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string & laziness_string, string rho) {
   SEXP e = CAR(cell);
-  RAnnot::ExpressionInfo * ei = getProperty(RAnnot::ExpressionInfo, cell);
+  ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
   Expression out = op_arglist_rec(sb, call_args(e), ei, 0, unprotcnt, laziness_string, rho);
   return out;
 }
 
-static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const RAnnot::ExpressionInfo * const ei, 
+static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const ExpressionInfo * const ei, 
 				 const int n, int * const unprotcnt, string & laziness_string, const string rho)
 {
   if (args == R_NilValue) {
