@@ -1615,8 +1615,7 @@ void popAllocStack()
 	AllocStack * temp = allocStackTop;
 	allocStackTop = temp->next;
 	free(temp);
-    }
-    else {
+    } else {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
     }
 }
