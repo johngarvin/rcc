@@ -1594,7 +1594,11 @@ char *S_realloc(char *p, long new, long old, int size)
 }
 
 static AllocStack * allocStackTop = NULL;
+static AllocStack * allocStackCurrent = NULL;
 
+/* pushes new allocator on the stack. Sets both allocStackTop and
+ * allocStackCurrent to the new allocator.
+ */
 void pushAllocStack(SEXP space,
 		    R_len_t size,
 		    AllocVectorFunction alloc_vector_function,
@@ -1606,17 +1610,36 @@ void pushAllocStack(SEXP space,
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
     elem->next = allocStackTop;
-    allocStackTop = elem;
+    allocStackTop = allocStackCurrent = elem;
 }
 
+/* pops top of allocator stack. allocStackCurrent is updated if it is
+   the top, unchanged otherwise. */
 void popAllocStack()
 {
     if (allocStackTop != NULL) {
 	AllocStack * temp = allocStackTop;
 	allocStackTop = temp->next;
+	if (allocStackCurrent == temp) {
+	    allocStackCurrent = allocStackTop;
+	}
 	free(temp);
     } else {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
+    }
+}
+
+/* Moves allocStackCurrent up to point to its parent. Useful for
+   specifying that memory should be allocated in the parent
+   allocator. */
+void upAllocStack()
+{
+    if (allocStackCurrent == NULL) {
+	errorcall(R_NilValue, _("cannot up empty allocation stack"));
+    } else if (allocStackCurrent->next == NULL) {
+	errorcall(R_NilValue, _("cannot up allocator; current allocator has no parent"));
+    } else {
+	allocStackCurrent = allocStackCurrent->next;
     }
 }
 
@@ -1635,7 +1658,7 @@ SEXP allocSExp(SEXPTYPE t)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: SEXP type %u ", t);
 
-    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(s, t);
     CAR(s) = R_NilValue;
@@ -1675,7 +1698,7 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: SEXP non-cons type %u ", t);
 
-    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
     allocSExpNonConsInPlace(t, s);
     return s;
 }
@@ -1710,7 +1733,7 @@ SEXP cons(SEXP car, SEXP cdr)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: cons ");
     
-    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
     consInPlace(car, cdr, s);
     return s;
 }
@@ -1804,7 +1827,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: environment ");
 
-    newrho = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    newrho = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(newrho) = ENVSXP;
     FRAME(newrho) = valuelist;
@@ -1842,7 +1865,7 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
 
-    s = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
     
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = PROMSXP;
@@ -1877,7 +1900,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	return R_NilValue;
     }
     
-    s = allocStackTop->allocateVector(allocStackTop, type, length);
+    s = allocStackCurrent->allocateVector(allocStackCurrent, type, length);
     allocVectorInPlace(type, length, s);
     return s;
 }
@@ -2496,7 +2519,7 @@ SEXP allocList(int n)
 	/* protect CDR (result), but CAR is always R_NilValue and doesn't need protection */
 	SEXP prev_result = result;
 	SEXP protect_on_gc[2] = {result, NULL};
-	result = allocStackTop->allocateNode(allocStackTop, protect_on_gc);
+	result = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
 	CDR(result) = prev_result;
     }
 

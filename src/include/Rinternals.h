@@ -494,12 +494,6 @@ SEXP Rf_StringFromReal(double, int*);
 SEXP Rf_StringFromComplex(Rcomplex, int*);
 SEXP Rf_EnsureString(SEXP);
 
-    /*
-typedef struct AllocInfoStruct {
-    SEXPTYPE type;
-    R_len_t length;
-} AllocInfo;
-    */
 typedef struct AllocStackStruct {
     SEXP space;
     R_len_t size;
@@ -515,6 +509,7 @@ void pushAllocStack(SEXP space,
 		    AllocVectorFunction alloc_vector_function,
 		    AllocNodeFunction alloc_node_function);
 void popAllocStack();
+void upAllocStack();
 SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
 SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);
