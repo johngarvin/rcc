@@ -695,8 +695,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     if (options & AC_STACK) {
-	pushAllocStack(NULL, -1, &allocVectorHeap, &allocNodeHeap);
-	/* heap allocate objects created in function body */
+	upAllocStack();
+	/* don't stack allocate in the body unless we're supposed to */
     }
 
     /*  Fix up any extras that were supplied by usemethod. */
@@ -819,7 +819,6 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     if (options & AC_STACK) {
-	popAllocStack();  /* heap */
 	popAllocStack();  /* stack space for closure */
     }
 
