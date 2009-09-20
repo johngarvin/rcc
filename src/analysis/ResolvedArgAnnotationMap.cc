@@ -30,7 +30,7 @@ namespace RAnnot {
 ResolvedArgAnnotationMap::ResolvedArgAnnotationMap() {
 }
 
-ResolvedArgAnnotationMap::get_instance() {
+ResolvedArgAnnotationMap * ResolvedArgAnnotationMap::get_instance() {
   if (s_instance == 0) {
     s_instance = new ResolvedArgAnnotationMap();
     analysisResults.add(s_handle, s_instance);
@@ -38,7 +38,7 @@ ResolvedArgAnnotationMap::get_instance() {
   return s_instance;
 }
 
-ResolvedArgAnnotationMap::handle() {
+PropertyHndlT ResolvedArgAnnotationMap::handle() {
   if (s_instance == 0) {
     s_instance = new ResolvedArgAnnotationMap();
     analysisResults.add(s_handle, s_instance);
@@ -46,22 +46,23 @@ ResolvedArgAnnotationMap::handle() {
   return s_handle;
 }
 
-ResolvedArgAnnotationMap::compute() {
+void ResolvedArgAnnotationMap::compute() {
   FuncInfo * fi;
   ExpressionInfo * cs;
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, cs) {
-      // get unique callee if it exists and get its formal arguments
-      SEXP formals = ...;
+      FuncInfo * callee = getProperty(FuncInfo, call_lhs(cs));
+      if (callee == 0) continue;
+      SEXP formals = fundef_args(callee->get_sexp());
       SEXP actuals = call_args(CAR(cs->get_cell()));
       actuals = Rf_matchArgs(formals, actuals);
-      actuals = resolve_defaults(formals, actuals);
-      m_map[cs] = new ResolvedArgs(actuals);
+      resolve_defaults(formals, actuals);
+      get_map()[cs] = new ResolvedArgs(actuals);
     }
   }
 }
 
-ResolvedArgAnnotationMap::resolve_defaults(SEXP formals, SEXP actuals) {
+void ResolvedArgAnnotationMap::resolve_defaults(SEXP formals, SEXP actuals) {
   SEXP f, a;
   /*  Use the default code for unbound formals. */
   

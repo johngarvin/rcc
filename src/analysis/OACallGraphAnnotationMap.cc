@@ -54,7 +54,8 @@ typedef OACallGraphAnnotationMap::const_iterator const_iterator;
 
 // ----- constructor, destructor -----
 
-OACallGraphAnnotationMap::OACallGraphAnnotationMap() {}
+OACallGraphAnnotationMap::OACallGraphAnnotationMap() {
+}
 
 OACallGraphAnnotationMap::~OACallGraphAnnotationMap() {
   delete_map_values();

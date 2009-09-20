@@ -16,39 +16,39 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: EscapeInfoAnnotationMap.h
+// File: CEscapeInfoAnnotationMap.h
 //
-// Maps expression SEXPs to information from escape analysis.
+// Maps expression SEXPs to information from closure escape analysis.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef ESCAPE_INFO_ANNOTATION_MAP_H
-#define ESCAPE_INFO_ANNOTATION_MAP_H
+#ifndef C_ESCAPE_INFO_ANNOTATION_MAP_H
+#define C_ESCAPE_INFO_ANNOTATION_MAP_H
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class EscapeInfoAnnotationMap : public DefaultAnnotationMap {
+class CEscapeInfoAnnotationMap : public DefaultAnnotationMap {
 public:
   // deconstructor
-  virtual ~EscapeInfoAnnotationMap();
+  virtual ~CEscapeInfoAnnotationMap();
 
   // singleton
-  static EscapeInfoAnnotationMap * get_instance();
+  static CEscapeInfoAnnotationMap * get_instance();
 
   // getting the handle causes this map to be created and registered
   static PropertyHndlT handle();
 
 private:
   // singleton: only this class is allowed to instantiate
-  explicit EscapeInfoAnnotationMap();
+  explicit CEscapeInfoAnnotationMap();
 
   void compute();
 
   // static members and methods for singleton
-  static EscapeInfoAnnotationMap * m_instance;
+  static CEscapeInfoAnnotationMap * m_instance;
   static PropertyHndlT m_handle;
   static void create();
 };
