@@ -201,6 +201,11 @@ bool is_var(const SEXP e) {
   return (TYPEOF(e) == SYMSXP);
 }
 
+// TODO: deprecate is_var, prefer is_symbol
+bool is_symbol(const SEXP e) {
+  return is_var(e);
+}
+
 std::string var_name(const SEXP e) {
   assert(is_var(e));
   return CHAR(PRINTNAME(e));
@@ -240,7 +245,7 @@ SEXP call_args(const SEXP e) {
   return CDR(e);
 }
 
-SEXP call_nth_arg(const SEXP e, int n) {
+SEXP call_nth_arg_c(const SEXP e, int n) {
   SEXP args = call_args(e);
   assert(n > 0);
   assert(Rf_length(args) <= n);

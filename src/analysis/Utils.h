@@ -61,6 +61,7 @@ SEXP subscript_first_sub_c(const SEXP e);
 SEXP subscript_subs(const SEXP e);
 bool is_const(const SEXP e);
 bool is_var(const SEXP e);
+bool is_symbol(const SEXP e);  // same as is_var
 std::string var_name(const SEXP e);
 bool is_library(const SEXP e);
 SEXP library_value(const SEXP e);
@@ -70,7 +71,7 @@ bool is_call(const SEXP e);
 SEXP call_lhs(const SEXP e);
 SEXP call_args(const SEXP e);
 // get the cons containing nth arg, indexed from 1
-SEXP call_nth_arg(const SEXP e, int n);
+SEXP call_nth_arg_c(const SEXP e, int n);
 
 bool is_if(const SEXP e);
 SEXP if_cond_c(const SEXP e);

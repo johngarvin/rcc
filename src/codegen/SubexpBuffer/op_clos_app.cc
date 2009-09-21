@@ -30,7 +30,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
-#include <analysis/EscapeInfo.h>
+#include <analysis/CEscapeInfo.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/Settings.h>
@@ -112,7 +112,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     options = "AC_DEFAULT";
   } else {
     options = "AC_RCC | AC_MATCH_ARGS | AC_ENVIRONMENT | AC_USEMETHOD";
-    if (!getProperty(EscapeInfo, fi_if_known->get_sexp())->may_escape()) {
+    if (!getProperty(CEscapeInfo, fi_if_known->get_sexp())->may_escape()) {
       options += " | AC_STACK";
     }
   }

@@ -44,6 +44,10 @@ rcc_bin_SOURCES =				\
   Assertion.h					\
   CallByValueAnalysis.cc                        \
   CallByValueAnalysis.h                         \
+  CEscapeInfo.h                                 \
+  CEscapeInfo.cc                                \
+  CEscapeInfoAnnotationMap.cc                   \
+  CEscapeInfoAnnotationMap.h                    \
   CommandLineArgs.cc                            \
   CommandLineArgs.h                             \
   Debug.cc                                      \
@@ -57,10 +61,6 @@ rcc_bin_SOURCES =				\
   DefVar.cc                                     \
   DefVar.h                                      \
   Dependence.h                                  \
-  EscapeInfo.h                                  \
-  EscapeInfo.cc                                 \
-  EscapeInfoAnnotationMap.cc                    \
-  EscapeInfoAnnotationMap.h                     \
   ExpressionInfo.cc                             \
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
