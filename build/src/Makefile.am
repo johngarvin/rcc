@@ -109,6 +109,10 @@ rcc_bin_SOURCES =				\
   OACallGraphAnnotation.h                       \
   OACallGraphAnnotationMap.cc                   \
   OACallGraphAnnotationMap.h                    \
+  OEscapeInfo.h                                 \
+  OEscapeInfo.cc                                \
+  OEscapeInfoAnnotationMap.cc                   \
+  OEscapeInfoAnnotationMap.h                    \
   PropertyHndl.h				\
   PropertySet.cc				\
   PropertySet.h					\

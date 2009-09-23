@@ -33,8 +33,11 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Settings.h>
+
 #include <support/StringUtils.h>
+
 #include <CodeGen.h>
+#include <CodeGenUtils.h>
 #include <GetName.h>
 #include <Metrics.h>
 #include <ParseInfo.h>
@@ -125,6 +128,33 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 	  append_defs("PROTECT(" + out + ");\n");
       }
     }
+
+    // special case for do_relop: call do_relop_dflt instead to avoid consing args
+  } else if (PRIMFUN(op) == (CCODE)do_relop && Settings::get_instance()->get_special_case_arithmetic()) {
+    if (!Rf_isObject(CAR(args)) && !Rf_isObject(CADR(args))) {
+      Protection xprot = Protected;
+      if (is_constant_expr(CAR(args))) {
+	xprot = Unprotected;
+      }
+      // pass true to op_exp to evaluate arguments
+      Expression x = op_exp(args, rho, xprot, true);
+      Expression y = op_exp(CDR(args), rho, Unprotected, true);
+      out = appl4("do_relop_dflt", to_string(e), "R_NilValue", op1.var, x.var, y.var, Unprotected);
+      int unprotcnt = 0;
+      if (!x.del_text.empty()) unprotcnt++;
+      if (!y.del_text.empty()) unprotcnt++;
+      if (unprotcnt > 0) {
+	append_defs(emit_call1("UNPROTECT", i_to_s(unprotcnt)) + ";\n");
+      }
+      if (resultProtection == Protected) {
+	if (unprotcnt > 0) {
+	  append_defs(emit_call1("SAFE_PROTECT", out) + ";\n");
+	} else {
+	  append_defs(emit_call1("PROTECT", out) + ";\n");
+	}
+      }
+    }
+
     // special case for OSR'd version of do_transpose
   } else if (PRIMFUN(op) == (CCODE)do_transpose) { /* && Settings::get_instance()->get_transpose_osr()) { */
 #if USE_OUTPUT_CODEGEN

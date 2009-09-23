@@ -16,46 +16,41 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CEscapeInfo.cc
+// File: OEscapeInfo.cc
 //
-// Annotation for information coming from closure escape analysis:
-// whether the closure of a function may outlive its caller. Attached
-// to fundefs.
+// Annotation for information coming from object escape analysis.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <analysis/CEscapeInfoAnnotationMap.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
 
 #include <support/RccError.h>
 
-#include "CEscapeInfo.h"
+#include "OEscapeInfo.h"
 
 namespace RAnnot {
 
-CEscapeInfo::CEscapeInfo(bool x) : m_may_escape(x) {
-}
-
-CEscapeInfo::~CEscapeInfo() {
-}
+OEscapeInfo::OEscapeInfo(bool x) : m_may_escape(x) {}
+OEscapeInfo::~OEscapeInfo() {}
   
-bool CEscapeInfo::may_escape() {
+bool OEscapeInfo::may_escape() {
   return m_may_escape;
 }
 
-void CEscapeInfo::set_may_escape(bool x) {
+void OEscapeInfo::set_may_escape(bool x) {
   m_may_escape = x;
 }
 
-AnnotationBase * CEscapeInfo::clone() {
+AnnotationBase * OEscapeInfo::clone() {
   return 0;
 }
 
-std::ostream & CEscapeInfo::dump(std::ostream &) const {
+std::ostream & OEscapeInfo::dump(std::ostream &) const {
   // TODO
 }
 
-PropertyHndlT CEscapeInfo::handle() {
-  return CEscapeInfoAnnotationMap::handle();
+PropertyHndlT OEscapeInfo::handle() {
+  return OEscapeInfoAnnotationMap::handle();
 }
   
 }

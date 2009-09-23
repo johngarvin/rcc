@@ -20,7 +20,7 @@
 //
 // Annotation for information coming from closure escape analysis:
 // whether the closure of a function may outlive its caller. Attached
-// to expressions and fundefs.
+// to fundefs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
