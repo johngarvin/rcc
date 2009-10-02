@@ -29,7 +29,6 @@
 #include <list>
 #include <string>
 #include <ostream>
-#include <assert.h>
 
 #include <OpenAnalysis/CFG/ManagerCFG.hpp>
 #include <OpenAnalysis/IRInterface/AliasIRInterface.hpp>
@@ -38,6 +37,7 @@
 #include <OpenAnalysis/IRInterface/InterSideEffectIRInterfaceDefault.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/IRInterface/ParamBindingsIRInterface.hpp>
+#include <OpenAnalysis/IRInterface/SSAIRInterface.hpp>
 
 #include <include/R/R_RInternals.h>
 
@@ -57,7 +57,8 @@ class R_IRInterface : public virtual OA::CFG::CFGIRInterfaceDefault,
 		      public virtual OA::Alias::AliasIRInterface,
 		      public virtual OA::CallGraph::CallGraphIRInterface,
 	              public virtual OA::DataFlow::ParamBindingsIRInterface,
-	              public virtual OA::SideEffect::InterSideEffectIRInterfaceDefault
+	              public virtual OA::SideEffect::InterSideEffectIRInterfaceDefault,
+		      public virtual OA::SSA::SSAIRInterface
 {
 public:
   explicit R_IRInterface() {}
@@ -305,6 +306,20 @@ public:
   // above
   //--------------------------------------------------------
 
+  //--------------------------------------------------------
+  // Implementing SSA information methods from SSAIRInterface
+  //--------------------------------------------------------
+
+  /// Given a statement, return uses (variables referenced)
+  OA::OA_ptr<OA::SSA::IRUseDefIterator> getUses(OA::StmtHandle h);
+
+  /// Given a statement, return defs (variables defined)
+  OA::OA_ptr<OA::SSA::IRUseDefIterator> getDefs(OA::StmtHandle h);
+  
+  /// Given a LeafHandle containing a use or def, return
+  /// the referened SymHandle.
+  OA::SymHandle getSymHandle(OA::LeafHandle h);
+
   //------------------------------------------------------------
   // Pretty printing methods from IRHandlesIRInterface
   //------------------------------------------------------------
@@ -383,9 +398,6 @@ private:
   R_ListIterator iter;
 };
 
-#if 0
-not required; no SSA in OA
-
 /// Enumerate all the variable uses or variable definitions in a statement.
 /// This is useful for analyses that require information about variable
 /// references or definitions, such as SSA construction.
@@ -401,7 +413,6 @@ public:
 private:
   OA::OA_ptr<R_VarRefSetIterator> m_iter;
 };
-#endif
 
 /// Enumerate all the variable uses or variable definitions in a statement.
 /// This is useful for analyses that require information about variable

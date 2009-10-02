@@ -85,13 +85,13 @@ void SideEffect::set_action(bool x) {
 
 void SideEffect::insert_use_var(const FuncInfo * fi, const UseVar * use) {
   OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, use));
+  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(use));
   insert_use(make_var_info(symbol));
 }
 
 void SideEffect::insert_def_var(const FuncInfo * fi, const DefVar * def) {
   OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(fi, def));
+  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::get_instance()->find_entry(def));
   insert_def(make_var_info(symbol));
 }
 

@@ -223,12 +223,7 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
       // in the scope's symbol table, associate the name with a VarInfo
       SymbolTable * st = scope->get_symbol_table();
       VarInfo * vi = st->find_or_create(name, scope);
-      // each VarInfo has a list of definitions. If this mention is a
-      // def, add it to the appropriate VarInfo if it's not there
-      // already.
-      if(DefVar * def = dynamic_cast<DefVar *>(var)) {
-	vi->insert_def(def);
-      }
+      vi->insert_var(var);
     }
     // if VarBinding is ambiguous (more than one scope), add it to the
     // special symbol table

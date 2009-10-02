@@ -22,12 +22,13 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <assert.h>
+
 #include <include/R/R_RInternals.h>
 
 #include <support/DumpMacros.h>
 
 #include <analysis/Var.h>
-#include <analysis/DefVar.h>
 #include <analysis/LexicalScope.h>
 
 #include <support/RccError.h>
@@ -38,11 +39,14 @@
 
 namespace RAnnot {
 
-  // typedefs for readability
+// typedefs for readability
 
-typedef VarInfo::iterator iterator;
-typedef VarInfo::const_iterator const_iterator;
-typedef VarInfo::size_type size_type;
+typedef VarInfo::DefIterator DefIterator;
+typedef VarInfo::ConstDefIterator ConstDefIterator;
+typedef VarInfo::DefSizeT DefSizeT;
+typedef VarInfo::UseIterator UseIterator;
+typedef VarInfo::ConstUseIterator ConstUseIterator;
+typedef VarInfo::UseSizeT UseSizeT;
 
 VarInfo::VarInfo(const SEXP name, const LexicalScope * const scope)
   : m_name(name), m_scope(scope), m_c_location(""), m_param(false)
@@ -64,49 +68,86 @@ VarInfo * VarInfo::clone() {
 
 // defs iterators:
 
-iterator VarInfo::begin_defs() {
+DefIterator VarInfo::begin_defs() {
   return m_defs.begin();
 }
 
-const_iterator VarInfo::begin_defs() const {
+ConstDefIterator VarInfo::begin_defs() const {
   return m_defs.begin();
 }
 
-iterator VarInfo::end_defs() {
+DefIterator VarInfo::end_defs() {
   return m_defs.end();
 }
 
-const_iterator VarInfo::end_defs() const {
+ConstDefIterator VarInfo::end_defs() const {
   return m_defs.end();
 }
   
 // defs capacity:
-size_type VarInfo::size_defs() const {
+DefSizeT VarInfo::size_defs() const {
   return m_defs.size();
 }
   
-// defs modifiers:
-void VarInfo::insert_def(const value_type& x) {
-  m_defs.push_back(x);
-  if (x->getSourceType() == DefVar::DefVar_FORMAL) {
-    m_param = true;
-  }
-}
-
-iterator VarInfo::insert_def(iterator position, const value_type& x) {
-  return m_defs.insert(position, x);
-}
-
-void VarInfo::erase_defs(iterator position) {
+void VarInfo::erase_defs(DefIterator position) {
   m_defs.erase(position);
 }
 
-void VarInfo::erase_defs(iterator first, iterator last) {
+void VarInfo::erase_defs(DefIterator first, DefIterator last) {
   m_defs.erase(first, last);
 }
 
 void VarInfo::clear_defs() {
   m_defs.clear();
+}
+
+// uses iterators:
+
+UseIterator VarInfo::begin_uses() {
+  return m_uses.begin();
+}
+
+ConstUseIterator VarInfo::begin_uses() const {
+  return m_uses.begin();
+}
+
+UseIterator VarInfo::end_uses() {
+  return m_uses.end();
+}
+
+ConstUseIterator VarInfo::end_uses() const {
+  return m_uses.end();
+}
+  
+// uses capacity:
+UseSizeT VarInfo::size_uses() const {
+  return m_uses.size();
+}
+  
+void VarInfo::erase_uses(UseIterator position) {
+  m_uses.erase(position);
+}
+
+void VarInfo::erase_uses(UseIterator first, UseIterator last) {
+  m_uses.erase(first, last);
+}
+
+void VarInfo::clear_uses() {
+  m_uses.clear();
+}
+
+// modifiers:
+void VarInfo::insert_var(const Var * x) {
+  if (DefT def = dynamic_cast<DefT>(x)) {
+    m_defs.push_back(def);
+    if (def->getSourceType() == DefVar::DefVar_FORMAL) {
+      m_param = true;
+    }
+  } else if (UseT use = dynamic_cast<UseT>(x)) {
+    m_uses.push_back(use);
+  } else {
+    assert(0);
+  }
 }
 
 bool VarInfo::is_param() {
@@ -117,7 +158,7 @@ bool VarInfo::is_internal() {
   return (m_scope == InternalLexicalScope::get_instance());
 }
 
-VarInfo::key_type VarInfo::single_def_if_exists() {
+VarInfo::DefT VarInfo::single_def_if_exists() {
   if (size_defs() == 1) {
     return *(m_defs.begin());
   } else {
@@ -158,9 +199,9 @@ VarInfo::dump(std::ostream& os) const
   } else {
     os << "<ambiguous: no scope specified>" << std::endl;
   }
-  const_iterator it;
+  ConstDefIterator it;
   for(it = begin_defs(); it != end_defs(); ++it) {
-    DefVar * def = *it;
+    const DefVar * def = *it;
     def->dump(os);
   }
   endObjDump(os, VarInfo);

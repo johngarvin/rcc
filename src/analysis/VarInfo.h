@@ -33,6 +33,7 @@
 #include <list>
 
 #include <analysis/DefVar.h>
+#include <analysis/UseVar.h>
 
 // ----- forward declarations -----
 
@@ -46,13 +47,17 @@ class VarInfo
   : public AnnotationBase
 {
 public:
-  typedef DefVar *                                          key_type;
+  typedef const DefVar *                                    DefT;
+  typedef const UseVar *                                    UseT;
 
-  typedef std::list<key_type>                               MySet_t;
-  typedef key_type                                          value_type;
-  typedef MySet_t::iterator                                 iterator;
-  typedef MySet_t::const_iterator                           const_iterator;
-  typedef MySet_t::size_type                                size_type;
+  typedef std::list<DefT>                                   DefSetT;
+  typedef std::list<UseT>                                   UseSetT;
+  typedef DefSetT::iterator                                 DefIterator;
+  typedef DefSetT::const_iterator                           ConstDefIterator;
+  typedef DefSetT::size_type                                DefSizeT;
+  typedef UseSetT::iterator                                 UseIterator;
+  typedef UseSetT::const_iterator                           ConstUseIterator;
+  typedef UseSetT::size_type                                UseSizeT;
 
 public:
   // constructor for SymbolTables in LexicalScopes
@@ -69,31 +74,45 @@ public:
   virtual VarInfo * clone();
 
   // defs iterators:
-  iterator begin_defs();
-  const_iterator begin_defs() const;
-  iterator end_defs();
-  const_iterator end_defs() const;
+  DefIterator begin_defs();
+  ConstDefIterator begin_defs() const;
+  DefIterator end_defs();
+  ConstDefIterator end_defs() const;
   
   // defs capacity:
-  size_type size_defs() const;
+  DefSizeT size_defs() const;
   
-  // defs modifiers:
-  void insert_def(const value_type& x);
-  iterator insert_def(iterator position, const value_type& x);
-
-  void erase_defs(iterator position);
-  void erase_defs(iterator first, iterator last);
-
+  void erase_defs(DefIterator position);
+  void erase_defs(DefIterator first, DefIterator last);
   void clear_defs();
 
+  // uses iterators:
+  UseIterator begin_uses();
+  ConstUseIterator begin_uses() const;
+  UseIterator end_uses();
+  ConstUseIterator end_uses() const;
+  
+  // uses capacity:
+  UseSizeT size_uses() const;
+  
+  void erase_uses(UseIterator position);
+  void erase_uses(UseIterator first, UseIterator last);
+  void clear_uses();
+
+  // insert def or use
+  void insert_var(const Var * var);
+
+  // true if the name is a formal argument
   bool is_param();
+
+  // true if it's a library
   bool is_internal();
 
   // if there is exactly one def, return it, otherwise return 0
-  key_type single_def_if_exists();
+  DefT single_def_if_exists();
 
   /// get the location in the R environment
-  std::string get_location(SubexpBuffer* sb);
+  std::string get_location(SubexpBuffer * sb);
 
   const SEXP get_name() const;
   const LexicalScope * const get_scope() const;
@@ -102,12 +121,13 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
 private:
   const SEXP m_name;
   const LexicalScope * const m_scope;
-  MySet_t m_defs;
+  DefSetT m_defs;
+  UseSetT m_uses;
   std::string m_c_location;
   bool m_param;
 };

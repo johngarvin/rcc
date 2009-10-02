@@ -24,7 +24,7 @@
 
 #include <analysis/StrictnessDFSetElement.h>
 
-#include <cassert>
+#include <assert.h>
 
 #include "StrictnessDFSetIterator.h"
 

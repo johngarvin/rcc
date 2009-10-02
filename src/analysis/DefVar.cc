@@ -22,7 +22,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <cassert>
+#include <assert.h>
 
 #include <support/DumpMacros.h>
 

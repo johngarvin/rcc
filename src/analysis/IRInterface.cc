@@ -23,12 +23,12 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <OpenAnalysis/Alias/Interface.hpp>
 #include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
 #include <OpenAnalysis/SideEffect/ManagerSideEffectStandard.hpp>
 #include <OpenAnalysis/SideEffect/InterSideEffectInterface.hpp>
 #include <OpenAnalysis/SideEffect/InterSideEffectStandard.hpp>
 #include <OpenAnalysis/SideEffect/SideEffectStandard.hpp>
-#include <OpenAnalysis/Alias/Interface.hpp>
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
@@ -393,7 +393,7 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
     return SymHandle(0);
   } else {
     SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
-    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(fi, getProperty(Var, cell));
+    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(getProperty(Var, cell));
     return make_sym_h(vi);
   }
 }
@@ -415,7 +415,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   if (is_var(call_lhs(e))) {
     // TODO: redo Annotations so we can use getProperty without requiring the annotations to have a certain name
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(e));
-    VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, e));  // e is the cell that contains the mention
+    VarInfo * vi = symbol_table->find_entry(getProperty(Var, e));  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
     return MemRefExprInterface::convert_sym_handle(sym);
     // TODO: do something different if this is a parameter.
@@ -433,7 +433,7 @@ ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
     rcc_error("getProcHandle: tried to get ProcHandle of procedure symbol parameter");
     return HellProcedure::get_instance();
   }
-  VarInfo::const_iterator iter = vi->begin_defs();
+  VarInfo::ConstDefIterator iter = vi->begin_defs();
   if (iter == vi->end_defs()) {
     rcc_warn("getProcHandle: procedure symbol has no definitions");
     return HellProcedure::get_instance();
@@ -460,7 +460,7 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
   SEXP name = fi->get_first_name_c();
   if (VarAnnotationMap::get_instance()->is_valid(name)) {
-    VarInfo * sym = symbol_table->find_entry(fi, getProperty(Var, name));
+    VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
     if (sym->size_defs() == 1) {
       return make_sym_h(sym);
     } else {
@@ -559,7 +559,7 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
     return make_sym_h(new VarInfo(formal_c));
   }
 
-  VarInfo * vi = symbol_table->find_entry(fi, getProperty(Var, formal_c));
+  VarInfo * vi = symbol_table->find_entry(getProperty(Var, formal_c));
   return make_sym_h(vi);
 }
 
@@ -649,7 +649,6 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
   return retval;
 }
 
-#if 0
 //--------------------------------------------------------
 // Obtain uses and defs for SSA
 //--------------------------------------------------------
@@ -659,7 +658,6 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
-  // For each variable, insert only if it's a def
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::get_instance();
   EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
@@ -676,7 +674,6 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
-  // For each variable, insert only if it's a use
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::get_instance();
   EXPRESSION_FOR_EACH_USE(stmt_info, use) {
@@ -687,7 +684,15 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   retval = new R_UseDefAsLeafIterator(uses->get_iterator());
   return retval;
 }
-#endif
+
+
+SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
+  SEXP sexp = make_sexp(h);
+  assert(is_var(sexp));
+  const Var * var = getProperty(Var, sexp);
+  const VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(var);
+  return make_sym_h(vi);
+}
 
 //------------------------------------------------------------
 // Dump routines for debugging
@@ -928,7 +933,6 @@ void R_RegionStmtListIterator::reset() {
   iter.reset(); 
 }
 
-#if 0
 //--------------------------------------------------------------------
 // R_UseDefAsLeafIterator
 //--------------------------------------------------------------------
@@ -956,7 +960,6 @@ void R_UseDefAsLeafIterator::operator++() {
 void R_UseDefAsLeafIterator::reset() {
   m_iter->reset();
 }
-#endif
 
 //------------------------------------------------------------
 // R_UseDefAsMemRefIterator

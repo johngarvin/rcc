@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <string>
-#include <cassert>
+#include <assert.h>
 
 //**************************** R Include Files ******************************
 

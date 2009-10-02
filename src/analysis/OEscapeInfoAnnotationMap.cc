@@ -83,17 +83,20 @@ void OEscapeInfoAnnotationMap::compute() {
   //   if it's the RHS of a non-local assignment, it escapes
   //   if an escaping expression points to it, it escapes
 
-  // simplified for fundefs: anonymous or LHS of assignment
-  //   if called, no change
-  //   if passed to a function, get whether that arg escapes from callee, or conservatively say may escape
-  //   if returned, it escapes
-  //   escaping expression points to it? can't happen unless passed to function
-
-  // simplified for variable (that is, object bound to variable)
+  // simplified for variable (that is, set of all objects bound to variable)
   //   if called, no change
   //   if passed to function, escapes if arg escapes from callee
   //   if returned, it escapes
   //   if RHS of non-local assignment, it escapes
+
+  // collect escaping expressions:
+  // * RHS of non-local assignments
+  // * return values
+  // * arguments that escape call sites via assignment (not return)
+  //
+  // for each escaping expression:
+  // * add expression to map
+  // * if call site, recur on args that escape via assignment or return
 
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_NODE(fi, node) {

@@ -33,7 +33,9 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/SymbolTable.h>
+#include <analysis/SymbolTableFacade.h>
 #include <analysis/Var.h>
+#include <analysis/VarAnnotationMap.h>
 #include <analysis/VarInfo.h>
 #include <analysis/VarBinding.h>
 
@@ -66,6 +68,41 @@ CEscapeInfoAnnotationMap::~CEscapeInfoAnnotationMap() {
 
 // ----- computation -----
 
+// We want to know:
+// * Is this fundef ever assigned non-locally?
+// * Is this fundef ever passed as an argument to a library/procedure that escapes that argument?
+
+// The common case: only one def, and all uses are in function position
+void CEscapeInfoAnnotationMap::compute() {
+  FuncInfo * fi;
+
+  FOR_EACH_PROC(fi) {
+    CEscapeInfo * annot = new CEscapeInfo(false);
+    
+    // for now, get the first name assigned to the function if it exists.
+    SEXP name = fi->get_first_name_c();
+    // if no name (anonymous or the whole-program procedure), conservatively say true
+    if (!VarAnnotationMap::get_instance()->is_valid(name)) {
+      annot->set_may_escape(true);
+    } else {
+      SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+      
+      VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
+      VarInfo::ConstUseIterator use_iter;
+      for (use_iter = sym->begin_uses(); use_iter != sym->end_uses(); use_iter++) {
+	// if in arg position, then escape is true (conservative unless
+	// we have escape information on whether procedures escape their
+	// arguments)
+	if ((*use_iter)->getPositionType() == UseVar::UseVar_ARGUMENT) {
+	  annot->set_may_escape(true);
+	}
+      }
+    }
+    get_map()[fi->get_sexp()] = annot;
+  }
+}
+
+#if 0
 void CEscapeInfoAnnotationMap::compute() {
   FuncInfo * fi;
   Var * var;
@@ -113,6 +150,7 @@ void CEscapeInfoAnnotationMap::compute() {
     }
   }
 }
+#endif
 
 // ----- singleton pattern -----
 

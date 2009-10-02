@@ -24,7 +24,7 @@
 
 #include <analysis/LocalityDFSetElement.h>
 
-#include <cassert>
+#include <assert.h>
 
 #include "LocalityDFSetIterator.h"
 
