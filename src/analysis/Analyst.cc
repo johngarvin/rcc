@@ -49,22 +49,22 @@ using namespace HandleInterface;
 // ----- implement Singleton pattern -----
 
 /// the only instance
-R_Analyst * R_Analyst::m_instance = 0;
+R_Analyst * R_Analyst::s_instance = 0;
 
 /// static instantiation
 R_Analyst * R_Analyst::get_instance(SEXP _program) {
-  if (m_instance == 0) {
-    m_instance = new R_Analyst(_program);
+  if (s_instance == 0) {
+    s_instance = new R_Analyst(_program);
   }
-  return m_instance;
+  return s_instance;
 }
 
 /// just get the existing instance; error if not yet instantiated
 R_Analyst * R_Analyst::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     rcc_error("R_Analyst is not yet instantiated");
   }
-  return m_instance;
+  return s_instance;
 }
 
 // ----- constructor -----

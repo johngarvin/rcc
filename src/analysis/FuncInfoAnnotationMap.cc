@@ -37,26 +37,26 @@ FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {
 // ----- singleton pattern -----
 
 FuncInfoAnnotationMap * FuncInfoAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT FuncInfoAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 void FuncInfoAnnotationMap::create() {
-  m_instance = new FuncInfoAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new FuncInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-FuncInfoAnnotationMap * FuncInfoAnnotationMap::m_instance = 0;
-PropertyHndlT FuncInfoAnnotationMap::m_handle = "FuncInfo";
+FuncInfoAnnotationMap * FuncInfoAnnotationMap::s_instance = 0;
+PropertyHndlT FuncInfoAnnotationMap::s_handle = "FuncInfo";
 
 // ----- computation -----
 

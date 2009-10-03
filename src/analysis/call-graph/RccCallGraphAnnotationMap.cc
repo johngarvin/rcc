@@ -93,26 +93,26 @@ RccCallGraphAnnotationMap::~RccCallGraphAnnotationMap() {
 // ----- singleton pattern -----
 
 RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
   
 PropertyHndlT RccCallGraphAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
   
 void RccCallGraphAnnotationMap::create() {
-  m_instance = new RccCallGraphAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new RccCallGraphAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
   
-RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::m_instance = 0;
-PropertyHndlT RccCallGraphAnnotationMap::m_handle = "RccCallGraph";
+RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::s_instance = 0;
+PropertyHndlT RccCallGraphAnnotationMap::s_handle = "RccCallGraph";
   
 //  ----- demand-driven analysis ----- 
 

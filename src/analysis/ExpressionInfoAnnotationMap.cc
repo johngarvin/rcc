@@ -123,27 +123,27 @@ ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
 // ----- singleton pattern -----
 
 ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT ExpressionInfoAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 // Create the singleton instance and register the map in PropertySet
 // for getProperty
 void ExpressionInfoAnnotationMap::create() {
-  m_instance = new ExpressionInfoAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new ExpressionInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::m_instance = 0;
-PropertyHndlT ExpressionInfoAnnotationMap::m_handle = "ExpressionInfo";
+ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::s_instance = 0;
+PropertyHndlT ExpressionInfoAnnotationMap::s_handle = "ExpressionInfo";
 
 }

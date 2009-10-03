@@ -42,8 +42,8 @@ public:
 protected:
   explicit MacroFactory() {}
 private:
-  static MacroFactory * _instance;
-  static const std::string m_path;
+  static MacroFactory * s_instance;
+  static const std::string s_path;
 };
 
 extern const MacroFactory mf;

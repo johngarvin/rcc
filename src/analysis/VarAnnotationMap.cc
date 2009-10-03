@@ -64,26 +64,26 @@ VarAnnotationMap::~VarAnnotationMap()
 // ----- singleton pattern -----
 
 VarAnnotationMap * VarAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT VarAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 void VarAnnotationMap::create() {
-  m_instance = new VarAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new VarAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-VarAnnotationMap * VarAnnotationMap::m_instance = 0;
-PropertyHndlT VarAnnotationMap::m_handle = "Var";
+VarAnnotationMap * VarAnnotationMap::s_instance = 0;
+PropertyHndlT VarAnnotationMap::s_handle = "Var";
 
 
 // ----- computation -----

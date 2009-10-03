@@ -56,8 +56,8 @@ private:
   static void create();
 
 private:
-  static VarBindingAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static VarBindingAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
 };
 
 }

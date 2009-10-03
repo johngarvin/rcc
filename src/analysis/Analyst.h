@@ -72,7 +72,7 @@ private:
   explicit R_Analyst(SEXP _program);
 
 private:
-  static R_Analyst * m_instance;
+  static R_Analyst * s_instance;
 
 private:
   SEXP m_program;

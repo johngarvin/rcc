@@ -107,40 +107,40 @@ private:
   // ----- maps of constants to their code representations -----
 
   // functions
-  static std::map<std::string, std::string> m_func_map;
+  static std::map<std::string, std::string> s_func_map;
 
   // R identifiers
-  static std::map<std::string, std::string> m_symbol_map;
+  static std::map<std::string, std::string> s_symbol_map;
 
   // constant strings
-  static std::map<std::string, std::string> m_string_map;
+  static std::map<std::string, std::string> s_string_map;
 
   // floating-point
-  static std::map<double, std::string> m_real_map;
+  static std::map<double, std::string> s_real_map;
 
   // Boolean
-  static std::map<int, std::string> m_logical_map;
+  static std::map<int, std::string> s_logical_map;
 
   // integers
-  static std::map<int, std::string> m_integer_map;
+  static std::map<int, std::string> s_integer_map;
 
   // primitive functions (PRIMSXP)
-  static std::map<int, std::string> m_primsxp_map;
+  static std::map<int, std::string> s_primsxp_map;
 
   // bindings of global library functions/variables
-  static std::map<std::string, std::string> m_binding_map;
+  static std::map<std::string, std::string> s_binding_map;
 
-  static CommandLineArgs * m_cl_args;
+  static CommandLineArgs * s_cl_args;
 
   // ----- flags -----
 
-  static bool m_problem_flag;
-  static bool m_analysis_ok;
-  static bool m_allow_oo;
-  static bool m_allow_envir_manip;
-  static bool m_allow_special_redef;
-  static bool m_allow_builtin_redef;
-  static bool m_allow_library_redef;
+  static bool s_problem_flag;
+  static bool s_analysis_ok;
+  static bool s_allow_oo;
+  static bool s_allow_envir_manip;
+  static bool s_allow_special_redef;
+  static bool s_allow_builtin_redef;
+  static bool s_allow_library_redef;
 };
 
 #endif

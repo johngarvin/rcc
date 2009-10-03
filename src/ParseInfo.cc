@@ -31,97 +31,97 @@
 using namespace std;
 
 // initialize statics
-map<string, string> ParseInfo::m_func_map;
-map<string, string> ParseInfo::m_symbol_map;
-map<string, string> ParseInfo::m_string_map;
-map<double, string> ParseInfo::m_real_map;
-map<int, string> ParseInfo::m_logical_map;
-map<int, string> ParseInfo::m_integer_map;
-map<int, string> ParseInfo::m_primsxp_map;
-map<string, string> ParseInfo::m_binding_map;
+map<string, string> ParseInfo::s_func_map;
+map<string, string> ParseInfo::s_symbol_map;
+map<string, string> ParseInfo::s_string_map;
+map<double, string> ParseInfo::s_real_map;
+map<int, string> ParseInfo::s_logical_map;
+map<int, string> ParseInfo::s_integer_map;
+map<int, string> ParseInfo::s_primsxp_map;
+map<string, string> ParseInfo::s_binding_map;
 SubexpBuffer * ParseInfo::global_fundefs;
 SplitSubexpBuffer * ParseInfo::global_constants;
 SubexpBuffer * ParseInfo::global_labels;
 
-CommandLineArgs * ParseInfo::m_cl_args = 0;
+CommandLineArgs * ParseInfo::s_cl_args = 0;
 
-bool ParseInfo::m_problem_flag = false;
-bool ParseInfo::m_analysis_ok  = true;
+bool ParseInfo::s_problem_flag = false;
+bool ParseInfo::s_analysis_ok  = true;
 
-bool ParseInfo::m_allow_oo            = true;
-bool ParseInfo::m_allow_envir_manip   = true;
-bool ParseInfo::m_allow_special_redef = true;
-bool ParseInfo::m_allow_builtin_redef = true;
-bool ParseInfo::m_allow_library_redef = true;
+bool ParseInfo::s_allow_oo            = true;
+bool ParseInfo::s_allow_envir_manip   = true;
+bool ParseInfo::s_allow_special_redef = true;
+bool ParseInfo::s_allow_builtin_redef = true;
+bool ParseInfo::s_allow_library_redef = true;
 
 void ParseInfo::set_command_line_args(CommandLineArgs * x) {
-  m_cl_args = x;
+  s_cl_args = x;
 }
 
 CommandLineArgs * ParseInfo::get_command_line_args() {
-  return m_cl_args;
+  return s_cl_args;
 }
 
 void ParseInfo::flag_problem() {
-  m_problem_flag = true;
+  s_problem_flag = true;
 }
 
 bool ParseInfo::get_problem_flag() {
-  return m_problem_flag;
+  return s_problem_flag;
 }
 
 void ParseInfo::set_analysis_ok(bool x) {
-  m_analysis_ok = x;
+  s_analysis_ok = x;
 }
 
 bool ParseInfo::analysis_ok() {
-  return m_analysis_ok;
+  return s_analysis_ok;
 }
 
 // whether we have to account for object-oriented programming
 void ParseInfo::set_allow_oo(bool x) {
-  m_allow_oo = x;
+  s_allow_oo = x;
 }
 
 bool ParseInfo::allow_oo() {
-  return m_allow_oo;
+  return s_allow_oo;
 }
 
 // whether we have to account for explicit environment manipulation
 // [get(), assign(), attach(), etc.]
 void ParseInfo::set_allow_envir_manip(bool x) {
-  m_allow_envir_manip = x;
+  s_allow_envir_manip = x;
 }
 
 bool ParseInfo::allow_envir_manip() {
-  return m_allow_envir_manip;
+  return s_allow_envir_manip;
 }
 
 // whether specials (control flow, etc.) might be redefined
 void ParseInfo::set_allow_special_redef(bool x) {
-  m_allow_special_redef = x;
+  s_allow_special_redef = x;
 }
 
 bool ParseInfo::allow_special_redef() {
-  return m_allow_special_redef;
+  return s_allow_special_redef;
 }
 
 // whether builtin functions (arithmetic, etc.) might be redefined
 void ParseInfo::set_allow_builtin_redef(bool x) {
-  m_allow_builtin_redef = x;
+  s_allow_builtin_redef = x;
 }
 
 bool ParseInfo::allow_builtin_redef() {
-  return m_allow_builtin_redef;
+  return s_allow_builtin_redef;
 }
 
 // whether library functions might be redefined
 void ParseInfo::set_allow_library_redef(bool x) {
-  m_allow_library_redef = x;
+  s_allow_library_redef = x;
 }
 
 bool ParseInfo::allow_library_redef() {
-  return m_allow_library_redef;
+  return s_allow_library_redef;
 }
 
 // maps for storing constants
@@ -129,127 +129,127 @@ bool ParseInfo::allow_library_redef() {
 // ----- function -----
 
 bool ParseInfo::func_constant_exists(string func) {
-  return (m_func_map.find(func) != m_func_map.end());
+  return (s_func_map.find(func) != s_func_map.end());
 }
 
 string ParseInfo::get_func_constant(string func) {
-  map<string, string>::const_iterator it = m_func_map.find(func);
-  assert(it != m_func_map.end());
+  map<string, string>::const_iterator it = s_func_map.find(func);
+  assert(it != s_func_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_func_constant(string func, string value) {
-  m_func_map[func] = value;
+  s_func_map[func] = value;
 }
 
 // ----- symbol -----
 
 bool ParseInfo::symbol_exists(string symbol) {
-  return (m_symbol_map.find(symbol) != m_symbol_map.end());
+  return (s_symbol_map.find(symbol) != s_symbol_map.end());
 }
 
 string ParseInfo::get_symbol(string symbol) {
-  map<string, string>::const_iterator it = m_symbol_map.find(symbol);
-  assert(it != m_symbol_map.end());
+  map<string, string>::const_iterator it = s_symbol_map.find(symbol);
+  assert(it != s_symbol_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_symbol(string symbol, string value) {
-  m_symbol_map[symbol] = value;
+  s_symbol_map[symbol] = value;
 }
 
 // ----- string -----
 
 bool ParseInfo::string_constant_exists(string s) {
-  return (m_string_map.find(s) != m_string_map.end());
+  return (s_string_map.find(s) != s_string_map.end());
 }
 
 string ParseInfo::get_string_constant(string s) {
-  map<string, string>::const_iterator it = m_string_map.find(s);
-  assert(it != m_string_map.end());
+  map<string, string>::const_iterator it = s_string_map.find(s);
+  assert(it != s_string_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_string_constant(string s, string value) {
-  m_string_map[s] = value;
+  s_string_map[s] = value;
 }
 
 // ----- real -----
 
 bool ParseInfo::real_constant_exists(double real) {
-  return (m_real_map.find(real) != m_real_map.end());
+  return (s_real_map.find(real) != s_real_map.end());
 }
 
 string ParseInfo::get_real_constant(double real) {
-  map<double, string>::const_iterator it = m_real_map.find(real);
-  assert(it != m_real_map.end());
+  map<double, string>::const_iterator it = s_real_map.find(real);
+  assert(it != s_real_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_real_constant(double real, string value) {
-  m_real_map[real] = value;
+  s_real_map[real] = value;
 }
 
 // ----- logical -----
 
 bool ParseInfo::logical_constant_exists(int logical) {
-  return (m_logical_map.find(logical) != m_logical_map.end());
+  return (s_logical_map.find(logical) != s_logical_map.end());
 }
 
 string ParseInfo::get_logical_constant(int logical) {
-  map<int, string>::const_iterator it = m_logical_map.find(logical);
-  assert(it != m_logical_map.end());
+  map<int, string>::const_iterator it = s_logical_map.find(logical);
+  assert(it != s_logical_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_logical_constant(int logical, string value) {
-  m_logical_map[logical] = value;
+  s_logical_map[logical] = value;
 }
 
 // ----- integer -----
 
 bool ParseInfo::integer_constant_exists(int integer) {
-  return (m_integer_map.find(integer) != m_integer_map.end());
+  return (s_integer_map.find(integer) != s_integer_map.end());
 }
 
 string ParseInfo::get_integer_constant(int integer) {
-  map<int, string>::const_iterator it = m_integer_map.find(integer);
-  assert(it != m_integer_map.end());
+  map<int, string>::const_iterator it = s_integer_map.find(integer);
+  assert(it != s_integer_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_integer_constant(int integer, string value) {
-  m_integer_map[integer] = value;
+  s_integer_map[integer] = value;
 }
 
 // ----- PRIMSXP -----
 
 bool ParseInfo::primsxp_constant_exists(int primsxp) {
-  return (m_primsxp_map.find(primsxp) != m_primsxp_map.end());
+  return (s_primsxp_map.find(primsxp) != s_primsxp_map.end());
 }
 
 string ParseInfo::get_primsxp_constant(int primsxp) {
-  map<int, string>::const_iterator it = m_primsxp_map.find(primsxp);
-  assert(it != m_primsxp_map.end());
+  map<int, string>::const_iterator it = s_primsxp_map.find(primsxp);
+  assert(it != s_primsxp_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_primsxp_constant(int primsxp, string value) {
-  m_primsxp_map[primsxp] = value;
+  s_primsxp_map[primsxp] = value;
 }
 
 // ----- binding -----
 
 bool ParseInfo::binding_exists(string binding) {
-  return (m_binding_map.find(binding) != m_binding_map.end());
+  return (s_binding_map.find(binding) != s_binding_map.end());
 }
 
 string ParseInfo::get_binding(string binding) {
-  map<string, string>::const_iterator it = m_binding_map.find(binding);
-  assert(it != m_binding_map.end());
+  map<string, string>::const_iterator it = s_binding_map.find(binding);
+  assert(it != s_binding_map.end());
   return it->second;
 }
 
 void ParseInfo::insert_binding(string binding, string value) {
-  m_binding_map[binding] = value;
+  s_binding_map[binding] = value;
 }

@@ -75,13 +75,13 @@ namespace RAnnot {
   
   UnknownValueCallGraphNode * UnknownValueCallGraphNode::
   get_instance() {
-    if (m_instance == 0) {
-      m_instance = new UnknownValueCallGraphNode();
+    if (s_instance == 0) {
+      s_instance = new UnknownValueCallGraphNode();
     }
-    return m_instance;
+    return s_instance;
   }
   
   UnknownValueCallGraphNode * UnknownValueCallGraphNode::
-  m_instance = 0;
+  s_instance = 0;
 
 } // end RAnnot namespace

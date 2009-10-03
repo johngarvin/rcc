@@ -32,24 +32,24 @@
 
 #include "Macro.h"
 
-MacroFactory * MacroFactory::_instance = 0;
+MacroFactory * MacroFactory::s_instance = 0;
 
-const std::string MacroFactory::m_path = RCC_MACRO_PATH;
+const std::string MacroFactory::s_path = RCC_MACRO_PATH;
 
 const MacroFactory mf = *MacroFactory::instance();
 const Macro mac_primsxp = mf.get_macro("primsxp");
 const Macro mac_ifelse = mf.get_macro("ifelse");
 
 MacroFactory * MacroFactory::instance() {
-  if (_instance == 0) {
-    _instance = new MacroFactory;
+  if (s_instance == 0) {
+    s_instance = new MacroFactory;
   }
-  return _instance;
+  return s_instance;
 }
 
 const Macro MacroFactory::get_macro(const std::string name) const {
   std::ostringstream ss;
-  const std::string filename = m_path + "/" + name + ".macro";
+  const std::string filename = s_path + "/" + name + ".macro";
   std::ifstream mac_file(filename.c_str());
   if (mac_file.fail()) {
     rcc_error("Couldn't open macro file " + filename);

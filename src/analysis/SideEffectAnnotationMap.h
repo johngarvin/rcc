@@ -70,8 +70,8 @@ private:
 			     OA::OA_ptr<OA::Alias::Interface> alias,
 			     OA::OA_ptr<OA::Alias::AliasTagIterator> tag_iter);
 
-  static SideEffectAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static SideEffectAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect;

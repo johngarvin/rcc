@@ -63,7 +63,7 @@ private:
   explicit CallGraphNode(const CallGraphNode &);
 
   int m_id;
-  static int m_max_id;
+  static int s_max_id;
 };
 
 } // end namespace RAnnot

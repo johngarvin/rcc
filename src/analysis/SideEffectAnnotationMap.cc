@@ -58,26 +58,26 @@ SideEffectAnnotationMap::~SideEffectAnnotationMap()
 // ----- singleton pattern -----
 
 SideEffectAnnotationMap * SideEffectAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT SideEffectAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 void SideEffectAnnotationMap::create() {
-  m_instance = new SideEffectAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new SideEffectAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-SideEffectAnnotationMap * SideEffectAnnotationMap::m_instance = 0;
-PropertyHndlT SideEffectAnnotationMap::m_handle = "SideEffect";
+SideEffectAnnotationMap * SideEffectAnnotationMap::s_instance = 0;
+PropertyHndlT SideEffectAnnotationMap::s_handle = "SideEffect";
 
 // ----- computation -----
 

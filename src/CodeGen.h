@@ -67,7 +67,7 @@ public:
   static Output op_vector(SEXP vec);
 
 private:
-  static const CScope m_scope;
+  static const CScope s_scope;
 };
 
 #endif

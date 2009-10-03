@@ -33,7 +33,7 @@ public:
   const std::string new_label() const;
 private:
   const std::string m_prefix;
-  static unsigned int m_id;
+  static unsigned int s_id;
 };
 
 #endif

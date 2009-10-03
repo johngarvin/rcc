@@ -162,7 +162,7 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
     VarBinding * annot = getProperty(VarBinding, cell);
     if (annot->is_single()) {
       string location = annot->get_location(NULL, NULL);  // TODO: fix this
-      string h = m_scope.new_label();
+      string h = s_scope.new_label();
       string call = emit_assign(h, emit_call1("R_GetVarLocValue", location));
       return Output(Decls(emit_decl(h)),
 		    Code(call),
@@ -174,12 +174,12 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
 		    VISIBLE);
     } else {
       string sym = make_symbol(e);
-      string v = m_scope.new_label();
+      string v = s_scope.new_label();
       string code = emit_assign(v, emit_call2("findVar", sym, rho));
       string decls = emit_decl(v);
       string del_text = "";
       if (fullyEvaluatedResult) {
-	string v1 = m_scope.new_label();
+	string v1 = s_scope.new_label();
 	code += emit_prot_assign(v1, emit_call2("eval", v, rho));
 	decls += emit_decl(v1);
 	if (resultProtected == Protected) {
@@ -242,7 +242,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
     string r_sym = var_name(lhs);
     if (!is_library(lhs)) {
       // not in global env; presumably, user-defined function
-      string func = m_scope.new_label();
+      string func = s_scope.new_label();
       string code = emit_prot_assign(func, emit_call2("findFun",
 						      make_symbol(lhs),
 						      rho));
@@ -263,7 +263,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
 	return op_builtin(e, op, rho);
       } else if (TYPEOF(op) == CLOSXP) {
 	// generate code to look up the function
-	string func = m_scope.new_label();
+	string func = s_scope.new_label();
 	string code = emit_prot_assign(func, emit_call2("findFun",
 							make_symbol(lhs),
 							rho));
@@ -307,7 +307,7 @@ Output CodeGen::op_begin(SEXP e, string rho) {
   if (e == R_NilValue) {
     return Output::nil;
   }
-  string var = m_scope.new_label();
+  string var = s_scope.new_label();
   string g_decls, g_code;
   string code;
   // output each one but the last expression.
@@ -338,7 +338,7 @@ Output CodeGen::op_begin(SEXP e, string rho) {
 }
 
 Output CodeGen::op_if(SEXP e, string rho) {
-  string out = m_scope.new_label();
+  string out = s_scope.new_label();
   if (Rf_length(e) == 3) {  // just the one clause, no else
     Output cond = op_exp(if_cond_c(e), rho, false);
     Output t = op_exp(if_truebody_c(e), rho, false);
@@ -366,7 +366,7 @@ Output CodeGen::op_if(SEXP e, string rho) {
     Output cond = op_exp(if_cond_c(e), rho, false);
     Output te = op_exp(if_truebody_c(e), rho, false);
     Output fe = op_exp(if_falsebody_c(e), rho, false);
-    string out = m_scope.new_label();
+    string out = s_scope.new_label();
     string mac_args[] = {cond.handle(),
 			 out,
 			 te.code(),
@@ -464,7 +464,7 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
     if (Rf_length(args) == 1
 	&& !Rf_isObject(CAR(args))) {
       Output x = op_exp(args, rho, true);
-      out = m_scope.new_label();
+      out = s_scope.new_label();
       code = 
 	emit_prot_assign(out, emit_call3("R_unary",
 					 "R_NilValue",
@@ -487,7 +487,7 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
 	       !Rf_isObject(CADR(args))) {
       Output x = op_exp(args, rho, true);
       Output y = op_exp(CDR(args), rho, true);
-      out = m_scope.new_label();
+      out = s_scope.new_label();
       code = emit_prot_assign(out, emit_call4("R_binary",
 					      "R_NilValue",
 					      op1.handle(),
@@ -507,7 +507,7 @@ Output CodeGen::op_builtin(SEXP e, SEXP op, string rho) {
     }
   } else {  // common case: call the do_ function
     Output args1 = op_list(args, rho, false, true);
-    out = m_scope.new_label();
+    out = s_scope.new_label();
     code = emit_prot_assign(out, emit_call4(get_name(PRIMOFFSET(op)),
 					    "R_NilValue ",
 					    op1.handle(),
@@ -572,7 +572,7 @@ Output CodeGen::op_arglist(SEXP e, string rho) {
   }
 
   delete [] args;
-  string out = m_scope.new_label();
+  string out = s_scope.new_label();
   string final_code = emit_in_braces(tmp_decls + tmp_code + emit_assign(out, tmp));
   return Output::dependent(Decls(emit_decl(out)),
 			   Code(final_code),
@@ -640,7 +640,7 @@ Output CodeGen::op_list(SEXP e,
 
     Output car = (literal ? op_literal(CAR(e), rho) : op_exp(e, rho, fullyEvaluatedResult));
     string code;
-    string var = m_scope.new_label();
+    string var = s_scope.new_label();
     if (TAG(e) == R_NilValue) {
       // No tag; regular cons or lcons
       code = emit_prot_assign(var, emit_call2(my_cons, car.handle(), "R_NilValue"));
@@ -757,7 +757,7 @@ Output CodeGen::op_list(SEXP e,
     string out_assign = "";
     // connect list in buffer to other code
     if (list_dependence == DEPENDENT) {
-      outside_handle = m_scope.new_label();
+      outside_handle = s_scope.new_label();
       out_assign = emit_prot_assign(outside_handle, lhs);
       string braces_exp = buf_decls + buf_code + out_assign;
       braces_exp = emit_in_braces(braces_exp, false /* unbalanced */);
@@ -769,7 +769,7 @@ Output CodeGen::op_list(SEXP e,
 		    DelText(del_text + unp(outside_handle)),
 		    DEPENDENT, VISIBLE);
     } else {                               // list is constant
-      outside_handle = m_scope.new_label();
+      outside_handle = s_scope.new_label();
       out_assign = emit_prot_assign(outside_handle, lhs);
       return Output::global(GDecls(g_decls + emit_static_decl(outside_handle)),
 			    GCode(g_code
@@ -846,4 +846,4 @@ Output CodeGen::op_vector(SEXP vec) {
   }
 }
 
-const CScope CodeGen::m_scope("vv");
+const CScope CodeGen::s_scope("vv");

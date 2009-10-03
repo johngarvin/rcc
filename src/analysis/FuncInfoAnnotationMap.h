@@ -52,8 +52,8 @@ private:
   /// Get FuncInfos for libraries called in the program
   void collect_libraries();
 
-  static FuncInfoAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static FuncInfoAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 };
 

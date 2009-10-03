@@ -47,29 +47,29 @@ FormalArgInfoAnnotationMap::~FormalArgInfoAnnotationMap() {
 // ----- singleton pattern -----
 
 FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT FormalArgInfoAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 void FormalArgInfoAnnotationMap::create() {
-  m_instance = new FormalArgInfoAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new FormalArgInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
 // TODO: implement this (move functionality that lives in FuncInfo here)
 void FormalArgInfoAnnotationMap::compute() {
 }
 
-FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::m_instance = 0;
-PropertyHndlT FormalArgInfoAnnotationMap::m_handle = "FormalArgInfo";
+FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::s_instance = 0;
+PropertyHndlT FormalArgInfoAnnotationMap::s_handle = "FormalArgInfo";
 
 }

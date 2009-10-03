@@ -73,8 +73,8 @@ private:
 			     OA::ProcHandle proc,
 			     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
 
-  static VarAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static VarAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 };
 

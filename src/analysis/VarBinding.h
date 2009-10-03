@@ -90,7 +90,7 @@ private:
 
   MyContainerT m_scopes; // sequence of scopes where var is bound
 
-  static PropertyHndlT m_handle;
+  static PropertyHndlT s_handle;
 };
 
 }

@@ -64,26 +64,26 @@ OACallGraphAnnotationMap::~OACallGraphAnnotationMap() {
 // ----- singleton pattern -----
 
 OACallGraphAnnotationMap * OACallGraphAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
   
 PropertyHndlT OACallGraphAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
   
 void OACallGraphAnnotationMap::create() {
-  m_instance = new OACallGraphAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new OACallGraphAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
   
-OACallGraphAnnotationMap * OACallGraphAnnotationMap::m_instance = 0;
-PropertyHndlT OACallGraphAnnotationMap::m_handle = "OACallGraph";
+OACallGraphAnnotationMap * OACallGraphAnnotationMap::s_instance = 0;
+PropertyHndlT OACallGraphAnnotationMap::s_handle = "OACallGraph";
 
 // ----- demand-driven analysis -----
 

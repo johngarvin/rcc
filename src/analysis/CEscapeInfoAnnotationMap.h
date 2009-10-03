@@ -48,8 +48,8 @@ private:
   void compute();
 
   // static members and methods for singleton
-  static CEscapeInfoAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static CEscapeInfoAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 };
 

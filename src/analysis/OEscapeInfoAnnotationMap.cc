@@ -194,28 +194,28 @@ void accum_implicit_returns(SEXP cell, std::list<SEXP> * returns) {
 // ----- singleton pattern -----
 
 OEscapeInfoAnnotationMap * OEscapeInfoAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT OEscapeInfoAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 // Create the singleton instance and register the map in PropertySet
 // for getProperty
 void OEscapeInfoAnnotationMap::create() {
-  m_instance = new OEscapeInfoAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new OEscapeInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-OEscapeInfoAnnotationMap * OEscapeInfoAnnotationMap::m_instance = 0;
-PropertyHndlT OEscapeInfoAnnotationMap::m_handle = "OEscapeInfo";
+OEscapeInfoAnnotationMap * OEscapeInfoAnnotationMap::s_instance = 0;
+PropertyHndlT OEscapeInfoAnnotationMap::s_handle = "OEscapeInfo";
 
 
 } // end namespace RAnnot

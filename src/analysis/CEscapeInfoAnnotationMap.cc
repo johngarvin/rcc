@@ -155,28 +155,28 @@ void CEscapeInfoAnnotationMap::compute() {
 // ----- singleton pattern -----
 
 CEscapeInfoAnnotationMap * CEscapeInfoAnnotationMap::get_instance() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_instance;
+  return s_instance;
 }
 
 PropertyHndlT CEscapeInfoAnnotationMap::handle() {
-  if (m_instance == 0) {
+  if (s_instance == 0) {
     create();
   }
-  return m_handle;
+  return s_handle;
 }
 
 // Create the singleton instance and register the map in PropertySet
 // for getProperty
 void CEscapeInfoAnnotationMap::create() {
-  m_instance = new CEscapeInfoAnnotationMap();
-  analysisResults.add(m_handle, m_instance);
+  s_instance = new CEscapeInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
 }
 
-CEscapeInfoAnnotationMap * CEscapeInfoAnnotationMap::m_instance = 0;
-PropertyHndlT CEscapeInfoAnnotationMap::m_handle = "CEscapeInfo";
+CEscapeInfoAnnotationMap * CEscapeInfoAnnotationMap::s_instance = 0;
+PropertyHndlT CEscapeInfoAnnotationMap::s_handle = "CEscapeInfo";
 
 
 } // end namespace RAnnot

@@ -51,8 +51,8 @@ private:
   void compute();
 
 private:
-  static FormalArgInfoAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static FormalArgInfoAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 };
 

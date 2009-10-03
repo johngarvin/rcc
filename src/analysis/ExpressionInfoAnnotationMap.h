@@ -59,8 +59,8 @@ public:
 
 private:
   // static members and methods for singleton
-  static ExpressionInfoAnnotationMap * m_instance;
-  static PropertyHndlT m_handle;
+  static ExpressionInfoAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
   static void create();
 };
 

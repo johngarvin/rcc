@@ -57,7 +57,7 @@ public:
 
 private:
   explicit UnknownValueCallGraphNode();
-  static UnknownValueCallGraphNode * m_instance;
+  static UnknownValueCallGraphNode * s_instance;
 };
 
 } // end namespace RAnnot
