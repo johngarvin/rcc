@@ -23,6 +23,8 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <OpenAnalysis/CFG/CFG.hpp>
+#include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
+#include <OpenAnalysis/SSA/SSAStandard.hpp>
 
 #include <support/Debug.h>
 
@@ -38,6 +40,8 @@
 #include <analysis/VarBinding.h>
 
 #include "OEscapeInfoAnnotationMap.h"
+
+using namespace OA;
 
 namespace RAnnot {
 
@@ -73,8 +77,10 @@ OEscapeInfoAnnotationMap::~OEscapeInfoAnnotationMap() {
 void OEscapeInfoAnnotationMap::compute() {
   FuncInfo * fi;
   Var * var;
-  OA::OA_ptr<OA::CFG::Node> node;
-  OA::StmtHandle stmt;
+  OA_ptr<CFG::Node> node;
+  StmtHandle stmt;
+  SSA::ManagerStandard ssa_man(R_Analyst::get_instance()->get_interface());
+  OA_ptr<SSA::SSAStandard> ssa;
 
   // want: whether expression gets returned or assigned upward.
   //   if it's called, no change
@@ -99,6 +105,8 @@ void OEscapeInfoAnnotationMap::compute() {
   // * if call site, recur on args that escape via assignment or return
 
   FOR_EACH_PROC(fi) {
+    ProcHandle ph = HandleInterface::make_proc_h(fi->get_sexp());
+    ssa = ssa_man.performAnalysis(ph, fi->get_cfg());
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	SEXP e = CAR(HandleInterface::make_sexp(stmt));
