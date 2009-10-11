@@ -30,7 +30,7 @@
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
-#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+#include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
 
 #include <analysis/LocalityType.h>
 

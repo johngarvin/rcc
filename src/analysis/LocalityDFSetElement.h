@@ -28,7 +28,7 @@
 #define LOCALITY_DF_SET_ELEMENT_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+#include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
 
 #include <analysis/LocalityType.h>
 #include <analysis/VarRef.h>

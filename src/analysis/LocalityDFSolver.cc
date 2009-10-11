@@ -27,7 +27,6 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
-#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>

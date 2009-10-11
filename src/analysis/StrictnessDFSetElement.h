@@ -28,7 +28,7 @@
 #define STRICTNESS_DF_SET_ELEMENT_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+#include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
 
 #include <analysis/VarRef.h>
 #include <analysis/StrictnessType.h>

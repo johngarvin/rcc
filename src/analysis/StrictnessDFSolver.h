@@ -31,7 +31,7 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
-#include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+#include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
 
 class OA::CFG::CFGInterface;
 class R_IRInterface;
