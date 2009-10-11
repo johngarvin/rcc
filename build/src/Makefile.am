@@ -109,6 +109,8 @@ rcc_bin_SOURCES =				\
   OACallGraphAnnotation.h                       \
   OACallGraphAnnotationMap.cc                   \
   OACallGraphAnnotationMap.h                    \
+  OEscapeDFSet.cc                               \
+  OescapeDFSet.h                                \
   OEscapeDFSolver.cc                            \
   OEscapeDFSolver.h                             \
   OEscapeInfo.h                                 \
