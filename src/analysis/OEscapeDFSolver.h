@@ -24,22 +24,22 @@
 #define O_ESCAPE_DF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
-#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/NameMentionMultiMap.h>
+#include <analysis/OEscapeDFSet.h>
 #include <analysis/VarRefFactory.h>
 
 class OA::CFG::CFGInterface;
 class R_IRInterface;
-class DefaultDFSet;
+class OEscapeDFSet;
+class OA::DataFlow::CFGDFSolver;
 
 class OEscapeDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit OEscapeDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~OEscapeDFSolver();
-  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg, OA::OA_ptr<OA::SSA::SSAStandard> ssa);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -67,10 +67,9 @@ private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<DefaultDFSet> m_top;
+  OA::OA_ptr<OEscapeDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
-
-
+  OA::OA_ptr<OA::SSA::SSAStandard> m_ssa;
 };
 
 #endif

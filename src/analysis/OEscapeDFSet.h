@@ -28,6 +28,9 @@ public:
   class ProcSetElement;
   class VarSetElement;
 
+  typedef OA::ProcHandle MyProc;
+  typedef OA::SSA::SSAStandard::Def * MyVar;
+
   //************************************************************
   // Constructor / destructor / clone
   //************************************************************
@@ -92,7 +95,7 @@ public:
 
   class ProcSetElement {
   public:
-    ProcSetElement(OA::ProcHandle proc, bool fresh);
+    ProcSetElement(MyProc proc, bool fresh);
     bool operator==(const ProcSetElement & other);
     bool operator<(const ProcSetElement & other);
   private:
@@ -102,7 +105,7 @@ public:
 
   class VarSetElement {
   public:
-    VarSetElement(OA::SSA::SSAStandard::Def * var, bool fresh, bool escaped, bool returned);
+    VarSetElement(MyVar var, bool fresh, bool escaped, bool returned);
     bool operator==(const VarSetElement & other);
     bool operator<(const VarSetElement & other);
   private:

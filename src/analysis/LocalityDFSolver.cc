@@ -52,7 +52,7 @@ using namespace HandleInterface;
 
 namespace Locality {
 
-// forward declarations
+// ----- forward declarations -----
 
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
@@ -60,27 +60,9 @@ static OA_ptr<R_VarRef> var_ref_from_use(UseVar * use);
 static OA_ptr<R_VarRef> var_ref_from_def(DefVar * def);
 static void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType locality, OA_ptr<R_VarRef> ref);
 
-// static variable for debugging
+// ----- static variable for debugging -----
 
 static bool debug;
-
-OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
-  return VarRefFactory::get_instance()->make_body_var_ref(use->getMention_c());
-}
-  
-OA_ptr<R_VarRef> var_ref_from_def(DefVar * def) {
-  switch(def->getSourceType()) {
-  case DefVar::DefVar_ASSIGN:
-    return VarRefFactory::get_instance()->make_body_var_ref(def->getMention_c());
-    break;
-  case DefVar::DefVar_FORMAL:
-    return VarRefFactory::get_instance()->make_arg_var_ref(def->getMention_c());
-    break;
-  default:
-    rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
-  }
-}
-
 
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
@@ -357,6 +339,25 @@ OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2) {
     }
   }
   return retval;
+}
+
+// ----- conversion functions used throughout -----
+
+OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
+  return VarRefFactory::get_instance()->make_body_var_ref(use->getMention_c());
+}
+  
+OA_ptr<R_VarRef> var_ref_from_def(DefVar * def) {
+  switch(def->getSourceType()) {
+  case DefVar::DefVar_ASSIGN:
+    return VarRefFactory::get_instance()->make_body_var_ref(def->getMention_c());
+    break;
+  case DefVar::DefVar_FORMAL:
+    return VarRefFactory::get_instance()->make_arg_var_ref(def->getMention_c());
+    break;
+  default:
+    rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
+  }
 }
 
 }  // end namespace Locality

@@ -24,22 +24,21 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-// includes
-
 #include <ostream>
+
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
 
 #include <include/R/R_RInternals.h>
 
+#include <analysis/FuncInfo.h>
 #include <analysis/IRInterface.h>
 #include <analysis/LexicalScope.h>
 
-// forward declarations
+// macro for convenient loops
 
-// from Annotation.h
-
-namespace RAnnot {
-class FuncInfo;
-}
+#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(R_Analyst::get_instance()->get_scope_tree_root()); \
+                              fii.IsValid() && ((fi) = fii.Current()) != 0;                                                      \
+                              ++fii, (fi) = fii.Current())
 
 class R_Analyst {
 
