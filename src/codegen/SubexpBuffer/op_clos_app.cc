@@ -38,7 +38,6 @@
 
 #include <support/StringUtils.h>
 
-#include <ArgMatcher.h>
 #include <CodeGen.h>
 #include <CodeGenUtils.h>
 #include <Metrics.h>

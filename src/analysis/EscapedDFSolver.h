@@ -48,6 +48,7 @@ public:
 private:
   // ----- callbacks for CFGDFSolver -----
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeTop();
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeBottom();
 
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeIN(OA::OA_ptr<OA::CFG::NodeInterface> n);
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeOUT(OA::OA_ptr<OA::CFG::NodeInterface> n);

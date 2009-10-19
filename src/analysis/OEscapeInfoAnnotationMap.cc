@@ -22,6 +22,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <map>
+
 #include <OpenAnalysis/CFG/CFG.hpp>
 #include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
 #include <OpenAnalysis/SSA/SSAStandard.hpp>
@@ -142,10 +144,29 @@ void OEscapeInfoAnnotationMap::compute() {
 }
 
 #if 0
+  /*
 	  } else if (is_library(call_lhs(e))) {
 	    CEscapeInfo * ei;
 	    PRIMPOINTS(library_value(call_lhs(e)))
 	      PRIMESCAPE(library_value(call_lhs(e)))
+  */
+#endif
+
+#if 0 
+void compute_returned() {
+  std::map<SEXP, bool> returned;
+  FuncInfo * fi;
+  OA_ptr<CFG::NodeInterface> node;
+  StmtHandle stmt;
+
+  FOR_EACH_PROC(fi) {
+    PROC_FOR_EACH_NODE(fi, node) {
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
+	
+      }
+    }
+  }
+}
 #endif
 
 // We have an assignment X <- Y or X <<- Y. If X is a symbol, then it

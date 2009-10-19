@@ -110,21 +110,26 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeTop() {
       if ((*mention)->getUseDefType() == Var::Var_DEF) {
 	OA_ptr<MyDFSet::VarSetElement> e;
 	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	//m_top->insert(e);
+	m_top->insert(e);
       }
     }
     // defs in phi functions
     PROC_FOR_EACH_NODE(fi, node) {
       OA_ptr<SSA::SSAStandard::PhiNodesIterator> it = m_ssa->getPhiNodesIterator(node);
       for( ; it->isValid(); ++*it) {
-	//it->current()
+	it->current()
 	OA_ptr<MyDFSet::VarSetElement> e;
 	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	//m_top->insert(e);
+	m_top->insert(e);
       }
     }
   }
   return m_top;
+}
+
+/// Not used.
+OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeBottom() {
+  assert(0);
 }
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
@@ -141,7 +146,7 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::meet(OA_ptr<DataFlow::DataFlowSet
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> set2; set2 = set2_orig.convert<MyDFSet>();
   
-  //return set1->meet(set2).convert<DataFlow::DataFlowSet>();
+  return set1->meet(set2).convert<DataFlow::DataFlowSet>();
 }
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,

@@ -16,26 +16,20 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: OEscapeDFSet.h
+// File: NameBoolDFSet.h
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <include/R/R_RInternals.h>
+
 #include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
-#include <OpenAnalysis/SSA/SSAStandard.hpp>
 
-class OEscapeDFSet : public OA::DataFlow::DataFlowSet {
+class NameBoolDFSet : public OA::DataFlow::DataFlowSet {
 public:
-  class ProcSetElement;
-  class VarSetElement;
+  class NameBoolPair;
 
-  typedef OA::ProcHandle MyProc;
-  typedef OA::SSA::SSAStandard::Def * MyVar;
-
-  //************************************************************
-  // Constructor / destructor / clone
-  //************************************************************
-  explicit OEscapeDFSet();
-  ~OEscapeDFSet();
+  explicit NameBoolDFSet();
+  ~NameBoolDFSet();
 
   //! Create a copy of this set
   OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() const;
@@ -48,10 +42,10 @@ public:
   /*! Return true if all elements in the LHS are equal to a unique element
     in the RHS and the LHS and RHS have exactly the same number of
     elements. */
-  bool operator==(OA::DataFlow::DataFlowSet &other) const;
+  bool operator==(OA::DataFlow::DataFlowSet & other) const;
 
   //! Return true if the LHS and RHS do not equal each other
-  bool operator!=(OA::DataFlow::DataFlowSet &other) const;
+  bool operator!=(OA::DataFlow::DataFlowSet & other) const;
 
 
   //************************************************************
@@ -87,39 +81,20 @@ public:
   //! Output succinct description of set's contents
   void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface>);
 
-  // ----- insert methods not inherited -----
-  
-  void insertProc(OA::OA_ptr<ProcSetElement> proc);
+  // ----- insert method -----
 
-  void insertVar(OA::OA_ptr<VarSetElement> var);
+  void insert(OA::OA_ptr<NameBoolPair>);
 
-  class ProcSetElement {
+  class NameBoolPair {
   public:
-    explicit ProcSetElement(MyProc proc, bool fresh);
-    bool operator==(const ProcSetElement & other);
-    bool operator<(const ProcSetElement & other);
+    explicit NameBoolPair(SEXP name, bool value);
+    bool operator==(const NameBoolPair & other);
+    bool operator<(const NameBoolPair & other);
   private:
-    MyProc mProc;
-    bool mFresh;
-  };
-
-  class VarSetElement {
-  public:
-    explicit VarSetElement(MyVar var, bool fresh, bool escaped, bool returned);
-    bool operator==(const VarSetElement & other);
-    bool operator<(const VarSetElement & other);
-  private:
-    MyVar mVar;
-    bool mVFresh;
-    bool mEscaped;
-    bool mReturned;
+    SEXP mName;
+    bool mValue;
   };
 
 private:
-
-  typedef std::set<OA::OA_ptr<ProcSetElement> > MyProcSet;
-  typedef std::set<OA::OA_ptr<VarSetElement> > MyVarSet;
-
-  OA::OA_ptr<MyProcSet> mProcSet;
-  OA::OA_ptr<MyVarSet> mVarSet;
+  std::set<OA::OA_ptr<NameBoolPair> > mSet;
 };
