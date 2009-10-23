@@ -217,6 +217,21 @@ bool is_library(const SEXP e) {
   return (fun != R_UnboundValue);
 }
 
+bool is_library_builtin(const SEXP e) {
+  assert(is_library(e));
+  return (TYPEOF(library_value(e)) == BUILTINSXP);
+}
+
+bool is_library_special(const SEXP e) {
+  assert(is_library(e));
+  return (TYPEOF(library_value(e)) == SPECIALSXP);
+}
+
+bool is_library_closure(const SEXP e) {
+  assert(is_library(e));
+  return (is_closure(library_value(e)));
+}
+
 SEXP library_value(const SEXP e) {
   SEXP value = Rf_findFunUnboundOK(e, R_GlobalEnv, TRUE);
   assert(value != R_UnboundValue);

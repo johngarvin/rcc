@@ -64,6 +64,9 @@ bool is_var(const SEXP e);
 bool is_symbol(const SEXP e);  // same as is_var
 std::string var_name(const SEXP e);
 bool is_library(const SEXP e);
+bool is_library_builtin(const SEXP e);
+bool is_library_special(const SEXP e);
+bool is_library_closure(const SEXP e);
 SEXP library_value(const SEXP e);
 bool is_cons(const SEXP e);
 bool is_string(const SEXP e);

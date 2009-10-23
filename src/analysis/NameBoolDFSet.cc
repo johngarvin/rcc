@@ -107,9 +107,9 @@ void NameBoolDFSet::dump(std::ostream & os) {
 
   beginObjDump(os, NameBoolSet);
   for (iter = mSet->begin(); iter != mSet->end(); iter++) {
-    OA_ptr<R_VarRef> name = (*iter)->getName();
+    SEXP name = (*iter)->getName()->get_name();
     bool value = (*iter)->getValue();
-    dumpSEXP(os, name->get_name());
+    dumpSEXP(os, name);
     dumpVar(os, value);
   }
   endObjDump(os, NameBoolSet);

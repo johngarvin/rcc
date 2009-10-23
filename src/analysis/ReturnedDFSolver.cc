@@ -229,7 +229,7 @@ void propagate(OA_ptr<MyDFSet> in, bool value, SEXP cell) {
   SEXP e = CAR(cell);
   if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
     in->replace(fact->make_body_var_ref(cell), value);
-  } else if (is_call(e) && is_library(call_lhs(e))) {
+  } else if (is_call(e) && is_library(call_lhs(e)) && !is_library_closure(call_lhs(e))) {
     int nargs = Rf_length(call_args(e));
     for (int i=1; i<=nargs; i++) {
       bool formal_returned = PRIMPOINTS(library_value(call_lhs(e)), i);
