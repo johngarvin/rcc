@@ -20,28 +20,25 @@
 
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef O_ESCAPE_DF_SOLVER_H
-#define O_ESCAPE_DF_SOLVER_H
+#ifndef RETURNED_DF_SOLVER_H
+#define RETURNED_DF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
-#include <OpenAnalysis/DataFlow/ICFGDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-// #include <analysis/NameBoolDFSet.h>
+#include <analysis/NameBoolDFSet.h>
 #include <analysis/VarRefFactory.h>
 
-class OA::ICFG::ICFGInterface;
+class OA::CFG::CFGInterface;
+namespace OA { namespace DataFlow { class CFGDFSolver; } }
 class R_IRInterface;
-class ReturnedDFSet;
 
-//temporary
-class NameBoolDFSet;
-
-class ReturnedDFSolver : private OA::DataFlow::ICFGDFProblem {
+class ReturnedDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit ReturnedDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~ReturnedDFSolver();
-  OA::OA_ptr<std::map<SEXP, bool> > perform_analysis(OA::OA_ptr<OA::ICFG::ICFGInterface> icfg);
+  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
+					     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -50,15 +47,22 @@ public:
 private:
   // ----- callbacks for CFGDFSolver -----
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeTop();
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeBottom();
+  
 
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeIN(OA::OA_ptr<OA::ICFG::NodeInterface> n);
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeOUT(OA::OA_ptr<OA::ICFG::NodeInterface> n);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeIN(OA::OA_ptr<OA::CFG::NodeInterface> n);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeOUT(OA::OA_ptr<OA::CFG::NodeInterface> n);
 
   //! OK to modify set1 and return it as result, because solver
   //! only passes a tempSet in as set1
   OA::OA_ptr<OA::DataFlow::DataFlowSet> meet(OA::OA_ptr<OA::DataFlow::DataFlowSet> set1, 
 					     OA::OA_ptr<OA::DataFlow::DataFlowSet> set2);
 
+  /// intraprocedural
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
+						 OA::StmtHandle stmt);
+  
+  /// interprocedural
   //! OK to modify in set and return it again as result because
   //! solver clones the BB in sets. Proc is procedure that
   //! contains the statement.
@@ -96,12 +100,13 @@ private:
 						     OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
 						     OA::CallHandle call,
 						     OA::ProcHandle callee);
+
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
-  OA::OA_ptr<OA::ICFG::ICFGInterface> m_icfg;
+  OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
   OA::OA_ptr<NameBoolDFSet> m_top;
-  OA::OA_ptr<OA::DataFlow::ICFGDFSolver> m_solver;
+  OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
 };
 
 #endif

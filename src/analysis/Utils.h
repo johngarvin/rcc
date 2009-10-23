@@ -77,7 +77,7 @@ bool is_if(const SEXP e);
 SEXP if_cond_c(const SEXP e);
 SEXP if_truebody_c(const SEXP e);
 SEXP if_falsebody_c(const SEXP e);
-bool is_return(const SEXP e);
+bool is_explicit_return(const SEXP e);
 bool is_break(const SEXP e);
 bool is_stop(const SEXP e);
 bool is_next(const SEXP e);

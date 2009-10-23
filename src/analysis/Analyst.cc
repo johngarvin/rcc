@@ -36,6 +36,8 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalFunctionAnalysis.h>
+#include <analysis/NameBoolDFSet.h>
+#include <analysis/ReturnedDFSolver.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
 #include <analysis/VarAnnotationMap.h>
@@ -92,6 +94,14 @@ void R_Analyst::perform_analysis() {
     }
   build_local_function_info();
   (new CallByValueAnalysis())->perform_analysis();
+
+  // temporary
+  FuncInfo * fi;
+  FOR_EACH_PROC(fi) {
+    ReturnedDFSolver solver(m_interface);
+    OA::OA_ptr<NameBoolDFSet> returned; returned = solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    solver.dump_node_maps();
+  }
 }
 
 /// Discovers local information on procedures: arguments, names

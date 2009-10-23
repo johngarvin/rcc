@@ -56,6 +56,8 @@ namespace RAnnot {
 // FuncInfo
 //****************************************************************************
 
+static void accum_implicit_returns(SEXP cell);
+
 typedef FuncInfo::mention_iterator mention_iterator;
 typedef FuncInfo::const_mention_iterator const_mention_iterator;
 typedef FuncInfo::call_site_iterator call_site_iterator;
@@ -278,6 +280,12 @@ void FuncInfo::perform_analysis() {
   CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
   m_cfg = cfg_man.performAnalysis(make_proc_h(m_sexp));
 
+  // find all explicit and implicit returns
+  if (is_fundef(m_sexp)) {
+    accum_implicit_returns(fundef_body_c(m_sexp));
+  }
+}
+
 #if 0
   // moved to Analyst (collect_... needs VarAnnotationMap filled in,
   // which needs FuncInfos to traverse the scope tree) (ugh)
@@ -289,6 +297,32 @@ void FuncInfo::perform_analysis() {
   StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
   strict_solver.perform_analysis(make_proc_h(m_sexp), m_cfg);
 #endif
+
+const std::set<SEXP> * FuncInfo::get_implicit_returns() const {
+  return &m_returns;
+}
+
+bool FuncInfo::is_return(SEXP cell) const {
+  SEXP e = CAR(cell);
+  return (is_explicit_return(e) || (m_returns.find(cell) != m_returns.end()));
+}
+
+void FuncInfo::accum_implicit_returns(SEXP cell) {
+  SEXP e = CAR(cell);
+  if (is_curly_list(e)) {
+    SEXP last_c = curly_body(e);
+    while (CDR(last_c) != R_NilValue) {
+      last_c = CDR(last_c);
+    }
+    accum_implicit_returns(last_c);
+  } else if (is_if(e)) {
+    accum_implicit_returns(if_truebody_c(e));
+    accum_implicit_returns(if_falsebody_c(e));
+  } else if (is_loop(e)) {
+    accum_implicit_returns(loop_body_c(e));
+  } else {
+    m_returns.insert(cell);
+  }
 }
 
 bool FuncInfo::has_children() const {

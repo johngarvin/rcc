@@ -248,7 +248,7 @@ SEXP call_args(const SEXP e) {
 SEXP call_nth_arg_c(const SEXP e, int n) {
   SEXP args = call_args(e);
   assert(n > 0);
-  assert(Rf_length(args) <= n);
+  assert(Rf_length(args) >= n);
   for(int i = 0; i<(n-1); i++) {  // take the CDR (n-1) times
     args = CDR(args);
   }
@@ -278,7 +278,7 @@ SEXP if_falsebody_c(const SEXP e) {
   return CDR(CDDR(e));
 }
 
-bool is_return(const SEXP e) {
+bool is_explicit_return(const SEXP e) {
   return (TYPEOF(e) == LANGSXP && CAR(e) == Rf_install("return"));
 }
 

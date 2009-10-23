@@ -51,7 +51,6 @@ namespace RAnnot {
 
 static bool assignment_escapes(SEXP e);
 static std::vector<SEXP> implicit_return_exps(SEXP fundef);
-static void accum_implicit_returns(SEXP fundef, std::list<SEXP> * returns);
 
 // ----- type definitions for readability -----
 
@@ -111,7 +110,8 @@ void OEscapeInfoAnnotationMap::compute() {
     ssa = ssa_man.performAnalysis(ph, fi->get_cfg());
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
-	SEXP e = CAR(HandleInterface::make_sexp(stmt));
+	SEXP cell = HandleInterface::make_sexp(stmt);
+	SEXP e = CAR(cell);
 	switch(TYPEOF(e)) {
 	case NILSXP:
 	case REALSXP:
@@ -126,7 +126,7 @@ void OEscapeInfoAnnotationMap::compute() {
 	  if (is_assign(e)) {
 	    get_map()[assign_rhs_c(e)] = new OEscapeInfo(assignment_escapes(e));
 	    // now propagate to components of RHS?
-	  } else if (is_return(e)) {
+	  } else if (fi->is_return(cell)) {
 	    get_map()[call_nth_arg_c(e,1)] = new OEscapeInfo(true);
 	    // propagate?
 	  } else {        // function call other than assignment or return
@@ -193,31 +193,6 @@ bool assignment_escapes(SEXP e) {
     } while (!is_symbol(CAR(sym_c)));
     return getProperty(Var, CAR(sym_c))->getScopeType() == Locality::Locality_FREE;
   }
-}
-
-std::list<SEXP> accum_implicit_returns(SEXP fundef) {
-  assert(is_fundef(fundef));
-  std::list<SEXP> returns;
-  accum_implicit_returns(fundef_body_c(fundef), &returns);
-  return returns;
-}
-
-void accum_implicit_returns(SEXP cell, std::list<SEXP> * returns) {
-  SEXP e = CAR(cell);
-  if (is_curly_list(e)) {
-    SEXP last_c = curly_body(e);
-    while (CDR(last_c) != R_NilValue) {
-      last_c = CDR(last_c);
-    }
-    accum_implicit_returns(last_c, returns);
-  } else if (is_if(e)) {
-    accum_implicit_returns(if_truebody_c(e), returns);
-    accum_implicit_returns(if_falsebody_c(e), returns);
-  } else if (is_loop(e)) {
-    accum_implicit_returns(loop_body_c(e), returns);
-  } else {
-    returns->push_back(cell);
-  }  
 }
 
 // ----- singleton pattern -----

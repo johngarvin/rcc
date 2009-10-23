@@ -25,7 +25,7 @@
 #ifndef ANNOTATION_FUNC_INFO_H
 #define ANNOTATION_FUNC_INFO_H
 
-#include <list>
+#include <set>
 
 #include <include/R/R_RInternals.h>
 
@@ -165,6 +165,9 @@ public:
 
   void perform_analysis();
 
+  const std::set<SEXP> * get_implicit_returns() const;
+  bool is_return(SEXP) const;
+  
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
@@ -175,6 +178,7 @@ public:
 
 
 private:
+  void accum_implicit_returns(SEXP cell);
 #if 0
   moved to Analyst to avoid circular dependence
   void collect_mentions_and_call_sites();
@@ -198,6 +202,7 @@ private:
   SEXP m_sexp;         // function definition
   SEXP m_first_name_c; // cell containing name of function at original definition 
   FuncInfo *m_parent;  // parent scope definition
+  std::set<SEXP> m_returns;  // implicit return statements
 };
 
 class FuncInfoChildIterator: public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {

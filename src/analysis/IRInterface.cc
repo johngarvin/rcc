@@ -102,7 +102,7 @@ CFG::IRStmtType getSexpCfgType(SEXP e) {
       return CFG::LOOP;
     } else if (is_if(e)) {
       return CFG::STRUCT_TWOWAY_CONDITIONAL;
-    } else if (is_return(e)) {
+    } else if (is_explicit_return(e)) {
       return CFG::RETURN;
     } else if (is_break(e) || is_stop(e)) {
       return CFG::BREAK;

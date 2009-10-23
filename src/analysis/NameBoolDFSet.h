@@ -20,13 +20,21 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <include/R/R_RInternals.h>
+//#include <include/R/R_RInternals.h>
+
+#ifndef NAME_BOOL_DF_SET_H
+#define NAME_BOOL_DF_SET_H
 
 #include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
+
+#include <analysis/VarRef.h>
 
 class NameBoolDFSet : public OA::DataFlow::DataFlowSet {
 public:
   class NameBoolPair;
+  class NameBoolDFSetIterator;
+
+  typedef std::set<OA::OA_ptr<NameBoolPair> > MySet;
 
   explicit NameBoolDFSet();
   ~NameBoolDFSet();
@@ -79,22 +87,53 @@ public:
   void output(OA::IRHandlesIRInterface& ir) const;
     
   //! Output succinct description of set's contents
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface>);
+  void dump(std::ostream & os, OA::OA_ptr<OA::IRHandlesIRInterface>);
 
-  // ----- insert method -----
+  void dump(std::ostream & os);
+
+  void dump();
+
+  // ----- our own methods -----
 
   void insert(OA::OA_ptr<NameBoolPair>);
 
+  OA::OA_ptr<NameBoolDFSet> meet(OA::OA_ptr<NameBoolDFSet> other);
+
+  OA::OA_ptr<NameBoolDFSetIterator> getIterator() const;
+
+  bool lookup(OA::OA_ptr<R_VarRef> e) const;
+
+  void replace(OA::OA_ptr<R_VarRef> e, bool value);
+
   class NameBoolPair {
   public:
-    explicit NameBoolPair(SEXP name, bool value);
+    explicit NameBoolPair(OA::OA_ptr<R_VarRef> name, bool value);
     bool operator==(const NameBoolPair & other);
+    bool equiv(const NameBoolPair & other);
     bool operator<(const NameBoolPair & other);
+    OA::OA_ptr<R_VarRef> getName();
+    bool getValue();
   private:
-    SEXP mName;
+    OA::OA_ptr<R_VarRef> mName;
     bool mValue;
   };
 
+  class NameBoolDFSetIterator {
+  public:
+    explicit NameBoolDFSetIterator(OA::OA_ptr<MySet> set);
+    ~NameBoolDFSetIterator();
+
+    void operator++();
+    bool isValid() const;
+    OA::OA_ptr<NameBoolPair> current() const;
+    void reset();
+  private:
+    OA::OA_ptr<MySet> mSet;
+    MySet::const_iterator mIter;
+  };
+  
 private:
-  std::set<OA::OA_ptr<NameBoolPair> > mSet;
+  OA::OA_ptr<MySet> mSet;
 };
+
+#endif

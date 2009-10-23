@@ -28,7 +28,6 @@ rcc_bin_SOURCES =				\
   ParseInfo.cc ParseInfo.h			\
   CScope.cc CScope.h				\
   CheckProtect.h				\
-  ArgMatcher.cc ArgMatcher.h                    \
 						\
   AnalysisException.cc                          \
   AnalysisException.h                           \
@@ -103,6 +102,8 @@ rcc_bin_SOURCES =				\
   MemRefExprInterface.h                         \
   Metrics.cc                                    \
   Metrics.h                                     \
+  NameBoolDFSet.cc                              \
+  NameBoolDFSet.h                               \
   NameMentionMultiMap.h                         \
   NameStmtMultiMap.h                            \
   OACallGraphAnnotation.cc                      \
@@ -126,6 +127,8 @@ rcc_bin_SOURCES =				\
   RccBasicInterface.h                           \
   RequiresContext.cc				\
   RequiresContext.h				\
+  ReturnedDFSolver.cc                           \
+  ReturnedDFSolver.h                            \
   ScopeAnnotationMap.cc                         \
   ScopeAnnotationMap.h                          \
   Settings.cc                                   \

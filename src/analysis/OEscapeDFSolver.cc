@@ -25,6 +25,7 @@
 
 #include <support/Debug.h>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
@@ -145,14 +146,15 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::meet(OA_ptr<DataFlow::DataFlowSet
 }
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
-							StmtHandle stmt_handle)
+							StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  SEXP stmt = make_sexp(stmt_handle);
+  SEXP e = make_sexp(stmt);
+  FuncInfo * fi; fi = getProperty(FuncInfo, make_sexp(m_proc));
 
-  if (is_return(stmt)) {
+  if (fi->is_return(e)) {
     
-  } else if (is_assign(stmt)) {
+  } else if (is_assign(e)) {
     
   }
 }

@@ -20,17 +20,20 @@
 
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <OpenAnalysis/DataFlow/ICFGDFProblem.hpp>
-#include <OpenAnalysis/DataFlow/ICFGDFSolver.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 
 #include <support/Debug.h>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/DefVar.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/NameBoolDFSet.h>
+#include <analysis/Utils.h>
+#include <analysis/VarRefFactory.h>
 
 #include "ReturnedDFSolver.h"
 
@@ -39,6 +42,9 @@ using namespace RAnnot;
 using namespace HandleInterface;
 
 typedef NameBoolDFSet MyDFSet;
+typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
+
+static void propagate(OA_ptr<MyDFSet> in, bool value, SEXP cell);
 
 static bool debug;
 
@@ -51,13 +57,18 @@ ReturnedDFSolver::ReturnedDFSolver(OA_ptr<R_IRInterface> ir)
 ReturnedDFSolver::~ReturnedDFSolver()
 {}
 
-OA_ptr<std::map<SEXP, bool> > ReturnedDFSolver::perform_analysis(OA_ptr<ICFG::ICFGInterface> icfg)
+OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
+						   OA_ptr<CFG::CFGInterface> cfg)
 {
-  m_icfg = icfg;
+  m_proc = proc;
+  m_cfg = cfg;
 
   // use OA to solve data flow problem
-  DataFlow::ICFGDFSolver solver(DataFlow::ICFGDFSolver::Backward, *this);
-  solver.solve(icfg, DataFlow::ITERATIVE);
+  m_top = new MyDFSet();
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
+  OA_ptr<DataFlow::DataFlowSet> entry_dfs = m_solver->solve(m_cfg, DataFlow::ITERATIVE);
+  OA_ptr<MyDFSet> entry = entry_dfs.convert<MyDFSet>();
+  return entry;
 }
 
 // ----- debugging -----
@@ -67,48 +78,50 @@ void ReturnedDFSolver::dump_node_maps() {
 }
 
 void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
-  m_solver->dump(os, m_ir);
-  // OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
-  // OA_ptr<MyDFSet> in_set, out_set;
-  // OA_ptr<ICFG::NodesIteratorInterface> ni = m_icfg->getICFGNodesIterator();
-  // for ( ; ni->isValid(); ++*ni) {
-  //   OA_ptr<ICFG::NodeInterface> n = ni->current().convert<ICFG::NodeInterface>();
-  //   df_in_set = m_solver->getInSet(n);
-  //   df_out_set = m_solver->getOutSet(n);
-  //   in_set = df_in_set.convert<MyDFSet>();
-  //   out_set = df_out_set.convert<MyDFSet>();
-  //   os << "CFG NODE #" << n->getId() << ":\n";
-  //   os << "IN SET:\n";
-  //   in_set->dump(os, m_ir);
-  //   os << "OUT SET:\n";
-  //   out_set->dump(os, m_ir);
-  // }
+  OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
+  OA_ptr<MyDFSet> in_set, out_set;
+  OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
+  for ( ; ni->isValid(); ++*ni) {
+    OA_ptr<CFG::NodeInterface> n = ni->current().convert<CFG::NodeInterface>();
+    df_in_set = m_solver->getInSet(n);
+    df_out_set = m_solver->getOutSet(n);
+    in_set = df_in_set.convert<MyDFSet>();
+    out_set = df_out_set.convert<MyDFSet>();
+    os << "CFG NODE #" << n->getId() << ":\n";
+    os << "IN SET:\n";
+    in_set->dump(os, m_ir);
+    os << "OUT SET:\n";
+    out_set->dump(os, m_ir);
+  }
 }
 
-// ----- callbacks for ICFGDFProblem -----
+// ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
-  FuncInfo * fi;
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * m;
   DefVar * def;
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_MENTION(fi, m) {
-      if ((def = dynamic_cast<DefVar *>(*m)) != 0) {
-	OA_ptr<NameBoolDFSet::NameBoolPair> element;
-	element = new NameBoolDFSet::NameBoolPair(def->getName(), false);
-	m_top->insert(element);
-      }
-    }
+  //  FOR_EACH_PROC(fi) {
+  PROC_FOR_EACH_MENTION(fi, m) {
+    OA_ptr<NameBoolDFSet::NameBoolPair> element;
+    element = new NameBoolDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
+    m_top->insert(element);
   }
   return m_top;
 }
 
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<ICFG::NodeInterface> n) {
+/// Not used.
+OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeBottom() {
+  assert(0);
+}
+
+OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<ICFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
@@ -120,89 +133,114 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSe
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> set2; set2 = set2_orig.convert<MyDFSet>();
   
-  //  return set1->meet(set2).convert<DataFlow::DataFlowSet>(); // TODO
+  return set1->meet(set2).convert<DataFlow::DataFlowSet>();
 }
 
-//! ICFGDFSolver says: OK to modify in set and return it again as
-//! result because solver clones the BB in sets. Proc is procedure
-//! that contains the statement.
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(ProcHandle proc,
-							 OA_ptr<DataFlow::DataFlowSet> in_orig,
-							 StmtHandle stmt_handle)
+/// CFGDFSolver says: OK to modify in set and return it again as
+/// result because solver clones the BB in sets. Proc is procedure
+/// that contains the statement.
+OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
+							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  SEXP stmt = make_sexp(stmt_handle);
+  SEXP cell = make_sexp(stmt);
+  SEXP e = CAR(cell);
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-#if 0
-  if (is_return_or_implicit_return(stmt)) {
+  if (fi->is_return(cell)) {
     // return rule
-    propagate(true, call_arg(1, stmt));
-  } else if (is_assign(stmt) && is_var(assign_lhs(stmt)) && is_local(assign_lhs(stmt))) {
-    // v0 = v1 rule
-    propagate(in[assign_lhs(stmt)], assign_rhs(stmt));
-  } else if (is_assign(stmt) && is_call(assign_rhs(stmt))) {
-    // method call rule
-    propagate(in[assign_lhs(stmt)], assign_rhs(stmt));
+    if (is_explicit_return(e)) {
+      propagate(in, true, call_nth_arg_c(e,1));
+    } else {
+      propagate(in, true, cell);
+    }
+  } else if (is_local_assign(e) && is_symbol(CAR(assign_lhs_c(e)))) {
+    // v0 = v1 rule and method call rule
+    propagate(in, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
+    // TODO: method call that is not an assignment
     // all other rules: no change
+    ;
   }
-#endif
   return in.convert<DataFlow::DataFlowSet>();  // upcast
 }
 
-//! transfer function for the entry node of the given procedure
-//! should manipulate incoming data-flow set in any special ways
-//! for procedure and return outgoing data-flow set for node
+/// ICFGDFSolver says: OK to modify in set and return it again as
+/// result because solver clones the BB in sets. Proc is procedure
+/// that contains the statement.
+OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(ProcHandle proc,
+							 OA_ptr<DataFlow::DataFlowSet> in_orig,
+							 StmtHandle stmt)
+{
+  assert(0);
+}
+
+/// transfer function for the entry node of the given procedure
+/// should manipulate incoming data-flow set in any special ways
+/// for procedure and return outgoing data-flow set for node
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::entryTransfer(ProcHandle proc,
 							      OA_ptr<DataFlow::DataFlowSet> in)
 {
+  assert(0);
 } 
 
-//! transfer function for the exit node of the given procedure
-//! should manipulate outgoing data-flow set in any special ways
-//! for procedure and return incoming data-flow set for node
+/// transfer function for the exit node of the given procedure
+/// should manipulate outgoing data-flow set in any special ways
+/// for procedure and return incoming data-flow set for node
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::exitTransfer(ProcHandle proc,
 							     OA_ptr<DataFlow::DataFlowSet> out)
 {
+  assert(0);
 }
 
-//! Propagate a data-flow set from caller to callee
+/// Propagate a data-flow set from caller to callee
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::callerToCallee(ProcHandle caller,
 							       OA_ptr<DataFlow::DataFlowSet> dfset,
 							       CallHandle call,
 							       ProcHandle callee)
 {
+  assert(0);
 }
   
-//! Propagate a data-flow set from callee to caller
+/// Propagate a data-flow set from callee to caller
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::calleeToCaller(ProcHandle callee,
 							       OA_ptr<DataFlow::DataFlowSet> dfset,
 							       CallHandle call,
 							       ProcHandle caller)
 {
+  assert(0);
 }
 
 // MMA
-//! Propagate a data-flow set from call node to return node
+/// Propagate a data-flow set from call node to return node
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::callToReturn(ProcHandle caller,
 							     OA_ptr<DataFlow::DataFlowSet> dfset,
 							     CallHandle call,
 							     ProcHandle callee)
 {
+  assert(0);
 }
 
 
-#if 0
 // propagate(value, expression): propagate lattice value from expression to subexpressions
-void propagate(bool value, SEXP e) {
-  if (is_var(e) && is_local(e)) {
-    in->replace(e, value);
-  } else if (is_call(e)) {
-    for (each arg i) {
-      if (in[formal i]) {
-	propagate(value, call_arg(actual i, e));
+void propagate(OA_ptr<MyDFSet> in, bool value, SEXP cell) {
+  VarRefFactory * const fact = VarRefFactory::get_instance();
+  SEXP e = CAR(cell);
+  if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
+    in->replace(fact->make_body_var_ref(cell), value);
+  } else if (is_call(e) && is_library(call_lhs(e))) {
+    int nargs = Rf_length(call_args(e));
+    for (int i=1; i<=nargs; i++) {
+      bool formal_returned = PRIMPOINTS(library_value(call_lhs(e)), i);
+      if (formal_returned) {
+	propagate(in, value, call_nth_arg_c(e, i));
       }
+    }
+  } else if (is_call(e)) { // unknown call
+    int nargs = Rf_length(call_args(e));
+    for (int i=1; i<=nargs; i++) {
+      propagate(in, value, call_nth_arg_c(e, i));
     }
   }
 }
-#endif
