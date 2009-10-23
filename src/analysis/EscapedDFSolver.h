@@ -20,8 +20,8 @@
 
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef O_ESCAPE_DF_SOLVER_H
-#define O_ESCAPE_DF_SOLVER_H
+#ifndef ESCAPED_DF_SOLVER_H
+#define ESCAPED_DF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
