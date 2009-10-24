@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: OEscapeDFSolver.cc
+// File: EscapedDFSolver.cc
 
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -25,51 +25,56 @@
 
 #include <support/Debug.h>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/NameMentionMultiMap.h>
+#include <analysis/NameBoolDFSet.h>
+#include <analysis/ReturnedDFSolver.h>
 
-#include "OEscapeDFSolver.h"
+#include "EscapedDFSolver.h"
 
 using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-typedef OEscapeDFSet MyDFSet;
+typedef NameBoolDFSet MyDFSet;
 
 static bool debug;
 
-OEscapeDFSolver::OEscapeDFSolver(OA_ptr<R_IRInterface> ir)
+static bool assignment_escapes(SEXP e);
+
+EscapedDFSolver::EscapedDFSolver(OA_ptr<R_IRInterface> ir)
   : m_ir(ir)
 {
-  RCC_DEBUG("RCC_OEscapeDFSolver", debug);
+  RCC_DEBUG("RCC_EscapedDFSolver", debug);
 }
 
-OEscapeDFSolver::~OEscapeDFSolver()
+EscapedDFSolver::~EscapedDFSolver()
 {}
 
-OA_ptr<NameMentionMultiMap> OEscapeDFSolver::perform_analysis(ProcHandle proc,
-							      OA_ptr<CFG::CFGInterface> cfg,
-							      OA_ptr<SSA::SSAStandard> ssa)
+OA_ptr<MyDFSet> EscapedDFSolver::perform_analysis(ProcHandle proc,
+						  OA_ptr<CFG::CFGInterface> cfg)
 {
   m_proc = proc;
   m_cfg = cfg;
-  m_ssa = ssa;
+  m_top = new MyDFSet();
 
   // use OA to solve data flow problem
-  DataFlow::CFGDFSolver solver(DataFlow::CFGDFSolver::Backward, *this);
-  solver.solve(cfg, DataFlow::ITERATIVE);
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
+  OA_ptr<DataFlow::DataFlowSet> entry_dfs = m_solver->solve(m_cfg, DataFlow::ITERATIVE);
+  OA_ptr<MyDFSet> entry = entry_dfs.convert<MyDFSet>();
+  return entry;
 }
 
 // ----- debugging -----
 
-void OEscapeDFSolver::dump_node_maps() {
+void EscapedDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void OEscapeDFSolver::dump_node_maps(std::ostream &os) {
+void EscapedDFSolver::dump_node_maps(std::ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<MyDFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
@@ -89,58 +94,34 @@ void OEscapeDFSolver::dump_node_maps(std::ostream &os) {
 
 // ----- callbacks for CFGDFProblem -----
 
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeTop() {
-  FuncInfo * fi;
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::initializeTop() {
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * mention;
-  OA_ptr<CFG::NodeInterface> node;
 
-  m_top = new MyDFSet;
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  // add (proc, false) for each procedure
-  FOR_EACH_PROC(fi) {
-    OA_ptr<MyDFSet::ProcSetElement> e;
-    e = new MyDFSet::ProcSetElement(make_proc_h(fi->get_sexp()), false);
-    m_top->insertProc(e);
-  }
-
-  // add (var, all false) for each SSA variable
-  FOR_EACH_PROC(fi) {
-    // defs by assignment and formal args
-    PROC_FOR_EACH_MENTION(fi, mention) {
-      if ((*mention)->getUseDefType() == Var::Var_DEF) {
-	OA_ptr<MyDFSet::VarSetElement> e;
-	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	m_top->insert(e);
-      }
-    }
-    // defs in phi functions
-    PROC_FOR_EACH_NODE(fi, node) {
-      OA_ptr<SSA::SSAStandard::PhiNodesIterator> it = m_ssa->getPhiNodesIterator(node);
-      for( ; it->isValid(); ++*it) {
-	it->current()
-	OA_ptr<MyDFSet::VarSetElement> e;
-	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	m_top->insert(e);
-      }
-    }
+  PROC_FOR_EACH_MENTION(fi, m) {
+    OA_ptr<NameBoolDFSet::NameBoolPair> element;
+    element = new NameBoolDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
+    m_top->insert(element);
   }
   return m_top;
 }
 
 /// Not used.
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeBottom() {
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::initializeBottom() {
   assert(0);
 }
 
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
 						    OA_ptr<DataFlow::DataFlowSet> set2_orig)
 {
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
@@ -149,15 +130,66 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::meet(OA_ptr<DataFlow::DataFlowSet
   return set1->meet(set2).convert<DataFlow::DataFlowSet>();
 }
 
-OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
+bool EscapedDFSolver::escaped_predicate(SEXP call, int arg) {
+  assert(is_call(call));
+  if (is_library(call_lhs(call)) && !is_library_closure(call_lhs(call))) {
+    return PRIMESCAPE(library_value(call_lhs(call)), arg);
+  } else {  // unknown call
+    return true;
+  }
+}
+
+OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
 							StmtHandle stmt_handle)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  SEXP stmt = make_sexp(stmt_handle);
+  SEXP cell = make_sexp(stmt_handle);
+  SEXP e = CAR(cell);
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  if (is_return(stmt)) {
-    
-  } else if (is_assign(stmt)) {
-    
+  if (is_assign(e) && assignment_escapes(e)) {
+    // upward assignment rule
+    MyDFSet::propagate(in, &escaped_predicate, true, assign_rhs_c(e));
+  } else if (is_assign(e) && !is_simple_assign(e)) {
+    // assignment to field/array/call rule
+    MyDFSet::propagate(in, &escaped_predicate, true, assign_rhs_c(e));
+  } else if (is_local_assign(e) && is_simple_assign(e)) {
+    // v0 = v1 rule and method call rule
+    bool escaped_v0 = in->lookup(fact->make_body_var_ref(assign_lhs_c(e)));
+    MyDFSet::propagate(in, &escaped_predicate, escaped_v0, assign_rhs_c(e));
+    if (escaped_v0) {
+      MyDFSet::propagate(in, &ReturnedDFSolver::returned_predicate, true, assign_rhs_c(e));
+    }
+  } else {
+    // all other rules: no change
+    ;
+  }
+  return in.convert<DataFlow::DataFlowSet>();  // upcast
+}
+
+// We have an assignment X <- Y or X <<- Y. If X is a symbol, then it
+// escapes if we have <<- and doesn't escape if we have <-. If X is a
+// more complicated expression, it escapes if and only if the base
+// symbol is nonlocal. Example: if the left side of the assignment is
+// a[b][c]$foo, then it escapes iff a is nonlocal regardness of the
+// kind of arrow.
+bool assignment_escapes(SEXP e) {
+  if (is_symbol(CAR(assign_lhs_c(e)))) {
+    return is_free_assign(e);
+  } else {
+    SEXP sym_c = assign_lhs_c(e);
+    do {
+      if (is_struct_field(CAR(sym_c))) {
+	sym_c = struct_field_lhs_c(CAR(sym_c));
+      } else if (is_subscript(CAR(sym_c))) {
+	sym_c = subscript_lhs_c(CAR(sym_c));
+      } else if (TYPEOF(CAR(sym_c)) == LANGSXP) {  // e.g., dim(x) <- foo
+	sym_c = call_nth_arg_c(CAR(sym_c), 1);
+      } else {
+	assert(0);
+      }
+    } while (!is_symbol(CAR(sym_c)));
+    return getProperty(Var, CAR(sym_c))->getScopeType() == Locality::Locality_FREE;
   }
 }

@@ -60,6 +60,8 @@ rcc_bin_SOURCES =				\
   DefVar.cc                                     \
   DefVar.h                                      \
   Dependence.h                                  \
+  EscapedDFSolver.cc                            \
+  EscapedDFSolver.h                             \
   ExpressionInfo.cc                             \
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \

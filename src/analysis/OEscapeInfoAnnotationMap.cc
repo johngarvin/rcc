@@ -49,7 +49,6 @@ namespace RAnnot {
 
 // ----- declarations for static functions -----
 
-static bool assignment_escapes(SEXP e);
 static std::vector<SEXP> implicit_return_exps(SEXP fundef);
 
 // ----- type definitions for readability -----
@@ -76,6 +75,7 @@ OEscapeInfoAnnotationMap::~OEscapeInfoAnnotationMap() {
 // ----- computation -----
 
 void OEscapeInfoAnnotationMap::compute() {
+#if 0
   FuncInfo * fi;
   Var * var;
   OA_ptr<CFG::Node> node;
@@ -141,6 +141,7 @@ void OEscapeInfoAnnotationMap::compute() {
       }
     }
   }
+#endif
 }
 
 #if 0
@@ -169,31 +170,6 @@ void compute_returned() {
 }
 #endif
 
-// We have an assignment X <- Y or X <<- Y. If X is a symbol, then it
-// escapes if we have <<- and doesn't escape if we have <-. If X is a
-// more complicated expression, it escapes if and only if the base
-// symbol is nonlocal. Example: if the left side of the assignment is
-// a[b][c]$foo, then it escapes iff a is nonlocal regardness of the
-// kind of arrow.
-bool assignment_escapes(SEXP e) {
-  if (is_symbol(CAR(assign_lhs_c(e)))) {
-    return is_free_assign(e);
-  } else {
-    SEXP sym_c = assign_lhs_c(e);
-    do {
-      if (is_struct_field(CAR(sym_c))) {
-	sym_c = struct_field_lhs_c(CAR(sym_c));
-      } else if (is_subscript(CAR(sym_c))) {
-	sym_c = subscript_lhs_c(CAR(sym_c));
-      } else if (TYPEOF(CAR(sym_c)) == LANGSXP) {  // e.g., dim(x) <- foo
-	sym_c = call_nth_arg_c(CAR(sym_c), 1);
-      } else {
-	assert(0);
-      }
-    } while (!is_symbol(CAR(sym_c)));
-    return getProperty(Var, CAR(sym_c))->getScopeType() == Locality::Locality_FREE;
-  }
-}
 
 // ----- singleton pattern -----
 

@@ -43,6 +43,8 @@ public:
   // ----- debugging -----
   void dump_node_maps();
   void dump_node_maps(std::ostream &os);
+
+  static bool returned_predicate(SEXP call, int arg);
   
 private:
   // ----- callbacks for CFGDFSolver -----

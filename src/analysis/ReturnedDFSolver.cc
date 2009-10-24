@@ -44,8 +44,6 @@ using namespace HandleInterface;
 typedef NameBoolDFSet MyDFSet;
 typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
 
-static void propagate(OA_ptr<MyDFSet> in, bool value, SEXP cell);
-
 static bool debug;
 
 ReturnedDFSolver::ReturnedDFSolver(OA_ptr<R_IRInterface> ir)
@@ -62,9 +60,9 @@ OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
 {
   m_proc = proc;
   m_cfg = cfg;
+  m_top = new MyDFSet();
 
   // use OA to solve data flow problem
-  m_top = new MyDFSet();
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
   OA_ptr<DataFlow::DataFlowSet> entry_dfs = m_solver->solve(m_cfg, DataFlow::ITERATIVE);
   OA_ptr<MyDFSet> entry = entry_dfs.convert<MyDFSet>();
@@ -103,7 +101,6 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
   DefVar * def;
   VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  //  FOR_EACH_PROC(fi) {
   PROC_FOR_EACH_MENTION(fi, m) {
     OA_ptr<NameBoolDFSet::NameBoolPair> element;
     element = new NameBoolDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
@@ -136,6 +133,15 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSe
   return set1->meet(set2).convert<DataFlow::DataFlowSet>();
 }
 
+bool ReturnedDFSolver::returned_predicate(SEXP call, int arg) {
+  assert(is_call(call));
+  if (is_library(call_lhs(call)) && !is_library_closure(call_lhs(call))) {
+    return PRIMPOINTS(library_value(call_lhs(call)), arg);
+  } else {  // unknown call
+    return true;
+  }
+}
+
 /// CFGDFSolver says: OK to modify in set and return it again as
 /// result because solver clones the BB in sets. Proc is procedure
 /// that contains the statement.
@@ -151,13 +157,13 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
   if (fi->is_return(cell)) {
     // return rule
     if (is_explicit_return(e)) {
-      propagate(in, true, call_nth_arg_c(e,1));
+      MyDFSet::propagate(in, &returned_predicate, true, call_nth_arg_c(e,1));
     } else {
-      propagate(in, true, cell);
+      MyDFSet::propagate(in, &returned_predicate, true, cell);
     }
-  } else if (is_local_assign(e) && is_symbol(CAR(assign_lhs_c(e)))) {
+  } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
-    propagate(in, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
+    MyDFSet::propagate(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
     // TODO: method call that is not an assignment
     // all other rules: no change
@@ -220,27 +226,4 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::callToReturn(ProcHandle caller,
 							     ProcHandle callee)
 {
   assert(0);
-}
-
-
-// propagate(value, expression): propagate lattice value from expression to subexpressions
-void propagate(OA_ptr<MyDFSet> in, bool value, SEXP cell) {
-  VarRefFactory * const fact = VarRefFactory::get_instance();
-  SEXP e = CAR(cell);
-  if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
-    in->replace(fact->make_body_var_ref(cell), value);
-  } else if (is_call(e) && is_library(call_lhs(e)) && !is_library_closure(call_lhs(e))) {
-    int nargs = Rf_length(call_args(e));
-    for (int i=1; i<=nargs; i++) {
-      bool formal_returned = PRIMPOINTS(library_value(call_lhs(e)), i);
-      if (formal_returned) {
-	propagate(in, value, call_nth_arg_c(e, i));
-      }
-    }
-  } else if (is_call(e)) { // unknown call
-    int nargs = Rf_length(call_args(e));
-    for (int i=1; i<=nargs; i++) {
-      propagate(in, value, call_nth_arg_c(e, i));
-    }
-  }
 }

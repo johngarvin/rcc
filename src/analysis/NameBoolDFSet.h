@@ -105,6 +105,9 @@ public:
 
   void replace(OA::OA_ptr<R_VarRef> e, bool value);
 
+  typedef bool (* PredicateType)(SEXP call, int arg);
+  static void propagate(OA::OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell);
+
   class NameBoolPair {
   public:
     explicit NameBoolPair(OA::OA_ptr<R_VarRef> name, bool value);

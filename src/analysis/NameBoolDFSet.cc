@@ -23,6 +23,11 @@
 #include <set>
 
 #include <analysis/AnalysisException.h>
+#include <analysis/AnalysisResults.h>
+#include <analysis/LocalityType.h>
+#include <analysis/VarRefFactory.h>
+#include <analysis/Utils.h>
+#include <analysis/Var.h>
 
 #include <support/DumpMacros.h>
 
@@ -30,6 +35,7 @@
 
 using namespace OA;
 using namespace OA::DataFlow;
+using RAnnot::Var;
 
 typedef NameBoolDFSet::NameBoolDFSetIterator NameBoolDFSetIterator;
 typedef NameBoolDFSet::MySet MySet;
@@ -160,6 +166,23 @@ void NameBoolDFSet::replace(OA_ptr<R_VarRef> e, bool value) {
   if (iter != mSet->end()) {
     mSet->erase(*iter);
     mSet->insert(pair);
+  }
+}
+
+// propagate(value, expression): propagate lattice value from expression to subexpressions
+// TODO: better description
+void NameBoolDFSet::propagate(OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell) {
+  VarRefFactory * const fact = VarRefFactory::get_instance();
+  SEXP e = CAR(cell);
+  if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
+    in->replace(fact->make_body_var_ref(cell), value);
+  } else if (is_call(e)) {
+    int nargs = Rf_length(call_args(e));
+    for (int i=1; i<=nargs; i++) {
+      if ((*predicate)(e, i)) {
+	propagate(in, predicate, value, call_nth_arg_c(e, i));
+      }
+    }
   }
 }
 
