@@ -98,12 +98,11 @@ void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * m;
-  DefVar * def;
   VarRefFactory * const fact = VarRefFactory::get_instance();
 
   PROC_FOR_EACH_MENTION(fi, m) {
-    OA_ptr<NameBoolDFSet::NameBoolPair> element;
-    element = new NameBoolDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
+    OA_ptr<MyDFSet::NameBoolPair> element;
+    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
     m_top->insert(element);
   }
   return m_top;
@@ -150,7 +149,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
 							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  OA_ptr<MyDFSet> out; out = in->clone().convert<MyDFSet>();
+  //  OA_ptr<MyDFSet> out; out = in->clone().convert<MyDFSet>();
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
@@ -159,19 +158,19 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
   if (fi->is_return(cell)) {
     // return rule
     if (is_explicit_return(e)) {
-      MyDFSet::propagate(out, &returned_predicate, true, call_nth_arg_c(e,1));
+      MyDFSet::propagate(in, &returned_predicate, true, call_nth_arg_c(e,1));
     } else {
-      MyDFSet::propagate(out, &returned_predicate, true, cell);
+      MyDFSet::propagate(in, &returned_predicate, true, cell);
     }
   } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
-    MyDFSet::propagate(out, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
+    MyDFSet::propagate(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
     // TODO: method call that is not an assignment?
     // all other rules: no change
     ;
   }
-  return out.convert<DataFlow::DataFlowSet>();  // upcast
+  return in.convert<DataFlow::DataFlowSet>();  // upcast
 }
 
 /// ICFGDFSolver says: OK to modify in set and return it again as

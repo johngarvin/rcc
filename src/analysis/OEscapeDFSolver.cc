@@ -30,7 +30,7 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/NameMentionMultiMap.h>
+#include <analysis/NameBoolDFSet.h>
 
 #include "OEscapeDFSolver.h"
 
@@ -38,7 +38,7 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-typedef OEscapeDFSet MyDFSet;
+typedef NameBoolDFSet MyDFSet;
 
 static bool debug;
 
@@ -51,17 +51,18 @@ OEscapeDFSolver::OEscapeDFSolver(OA_ptr<R_IRInterface> ir)
 OEscapeDFSolver::~OEscapeDFSolver()
 {}
 
-OA_ptr<NameMentionMultiMap> OEscapeDFSolver::perform_analysis(ProcHandle proc,
-							      OA_ptr<CFG::CFGInterface> cfg,
-							      OA_ptr<SSA::SSAStandard> ssa)
+OA_ptr<MyDFSet> OEscapeDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg)
 {
   m_proc = proc;
   m_cfg = cfg;
-  m_ssa = ssa;
+  m_top = new MyDFSet();
+  
 
   // use OA to solve data flow problem
-  DataFlow::CFGDFSolver solver(DataFlow::CFGDFSolver::Backward, *this);
-  solver.solve(cfg, DataFlow::ITERATIVE);
+  m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
+  OA_ptr<DataFlow::DataFlowSet> entry_dfs = m_solver->solve(m_cfg, DataFlow::ITERATIVE);
+  OA_ptr<MyDFSet> entry = entry_dfs.convert<MyDFSet>();
+  return entry;
 }
 
 // ----- debugging -----
@@ -91,41 +92,21 @@ void OEscapeDFSolver::dump_node_maps(std::ostream &os) {
 // ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeTop() {
-  FuncInfo * fi;
+  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * mention;
-  OA_ptr<CFG::NodeInterface> node;
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  m_top = new MyDFSet;
-
-  // add (proc, false) for each procedure
-  FOR_EACH_PROC(fi) {
-    OA_ptr<MyDFSet::ProcSetElement> e;
-    e = new MyDFSet::ProcSetElement(make_proc_h(fi->get_sexp()), false);
-    m_top->insertProc(e);
-  }
-
-  // add (var, all false) for each SSA variable
-  FOR_EACH_PROC(fi) {
-    // defs by assignment and formal args
-    PROC_FOR_EACH_MENTION(fi, mention) {
-      if ((*mention)->getUseDefType() == Var::Var_DEF) {
-	OA_ptr<MyDFSet::VarSetElement> e;
-	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	//m_top->insert(e);
-      }
-    }
-    // defs in phi functions
-    PROC_FOR_EACH_NODE(fi, node) {
-      OA_ptr<SSA::SSAStandard::PhiNodesIterator> it = m_ssa->getPhiNodesIterator(node);
-      for( ; it->isValid(); ++*it) {
-	//it->current()
-	OA_ptr<MyDFSet::VarSetElement> e;
-	e = new MyDFSet::VarSetElement(0, false, false, false);  // TODO
-	//m_top->insert(e);
-      }
-    }
+  PROC_FOR_EACH_MENTION(fi, mention) {
+    OA_ptr<MyDFSet::NameBoolPair> element;
+    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*mention)->getMention_c()), false);
+    m_top->insert(element);
   }
   return m_top;
+}
+
+/// Not used.
+OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeBottom() {
+  assert(0);
 }
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
@@ -142,7 +123,7 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::meet(OA_ptr<DataFlow::DataFlowSet
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> set2; set2 = set2_orig.convert<MyDFSet>();
   
-  //return set1->meet(set2).convert<DataFlow::DataFlowSet>();
+  return set1->meet(set2).convert<DataFlow::DataFlowSet>();
 }
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
@@ -152,18 +133,23 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi; fi = getProperty(FuncInfo, make_sexp(m_proc));
+  VarRefFactory * const fact = VarRefFactory::get_instance();
 
   if (fi->is_return(e)) {
-    // if escaped, propagate true
-    // propagate vfresh of return value to mfresh of procedure
+    // When add inter: if e is escaped, make mnfresh true for this proc
+    //                 in all cases propagate vnfresh to mnfresh
   } else if (is_simple_assign(e) && !is_call(CAR(assign_lhs_c(e)))) {
-    // v = s rule, v0 = v1.f rule, and v0 = v1 rule
-    // propagate true
+    in->replace(fact->make_body_var_ref(assign_lhs_c(e)), true);
   } else if (is_assign(e) && !is_simple_assign(e)) {
     // v0.f = v1 rule (may create object in R)
-    // add to vfresh
-  } else if (is_assign(e) && is_call(CAR(assign_lhs_c(e)))) {
+    // creates object. vnfresh stays false TODO: right?
+  } else if (is_simple_assign(e) && is_call(CAR(assign_rhs_c(e)))) {
     // method call rule
-    // propagate mfresh of callee to vfresh of v0
+    const SEXP callee = call_lhs(CAR(assign_rhs_c(e)));
+    if (!is_library(callee) || is_library_closure(callee)) {
+      in->replace(fact->make_body_var_ref(assign_lhs_c(e)), true);
+    }
+    // When add inter: propagate mnfresh of callee to vnfresh of v0
   }
+  return in.convert<DataFlow::DataFlowSet>();
 }

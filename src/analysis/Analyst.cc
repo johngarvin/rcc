@@ -38,6 +38,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/NameBoolDFSet.h>
+#include <analysis/OEscapeDFSolver.h>
 #include <analysis/ReturnedDFSolver.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
@@ -99,18 +100,25 @@ void R_Analyst::perform_analysis() {
   // temporary
   FuncInfo * fi;
   FOR_EACH_PROC(fi) {
+    const OA::ProcHandle proc = make_proc_h(fi->get_sexp());
+    const OA::OA_ptr<OA::CFG::CFGInterface> cfg = fi->get_cfg();
+
     ReturnedDFSolver ret_solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, cfg);
     EscapedDFSolver esc_solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
-    std::cout << "RETURNED nodes\n";
-    ret_solver.dump_node_maps();
-    std::cout << "ESCAPED nodes\n";
-    esc_solver.dump_node_maps();
+    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, cfg);
+    OEscapeDFSolver oe_solver(m_interface);
+    OA::OA_ptr<NameBoolDFSet> oe; oe = oe_solver.perform_analysis(proc,cfg);
+    // std::cout << "RETURNED nodes\n";
+    // ret_solver.dump_node_maps();
+    // std::cout << "ESCAPED nodes\n";
+    // esc_solver.dump_node_maps();
     std::cout << "RETURNED summary\n";
     returned->dump();
     std::cout << "ESCAPED summary\n";
     escaped->dump();
+    std::cout << "NFRESH summary\n";
+    oe->dump();
   }
 }
 

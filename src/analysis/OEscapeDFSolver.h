@@ -39,7 +39,7 @@ class OEscapeDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit OEscapeDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~OEscapeDFSolver();
-  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg, OA::OA_ptr<OA::SSA::SSAStandard> ssa);
+  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -48,6 +48,7 @@ public:
 private:
   // ----- callbacks for CFGDFSolver -----
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeTop();
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeBottom();
 
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeIN(OA::OA_ptr<OA::CFG::NodeInterface> n);
   OA::OA_ptr<OA::DataFlow::DataFlowSet> initializeNodeOUT(OA::OA_ptr<OA::CFG::NodeInterface> n);
@@ -66,9 +67,8 @@ private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<OEscapeDFSet> m_top;
+  OA::OA_ptr<NameBoolDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
-  OA::OA_ptr<OA::SSA::SSAStandard> m_ssa;
 };
 
 #endif
