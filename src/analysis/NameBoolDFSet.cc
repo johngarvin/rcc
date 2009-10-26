@@ -134,11 +134,13 @@ void NameBoolDFSet::insert(OA_ptr<NameBoolPair> element) {
 }
 
 OA_ptr<NameBoolDFSet> NameBoolDFSet::meet(OA::OA_ptr<NameBoolDFSet> other) {
-  OA_ptr<NameBoolDFSet> meet; meet = new NameBoolDFSet(*this);
+  OA_ptr<NameBoolDFSet> meet; meet = this->clone().convert<NameBoolDFSet>();
   OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
   for (iter = other->getIterator(); iter->isValid(); ++(*iter)) {
-    if (mSet->find(iter->current()) == mSet->end() || iter->current()->getValue() == true) {
+    if (mSet->find(iter->current()) == mSet->end()) {
       meet->insert(iter->current());
+    } else if (iter->current()->getValue() == true) {
+      meet->replace(iter->current()->getName(), iter->current()->getValue());
     }
   }
   return meet;

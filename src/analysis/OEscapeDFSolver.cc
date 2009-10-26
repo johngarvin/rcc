@@ -149,12 +149,21 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
 							StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  SEXP e = make_sexp(stmt);
+  SEXP cell = make_sexp(stmt);
+  SEXP e = CAR(cell);
   FuncInfo * fi; fi = getProperty(FuncInfo, make_sexp(m_proc));
 
   if (fi->is_return(e)) {
-    
-  } else if (is_assign(e)) {
-    
+    // if escaped, propagate true
+    // propagate vfresh of return value to mfresh of procedure
+  } else if (is_simple_assign(e) && !is_call(CAR(assign_lhs_c(e)))) {
+    // v = s rule, v0 = v1.f rule, and v0 = v1 rule
+    // propagate true
+  } else if (is_assign(e) && !is_simple_assign(e)) {
+    // v0.f = v1 rule (may create object in R)
+    // add to vfresh
+  } else if (is_assign(e) && is_call(CAR(assign_lhs_c(e)))) {
+    // method call rule
+    // propagate mfresh of callee to vfresh of v0
   }
 }

@@ -23,15 +23,21 @@
 #ifndef ESCAPED_DF_SOLVER_H
 #define ESCAPED_DF_SOLVER_H
 
-#include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
+#include <OpenAnalysis/Utils/OA_ptr.hpp>
 
 #include <analysis/NameBoolDFSet.h>
 #include <analysis/VarRefFactory.h>
 
-class OA::CFG::CFGInterface;
 class R_IRInterface;
-class OA::DataFlow::CFGDFSolver;
+namespace OA {
+  namespace CFG {
+    class CFGInterface;
+    class NodeInterface;
+  }
+}
+
 
 class EscapedDFSolver : private OA::DataFlow::CFGDFProblem {
 public:

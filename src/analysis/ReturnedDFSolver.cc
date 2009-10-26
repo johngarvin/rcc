@@ -130,7 +130,8 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSe
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> set2; set2 = set2_orig.convert<MyDFSet>();
   
-  return set1->meet(set2).convert<DataFlow::DataFlowSet>();
+  OA_ptr<MyDFSet> out; out = set1->meet(set2);
+  return out.convert<DataFlow::DataFlowSet>();
 }
 
 bool ReturnedDFSolver::returned_predicate(SEXP call, int arg) {
@@ -149,6 +150,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
 							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
+  OA_ptr<MyDFSet> out; out = in->clone().convert<MyDFSet>();
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
@@ -157,19 +159,19 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
   if (fi->is_return(cell)) {
     // return rule
     if (is_explicit_return(e)) {
-      MyDFSet::propagate(in, &returned_predicate, true, call_nth_arg_c(e,1));
+      MyDFSet::propagate(out, &returned_predicate, true, call_nth_arg_c(e,1));
     } else {
-      MyDFSet::propagate(in, &returned_predicate, true, cell);
+      MyDFSet::propagate(out, &returned_predicate, true, cell);
     }
   } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
-    MyDFSet::propagate(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
+    MyDFSet::propagate(out, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
-    // TODO: method call that is not an assignment
+    // TODO: method call that is not an assignment?
     // all other rules: no change
     ;
   }
-  return in.convert<DataFlow::DataFlowSet>();  // upcast
+  return out.convert<DataFlow::DataFlowSet>();  // upcast
 }
 
 /// ICFGDFSolver says: OK to modify in set and return it again as

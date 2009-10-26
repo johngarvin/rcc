@@ -32,6 +32,7 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/CallByValueAnalysis.h>
+#include <analysis/EscapedDFSolver.h>
 #include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
@@ -98,9 +99,18 @@ void R_Analyst::perform_analysis() {
   // temporary
   FuncInfo * fi;
   FOR_EACH_PROC(fi) {
-    ReturnedDFSolver solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> returned; returned = solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
-    solver.dump_node_maps();
+    ReturnedDFSolver ret_solver(m_interface);
+    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    EscapedDFSolver esc_solver(m_interface);
+    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    std::cout << "RETURNED nodes\n";
+    ret_solver.dump_node_maps();
+    std::cout << "ESCAPED nodes\n";
+    esc_solver.dump_node_maps();
+    std::cout << "RETURNED summary\n";
+    returned->dump();
+    std::cout << "ESCAPED summary\n";
+    escaped->dump();
   }
 }
 

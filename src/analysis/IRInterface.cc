@@ -741,7 +741,13 @@ std::string R_IRInterface::toString(MemRefHandle h) const {
 
 std::string R_IRInterface::toString(SymHandle h) const {
   VarInfo * vi = make_var_info(h);
-  return to_string(vi->get_name()) + "@" + vi->get_scope()->get_name();
+  if (vi == 0) {
+    return "SymHandle(0)";
+  } else if (vi->has_scope()) {
+    return to_string(vi->get_name()) + "@" + vi->get_scope()->get_name();
+  } else {
+    return to_string(vi->get_name()) + "@<ambiguous scope>";
+  }
 }
 
 std::string R_IRInterface::toString(ConstSymHandle h) const {
