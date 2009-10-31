@@ -35,6 +35,7 @@
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <analysis/VarBinding.h>
 
@@ -114,11 +115,8 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 
   string strictness = comment("strictness: " + output_strictness(args));  // string of S and N: whether each formal is strict
 
-  //  CEscapeInfo * ei = getProperty(CEscapeInfo, fndef);
-  //  bool stack_alloc_env = !(ei->may_escape());
-  bool stack_alloc_env = false;
-
-  bool stack_alloc_obj = false; // needs points-to analysis
+  // whether to use escape analysis to stack allocate objects
+  bool stack_alloc_obj = Settings::get_instance()->get_stack_alloc_obj();
 
   header = "SEXP " + func_name + "(";
   header += "SEXP args, SEXP newenv)";

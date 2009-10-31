@@ -32,10 +32,14 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
-#include <analysis/OEscapeInfo.h>
+#include <analysis/EscapedDFSolver.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/NameBoolDFSet.h>
+#include <analysis/OEscapeDFSolver.h>
+#include <analysis/OEscapeInfo.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/ReturnedDFSolver.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/Var.h>
 #include <analysis/VarInfo.h>
@@ -44,6 +48,8 @@
 #include "OEscapeInfoAnnotationMap.h"
 
 using namespace OA;
+
+static bool debug;
 
 namespace RAnnot {
 
@@ -60,7 +66,7 @@ typedef OEscapeInfoAnnotationMap::MyMappedT MyMappedT;
 
 OEscapeInfoAnnotationMap::OEscapeInfoAnnotationMap()
 {
-  // RCC_DEBUG("RCC_OEscapeInfoAnnotationMap", debug);
+  RCC_DEBUG("RCC_OEscapeInfoAnnotationMap", debug);
 }
 
 OEscapeInfoAnnotationMap::~OEscapeInfoAnnotationMap() {
@@ -75,73 +81,37 @@ OEscapeInfoAnnotationMap::~OEscapeInfoAnnotationMap() {
 // ----- computation -----
 
 void OEscapeInfoAnnotationMap::compute() {
-#if 0
   FuncInfo * fi;
   Var * var;
   OA_ptr<CFG::Node> node;
   StmtHandle stmt;
-  SSA::ManagerStandard ssa_man(R_Analyst::get_instance()->get_interface());
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  SSA::ManagerStandard ssa_man(interface);
   OA_ptr<SSA::SSAStandard> ssa;
-
-  // want: whether expression gets returned or assigned upward.
-  //   if it's called, no change
-  //   if it's passed to a function, get whether that arg escapes from the callee
-  //   if it's returned, it escapes
-  //   if it's the RHS of a non-local assignment, it escapes
-  //   if an escaping expression points to it, it escapes
-
-  // simplified for variable (that is, set of all objects bound to variable)
-  //   if called, no change
-  //   if passed to function, escapes if arg escapes from callee
-  //   if returned, it escapes
-  //   if RHS of non-local assignment, it escapes
-
-  // collect escaping expressions:
-  // * RHS of non-local assignments
-  // * return values
-  // * arguments that escape call sites via assignment (not return)
-  //
-  // for each escaping expression:
-  // * add expression to map
-  // * if call site, recur on args that escape via assignment or return
+  OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
 
   FOR_EACH_PROC(fi) {
-    ProcHandle ph = HandleInterface::make_proc_h(fi->get_sexp());
-    ssa = ssa_man.performAnalysis(ph, fi->get_cfg());
-    PROC_FOR_EACH_NODE(fi, node) {
-      NODE_FOR_EACH_STATEMENT(node, stmt) {
-	SEXP cell = HandleInterface::make_sexp(stmt);
-	SEXP e = CAR(cell);
-	switch(TYPEOF(e)) {
-	case NILSXP:
-	case REALSXP:
-	case STRSXP:
-	case LGLSXP:
-	case SYMSXP:
-	  continue;
-	case LISTSXP:
-	  assert(0);   // I don't think this can happen.
-	  break;
-	case LANGSXP:
-	  if (is_assign(e)) {
-	    get_map()[assign_rhs_c(e)] = new OEscapeInfo(assignment_escapes(e));
-	    // now propagate to components of RHS?
-	  } else if (fi->is_return(cell)) {
-	    get_map()[call_nth_arg_c(e,1)] = new OEscapeInfo(true);
-	    // propagate?
-	  } else {        // function call other than assignment or return
-	    // conservative for now
-	    get_map()[e] = new OEscapeInfo(true);
-	    // propagate?
-	  }
-	  break;
-	default:
-	  assert(0);
-	}
+    ProcHandle proc = HandleInterface::make_proc_h(fi->get_sexp());
+    ssa = ssa_man.performAnalysis(proc, fi->get_cfg());
+    ReturnedDFSolver ret_solver(interface);
+    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg());
+    EscapedDFSolver esc_solver(interface);
+    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg());
+    OEscapeDFSolver oe_solver(interface);
+    OA::OA_ptr<NameBoolDFSet> oe; oe = oe_solver.perform_analysis(proc, fi->get_cfg());
+    for (iter = oe->getIterator(); iter->isValid(); ++*iter) {
+      bool ret = returned->lookup(iter->current()->getName());
+      bool esc = escaped->lookup(iter->current()->getName());
+      bool nfresh = iter->current()->getValue();
+      if (ret || esc || nfresh) {
+	// may escape
+	get_map()[iter->current()->getName()->get_name()] = new OEscapeInfo(true);
+      } else {
+	// does not escape
+	get_map()[iter->current()->getName()->get_name()] = new OEscapeInfo(false);
       }
     }
   }
-#endif
 }
 
 #if 0

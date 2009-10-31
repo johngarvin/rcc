@@ -41,6 +41,7 @@ class Settings {
   BOOL_GETTER_SETTER(special_case_arithmetic)
   BOOL_GETTER_SETTER(call_graph)
   BOOL_GETTER_SETTER(lookup_elimination)
+  BOOL_GETTER_SETTER(stack_alloc_obj)
 
   // Singleton pattern
 public:

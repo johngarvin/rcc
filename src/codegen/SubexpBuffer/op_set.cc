@@ -29,8 +29,11 @@
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <include/R/R_Defn.h>
+
 #include <support/StringUtils.h>
+
 #include <analysis/AnalysisResults.h>
+#include <analysis/OEscapeInfo.h>
 #include <analysis/Settings.h>
 #include <analysis/Utils.h>
 
@@ -41,19 +44,25 @@
 #include <Visibility.h>
 
 using namespace std;
+using RAnnot::OEscapeInfo;
 
 /// Output an assignment statement
 Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho, 
 				Protection resultProtection)
 {
   string out;
+  Expression retval;
   assert(is_assign_prim(op));
   SEXP lhs = CAR(assign_lhs_c(e));
   if (is_string(lhs)) {
     SETCAR(CDR(e), Rf_install(CHAR(STRING_ELT(lhs, 0))));
     lhs = CAR(assign_lhs_c(e));
   }
-  if (is_var(lhs)) {
+  if (is_symbol(lhs)) {
+    OEscapeInfo * ei = getProperty(OEscapeInfo, lhs);
+    if (ei->may_escape()) {
+      emit_call0("upAllocStack");
+    }
     string name = make_symbol(lhs);
     SEXP rhs_c = assign_rhs_c(e);
     SEXP rhs = CAR(assign_rhs_c(e));
@@ -75,12 +84,12 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
       target_env = emit_call1("ENCLOS", rho);
     }
 
-    Expression out = op_var_def(assign_lhs_c(e), body.var, target_env);
-    if (!body.del_text.empty())
+    retval = op_var_def(assign_lhs_c(e), body.var, target_env);
+    if (!body.del_text.empty()) {
       append_defs("UNPROTECT(1);\n");
-    return out;
+    }
   } else if (is_simple_subscript(lhs) && Settings::get_instance()->get_subscript_assignment()) {
-    return op_subscriptset(e, rho, resultProtection);
+    retval = op_subscriptset(e, rho, resultProtection);
   } else if (Rf_isLanguage(lhs)) {
 #ifdef USE_OUTPUT_CODEGEN
     Expression func = output_to_expression(CodeGen::op_primsxp(op, rho));
@@ -99,10 +108,12 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     if (resultProtection == Protected) cleanup = unp(out);
     del(func);
     del(args);
-    return Expression(out, DEPENDENT, INVISIBLE, cleanup);
+    retval = Expression(out, DEPENDENT, INVISIBLE, cleanup);
   } else {
     ParseInfo::flag_problem();
-    return Expression("<<assignment with unrecognized LHS>>",
-		      DEPENDENT, INVISIBLE, "");
+    retval = Expression("<<assignment with unrecognized LHS>>",
+			DEPENDENT, INVISIBLE, "");
   }
+  emit_call0("restoreAllocStack");
+  return retval;
 }

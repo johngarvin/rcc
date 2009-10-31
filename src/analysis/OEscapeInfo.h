@@ -22,8 +22,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef ANNOTATION_C_ESCAPE_INFO_H
-#define ANNOTATION_C_ESCAPE_INFO_H
+#ifndef ANNOTATION_O_ESCAPE_INFO_H
+#define ANNOTATION_O_ESCAPE_INFO_H
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/PropertyHndl.h>

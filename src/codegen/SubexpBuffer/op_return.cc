@@ -31,6 +31,7 @@
 
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
+#include <analysis/Settings.h>
 
 #include <ParseInfo.h>
 #include <Dependence.h>
@@ -81,8 +82,13 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   // tear down context, if any
   //---------------------------
-  if (fi && fi->requires_context())  
+  if (fi && fi->requires_context()) {
     append_defs("endcontext(&context);\n"); 
+  }
+
+  if (Settings::get_instance()->get_stack_alloc_obj()) {
+    append_defs("popAllocStack();\n");
+  }
 
 #ifdef CHECK_PROTECT
   append_defs("assert(topval == R_PPStackTop);\n");
@@ -91,8 +97,8 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
   //---------------------------
   // set visibility
   //---------------------------
-  if (value.visibility == VISIBLE) append_defs("R_Visible = 1;");
-  if (value.visibility == INVISIBLE) append_defs("R_Visible = 0;");
+  if (value.visibility == VISIBLE) append_defs("R_Visible = 1;\n");
+  if (value.visibility == INVISIBLE) append_defs("R_Visible = 0;\n");
   // if CHECK_VISIBILITY, then don't change anything
 
   //---------------------------

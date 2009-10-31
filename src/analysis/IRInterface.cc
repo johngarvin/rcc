@@ -688,7 +688,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   SEXP sexp = make_sexp(h);
-  assert(is_var(sexp));
+  assert(is_symbol(CAR(sexp)) || is_symbol(TAG(sexp)));
   const Var * var = getProperty(Var, sexp);
   const VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(var);
   return make_sym_h(vi);
