@@ -52,7 +52,8 @@ private:
 	       m_strictness(true),
 	       m_special_case_arithmetic(true),
 	       m_call_graph(true),
-	       m_lookup_elimination(true)
+	       m_lookup_elimination(true),
+	       m_stack_alloc_obj(true)
   { }
   static Settings * s_instance;
 };

@@ -98,6 +98,7 @@ void R_Analyst::perform_analysis() {
   (new CallByValueAnalysis())->perform_analysis();
 
   // temporary
+#if 0
   FuncInfo * fi;
   FOR_EACH_PROC(fi) {
     const OA::ProcHandle proc = make_proc_h(fi->get_sexp());
@@ -120,6 +121,7 @@ void R_Analyst::perform_analysis() {
     std::cout << "NFRESH summary\n";
     oe->dump();
   }
+#endif
 }
 
 /// Discovers local information on procedures: arguments, names

@@ -135,7 +135,7 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
   FuncInfo * fi; fi = getProperty(FuncInfo, make_sexp(m_proc));
   VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  if (fi->is_return(e)) {
+  if (fi->is_return(cell)) {
     // When add inter: if e is escaped, make mnfresh true for this proc
     //                 in all cases propagate vnfresh to mnfresh
   } else if (is_simple_assign(e) && !is_call(CAR(assign_lhs_c(e)))) {
@@ -151,5 +151,6 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
     }
     // When add inter: propagate mnfresh of callee to vnfresh of v0
   }
+  // all other cases: no change
   return in.convert<DataFlow::DataFlowSet>();
 }
