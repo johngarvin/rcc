@@ -504,12 +504,15 @@ typedef struct AllocStackStruct {
   /* AllocStack * allocStackTop; */
 typedef SEXP (*AllocVectorFunction)(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 typedef SEXP (*AllocNodeFunction)(AllocStack * allocator, SEXP * protect_on_gc);
+void * getAllocStackTop();
+void * getAllocStackCurrent();
 void pushAllocStack(SEXP space,
 		    R_len_t size,
 		    AllocVectorFunction alloc_vector_function,
 		    AllocNodeFunction alloc_node_function);
 void popAllocStack();
 void upAllocStack();
+void restoreAllocStack();
 SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
 SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);

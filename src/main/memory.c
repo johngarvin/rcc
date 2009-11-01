@@ -1596,6 +1596,16 @@ char *S_realloc(char *p, long new, long old, int size)
 static AllocStack * allocStackTop = NULL;
 static AllocStack * allocStackCurrent = NULL;
 
+void * getAllocStackTop()
+{
+  return (void *)allocStackTop;
+}
+
+void * getAllocStackCurrent()
+{
+  return (void *)allocStackCurrent;
+}
+
 /* pushes new allocator on the stack. Sets both allocStackTop and
  * allocStackCurrent to the new allocator.
  */
@@ -1641,6 +1651,26 @@ void upAllocStack()
     } else {
 	allocStackCurrent = allocStackCurrent->next;
     }
+}
+
+/* Makes allocStackCurrent point to the top of the stack again. Useful
+   for undoing an upAllocStack call. */
+void restoreAllocStack()
+{
+  allocStackCurrent = allocStackTop;
+}
+
+// when true, use heap allocation all the time as a fallback
+static int fallback_alloc = FALSE;
+
+void setFallbackAlloc()
+{
+  fallback_alloc = TRUE;
+}
+
+void unSetFallbackAlloc()
+{
+  fallback_alloc = FALSE;
 }
 
 SEXP allocSExp(SEXPTYPE t)
@@ -1883,7 +1913,7 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
 
 SEXP allocString(int length)
 {
-    return allocVector(CHARSXP, length);
+  return allocVector(CHARSXP, length);
 }
 
 
@@ -2248,6 +2278,8 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 {
     R_size_t size;
     
+    if (global_use_heap_alloc) return allocVectorHeap(NULL, type, length);
+
     size = allocVectorGetSize(type, length);
 
     if (global_dump_stats) fprintf(stderr, "vector stack %u bytes\n", size);
@@ -2277,6 +2309,8 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 {
     const R_size_t node_size = sizeof(SEXPREC);
+    
+    if (global_use_heap_alloc) return allocNodeHeap(NULL, protect_on_gc);
 
     if (global_dump_stats) fprintf(stderr, "node stack %u bytes\n", node_size);
     

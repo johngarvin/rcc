@@ -20,6 +20,7 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
+extern int global_use_heap_alloc;
 
 #undef HASHING
 
@@ -609,7 +610,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 }
 
 /* Apply SEXP op of type CLOSXP to actuals */
-
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options)
 {
     SEXP body, formals, actuals, savedrho, funsxp;
@@ -618,6 +618,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     RCNTXT cntxt;
     SEXP stack_space;
     int nprotect = 0;
+    int old_heap_alloc;
+    const void * const allocStackTop = getAllocStackTop();
 
     if (TYPEOF(op) == RCC_CLOSXP) {
       options |= AC_RCC;
@@ -636,9 +638,9 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	body = BODY(op);
 	savedrho = CLOENV(op);
     }
-    
+
     /*  Set up a context with the call in it so error has access to it */
-    
+
     if (options & AC_CONTEXT) {
 	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
     }
@@ -647,7 +649,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	to the formal paramters.  Build a new environment which
 	contains the matched pairs.  Ideally this environment sould be
 	hashed.  */
-    
+
     if (options & AC_STACK) {
 	const int size = 4096;
 	stack_space = alloca(size);
@@ -661,7 +663,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     } else {
       actuals = arglist;
     }
-    
+
     if (options & AC_ENVIRONMENT) {
       PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
       nprotect++;
@@ -766,7 +768,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	    do_browser(call,op,arglist,newrho);
 	}
     }
-    
+
  regdb:
 
     /*  It isn't completely clear that this is the right place to do
@@ -785,9 +787,16 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
+    if (!(options & AC_RCC) &&
+	TYPEOF(body) == LANGSXP &&
+	CAR(body) == Rf_install("UseMethod"))
+    {
+	old_heap_alloc = global_use_heap_alloc;
+	global_use_heap_alloc = TRUE;
+    }
+
     /*  Set a longjmp target which will catch any explicit returns
 	from the function body.  */
-
     if ((options & AC_CONTEXT) && (SETJMP(cntxt.cjmpbuf))) {
 	    if (R_ReturnedValue == R_RestartToken) {
 		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
@@ -808,7 +817,14 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	}
     }
     nprotect++;
-    
+
+    if (!(options & AC_RCC) &&
+	TYPEOF(body) == LANGSXP &&
+	CAR(body) == Rf_install("UseMethod"))
+    {
+	global_use_heap_alloc = old_heap_alloc;
+    }
+
     if (options & AC_CONTEXT) {
 	endcontext(&cntxt);
     }
@@ -823,6 +839,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     UNPROTECT(nprotect);
+    if (getAllocStackTop() != allocStackTop) error(_("Allocation stack imbalance"));
     return (tmp);
 }
 
@@ -928,7 +945,7 @@ SEXP applyRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     SET_DEBUG(newrho, DEBUG(op));
     if (DEBUG(op)) {
-	SEXP body = RCC_FUNSXP_BODYEXPR(funsxp); 
+	SEXP body = RCC_FUNSXP_BODYEXPR(funsxp);
 	Rprintf("debugging in: ");
 	PrintValueRec(call,rho);
 	/* Is the body a bare symbol (PR#6804) */
@@ -1122,7 +1139,7 @@ SEXP applyPlainRccClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppl
 
     SET_DEBUG(newrho, DEBUG(op));
     if (DEBUG(op)) {
-	SEXP body = RCC_FUNSXP_BODYEXPR(funsxp); 
+	SEXP body = RCC_FUNSXP_BODYEXPR(funsxp);
 	Rprintf("debugging in: ");
 	PrintValueRec(call,rho);
 	/* Is the body a bare symbol (PR#6804) */
