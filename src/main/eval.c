@@ -20,7 +20,7 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
-extern int global_use_heap_alloc;
+extern int fallback_alloc;
 
 #undef HASHING
 
@@ -791,8 +791,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
     {
-	old_heap_alloc = global_use_heap_alloc;
-	global_use_heap_alloc = TRUE;
+	old_heap_alloc = fallback_alloc;
+	fallback_alloc = TRUE;
     }
 
     /*  Set a longjmp target which will catch any explicit returns
@@ -822,7 +822,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
     {
-	global_use_heap_alloc = old_heap_alloc;
+	fallback_alloc = old_heap_alloc;
     }
 
     if (options & AC_CONTEXT) {

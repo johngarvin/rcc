@@ -1661,7 +1661,7 @@ void restoreAllocStack()
 }
 
 // when true, use heap allocation all the time as a fallback
-static int fallback_alloc = FALSE;
+int fallback_alloc = FALSE;
 
 void setFallbackAlloc()
 {
@@ -2278,7 +2278,7 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 {
     R_size_t size;
     
-    if (global_use_heap_alloc) return allocVectorHeap(NULL, type, length);
+    if (fallback_alloc) return allocVectorHeap(NULL, type, length);
 
     size = allocVectorGetSize(type, length);
 
@@ -2310,7 +2310,7 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 {
     const R_size_t node_size = sizeof(SEXPREC);
     
-    if (global_use_heap_alloc) return allocNodeHeap(NULL, protect_on_gc);
+    if (fallback_alloc) return allocNodeHeap(NULL, protect_on_gc);
 
     if (global_dump_stats) fprintf(stderr, "node stack %u bytes\n", node_size);
     
