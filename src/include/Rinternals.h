@@ -513,6 +513,8 @@ void pushAllocStack(SEXP space,
 void popAllocStack();
 void upAllocStack();
 void restoreAllocStack();
+Rboolean getFallbackAlloc();
+void setFallbackAlloc(Rboolean x);
 SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
 SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);
@@ -536,7 +538,7 @@ typedef enum {
     AC_CONTEXT = 4,
     AC_ENVIRONMENT = 8,
     AC_USEMETHOD = 16,
-    AC_STACK = 32,
+    AC_STACK_CLOSURE = 32,
     AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
 } ApplyClosureOptions;
 SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions);

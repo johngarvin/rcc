@@ -51,9 +51,11 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
 
-int global_dump_stats = FALSE;
+Rboolean global_dump_stats = FALSE;
 
-int global_stack_debug = FALSE;
+Rboolean global_stack_debug = FALSE;
+
+Rboolean global_stress_memory = FALSE;
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
    as large as unsigned long.  Changed from int at 1.6.0 to (i) allow
@@ -1627,15 +1629,21 @@ void pushAllocStack(SEXP space,
    the top, unchanged otherwise. */
 void popAllocStack()
 {
-    if (allocStackTop != NULL) {
+    if (allocStackTop == NULL) {
+	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
+    } else {
 	AllocStack * temp = allocStackTop;
+	if (global_stress_memory) {
+	    int * p;
+	    for(p = (int *)temp->space; p < (int*)temp->space + temp->size; p++) {
+		*p = 0;
+	    }
+	}
 	allocStackTop = temp->next;
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
 	free(temp);
-    } else {
-	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
     }
 }
 
@@ -1661,16 +1669,16 @@ void restoreAllocStack()
 }
 
 // when true, use heap allocation all the time as a fallback
-int fallback_alloc = FALSE;
+static int fallback_alloc = FALSE;
 
-void setFallbackAlloc()
+Rboolean getFallbackAlloc()
 {
-  fallback_alloc = TRUE;
+    return fallback_alloc;
 }
 
-void unSetFallbackAlloc()
+void setFallbackAlloc(Rboolean x)
 {
-  fallback_alloc = FALSE;
+    fallback_alloc = x;
 }
 
 SEXP allocSExp(SEXPTYPE t)

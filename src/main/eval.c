@@ -599,7 +599,7 @@ typedef enum {
     AC_CONTEXT = 4,
     AC_ENVIRONMENT = 8,
     AC_USEMETHOD = 16,
-    AC_STACK = 32,
+    AC_STACK_CLOSURE = 32,
     AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
 } ApplyClosureOptions;
 */
@@ -650,11 +650,14 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	contains the matched pairs.  Ideally this environment sould be
 	hashed.  */
 
-    if (options & AC_STACK) {
+    if (options & AC_STACK_CLOSURE) {
 	const int size = 4096;
 	stack_space = alloca(size);
 	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
 	/* stack allocate matchArgs list, environment, promises */
+    } else {
+	old_heap_alloc = getFallbackAlloc();
+	setFallbackAlloc(TRUE);
     }
 
     if (options & AC_MATCH_ARGS) {
@@ -696,7 +699,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	}
     }
 
-    if (options & AC_STACK) {
+    if (options & AC_STACK_CLOSURE) {
 	upAllocStack();
 	/* don't stack allocate in the body unless we're supposed to */
     }
@@ -791,8 +794,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
     {
-	old_heap_alloc = fallback_alloc;
-	fallback_alloc = TRUE;
+	old_heap_alloc = getFallbackAlloc();
+	setFallbackAlloc(TRUE);
     }
 
     /*  Set a longjmp target which will catch any explicit returns
@@ -822,7 +825,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
     {
-	fallback_alloc = old_heap_alloc;
+        setFallbackAlloc(old_heap_alloc);
     }
 
     if (options & AC_CONTEXT) {
@@ -834,8 +837,10 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PrintValueRec(call, rho);
     }
 
-    if (options & AC_STACK) {
+    if (options & AC_STACK_CLOSURE) {
 	popAllocStack();  /* stack space for closure */
+    } else {
+	setFallbackAlloc(old_heap_alloc);
     }
 
     UNPROTECT(nprotect);
