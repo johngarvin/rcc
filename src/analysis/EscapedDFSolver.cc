@@ -150,16 +150,16 @@ OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::transfer(OA_ptr<DataFlow::DataFlo
 
   if (is_assign(e) && assignment_escapes(e)) {
     // upward assignment rule
-    MyDFSet::propagate(in, &escaped_predicate, true, assign_rhs_c(e));
+    MyDFSet::propagate_rhs(in, &escaped_predicate, true, assign_rhs_c(e));
   } else if (is_assign(e) && !is_simple_assign(e)) {
     // assignment to field/array/call rule
-    MyDFSet::propagate(in, &escaped_predicate, true, assign_rhs_c(e));
+    MyDFSet::propagate_rhs(in, &escaped_predicate, true, assign_rhs_c(e));
   } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
     bool escaped_v0 = in->lookup(fact->make_body_var_ref(assign_lhs_c(e)));
-    MyDFSet::propagate(in, &escaped_predicate, escaped_v0, assign_rhs_c(e));
+    MyDFSet::propagate_rhs(in, &escaped_predicate, escaped_v0, assign_rhs_c(e));
     if (escaped_v0) {
-      MyDFSet::propagate(in, &ReturnedDFSolver::returned_predicate, true, assign_rhs_c(e));
+      MyDFSet::propagate_rhs(in, &ReturnedDFSolver::returned_predicate, true, assign_rhs_c(e));
     }
   } else {
     // all other rules: no change
@@ -190,6 +190,6 @@ bool assignment_escapes(SEXP e) {
 	assert(0);
       }
     } while (!is_symbol(CAR(sym_c)));
-    return getProperty(Var, CAR(sym_c))->getScopeType() == Locality::Locality_FREE;
+    return getProperty(Var, sym_c)->getScopeType() == Locality::Locality_FREE;
   }
 }

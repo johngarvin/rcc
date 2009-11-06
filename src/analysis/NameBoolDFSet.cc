@@ -171,23 +171,46 @@ void NameBoolDFSet::replace(OA_ptr<R_VarRef> e, bool value) {
   }
 }
 
-// propagate(value, expression): propagate lattice value from expression to subexpressions
+// propagate: propagate lattice value from expression to subexpressions
 // TODO: better description
-void NameBoolDFSet::propagate(OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell) {
+void NameBoolDFSet::propagate_rhs(OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell) {
   VarRefFactory * const fact = VarRefFactory::get_instance();
   SEXP e = CAR(cell);
-  if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
+  if (is_assign(e)) {
+    propagate_lhs(in, predicate, value, call_nth_arg_c(e, 1));
+    propagate_rhs(in, predicate, value, call_nth_arg_c(e, 2));
+  } else if (is_struct_field(e)) {
+    propagate_rhs(in, predicate, value, call_nth_arg_c(e, 1));
+  } else if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
     in->replace(fact->make_body_var_ref(cell), value);
   } else if (is_call(e)) {
     int nargs = Rf_length(call_args(e));
-    for (int i=1; i<=nargs; i++) {
+    for (int i = 1; i <= nargs; i++) {
       if ((*predicate)(e, i)) {
-	propagate(in, predicate, value, call_nth_arg_c(e, i));
+	propagate_rhs(in, predicate, value, call_nth_arg_c(e, i));
       }
     }
   }
 }
 
+void NameBoolDFSet::propagate_lhs(OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell) {
+  SEXP e = CAR(cell);
+  if (is_struct_field(e)) {
+    propagate_lhs(in, predicate, value, call_nth_arg_c(e, 1));
+  } else if (is_subscript(e)) {
+    propagate_lhs(in, predicate, value, call_nth_arg_c(e, 1));
+    int nargs = Rf_length(call_args(e));
+    for (int i = 1; i <= nargs; i++) {
+      propagate_rhs(in, predicate, value, call_nth_arg_c(e, i));
+    }
+  } else if (is_call(e)) {
+    // Function application as lvalue. For example: dim(x) <- foo
+    propagate_rhs(in, predicate, value, call_nth_arg_c(e, 1));
+    propagate_lhs(in, predicate, value, call_nth_arg_c(e, 2));
+  } else {
+    // no action
+  }
+}
 // ----- NameBoolPair methods -----
 
 NameBoolDFSet::NameBoolPair::NameBoolPair(OA_ptr<R_VarRef> name, bool value)

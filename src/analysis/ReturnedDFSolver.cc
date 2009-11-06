@@ -133,6 +133,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSe
   return out.convert<DataFlow::DataFlowSet>();
 }
 
+// TODO: description
 bool ReturnedDFSolver::returned_predicate(SEXP call, int arg) {
   assert(is_call(call));
   if (is_library(call_lhs(call)) && !is_library_closure(call_lhs(call))) {
@@ -158,13 +159,13 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
   if (fi->is_return(cell)) {
     // return rule
     if (is_explicit_return(e)) {
-      MyDFSet::propagate(in, &returned_predicate, true, call_nth_arg_c(e,1));
+      MyDFSet::propagate_rhs(in, &returned_predicate, true, call_nth_arg_c(e,1));
     } else {
-      MyDFSet::propagate(in, &returned_predicate, true, cell);
+      MyDFSet::propagate_rhs(in, &returned_predicate, true, cell);
     }
   } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
-    MyDFSet::propagate(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
+    MyDFSet::propagate_rhs(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
     // TODO: method call that is not an assignment?
     // all other rules: no change
