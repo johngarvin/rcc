@@ -127,7 +127,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 #endif
   f += indent("SEXP out;\n");
 
-  FuncInfo *fi = lexicalContext.Top();
+  FuncInfo * fi = lexicalContext.Top();
   
   if (fi->requires_context()) {
     f += indent("RCNTXT context;\n");
@@ -153,14 +153,15 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   }
 
   // add code to get the location for each argument
-  string arg_location_code;
-  string arg_cell = "args";
+  string arg_location_decls = "SEXP arg_loc_p;\n";
+  string arg_location_defs = "arg_loc_p = args;\n";
   VarBinding * binding;
   for(SEXP p = args; p != R_NilValue; p = CDR(p)) {
     binding = getProperty(VarBinding, p);
     string location = binding->get_location(TAG(p), this_buf);
-    arg_location_code += "R_varloc_t " + emit_assign(location, emit_call1("get_R_location", arg_cell));
-    arg_cell = emit_call1("CDR", arg_cell);
+    arg_location_decls += "R_varloc_t " + location + ";\n";
+    arg_location_defs += emit_assign(location, emit_call1("get_R_location", "arg_loc_p"));
+    arg_location_defs += emit_assign("arg_loc_p", emit_call1("CDR", "arg_loc_p"));
   }
 
   // emit stack allocation
@@ -174,7 +175,8 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 					   "newenv", Unprotected, true, 
 					   ResultNeeded);
   f += indent(indent("{\n"));
-  f += indent(indent(indent(arg_location_code)));
+  f += indent(indent(indent(arg_location_decls)));
+  f += indent(indent(indent(arg_location_defs)));
   f += indent(indent(indent(out_subexps.output() +
 			    Visibility::emit_set(outblock.visibility))));
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
@@ -260,7 +262,7 @@ string make_fundef(string func_name, SEXP fndef) {
   global_formals = new string[len];
   global_formals_len = len;
   for (i=0; i<len; i++) {
-    global_formals[i] = string(CHAR(PRINTNAME(TAG(temp_args))));
+    global_formals[i] = string(var_name(TAG(temp_args)));
     temp_args = CDR(temp_args);
   }
   header = "SEXP " + func_name + "(SEXP env";

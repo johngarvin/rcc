@@ -61,7 +61,7 @@ private:
   // CFGDFProblem says: OK to modify in set and return it again as result because
   // solver clones the BB in sets
   OA::OA_ptr<OA::DataFlow::DataFlowSet>
-  transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
+  transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt);
   
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
