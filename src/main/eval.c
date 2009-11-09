@@ -790,6 +790,10 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
+    if (options & AC_STACK_CLOSURE) {
+	setFallbackAlloc(old_heap_alloc);
+    }
+
     if (!(options & AC_RCC) &&
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
@@ -839,8 +843,6 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     if (options & AC_STACK_CLOSURE) {
 	popAllocStack();  /* stack space for closure */
-    } else {
-	setFallbackAlloc(old_heap_alloc);
     }
 
     UNPROTECT(nprotect);

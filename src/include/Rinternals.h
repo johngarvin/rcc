@@ -495,8 +495,9 @@ SEXP Rf_StringFromComplex(Rcomplex, int*);
 SEXP Rf_EnsureString(SEXP);
 
 typedef struct AllocStackStruct {
-    SEXP space;
+    Rboolean valid;
     R_len_t size;
+    SEXP space;
     SEXP (*allocateVector)(struct AllocStackStruct * allocator, SEXPTYPE type, R_len_t length);
     SEXP (*allocateNode)(struct AllocStackStruct * allocator, SEXP * protect_on_gc);
     struct AllocStackStruct * next;

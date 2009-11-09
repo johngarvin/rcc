@@ -52,9 +52,8 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Rdevices.h> /* GetDevice */
 
 Rboolean global_dump_stats = FALSE;
-
+Rboolean global_stack_info = FALSE;
 Rboolean global_stack_debug = FALSE;
-
 Rboolean global_stress_memory = FALSE;
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
@@ -1617,8 +1616,9 @@ void pushAllocStack(SEXP space,
 		    AllocNodeFunction alloc_node_function)
 {
     AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
-    elem->space = space;
+    elem->valid = TRUE;
     elem->size = size;
+    elem->space = space;
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
     elem->next = allocStackTop;
@@ -1635,7 +1635,7 @@ void popAllocStack()
 	AllocStack * temp = allocStackTop;
 	if (global_stress_memory) {
 	    int * p;
-	    for(p = (int *)temp->space; p < (int*)temp->space + temp->size; p++) {
+	    for(p = (int *)temp->space; p < (int *)temp->space + temp->size; p++) {
 		*p = 0;
 	    }
 	}
@@ -1643,7 +1643,11 @@ void popAllocStack()
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
-	free(temp);
+	if (global_stack_debug) {
+	    temp->valid = FALSE;
+	} else {
+	    free(temp);
+	}
     }
 }
 
@@ -2286,17 +2290,17 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 {
     R_size_t size;
     
+    if (!allocator->valid) {
+	error("allocVectorStack: invalid allocation stack node");
+    }
     if (fallback_alloc) return allocVectorHeap(NULL, type, length);
-
     size = allocVectorGetSize(type, length);
-
     if (global_dump_stats) fprintf(stderr, "vector stack %u bytes\n", size);
-
     if (allocator->size == -1) { /* -1 means heap allocator */
 	error("allocVectorStack called on heap allocator");
     }
     if (size > allocator->size) {
-	if (global_stack_debug) {
+	if (global_stack_info) {
 	    fprintf(stderr, "allocVectorStack: not enough stack space, using parent space\n");
 	}
 	return allocator->next->allocateVector(allocator->next, type, length); /* parent */
@@ -2307,7 +2311,7 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	SET_PREV_NODE(space, NULL);
 	allocator->space = (SEXP)(((R_size_t)allocator->space) + size);
 	allocator->size -= size;
-	if (global_stack_debug) {
+	if (global_stack_info) {
 	    fprintf(stderr, "allocVectorStack allocated %u bytes; %u bytes available in this allocator\n", size, allocator->size);
 	}
 	return space;
@@ -2317,16 +2321,16 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 {
     const R_size_t node_size = sizeof(SEXPREC);
-    
+    if (!allocator->valid) {
+	error("allocNodeStack: invalid allocation stack node");
+    }
     if (fallback_alloc) return allocNodeHeap(NULL, protect_on_gc);
-
     if (global_dump_stats) fprintf(stderr, "node stack %u bytes\n", node_size);
-    
     if (allocator == NULL) {
 	error("allocNodeStack called on null allocator");
     }
     if (node_size > allocator->size) {
-	if (global_stack_debug) {
+	if (global_stack_info) {
 	    fprintf(stderr, "allocNodeStack warning: not enough stack space, using parent space\n");
 	}
 	SEXP protect_on_gc[1] = {NULL};
@@ -2338,7 +2342,7 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 	SET_PREV_NODE(space, NULL);
 	allocator->space++;  /* space is an SEXP, so incrementing ptr will add size of node */
 	allocator->size -= node_size;
-	if (global_stack_debug) {
+	if (global_stack_info) {
 	  fprintf(stderr,"allocNodeStack allocated %u bytes; %u bytes available in this allocator\n", node_size, allocator->size);
 	}
 	return space;
