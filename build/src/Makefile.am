@@ -129,6 +129,8 @@ rcc_bin_SOURCES =				\
   RccBasicInterface.h                           \
   RequiresContext.cc				\
   RequiresContext.h				\
+  ReturnedCGSolver.cc                           \
+  ReturnedCGSolver.h                            \
   ReturnedDFSolver.cc                           \
   ReturnedDFSolver.h                            \
   ScopeAnnotationMap.cc                         \

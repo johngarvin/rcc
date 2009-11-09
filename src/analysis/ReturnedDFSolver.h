@@ -63,45 +63,6 @@ private:
   /// intraprocedural
   OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
 						 OA::StmtHandle stmt);
-  
-  /// interprocedural
-  //! OK to modify in set and return it again as result because
-  //! solver clones the BB in sets. Proc is procedure that
-  //! contains the statement.
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::ProcHandle proc,
-						 OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
-						 OA::StmtHandle stmt); 
-
-  //! transfer function for the entry node of the given procedure
-  //! should manipulate incoming data-flow set in any special ways
-  //! for procedure and return outgoing data-flow set for node
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> entryTransfer(OA::ProcHandle proc,
-						      OA::OA_ptr<OA::DataFlow::DataFlowSet> in);
-
-  //! transfer function for the exit node of the given procedure
-  //! should manipulate outgoing data-flow set in any special ways
-  //! for procedure and return incoming data-flow set for node
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> exitTransfer(OA::ProcHandle proc,
-						     OA::OA_ptr<OA::DataFlow::DataFlowSet> out);
-
-  //! Propagate a data-flow set from caller to callee
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> callerToCallee(OA::ProcHandle caller,
-						       OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
-						       OA::CallHandle call,
-						       OA::ProcHandle callee);
-  
-  //! Propagate a data-flow set from callee to caller
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> calleeToCaller(OA::ProcHandle callee,
-						       OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
-						       OA::CallHandle call,
-						       OA::ProcHandle caller);
-
-  // MMA
-  //! Propagate a data-flow set from call node to return node
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> callToReturn(OA::ProcHandle caller,
-						     OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
-						     OA::CallHandle call,
-						     OA::ProcHandle callee);
 
 private:
   OA::OA_ptr<R_IRInterface> m_ir;

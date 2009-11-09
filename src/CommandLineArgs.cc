@@ -145,6 +145,10 @@ void CommandLineArgs::add_f_option(std::string option) {
     settings->set_call_graph(flag);
   } else if (option == "lookup-elimination") {
     settings->set_lookup_elimination(flag);
+  } else if (option == "stack_alloc_obj") {
+    settings->set_stack_alloc_obj(flag);
+  } else if (option == "stack_debug") {
+    settings->set_stack_debug(flag);
   } else {
     arg_err();
   }

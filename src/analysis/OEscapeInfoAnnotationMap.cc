@@ -36,6 +36,7 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/NameBoolDFSet.h>
+#include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/OEscapeDFSolver.h>
 #include <analysis/OEscapeInfo.h>
 #include <analysis/PropertyHndl.h>
@@ -90,6 +91,7 @@ void OEscapeInfoAnnotationMap::compute() {
   OA_ptr<SSA::SSAStandard> ssa;
   OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
 
+  // get intraprocedural data for each procedure
   FOR_EACH_PROC(fi) {
     ProcHandle proc = HandleInterface::make_proc_h(fi->get_sexp());
     ssa = ssa_man.performAnalysis(proc, fi->get_cfg());
@@ -112,6 +114,11 @@ void OEscapeInfoAnnotationMap::compute() {
       }
     }
   }
+
+  // use call graph to get interprocedural data
+  OA_ptr<OA::CallGraph::CallGraphInterface> call_graph;
+  call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
+  
 }
 
 #if 0

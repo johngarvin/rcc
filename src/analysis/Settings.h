@@ -19,6 +19,7 @@
 // File: Settings.h
 //
 // Settings for analyses and optimizations. Default is to turn all optimizations on.
+// Note: changes here should also be reflected in CommandLineArgs.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -42,6 +43,7 @@ class Settings {
   BOOL_GETTER_SETTER(call_graph)
   BOOL_GETTER_SETTER(lookup_elimination)
   BOOL_GETTER_SETTER(stack_alloc_obj)
+  BOOL_GETTER_SETTER(stack_debug)
 
   // Singleton pattern
 public:
@@ -53,7 +55,8 @@ private:
 	       m_special_case_arithmetic(true),
 	       m_call_graph(true),
 	       m_lookup_elimination(true),
-	       m_stack_alloc_obj(true)
+	       m_stack_alloc_obj(true),
+	       m_stack_debug(false)
   { }
   static Settings * s_instance;
 };

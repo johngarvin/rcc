@@ -29,6 +29,7 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/Settings.h>
 #include <analysis/Utils.h>
 
 #include <CheckProtect.h>
@@ -56,6 +57,11 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
     tmp_e = CDR(tmp_e);
   }
   
+  // if stack debug is on, turn it on in the interpreter memory system
+  if (Settings::get_instance()->get_stack_debug()) {
+    exec_decls += "extern Rboolean global_stack_debug;\n";
+    exec_defs += emit_assign("global_stack_debug", "TRUE");
+  }
   // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++, e = CDR(e)) {
     SubexpBuffer subexps;

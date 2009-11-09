@@ -118,6 +118,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<CFG::Nod
 }
 
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+  // TODO: if exit node, return optional initial set
   return m_top->clone();
 }
 
@@ -150,7 +151,6 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
 							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
-  //  OA_ptr<MyDFSet> out; out = in->clone().convert<MyDFSet>();
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
@@ -172,60 +172,4 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
     ;
   }
   return in.convert<DataFlow::DataFlowSet>();  // upcast
-}
-
-/// ICFGDFSolver says: OK to modify in set and return it again as
-/// result because solver clones the BB in sets. Proc is procedure
-/// that contains the statement.
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(ProcHandle proc,
-							 OA_ptr<DataFlow::DataFlowSet> in_orig,
-							 StmtHandle stmt)
-{
-  assert(0);
-}
-
-/// transfer function for the entry node of the given procedure
-/// should manipulate incoming data-flow set in any special ways
-/// for procedure and return outgoing data-flow set for node
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::entryTransfer(ProcHandle proc,
-							      OA_ptr<DataFlow::DataFlowSet> in)
-{
-  assert(0);
-} 
-
-/// transfer function for the exit node of the given procedure
-/// should manipulate outgoing data-flow set in any special ways
-/// for procedure and return incoming data-flow set for node
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::exitTransfer(ProcHandle proc,
-							     OA_ptr<DataFlow::DataFlowSet> out)
-{
-  assert(0);
-}
-
-/// Propagate a data-flow set from caller to callee
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::callerToCallee(ProcHandle caller,
-							       OA_ptr<DataFlow::DataFlowSet> dfset,
-							       CallHandle call,
-							       ProcHandle callee)
-{
-  assert(0);
-}
-  
-/// Propagate a data-flow set from callee to caller
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::calleeToCaller(ProcHandle callee,
-							       OA_ptr<DataFlow::DataFlowSet> dfset,
-							       CallHandle call,
-							       ProcHandle caller)
-{
-  assert(0);
-}
-
-// MMA
-/// Propagate a data-flow set from call node to return node
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::callToReturn(ProcHandle caller,
-							     OA_ptr<DataFlow::DataFlowSet> dfset,
-							     CallHandle call,
-							     ProcHandle callee)
-{
-  assert(0);
 }
