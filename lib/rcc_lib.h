@@ -28,6 +28,9 @@ void my_init_memory(SEXP mem, int n);
 SEXP tagged_cons(SEXP car, SEXP tag, SEXP cdr);
 Rcomplex mk_complex(double r, double i);
 SEXP rcc_cons(SEXP car, SEXP cdr, int unp_car, int unp_cdr);
+SEXP rcc_list(int lang, int n, ...);
+/* SEXP rcc_lang_list(int n, ...); */
+SEXP rcc_tagged_list(int lang, int n, ...);
 Rboolean my_asLogicalNoNA(SEXP s);
 SEXP R_binary(SEXP call, SEXP op, SEXP x, SEXP y);
 SEXP R_unary(SEXP call, SEXP op, SEXP x);

@@ -24,15 +24,19 @@
 #define RETURNED_CG_SOLVER_H
 
 #include <OpenAnalysis/CallGraph/CallGraphInterface.hpp>
+#include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/CallGraphDFProblem.hpp>
 #include <OpenAnalysis/DataFlow/DataFlowSet.hpp>
 
 class NameBoolDFSet;
 
-class ReturnedCGSolver : private OA::DataFlow::CallGraphDFProblem {
-
+class ReturnedCGSolver : public OA::DataFlow::CallGraphDFProblem {
+public:
   explicit ReturnedCGSolver();
   ~ReturnedCGSolver();
+
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> perform_analysis(OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph,
+							 OA::DataFlow::DFPImplement algorithm);
 
   //--------------------------------------------------------
   // initialization callbacks
@@ -111,6 +115,7 @@ class ReturnedCGSolver : private OA::DataFlow::CallGraphDFProblem {
 				  OA::OA_ptr<OA::DataFlow::DataFlowSet> callDFSet,
 				  OA::ProcHandle proc);
 private:
+  OA::OA_ptr<OA::DataFlow::CallGraphDFSolver> m_solver;
   OA::OA_ptr<NameBoolDFSet> m_top;
 };
 

@@ -58,9 +58,18 @@ ReturnedDFSolver::~ReturnedDFSolver()
 OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
 						   OA_ptr<CFG::CFGInterface> cfg)
 {
+  OA_ptr<MyDFSet> top; top = new MyDFSet();
+  return perform_analysis(proc, cfg, top);
+}
+
+OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
+						   OA_ptr<CFG::CFGInterface> cfg,
+						   OA_ptr<MyDFSet> in_set)
+{
   m_proc = proc;
   m_cfg = cfg;
   m_top = new MyDFSet();
+  m_in = in_set;
 
   // use OA to solve data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
@@ -119,7 +128,11 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<CFG::Nod
 
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
   // TODO: if exit node, return optional initial set
-  return m_top->clone();
+  if (n.ptrEqual(m_cfg->getExit())) {
+    return m_in->clone();
+  } else {
+    return m_top->clone();
+  }
 }
 
 /// ICFGDFProblem says: OK to modify set1 and return it as result, because solver

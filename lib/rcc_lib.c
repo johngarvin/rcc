@@ -24,6 +24,7 @@
  */
 
 #include <stdarg.h>
+#include <assert.h>
 
 #include <IOStuff.h>
 
@@ -73,6 +74,90 @@ SEXP rcc_cons(SEXP car, SEXP cdr, int unp_car, int unp_cdr) {
   if (unp_cdr) UNPROTECT_PTR(cdr);
   return out;
 }
+
+/* takes a backwards sequence of SEXPs, returns them in a cons'd list
+   with the outer cons protected. Make the outer 'lang' conses LANGSXP
+   and the rest LISTSXP. */
+SEXP rcc_list(int lang, int n, ...) {
+  int i;
+  SEXP list;
+  va_list ap;
+  va_start(ap, n);
+  assert(n > 0);
+  assert(lang <= n);
+  if (n == 1) {
+    PROTECT(list = cons(va_arg(ap, SEXP), R_NilValue));
+    if (lang > 0) SET_TYPEOF(list, LANGSXP);
+  } else {
+    list = R_NilValue;
+    for (i = 0; i < n-1; i++) {
+      PROTECT(list = cons(va_arg(ap, SEXP), list));
+      if (i >= n - lang) SET_TYPEOF(list, LANGSXP);
+    }
+    UNPROTECT(n-1);
+    SAFE_PROTECT(list = cons(va_arg(ap, SEXP), list));
+    if (lang > 0) SET_TYPEOF(list, LANGSXP);
+  }
+  va_end(ap);
+  return list;
+}
+
+/* takes a backwards sequence of SEXPs, returns them in a cons'd list
+   with the outer cons protected. Outer cons is of type LANGSXP
+   instead of LISTSXP. */
+#if 0
+SEXP rcc_lang_list(int n, ...) {
+  int i;
+  SEXP list;
+  va_list ap;
+
+  va_start(ap, n);
+  assert(n > 0);
+  if (n == 1) {
+    PROTECT(list = lcons(va_arg(ap, SEXP), R_NilValue));
+  } else {
+    list = R_NilValue;
+    for (i = 0; i < n-1; i++) {
+      PROTECT(list = cons(va_arg(ap, SEXP), list));
+    }
+    UNPROTECT(n-1);
+    SAFE_PROTECT(list = lcons(va_arg(ap, SEXP), list));
+  }
+  va_end(ap);
+  return list;
+}
+#endif
+
+/* takes a sequence arg_n, tag_n, arg_n-1, tag_n-1, ..., arg_1, tag_1
+   and returns a tagged cons'd list in order */
+SEXP rcc_tagged_list(int lang, int va_n, ...) {
+  int i, n;
+  SEXP list, arg, tag;
+  va_list ap;
+
+  va_start(ap, va_n);
+  assert(va_n > 0 && va_n % 2 == 0);
+  n = va_n / 2;
+  if (n == 1) {
+    PROTECT(list = cons(va_arg(ap, SEXP), R_NilValue));
+    SET_TAG(list, va_arg(ap, SEXP));
+    if (lang > 0) SET_TYPEOF(list, LANGSXP);
+  } else {
+    list = R_NilValue;
+    for (i = 0; i < n-1; i++) {
+      PROTECT(list = cons(va_arg(ap, SEXP), list));
+      SET_TAG(list, va_arg(ap, SEXP));
+      if (i >= n - lang) SET_TYPEOF(list, LANGSXP);
+    }
+    UNPROTECT(n-1);
+    SAFE_PROTECT(list = cons(va_arg(ap, SEXP), list));
+    SET_TAG(list, va_arg(ap, SEXP));
+    if (lang > 0) SET_TYPEOF(list, LANGSXP);
+  }
+  va_end(ap);
+  return list;
+}
+
 
 Rboolean my_asLogicalNoNA(SEXP s) {
     Rboolean cond = asLogical(s);

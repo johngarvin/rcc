@@ -39,6 +39,9 @@ public:
   ~ReturnedDFSolver();
   OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
 					     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
+					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
+					     OA::OA_ptr<NameBoolDFSet> in_set);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -69,6 +72,7 @@ private:
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
   OA::OA_ptr<NameBoolDFSet> m_top;
+  OA::OA_ptr<NameBoolDFSet> m_in;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
 };
 

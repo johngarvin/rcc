@@ -31,6 +31,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/Utils.h>
 #include <support/StringUtils.h>
 #include <CodeGenUtils.h>
 #include <ParseInfo.h>
@@ -43,15 +44,98 @@ using namespace std;
 // forward declarations 
 //*****************************************************************************
 
+typedef enum {
+  UNTAGGED,             // all LISTSXP with no tags
+  UNTAGGED_LANG,        // first cons LANGSXP, the rest LISTSXP, no tags
+  TAGGED,               // LISTSXPs with tags
+  OTHER                 // any other list
+} ListType;
 static string getConsFunction(SEXP lst);
-
-
+static bool list_is_tagged(SEXP e);
+static int list_lang(SEXP e);
 
 //*****************************************************************************
 // interface operations 
 //*****************************************************************************
 
+Expression SubexpBuffer::op_list(SEXP list, string rho, bool literal,
+				 Protection protection,
+				 bool fullyEvaluatedResult /* = false */)
+{
+  if (protection == Unprotected) {
+    std::cerr << "found unprotected op_list! I didn't think that could happen.\n";
+  }
+  int i;
+  SEXP e;
+  int unp_count = 0;
+  Expression * cars;
+  Expression * tags;
+  DependenceType list_dep;
+  if (list == R_NilValue) {
+    return Expression::nil_exp;
+  }
 
+  int length = Rf_length(list);
+
+  // output and store the car of each cons
+  cars = new Expression[length];
+  list_dep = CONST;
+  e = list;
+  for (i = 0; i < length; i++) {
+    cars[i] = (literal ?
+	       op_literal(CAR(e), rho) :
+	       op_exp(list, rho, Unprotected, fullyEvaluatedResult));
+    if (cars[i].dependence == DEPENDENT) {
+      list_dep = DEPENDENT;
+    }
+    if (cars[i].dependence == DEPENDENT && cars[i].del_text != "") {
+      unp_count++;
+    }
+    e = CDR(e);
+  }
+
+  string call;
+  int lang = list_lang(list);  // number of LANGSXP conses at head
+  if (list_is_tagged(list)) {
+    // output and store tags
+    tags = new Expression[length];
+    e = list;
+    for (i = 0; i < length; i++) {
+      tags[i] = op_literal(TAG(e), rho);
+      e = CDR(e);
+    }
+    call = "rcc_tagged_list(" + i_to_s(lang) + ", " + i_to_s(2 * length);
+    // output in reverse order for consing
+    for (i = length - 1; i >= 0; i--) {
+      call += ", " + cars[i].var;
+      call += ", " + tags[i].var;
+    }
+    delete [] tags;
+  } else {
+    call = "rcc_list(" + i_to_s(lang) + ", " + i_to_s(length);
+    // output in reverse order for consing
+    for (i = length - 1; i >= 0; i--) {
+      call += ", " + cars[i].var;
+    }
+  }
+  call += ")";
+  delete [] cars;
+  
+  // if result is constant, assemble it in the constant pool
+  SubexpBuffer * subexp = (list_dep == DEPENDENT ? 
+			   this :
+			   ParseInfo::global_constants);
+  string var = subexp->new_var_unp();
+  if (list_dep == DEPENDENT) {
+    subexp->append_decls("SEXP " + var + ";\n");
+  } else {
+    subexp->append_decls("static SEXP " + var + ";\n");
+  }
+  subexp->append_defs(emit_assign(var, call));
+  return Expression(var, list_dep, VISIBLE, list_dep == DEPENDENT ? unp(var) : "");
+}
+
+#if 0 
 Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal, 
 				 Protection protection,
 				 bool fullyEvaluatedResult /* = false */ ) 
@@ -121,7 +205,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
     } else {
       string consFn = getConsFunction(lst);
       out = subexp->appl2(consFn, "", headExp.var, restExp.var, consProt);
-    } 
+    }
     if (!headExp.del_text.empty()) unprotcnt++;
     if (!restExp.del_text.empty()) unprotcnt++;
     if (unprotcnt > 0)
@@ -139,6 +223,7 @@ Expression SubexpBuffer::op_list(SEXP lst, string rho, bool literal,
     return Expression(out, resultNonConstant ? DEPENDENT : CONST, VISIBLE, deleteText);
   } 
 }
+#endif
 
 #if 0
 {
@@ -269,3 +354,32 @@ static string getConsFunction(SEXP lst)
   return consFn;
 }
 
+static bool list_is_tagged(SEXP e) {
+  assert(is_cons(e));
+  while (e != R_NilValue) {
+    if (TAG(e) != R_NilValue) {
+      return true;
+    }
+    e = CDR(e);
+  }
+  return false;
+}
+
+static int list_lang(SEXP e) {
+  assert(is_cons(e));
+  int lang = 0;
+  bool last_was_list = false;
+  while (e != R_NilValue) {
+    if (TYPEOF(e) == LANGSXP) {
+      lang++;
+      if (last_was_list) {
+	assert(0);  // LANGSXP following a LISTSXP: I don't think this can happen.
+      }
+    }
+    if (TYPEOF(e) == LISTSXP) {
+      last_was_list = true;
+    }
+    e = CDR(e);
+  }
+  return lang;
+}

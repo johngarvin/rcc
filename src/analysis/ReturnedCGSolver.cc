@@ -38,10 +38,18 @@ typedef NameBoolDFSet MyDFSet;
 
 ReturnedCGSolver::ReturnedCGSolver()
 {
+  m_solver = new DataFlow::CallGraphDFSolver(DataFlow::CallGraphDFSolver::BottomUp, *this);
 }
 
 ReturnedCGSolver::~ReturnedCGSolver()
 {
+}
+
+OA_ptr<DataFlowSet> ReturnedCGSolver::perform_analysis(OA_ptr<CallGraph::CallGraphInterface> call_graph,
+						       DataFlow::DFPImplement algorithm)
+{
+  m_solver->solve(call_graph, algorithm);
+  //  return ???;
 }
 
 //--------------------------------------------------------
@@ -53,6 +61,7 @@ OA_ptr<DataFlowSet> ReturnedCGSolver::initializeTop()
   RAnnot::FuncInfo * fi;
   RAnnot::Var * m;
   VarRefFactory * const fact = VarRefFactory::get_instance();
+  m_top = new MyDFSet();
   
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_MENTION(fi, m) {
@@ -129,14 +138,15 @@ OA_ptr<DataFlowSet>  ReturnedCGSolver::meet(
 
 //! What the analysis does for the particular procedure
 OA_ptr<DataFlowSet>  ReturnedCGSolver::atCallGraphNode(
-				     OA_ptr<DataFlowSet> inSet,
+				     OA_ptr<DataFlowSet> inSetOrig,
 				     OA::ProcHandle proc)
 {
+  OA_ptr<NameBoolDFSet> inSet; inSet = inSetOrig.convert<NameBoolDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
   ReturnedDFSolver ret_solver(R_Analyst::get_instance()->get_interface());
-  OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg());
+  OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   // TODO: make intra solver take an initial set
-  return returned;
+  return returned.convert<DataFlowSet>();
 }
  
 //! What the analysis does for a particular call
@@ -147,8 +157,7 @@ OA_ptr<DataFlowSet>  ReturnedCGSolver::atCallGraphEdge(
 				     ProcHandle caller,
 				     ProcHandle callee)
 {
-  // for each callee formal:
-  //   if returned(formal), then propagate returned(call) to matching actual
+  return inSet;
 }
 
 //! use if callee is not defined in the call graph
@@ -158,8 +167,7 @@ OA_ptr<DataFlowSet>  ReturnedCGSolver::atCallGraphEdge(
 				     ProcHandle caller,
 				     SymHandle callee)
 {
-  // conservative information
-  // each formal is considered returned
+  return inSet;
 }
   
 //! translate results from procedure node to callee edge if top-down

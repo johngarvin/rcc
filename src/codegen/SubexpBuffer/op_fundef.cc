@@ -69,7 +69,6 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 
   // closure version
   ParseInfo::global_fundefs->append_defs(make_fundef(this, c_name, fndef));
-  Expression formals = op_literal(CAR(e), rho);
   if (rho == "R_GlobalEnv") {
     Expression r_args = ParseInfo::global_constants->op_list(CAR(e),
 							     rho, true, Protected);
@@ -84,7 +83,6 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				      &c_name,
 				      &r_code.var,
 				      &rho);
-    ParseInfo::global_constants->del(formals);
     lexicalContext.Pop();
     return Expression(closure, CONST, INVISIBLE, "");
   } else {   // not the global environment

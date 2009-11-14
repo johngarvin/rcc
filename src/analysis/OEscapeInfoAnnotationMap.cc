@@ -25,6 +25,7 @@
 #include <map>
 
 #include <OpenAnalysis/CFG/CFG.hpp>
+#include <OpenAnalysis/DataFlow/CallGraphDFSolver.hpp>
 #include <OpenAnalysis/SSA/ManagerSSAStandard.hpp>
 #include <OpenAnalysis/SSA/SSAStandard.hpp>
 
@@ -40,6 +41,7 @@
 #include <analysis/OEscapeDFSolver.h>
 #include <analysis/OEscapeInfo.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/ReturnedCGSolver.h>
 #include <analysis/ReturnedDFSolver.h>
 #include <analysis/SymbolTable.h>
 #include <analysis/Var.h>
@@ -91,18 +93,22 @@ void OEscapeInfoAnnotationMap::compute() {
   OA_ptr<SSA::SSAStandard> ssa;
   OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
 
+  ReturnedCGSolver * ret_problem = new ReturnedCGSolver();
+  DataFlow::CallGraphDFSolver cg_solver(DataFlow::CallGraphDFSolver::BottomUp, *ret_problem);
+  cg_solver.solve(OACallGraphAnnotationMap::get_instance()->get_OA_call_graph(), DataFlow::ITERATIVE);
+
   // get intraprocedural data for each procedure
   FOR_EACH_PROC(fi) {
     ProcHandle proc = HandleInterface::make_proc_h(fi->get_sexp());
     ssa = ssa_man.performAnalysis(proc, fi->get_cfg());
-    ReturnedDFSolver ret_solver(interface);
-    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg());
+    //    ReturnedDFSolver ret_solver(interface);
+    // OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg());
     EscapedDFSolver esc_solver(interface);
     OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg());
     OEscapeDFSolver oe_solver(interface);
     OA::OA_ptr<NameBoolDFSet> oe; oe = oe_solver.perform_analysis(proc, fi->get_cfg());
     for (iter = oe->getIterator(); iter->isValid(); ++*iter) {
-      bool ret = returned->lookup(iter->current()->getName());
+      bool ret = true; // returned->lookup(iter->current()->getName());
       bool esc = escaped->lookup(iter->current()->getName());
       bool nfresh = iter->current()->getValue();
       if (ret || esc || nfresh) {

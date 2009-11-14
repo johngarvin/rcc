@@ -194,7 +194,6 @@ static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const
     Metrics::get_instance()->inc_eager_actual_args();
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
-    if (!head_exp.del_text.empty()) (*unprotcnt)++;
     string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
     laziness_string = "L" + laziness_string;
