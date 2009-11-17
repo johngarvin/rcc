@@ -44,7 +44,12 @@ public:
   explicit EscapedDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~EscapedDFSolver();
   OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
-					     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
+					     OA::OA_ptr<NameBoolDFSet> returned);
+  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
+					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
+					     OA::OA_ptr<NameBoolDFSet> returned,
+					     OA::OA_ptr<NameBoolDFSet> in_set);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -70,12 +75,20 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet>
   transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
   
+  OA::OA_ptr<NameBoolDFSet> esc(SEXP e, bool b, OA::OA_ptr<NameBoolDFSet> c);
+  OA::OA_ptr<NameBoolDFSet> esc_curly_list(SEXP e, bool b, OA::OA_ptr<NameBoolDFSet> c);
+  OA::OA_ptr<NameBoolDFSet> make_universal();
+  
+
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
   OA::OA_ptr<NameBoolDFSet> m_top;
+  OA::OA_ptr<NameBoolDFSet> m_returned;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
+  VarRefFactory * const m_fact;
+  RAnnot::FuncInfo * m_func_info;
 };
 
 #endif

@@ -33,6 +33,7 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/EscapedCGSolver.h>
 #include <analysis/EscapedDFSolver.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
@@ -95,7 +96,7 @@ void OEscapeInfoAnnotationMap::compute() {
   OA_ptr<CallGraph::NodeInterface> node; 
   OA_ptr<NameBoolDFSet> returned; 
   OA_ptr<NameBoolDFSet> escaped;
-  OA_ptr<NameBoolDFSet> oe; 
+  OA_ptr<NameBoolDFSet> oe;
   OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
   OA_ptr<CallGraph::NodesIteratorInterface> cg_iter; 
 
@@ -104,6 +105,8 @@ void OEscapeInfoAnnotationMap::compute() {
   call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
   ReturnedCGSolver * ret_problem = new ReturnedCGSolver();
   ret_problem->perform_analysis(call_graph, DataFlow::ITERATIVE);
+  EscapedCGSolver * esc_problem = new EscapedCGSolver();
+  esc_problem->perform_analysis(call_graph, DataFlow::ITERATIVE);
 
   // get intraprocedural data for each procedure in call graph
   cg_iter = call_graph->getCallGraphNodesIterator();
@@ -113,13 +116,16 @@ void OEscapeInfoAnnotationMap::compute() {
     cfg = getProperty(FuncInfo, HandleInterface::make_sexp(proc))->get_cfg();
     ssa = ssa_man.performAnalysis(proc, cfg);
     returned = ret_problem->getOutSet(node).convert<NameBoolDFSet>();
+    escaped = esc_problem->getOutSet(node).convert<NameBoolDFSet>();
     if (debug) {
-      std::cout << "Returned info:\n";
-      getProperty(FuncInfo, HandleInterface::make_sexp(proc))->dump(std::cout);
+      std::cout << "OEscape info:" << std::endl;
+      FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+      std::cout << var_name(CAR(fi->get_first_name_c())) << std::endl;
+      std::cout << "Returned:" << std::endl;
       returned->dump(std::cout);
+      std::cout << "Escaped:" << std::endl;
+      escaped->dump(std::cout);
     }
-    EscapedDFSolver * esc_solver = new EscapedDFSolver(interface);
-    escaped = esc_solver->perform_analysis(proc, cfg);
     OEscapeDFSolver * oe_solver = new OEscapeDFSolver(interface);
     oe = oe_solver->perform_analysis(proc, cfg);
     for (iter = oe->getIterator(); iter->isValid(); ++*iter) {

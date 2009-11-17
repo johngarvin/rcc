@@ -63,7 +63,7 @@ Expression SubexpBuffer::op_list(SEXP list, string rho, bool literal,
 				 bool fullyEvaluatedResult /* = false */)
 {
   if (protection == Unprotected) {
-    std::cerr << "found unprotected op_list! I didn't think that could happen.\n";
+    assert(0 && "found unprotected op_list! I didn't think that could happen.\n");
   }
   int i;
   SEXP e;

@@ -79,7 +79,7 @@ private:
   OA::OA_ptr<NameBoolDFSet> m_top;
   OA::OA_ptr<NameBoolDFSet> m_in;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
-  VarRefFactory * m_fact;
+  VarRefFactory * const m_fact;
   RAnnot::FuncInfo * m_func_info;
 };
 
