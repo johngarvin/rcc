@@ -167,6 +167,7 @@ public:
 
   const std::set<SEXP> * get_implicit_returns() const;
   bool is_return(SEXP) const;
+  SEXP return_value_c(const SEXP) const;
   
   // -------------------------------------------------------
   // debugging

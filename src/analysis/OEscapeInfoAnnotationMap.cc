@@ -86,31 +86,46 @@ OEscapeInfoAnnotationMap::~OEscapeInfoAnnotationMap() {
 void OEscapeInfoAnnotationMap::compute() {
   FuncInfo * fi;
   Var * var;
-  OA_ptr<CFG::Node> node;
   StmtHandle stmt;
+  ProcHandle proc;
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
   SSA::ManagerStandard ssa_man(interface);
+  OA_ptr<CFG::CFGInterface> cfg;
   OA_ptr<SSA::SSAStandard> ssa;
+  OA_ptr<CallGraph::NodeInterface> node; 
+  OA_ptr<NameBoolDFSet> returned; 
+  OA_ptr<NameBoolDFSet> escaped;
+  OA_ptr<NameBoolDFSet> oe; 
   OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
+  OA_ptr<CallGraph::NodesIteratorInterface> cg_iter; 
 
+  // use call graph to get interprocedural data
+  OA_ptr<OA::CallGraph::CallGraphInterface> call_graph;
+  call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
   ReturnedCGSolver * ret_problem = new ReturnedCGSolver();
-  DataFlow::CallGraphDFSolver cg_solver(DataFlow::CallGraphDFSolver::BottomUp, *ret_problem);
-  cg_solver.solve(OACallGraphAnnotationMap::get_instance()->get_OA_call_graph(), DataFlow::ITERATIVE);
+  ret_problem->perform_analysis(call_graph, DataFlow::ITERATIVE);
 
-  // get intraprocedural data for each procedure
-  FOR_EACH_PROC(fi) {
-    ProcHandle proc = HandleInterface::make_proc_h(fi->get_sexp());
-    ssa = ssa_man.performAnalysis(proc, fi->get_cfg());
-    //    ReturnedDFSolver ret_solver(interface);
-    // OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg());
-    EscapedDFSolver esc_solver(interface);
-    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg());
-    OEscapeDFSolver oe_solver(interface);
-    OA::OA_ptr<NameBoolDFSet> oe; oe = oe_solver.perform_analysis(proc, fi->get_cfg());
+  // get intraprocedural data for each procedure in call graph
+  cg_iter = call_graph->getCallGraphNodesIterator();
+  for(cg_iter->reset(); cg_iter->isValid(); ++*cg_iter) {
+    node = cg_iter->currentCallGraphNode();
+    proc = node->getProc();
+    cfg = getProperty(FuncInfo, HandleInterface::make_sexp(proc))->get_cfg();
+    ssa = ssa_man.performAnalysis(proc, cfg);
+    returned = ret_problem->getOutSet(node).convert<NameBoolDFSet>();
+    if (debug) {
+      std::cout << "Returned info:\n";
+      getProperty(FuncInfo, HandleInterface::make_sexp(proc))->dump(std::cout);
+      returned->dump(std::cout);
+    }
+    EscapedDFSolver * esc_solver = new EscapedDFSolver(interface);
+    escaped = esc_solver->perform_analysis(proc, cfg);
+    OEscapeDFSolver * oe_solver = new OEscapeDFSolver(interface);
+    oe = oe_solver->perform_analysis(proc, cfg);
     for (iter = oe->getIterator(); iter->isValid(); ++*iter) {
-      bool ret = true; // returned->lookup(iter->current()->getName());
-      bool esc = escaped->lookup(iter->current()->getName());
-      bool nfresh = iter->current()->getValue();
+      bool ret = returned->lookup(iter->current()->getName());
+      bool esc = true; // escaped->lookup(iter->current()->getName());
+      bool nfresh = true; // iter->current()->getValue();
       if (ret || esc || nfresh) {
 	// may escape
 	get_map()[iter->current()->getName()->get_name()] = new OEscapeInfo(true);
@@ -120,11 +135,6 @@ void OEscapeInfoAnnotationMap::compute() {
       }
     }
   }
-
-  // use call graph to get interprocedural data
-  OA_ptr<OA::CallGraph::CallGraphInterface> call_graph;
-  call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
-  
 }
 
 #if 0

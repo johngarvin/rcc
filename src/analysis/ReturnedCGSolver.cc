@@ -37,20 +37,34 @@ using OA::DataFlow::DataFlowSet;
 typedef NameBoolDFSet MyDFSet;
 
 ReturnedCGSolver::ReturnedCGSolver()
+  : m_solved(false)
 {
-  m_solver = new DataFlow::CallGraphDFSolver(DataFlow::CallGraphDFSolver::BottomUp, *this);
 }
 
 ReturnedCGSolver::~ReturnedCGSolver()
 {
 }
 
-OA_ptr<DataFlowSet> ReturnedCGSolver::perform_analysis(OA_ptr<CallGraph::CallGraphInterface> call_graph,
+void ReturnedCGSolver::perform_analysis(OA_ptr<CallGraph::CallGraphInterface> call_graph,
 						       DataFlow::DFPImplement algorithm)
 {
+  m_solver = new DataFlow::CallGraphDFSolver(DataFlow::CallGraphDFSolver::BottomUp, *this);
   m_solver->solve(call_graph, algorithm);
-  //  return ???;
+  m_solved = true;
 }
+
+OA_ptr<DataFlow::DataFlowSet> ReturnedCGSolver::getInSet(OA_ptr<CallGraph::NodeInterface> n)
+{
+  assert(m_solved);
+  return m_solver->getInSet(n);
+}
+
+OA_ptr<DataFlow::DataFlowSet> ReturnedCGSolver::getOutSet(OA_ptr<CallGraph::NodeInterface> n)
+{
+  assert(m_solved);
+  return m_solver->getOutSet(n);
+}
+
 
 //--------------------------------------------------------
 // initialization callbacks
@@ -145,7 +159,6 @@ OA_ptr<DataFlowSet>  ReturnedCGSolver::atCallGraphNode(
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
   ReturnedDFSolver ret_solver(R_Analyst::get_instance()->get_interface());
   OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg(), inSet);
-  // TODO: make intra solver take an initial set
   return returned.convert<DataFlowSet>();
 }
  

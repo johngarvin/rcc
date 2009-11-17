@@ -303,8 +303,19 @@ const std::set<SEXP> * FuncInfo::get_implicit_returns() const {
 }
 
 bool FuncInfo::is_return(SEXP cell) const {
+  assert(is_cons(cell));
   SEXP e = CAR(cell);
   return (is_explicit_return(e) || (m_returns.find(cell) != m_returns.end()));
+}
+
+SEXP FuncInfo::return_value_c(const SEXP cell) const {
+  assert(is_return(cell));
+  SEXP e = CAR(cell);
+  if (is_explicit_return(e)) {
+    return call_nth_arg_c(e,1);
+  } else {
+    return cell;
+  }
 }
 
 void FuncInfo::accum_implicit_returns(SEXP cell) {

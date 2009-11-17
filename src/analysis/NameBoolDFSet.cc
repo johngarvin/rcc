@@ -84,7 +84,10 @@ bool NameBoolDFSet::operator!=(DataFlowSet & orig_other) const {
 }
 
 void NameBoolDFSet::setUniversal() {
-  throw new AnalysisException("Not yet implemented");
+  std::set<OA_ptr<NameBoolPair> >::const_iterator it;
+  for(it = mSet->begin(); it != mSet->end(); ++it) {
+    (*it)->setValue(true);
+  }
 }
 
 void NameBoolDFSet::clear() {
@@ -155,6 +158,7 @@ OA_ptr<NameBoolDFSetIterator> NameBoolDFSet::getIterator() const {
 bool NameBoolDFSet::lookup(OA_ptr<R_VarRef> e) const {
   OA_ptr<NameBoolPair> find_pair; find_pair = new NameBoolPair(e, false);
   NameBoolDFSet::MySet::const_iterator iter = mSet->find(find_pair);
+  bool answer;
   if (iter != mSet->end()) {
     return (*iter)->getValue();
   } else {
@@ -167,8 +171,8 @@ void NameBoolDFSet::replace(OA_ptr<R_VarRef> e, bool value) {
   NameBoolDFSet::MySet::const_iterator iter = mSet->find(pair);
   if (iter != mSet->end()) {
     mSet->erase(*iter);
-    mSet->insert(pair);
   }
+  mSet->insert(pair);
 }
 
 // propagate: propagate lattice value from expression to subexpressions
@@ -235,6 +239,10 @@ OA_ptr<R_VarRef> NameBoolDFSet::NameBoolPair::getName() {
 
 bool NameBoolDFSet::NameBoolPair::getValue() {
   return mValue;
+}
+
+void NameBoolDFSet::NameBoolPair::setValue(bool x) {
+  mValue = x;
 }
 
 // ----- NameBoolDFSetIterator methods -----

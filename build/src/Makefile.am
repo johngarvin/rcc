@@ -43,6 +43,8 @@ rcc_bin_SOURCES =				\
   Assertion.h					\
   CallByValueAnalysis.cc                        \
   CallByValueAnalysis.h                         \
+  CallType.cc                                   \
+  CallType.h                                    \
   CEscapeInfo.h                                 \
   CEscapeInfo.cc                                \
   CEscapeInfoAnnotationMap.cc                   \

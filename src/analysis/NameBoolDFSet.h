@@ -117,6 +117,7 @@ public:
     bool operator<(const NameBoolPair & other);
     OA::OA_ptr<R_VarRef> getName();
     bool getValue();
+    void setValue(bool x);
   private:
     OA::OA_ptr<R_VarRef> mName;
     bool mValue;

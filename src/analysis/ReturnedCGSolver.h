@@ -35,8 +35,11 @@ public:
   explicit ReturnedCGSolver();
   ~ReturnedCGSolver();
 
-  OA::OA_ptr<OA::DataFlow::DataFlowSet> perform_analysis(OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph,
-							 OA::DataFlow::DFPImplement algorithm);
+  void perform_analysis(OA::OA_ptr<OA::CallGraph::CallGraphInterface> call_graph,
+			OA::DataFlow::DFPImplement algorithm);
+
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> getInSet(OA::OA_ptr<OA::CallGraph::NodeInterface> n);
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> getOutSet(OA::OA_ptr<OA::CallGraph::NodeInterface> n);
 
   //--------------------------------------------------------
   // initialization callbacks
@@ -115,6 +118,7 @@ public:
 				  OA::OA_ptr<OA::DataFlow::DataFlowSet> callDFSet,
 				  OA::ProcHandle proc);
 private:
+  bool m_solved;
   OA::OA_ptr<OA::DataFlow::CallGraphDFSolver> m_solver;
   OA::OA_ptr<NameBoolDFSet> m_top;
 };

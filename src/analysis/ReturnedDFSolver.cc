@@ -32,6 +32,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/NameBoolDFSet.h>
+#include <analysis/OACallGraphAnnotation.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
 
@@ -47,7 +48,7 @@ typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
 static bool debug;
 
 ReturnedDFSolver::ReturnedDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir)
+  : m_ir(ir), m_fact(VarRefFactory::get_instance())
 {
   RCC_DEBUG("RCC_ReturnedDFSolver", debug);
 }
@@ -70,6 +71,7 @@ OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
   m_cfg = cfg;
   m_top = new MyDFSet();
   m_in = in_set;
+  m_func_info = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
 
   // use OA to solve data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Backward, *this);
@@ -105,13 +107,11 @@ void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
 // ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * m;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  PROC_FOR_EACH_MENTION(fi, m) {
+  PROC_FOR_EACH_MENTION(m_func_info, m) {
     OA_ptr<MyDFSet::NameBoolPair> element;
-    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
+    element = new MyDFSet::NameBoolPair(m_fact->make_body_var_ref((*m)->getMention_c()), false);
     m_top->insert(element);
   }
   return m_top;
@@ -127,7 +127,6 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<CFG::Nod
 }
 
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
-  // TODO: if exit node, return optional initial set
   if (n.ptrEqual(m_cfg->getExit())) {
     return m_in->clone();
   } else {
@@ -135,7 +134,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::No
   }
 }
 
-/// ICFGDFProblem says: OK to modify set1 and return it as result, because solver
+/// CFGDFProblem says: OK to modify set1 and return it as result, because solver
 /// only passes a tempSet in as set1
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
 						     OA_ptr<DataFlow::DataFlowSet> set2_orig)
@@ -158,18 +157,17 @@ bool ReturnedDFSolver::returned_predicate(SEXP call, int arg) {
 }
 
 /// CFGDFSolver says: OK to modify in set and return it again as
-/// result because solver clones the BB in sets. Proc is procedure
-/// that contains the statement.
+/// result because solver clones the BB in sets.
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
 							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
+  OA_ptr<MyDFSet> out;
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
-  VarRefFactory * const fact = VarRefFactory::get_instance();
 
-  if (fi->is_return(cell)) {
+#if 0
+  if (m_fi->is_return(cell)) {
     // return rule
     if (is_explicit_return(e)) {
       MyDFSet::propagate_rhs(in, &returned_predicate, true, call_nth_arg_c(e,1));
@@ -178,11 +176,102 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
     }
   } else if (is_local_assign(e) && is_simple_assign(e)) {
     // v0 = v1 rule and method call rule
-    MyDFSet::propagate_rhs(in, &returned_predicate, in->lookup(fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
+    MyDFSet::propagate_rhs(in, &returned_predicate, in->lookup(m_fact->make_body_var_ref(assign_lhs_c(e))), assign_rhs_c(e));
   } else {
     // TODO: method call that is not an assignment?
     // all other rules: no change
     ;
   }
-  return in.convert<DataFlow::DataFlowSet>();  // upcast
+#endif
+
+  out = ret(cell, false, in);
+  return out.convert<DataFlow::DataFlowSet>();  // upcast
+}
+
+OA_ptr<NameBoolDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<NameBoolDFSet> c) {
+  OA_ptr<NameBoolDFSet> s;
+  assert(is_cons(cell));
+  SEXP e = CAR(cell);
+  if (m_func_info->is_return(cell) && !is_explicit_return(cell)) {
+    b = true;
+    // continue with current expression
+  }
+  if (is_explicit_return(e)) {
+    return ret(m_func_info->return_value_c(cell), true, c);
+  } else if (is_fundef(e)) {
+    return c;
+    // will be handled separately
+  } else if (is_symbol(e)) {
+    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
+    OA_ptr<NameBoolDFSet> new_c; new_c = c->clone().convert<NameBoolDFSet>();
+    new_c->replace(v, b);
+    return new_c;
+  } else if (is_const(e)) {
+    return c;
+  } else if (is_struct_field(e)) {
+    return ret(struct_field_lhs_c(e), false, c);
+  } else if (is_curly_list(e)) {
+    return ret_curly_list(curly_body(e), b, c);
+  } else if (is_call(e)) {
+    if (!is_symbol(call_lhs(e))) {
+      return make_universal();
+    }
+    OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
+    if (cga == 0) {
+      if (is_library(call_lhs(e)) && !is_library_closure(call_lhs(e))) {
+	// call to library procedure
+	s = c->clone().convert<NameBoolDFSet>();
+	int i = 1;
+	for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
+	  bool arg_ret = PRIMPOINTS(library_value(call_lhs(e)), i);
+	  s = s->meet(ret(arg_c, (b && arg_ret), c));
+	  i++;
+	}
+	return s;
+      } else {
+	return make_universal();
+      }
+    } else {
+      ProcHandle proc = cga->get_singleton_if_exists();
+      if (proc == ProcHandle(0)) {
+	return make_universal();
+      }
+      FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+      s = c->clone().convert<NameBoolDFSet>();
+      int i = 1;
+      for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
+	OA_ptr<R_VarRef> f; f = m_fact->make_arg_var_ref(callee->get_arg(i));
+	s = s->meet(ret(arg_c, (b && c->lookup(f)), c));
+	i++;
+      }
+      return s;
+    }
+  } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
+    return ret(struct_field_lhs_c(e), false, c)->meet(ret(assign_rhs_c(e), false, c));
+  } else if (is_simple_assign(e) && is_local_assign(e)) {
+    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
+    return ret(assign_rhs_c(e), (b && c->lookup(v)), c);
+  } else if (is_simple_assign(e) && is_free_assign(e)) {
+    return ret(assign_rhs_c(e), false, c);
+  } else {
+    assert(0);
+  }
+}
+
+OA_ptr<NameBoolDFSet> ReturnedDFSolver::ret_curly_list(SEXP e, bool b, OA_ptr<NameBoolDFSet> c) {
+  if (e == R_NilValue) {
+    return c;
+  } else if (CDR(e) == R_NilValue) {
+    return ret(CAR(e), b, c);
+  } else {
+    OA_ptr<NameBoolDFSet> cprime; cprime = ret_curly_list(CDR(e), b, c);
+    return ret(CAR(e), false, cprime);
+  }
+}
+
+OA_ptr<NameBoolDFSet> ReturnedDFSolver::make_universal() {
+  OA_ptr<NameBoolDFSet> all; all = m_top->clone().convert<NameBoolDFSet>();
+  all->setUniversal();
+  return all;
+  
 }

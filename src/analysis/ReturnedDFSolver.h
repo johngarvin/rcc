@@ -32,6 +32,7 @@
 class OA::CFG::CFGInterface;
 namespace OA { namespace DataFlow { class CFGDFSolver; } }
 class R_IRInterface;
+namespace RAnnot { class FuncInfo; }
 
 class ReturnedDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
@@ -67,6 +68,10 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
 						 OA::StmtHandle stmt);
 
+  OA::OA_ptr<NameBoolDFSet> ret(SEXP cell, bool b, OA::OA_ptr<NameBoolDFSet> c);
+  OA::OA_ptr<NameBoolDFSet> ret_curly_list(SEXP cell, bool b, OA::OA_ptr<NameBoolDFSet> c);
+  OA::OA_ptr<NameBoolDFSet> make_universal();
+
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
@@ -74,6 +79,8 @@ private:
   OA::OA_ptr<NameBoolDFSet> m_top;
   OA::OA_ptr<NameBoolDFSet> m_in;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
+  VarRefFactory * m_fact;
+  RAnnot::FuncInfo * m_func_info;
 };
 
 #endif
