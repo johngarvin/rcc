@@ -1368,6 +1368,11 @@ R_varloc_t findNonSystemFunLoc(SEXP symbol, SEXP rho)
 
 void defineVar(SEXP symbol, SEXP value, SEXP rho)
 {
+  defineVarUseHeap(symbol, value, rho, FALSE);
+}
+
+void defineVarUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean heap)
+{
     int hashcode;
     SEXP frame, c;
 
@@ -1402,7 +1407,8 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 	    }
 	    if (FRAME_IS_LOCKED(rho))
 		error(_("cannot add bindings to a locked environment"));
-	    SET_FRAME(rho, CONS(value, FRAME(rho)));
+	    
+	    SET_FRAME(rho, (heap ? consHeap(value, FRAME(rho)) : CONS(value, FRAME(rho))));
 	    SET_TAG(FRAME(rho), symbol);
 	}
 	else {
@@ -1438,6 +1444,11 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 
 R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho)
 {
+  return defineVarReturnLocUseHeap(symbol, value, rho, FALSE);
+}
+
+R_varloc_t defineVarReturnLocUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean heap)
+{
     int hashcode;
     SEXP frame, c;
     R_varloc_t loc;
@@ -1464,7 +1475,7 @@ R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho)
 	    }
 	    if (FRAME_IS_LOCKED(rho))
 		error(_("cannot add bindings to a locked environment"));
-	    SET_FRAME(rho, CONS(value, FRAME(rho)));
+	    SET_FRAME(rho, (heap ? consHeap(value, FRAME(rho)) : CONS(value, FRAME(rho))));
 	    SET_TAG(FRAME(rho), symbol);
 	    return R_GetBindingVarLoc(FRAME(rho), symbol);
 	}
@@ -1483,6 +1494,7 @@ R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho)
 	}
     }
     else {
+        error(_("cannot return location of given binding"));
 #ifdef USE_GLOBAL_CACHE
 	R_FlushGlobalCache(symbol);
 #endif

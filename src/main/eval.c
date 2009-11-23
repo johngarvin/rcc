@@ -20,8 +20,6 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
-extern int fallback_alloc;
-
 #undef HASHING
 
 #ifdef HAVE_CONFIG_H

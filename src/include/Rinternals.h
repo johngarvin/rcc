@@ -566,6 +566,7 @@ void Rf_copyVector(SEXP, SEXP);
 SEXP Rf_CreateTag(SEXP);
 void Rf_CustomPrintValue(SEXP,SEXP);
 void Rf_defineVar(SEXP, SEXP, SEXP);
+void Rf_defineVarUseHeap(SEXP, SEXP, SEXP, Rboolean);
 SEXP Rf_dimgets(SEXP, SEXP);
 SEXP Rf_dimnamesgets(SEXP, SEXP);
 SEXP Rf_DropDims(SEXP);
@@ -1005,6 +1006,7 @@ int R_system(char *);
 #define CreateTag		Rf_CreateTag
 #define CustomPrintValue	Rf_CustomPrintValue
 #define defineVar		Rf_defineVar
+#define defineVarUseHeap	Rf_defineVarUseHeap
 #define dimgets			Rf_dimgets
 #define dimnamesgets		Rf_dimnamesgets
 #define DropDims                Rf_DropDims
