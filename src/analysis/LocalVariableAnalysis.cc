@@ -208,13 +208,17 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
       build_ud_rhs(sub_c, Var::Var_MUST);
     }
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
-    // Function application as lvalue. For example: dim(x) <- foo
+    // Function application as lvalue. Examples: dim(x) <- foo, attr(x, "dim") <- c(2, 5)
     //
     // TODO: We should really be checking if the function is valid;
     // only some functions applied to arguments make a valid lvalue.
-    assert(CDDR(e) == R_NilValue); // more than one argument is an error, right?
-    build_ud_rhs(e, Var::Var_MUST);
-    build_ud_lhs(CDR(e), rhs_c, Var::Var_MAY, lhs_type);
+    build_ud_rhs(e, Var::Var_MUST);                        // assignment function
+    build_ud_lhs(CDR(e), rhs_c, Var::Var_MAY, lhs_type);   // first arg is lvalue
+    SEXP arg = CDDR(e);                                    // other args are rvalues if they exist
+    while (arg != R_NilValue) {
+      build_ud_rhs(arg, Var::Var_MUST);
+      arg = CDR(arg);
+    }
   } else {
     assert(0);
   }

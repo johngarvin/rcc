@@ -48,8 +48,18 @@ using namespace RAnnot;
 
 Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
   string symbol = make_symbol(CAR(cell));
+
+  // stack_define_var: whether the cons cell in defineVar can be stack allocated
+  const bool stack_define_var = (rho == "R_GlobalEnv" || rho == "newenv");
+  const string define = (stack_define_var ?
+			 emit_call3("defineVar", symbol, rhs, rho) + ";\n" :
+			 emit_call4("defineVarUseHeap", symbol, rhs, rho, "TRUE") + ";\n");
+  const string define_loc = (stack_define_var ?
+			 emit_call3("defineVarReturnLoc", symbol, rhs, rho) :
+			 emit_call4("defineVarReturnLocUseHeap", symbol, rhs, rho, "TRUE"));
+
   if (Settings::get_instance()->get_lookup_elimination() == false) {
-    append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
+    append_defs(define);
     return Expression(rhs, DEPENDENT, INVISIBLE, "");
   }
 
@@ -64,7 +74,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());
     if (var->is_first_on_some_path() && !fi->is_arg(CAR(cell))) {
       // first mention of a local var (not a formal), so emit defineVar
-      append_defs(emit_assign(location, emit_call3("defineVarReturnLoc", symbol, rhs, rho)));
+      append_defs(emit_assign(location, define_loc));
       return Expression(rhs, DEPENDENT, INVISIBLE, "");
     } else {
       // name has been defined previously, either as a formal or by assignment
@@ -72,7 +82,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
       return Expression(rhs, DEPENDENT, INVISIBLE, "");
     }
   } else {   // no unique location; emit lookup
-    append_defs(emit_call3("defineVar", symbol, rhs, rho) + ";\n");
+    append_defs(define);
     return Expression(rhs, DEPENDENT, INVISIBLE, "");
   }
 }

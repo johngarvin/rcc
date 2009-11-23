@@ -94,8 +94,9 @@ SEXP rcc_list(int lang, int n, ...) {
       PROTECT(list = cons(va_arg(ap, SEXP), list));
       if (i >= n - lang) SET_TYPEOF(list, LANGSXP);
     }
+    list = cons(va_arg(ap, SEXP), list);
     UNPROTECT(n-1);
-    SAFE_PROTECT(list = cons(va_arg(ap, SEXP), list));
+    SAFE_PROTECT(list);
     if (lang > 0) SET_TYPEOF(list, LANGSXP);
   }
   va_end(ap);
