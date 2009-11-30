@@ -832,12 +832,13 @@ static void AdjustHeapSize(R_size_t size_needed)
   SEXP an__n__ = (s); \
   int an__g__ = (g); \
   if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
-    if (NODE_IS_MARKED(an__n__)) \
-       R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \
+    if (NODE_IS_MARKED(an__n__) && PREV_NODE(an__n__) != NULL)	\
+      R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \
     else \
       MARK_NODE(an__n__); \
     SET_NODE_GENERATION(an__n__, an__g__); \
-    UNSNAP_NODE(an__n__); \
+    if (PREV_NODE(an__n__) != NULL) \
+	UNSNAP_NODE(an__n__);		     \
     SET_NEXT_NODE(an__n__, forwarded_nodes); \
     forwarded_nodes = an__n__; \
   } \
@@ -852,8 +853,10 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	forwarded_nodes = NEXT_NODE(forwarded_nodes);
 	if (NODE_GENERATION(s) != gen)
 	    REprintf("****snapping into wrong generation\n");
-	SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
-	R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
+	if (PREV_NODE(s) != NULL) {
+	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
+	    R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
+	}
 	DO_CHILDREN(s, AGE_NODE, gen);
     }
 }
@@ -863,9 +866,7 @@ static void old_to_new(SEXP x, SEXP y)
     /*    if (!PREV_NODE(x) || !PREV_NODE(y)) error(_("old_to_new: non-heap object in heap")); */
     if (!PREV_NODE(x) || !PREV_NODE(y)) return;
 #ifdef EXPEL_OLD_TO_NEW
-    if (PREV_NODE(y) != NULL) {
-	AgeNodeAndChildren(y, NODE_GENERATION(x));
-    }
+    AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
     if (PREV_NODE(x) != NULL) {
 	UNSNAP_NODE(x);
@@ -1197,7 +1198,7 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else {							\
 	    SET_NEXT_NODE(s, NULL);					\
 	}								\
-	FORWARD_CHILDREN_f(s);			\
+	FORWARD_CHILDREN(s);			\
     } \
 } while (0)
 

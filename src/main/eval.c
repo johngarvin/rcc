@@ -610,6 +610,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 /* Apply SEXP op of type CLOSXP to actuals */
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options)
 {
+    extern Rboolean global_stack_debug;
     SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
@@ -643,20 +644,20 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
     }
 
-    /*  Build a list which matches the actual (unevaluated) arguments
-	to the formal paramters.  Build a new environment which
-	contains the matched pairs.  Ideally this environment sould be
-	hashed.  */
-
     if (options & AC_STACK_CLOSURE) {
-	const int size = 4096;
-	stack_space = alloca(size);
-	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
 	/* stack allocate matchArgs list, environment, promises */
+	const int size = 4096;
+	stack_space = (global_stack_debug ? malloc(size) : alloca(size));
+	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
     } else {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
     }
+
+    /*  Build a list which matches the actual (unevaluated) arguments
+	to the formal paramters.  Build a new environment which
+	contains the matched pairs.  Ideally this environment sould be
+	hashed.  */
 
     if (options & AC_MATCH_ARGS) {
       PROTECT(actuals = matchArgs(formals, arglist));
@@ -697,10 +698,12 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	}
     }
 
+#if 0
     if (options & AC_STACK_CLOSURE) {
-	upAllocStack();
+      upAllocStack();
 	/* don't stack allocate in the body unless we're supposed to */
     }
+#endif
 
     /*  Fix up any extras that were supplied by usemethod. */
 
@@ -788,7 +791,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
-    if (options & AC_STACK_CLOSURE) {
+    if (!(options & AC_STACK_CLOSURE)) {
 	setFallbackAlloc(old_heap_alloc);
     }
 
