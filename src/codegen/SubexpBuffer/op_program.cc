@@ -118,7 +118,6 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
 
   string finish_code;
   finish_code += "UNPROTECT(" + i_to_s(ParseInfo::global_constants->get_n_prot()) + "); /* c_ */\n";
-  finish_code += "Rprintf(\"\\n\");\n";
   
   string rcc_path_prefix = string("#include \"") + RCC_INCLUDE_PATH + "/"; 
 
@@ -167,8 +166,13 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
        mainargs = "int argc, char **argv";
        arginit += string("myargc = argc\n;") + "myargv = argv\n;";
      }
-     string body = arginit + "Rf_initialize_R(myargc, myargv);\n" + "setup_Rmainloop();\n" +
-       func_name + "();\nreturn 0;\n";
+     string body = arginit +
+       "Rf_initialize_R(myargc, myargv);\n" +
+       "setup_Rmainloop();\n" +
+       "SETJMP(R_Toplevel.cjmpbuf);\n" +
+       func_name + "();\n" +
+       "end_Rmainloop();\n" +
+       "return 0;\n";
      program += "\nint main(" + mainargs + ") \n{\n" + indent(body) + "}\n"; 
   }
 
