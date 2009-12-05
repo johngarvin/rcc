@@ -30,7 +30,11 @@
 
 #include <include/R/R_Defn.h>
 
+#include <CodeGenUtils.h>
 #include <ParseInfo.h>
+
+#include <analysis/Utils.h>
+
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
 
 #include <support/RccError.h>
@@ -65,6 +69,14 @@ string make_symbol(SEXP e) {
       string var = ParseInfo::global_constants->new_sexp_unp_name(name);
       string qname = quote(name);
       ParseInfo::global_constants->appl(var, Unprotected, "Rf_install", "", 1, &qname);
+      // library symbols have promises as their symvalue. Evaluate
+      // this promise early here. Otherwise evaluating the promise
+      // will allocate memory in the wrong environment if we're doing
+      // stack allocation.
+      if (is_library(e)) {
+	string symvalue = emit_call1("SYMVALUE", var);
+	ParseInfo::global_constants->append_defs(emit_call2("eval", symvalue, "R_GlobalEnv") + ";\n");
+      }
       ParseInfo::insert_symbol(name, var);
       return var;
     } else {
