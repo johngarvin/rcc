@@ -185,6 +185,8 @@ rcc_bin_SOURCES =				\
   VarRefSet.cc					\
   VarRefSet.h					\
   VarVisitor.h                                  \
+  VFreshDFSolver.cc                             \
+  VFreshDFSolver.h                              \
                                                 \
   SplitSubexpBuffer.cc SplitSubexpBuffer.h	\
   SubexpBuffer.cc SubexpBuffer.h		\

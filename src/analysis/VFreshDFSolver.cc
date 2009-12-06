@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: ReturnedDFSolver.cc
+// File: VFreshDFSolver.cc
 
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -36,7 +36,7 @@
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
 
-#include "ReturnedDFSolver.h"
+#include "VFreshDFSolver.h"
 
 using namespace OA;
 using namespace RAnnot;
@@ -47,23 +47,27 @@ typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
 
 static bool debug;
 
-ReturnedDFSolver::ReturnedDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir), m_fact(VarRefFactory::get_instance())
-{
-  RCC_DEBUG("RCC_ReturnedDFSolver", debug);
+static std::pair<bool, OA_ptr<NameBoolDFSet> > make_pair(bool x, OA_ptr<NameBoolDFSet> y) {
+  return std::pair<bool, OA_ptr<NameBoolDFSet> >(x, y);
 }
 
-ReturnedDFSolver::~ReturnedDFSolver()
+VFreshDFSolver::VFreshDFSolver(OA_ptr<R_IRInterface> ir)
+  : m_ir(ir), m_fact(VarRefFactory::get_instance())
+{
+  RCC_DEBUG("RCC_VFreshDFSolver", debug);
+}
+
+VFreshDFSolver::~VFreshDFSolver()
 {}
 
-OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
+OA_ptr<MyDFSet> VFreshDFSolver::perform_analysis(ProcHandle proc,
 						   OA_ptr<CFG::CFGInterface> cfg)
 {
   OA_ptr<MyDFSet> top; top = new MyDFSet();
   return perform_analysis(proc, cfg, top);
 }
 
-OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
+OA_ptr<MyDFSet> VFreshDFSolver::perform_analysis(ProcHandle proc,
 						   OA_ptr<CFG::CFGInterface> cfg,
 						   OA_ptr<MyDFSet> in_set)
 {
@@ -82,11 +86,11 @@ OA_ptr<MyDFSet> ReturnedDFSolver::perform_analysis(ProcHandle proc,
 
 // ----- debugging -----
 
-void ReturnedDFSolver::dump_node_maps() {
+void VFreshDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
+void VFreshDFSolver::dump_node_maps(std::ostream &os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<MyDFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
@@ -106,7 +110,7 @@ void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
 
 // ----- callbacks for CFGDFProblem -----
 
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeTop() {
   Var * m;
 
   PROC_FOR_EACH_MENTION(m_func_info, m) {
@@ -118,15 +122,15 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
 }
 
 /// Not used.
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeBottom() {
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeBottom() {
   assert(0);
 }
 
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeNodeIN(OA_ptr<CFG::NodeInterface> n) {
   return m_top->clone();
 }
 
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeNodeOUT(OA_ptr<CFG::NodeInterface> n) {
   if (n.ptrEqual(m_cfg->getExit())) {
     return m_in->clone();
   } else {
@@ -136,7 +140,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeNodeOUT(OA_ptr<CFG::No
 
 /// CFGDFProblem says: OK to modify set1 and return it as result, because solver
 /// only passes a tempSet in as set1
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
 						     OA_ptr<DataFlow::DataFlowSet> set2_orig)
 {
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
@@ -146,111 +150,51 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::meet(OA_ptr<DataFlow::DataFlowSe
   return out.convert<DataFlow::DataFlowSet>();
 }
 
-// Given a call (library or unknown) and an argument, returns true if
-// the return value of the procedure points to the argument
-bool ReturnedDFSolver::returned_predicate(SEXP call, int arg) {
-  assert(is_call(call));
-  if (is_library(call_lhs(call)) && !is_library_closure(call_lhs(call))) {
-    return PRIMPOINTS(library_value(call_lhs(call)), arg);
-  } else {  // unknown call
-    return true;
-  }
-}
-
 /// CFGDFSolver says: OK to modify in set and return it again as
 /// result because solver clones the BB in sets.
-OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
+OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
 							 StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> out;
   SEXP cell = make_sexp(stmt);
-  out = ret(cell, false, in);
+  out = vfresh(cell, in).second;
   return out.convert<DataFlow::DataFlowSet>();  // upcast
 }
 
-OA_ptr<NameBoolDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<NameBoolDFSet> c) {
+std::pair<bool, OA_ptr<NameBoolDFSet> > VFreshDFSolver::vfresh(SEXP cell, OA_ptr<NameBoolDFSet> c) {
   OA_ptr<NameBoolDFSet> s;
   assert(is_cons(cell));
   SEXP e = CAR(cell);
-  if (m_func_info->is_return(cell) && !is_explicit_return(cell)) {
-    b = true;
-    // continue with current expression
-  }
   if (is_explicit_return(e)) {
-    return ret(m_func_info->return_value_c(cell), true, c);
+    return vfresh(m_func_info->return_value_c(cell), c);
   } else if (is_fundef(e)) {
-    return c;
-    // will be handled separately
+    return make_pair(false, c);
   } else if (is_symbol(e)) {
-    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
-    OA_ptr<NameBoolDFSet> new_c; new_c = c->clone().convert<NameBoolDFSet>();
-    new_c->replace(v, b);
-    return new_c;
+    return make_pair(true, c);
   } else if (is_const(e)) {
-    return c;
+    return make_pair(false, c);
   } else if (is_struct_field(e)) {
-    return ret(struct_field_lhs_c(e), false, c);
+    return make_pair(true, vfresh(struct_field_lhs_c(e), c).second);
   } else if (is_curly_list(e)) {
-    return ret_curly_list(curly_body(e), b, c);
+    return vfresh_curly_list(curly_body(e), c);
   } else if (is_call(e)) {
-    if (!is_symbol(call_lhs(e))) {
-      return make_universal();
-    }
-    OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
-    if (cga == 0) {
-      if (is_library(call_lhs(e)) && !is_library_closure(call_lhs(e))) {
-	// call to library procedure
-	s = c->clone().convert<NameBoolDFSet>();
-	int i = 1;
-	for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
-	  bool arg_ret = PRIMPOINTS(library_value(call_lhs(e)), i);
-	  s = s->meet(ret(arg_c, (b && arg_ret), c));
-	  i++;
-	}
-	return s;
-      } else {
-	return make_universal();
-      }
-    } else {
-      ProcHandle proc = cga->get_singleton_if_exists();
-      if (proc == ProcHandle(0)) {
-	return make_universal();
-      }
-      FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
-      s = c->clone().convert<NameBoolDFSet>();
-      int i = 1;
-      for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
-	OA_ptr<R_VarRef> f; f = m_fact->make_arg_var_ref(callee->get_arg(i));
-	s = s->meet(ret(arg_c, (b && c->lookup(f)), c));
-	i++;
-      }
-      return s;
-    }
+    // TODO
   } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
-    return ret(struct_field_lhs_c(e), false, c)->meet(ret(assign_rhs_c(e), false, c));
+    // TODO
   } else if (is_simple_assign(e) && is_local_assign(e)) {
-    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
-    return ret(assign_rhs_c(e), (b && c->lookup(v)), c);
+    // TODO
   } else if (is_simple_assign(e) && is_free_assign(e)) {
-    return ret(assign_rhs_c(e), false, c);
+    // TODO
   } else {
     assert(0);
   }
 }
 
-OA_ptr<NameBoolDFSet> ReturnedDFSolver::ret_curly_list(SEXP e, bool b, OA_ptr<NameBoolDFSet> c) {
-  if (e == R_NilValue) {
-    return c;
-  } else if (CDR(e) == R_NilValue) {
-    return ret(CAR(e), b, c);
-  } else {
-    OA_ptr<NameBoolDFSet> cprime; cprime = ret_curly_list(CDR(e), b, c);
-    return ret(CAR(e), false, cprime);
-  }
+std::pair<bool, OA_ptr<NameBoolDFSet> > VFreshDFSolver::vfresh_curly_list(SEXP e, OA_ptr<NameBoolDFSet> c) {
 }
 
-OA_ptr<NameBoolDFSet> ReturnedDFSolver::make_universal() {
+OA_ptr<NameBoolDFSet> VFreshDFSolver::make_universal() {
   OA_ptr<NameBoolDFSet> all; all = m_top->clone().convert<NameBoolDFSet>();
   all->setUniversal();
   return all;
