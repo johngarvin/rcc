@@ -73,7 +73,7 @@ string make_symbol(SEXP e) {
       // this promise early here. Otherwise evaluating the promise
       // will allocate memory in the wrong environment if we're doing
       // stack allocation.
-      if (is_library(e)) {
+      if (is_library(e) && TYPEOF(SYMVALUE(e)) == PROMSXP) {
 	string symvalue = emit_call1("SYMVALUE", var);
 	ParseInfo::global_constants->append_defs(emit_call2("eval", symvalue, "R_GlobalEnv") + ";\n");
       }

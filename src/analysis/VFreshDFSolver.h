@@ -36,6 +36,11 @@ namespace RAnnot { class FuncInfo; }
 
 class VFreshDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
+  struct MyPair {
+    bool b;
+    OA::OA_ptr<NameBoolDFSet> s;
+  };
+
   explicit VFreshDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~VFreshDFSolver();
   OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
@@ -66,8 +71,9 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
 						 OA::StmtHandle stmt);
 
-  std::pair<bool, OA::OA_ptr<NameBoolDFSet> > vfresh(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
-  std::pair<bool, OA::OA_ptr<NameBoolDFSet> > vfresh_curly_list(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
+  MyPair nfresh(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
+  MyPair nfresh_curly_list(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
+
   OA::OA_ptr<NameBoolDFSet> make_universal();
 
 private:

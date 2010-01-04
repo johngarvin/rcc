@@ -33,8 +33,11 @@
 #include <analysis/CEscapeInfo.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/OEscapeInfo.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/Settings.h>
 #include <analysis/Utils.h>
+#include <analysis/VFreshDFSolver.h>
 
 #include <support/StringUtils.h>
 
@@ -85,6 +88,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   int unprotcnt = 0;
   string laziness_string;  // string of E's and L's, one for each arg, saying whether it's eager or lazy
   Expression args1;
+  string fallback = "INVALID";
 
 //   if (fi_if_known != 0) {
 //     ArgMatcher matcher(fi_if_known->get_args(), args);
@@ -117,6 +121,14 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     //    }
   }
 
+  bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+
+  if (may_escape) {
+    fallback = new_var_unp();
+    append_decls("Rboolean " + fallback + ";\n");
+    append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+    append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+  }
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
   string out = appl6(apply_closure_string,
@@ -128,6 +140,9 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 		     "R_NilValue",
 		     options,
 		     Unprotected);
+  if (may_escape) {
+    append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+  }
   if (!op1.del_text.empty()) unprotcnt++;
   if (!args1.del_text.empty()) unprotcnt++;
   if (unprotcnt > 0)

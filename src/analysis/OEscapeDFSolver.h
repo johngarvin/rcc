@@ -24,6 +24,7 @@
 #define O_ESCAPE_DF_SOLVER_H
 
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
+#include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
 #include <analysis/NameMentionMultiMap.h>

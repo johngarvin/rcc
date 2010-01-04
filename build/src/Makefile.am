@@ -108,6 +108,8 @@ rcc_bin_SOURCES =				\
   MemRefExprInterface.h                         \
   Metrics.cc                                    \
   Metrics.h                                     \
+  MFreshCGSolver.cc                             \
+  MFreshCGSolver.h                              \
   NameBoolDFSet.cc                              \
   NameBoolDFSet.h                               \
   NameMentionMultiMap.h                         \

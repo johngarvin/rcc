@@ -44,11 +44,17 @@ using namespace HandleInterface;
 
 typedef NameBoolDFSet MyDFSet;
 typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
-
+// typedef OA_ptr<std::pair<bool, OA_ptr<NameBoolDFSet> > > MyPair;
 static bool debug;
 
-static std::pair<bool, OA_ptr<NameBoolDFSet> > make_pair(bool x, OA_ptr<NameBoolDFSet> y) {
-  return std::pair<bool, OA_ptr<NameBoolDFSet> >(x, y);
+typedef VFreshDFSolver::MyPair MyPair;
+
+static MyPair make_pair(bool x, OA_ptr<NameBoolDFSet> y) {
+  MyPair ret;
+  //  std::pair<bool, OA_ptr<NameBoolDFSet> > * p; p = new std::pair<bool, OA_ptr<NameBoolDFSet> >(x, y);
+  ret.b = x;
+  ret.s = y;
+  return ret;
 }
 
 VFreshDFSolver::VFreshDFSolver(OA_ptr<R_IRInterface> ir)
@@ -61,15 +67,15 @@ VFreshDFSolver::~VFreshDFSolver()
 {}
 
 OA_ptr<MyDFSet> VFreshDFSolver::perform_analysis(ProcHandle proc,
-						   OA_ptr<CFG::CFGInterface> cfg)
+						 OA_ptr<CFG::CFGInterface> cfg)
 {
   OA_ptr<MyDFSet> top; top = new MyDFSet();
   return perform_analysis(proc, cfg, top);
 }
 
 OA_ptr<MyDFSet> VFreshDFSolver::perform_analysis(ProcHandle proc,
-						   OA_ptr<CFG::CFGInterface> cfg,
-						   OA_ptr<MyDFSet> in_set)
+						 OA_ptr<CFG::CFGInterface> cfg,
+						 OA_ptr<MyDFSet> in_set)
 {
   m_proc = proc;
   m_cfg = cfg;
@@ -141,7 +147,7 @@ OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeNodeOUT(OA_ptr<CFG::Node
 /// CFGDFProblem says: OK to modify set1 and return it as result, because solver
 /// only passes a tempSet in as set1
 OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig,
-						     OA_ptr<DataFlow::DataFlowSet> set2_orig)
+						   OA_ptr<DataFlow::DataFlowSet> set2_orig)
 {
   OA_ptr<MyDFSet> set1; set1 = set1_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> set2; set2 = set2_orig.convert<MyDFSet>();
@@ -153,21 +159,22 @@ OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::meet(OA_ptr<DataFlow::DataFlowSet>
 /// CFGDFSolver says: OK to modify in set and return it again as
 /// result because solver clones the BB in sets.
 OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_orig,
-							 StmtHandle stmt)
+						       StmtHandle stmt)
 {
   OA_ptr<MyDFSet> in; in = in_orig.convert<MyDFSet>();
   OA_ptr<MyDFSet> out;
+  MyPair p;
   SEXP cell = make_sexp(stmt);
-  out = vfresh(cell, in).second;
+  p = nfresh(cell, in);
+  out = p.s;
   return out.convert<DataFlow::DataFlowSet>();  // upcast
 }
 
-std::pair<bool, OA_ptr<NameBoolDFSet> > VFreshDFSolver::vfresh(SEXP cell, OA_ptr<NameBoolDFSet> c) {
-  OA_ptr<NameBoolDFSet> s;
+MyPair VFreshDFSolver::nfresh(SEXP cell, OA_ptr<MyDFSet> c) {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
   if (is_explicit_return(e)) {
-    return vfresh(m_func_info->return_value_c(cell), c);
+    return nfresh(m_func_info->return_value_c(cell), c);
   } else if (is_fundef(e)) {
     return make_pair(false, c);
   } else if (is_symbol(e)) {
@@ -175,28 +182,56 @@ std::pair<bool, OA_ptr<NameBoolDFSet> > VFreshDFSolver::vfresh(SEXP cell, OA_ptr
   } else if (is_const(e)) {
     return make_pair(false, c);
   } else if (is_struct_field(e)) {
-    return make_pair(true, vfresh(struct_field_lhs_c(e), c).second);
+    return make_pair(true, nfresh(struct_field_lhs_c(e), c).s);
   } else if (is_curly_list(e)) {
-    return vfresh_curly_list(curly_body(e), c);
+    return nfresh_curly_list(curly_body(e), c);
   } else if (is_call(e)) {
-    // TODO
+    // lhs is || of all mfresh(procedures(e), c)
+    // rhs is meet of c with nfresh(arg, c) for each arg
+    {
+      OACallGraphAnnotation * cga;
+      ProcHandle proc;
+      bool b;
+      if (!is_symbol(call_lhs(e))) {
+	b = true;
+      } else {
+	OA_ptr<R_VarRef> f; f = m_fact->make_arg_var_ref(call_lhs(e));
+	b = m_in->lookup(f);
+      }
+      
+      OA_ptr<MyDFSet> s; s = c;
+      SEXP arg_c;
+      for (arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
+	s = s->meet(nfresh(arg_c, c).s);
+      }
+      return make_pair(b, s);
+    }
   } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
-    // TODO
+    // TODO: refine analysis for the possibility of allocation due to copy-on-write
+    MyPair e1 = nfresh(struct_field_lhs_c(CAR(assign_lhs_c(e))), c);
+    MyPair e2 = nfresh(assign_rhs_c(e), c);
+    return make_pair(e2.b, e1.s->meet(e2.s));
   } else if (is_simple_assign(e) && is_local_assign(e)) {
-    // TODO
+    return make_pair(true, nfresh(assign_rhs_c(e), c).s);
   } else if (is_simple_assign(e) && is_free_assign(e)) {
-    // TODO
+    return nfresh(assign_rhs_c(e), c);
   } else {
     assert(0);
   }
 }
 
-std::pair<bool, OA_ptr<NameBoolDFSet> > VFreshDFSolver::vfresh_curly_list(SEXP e, OA_ptr<NameBoolDFSet> c) {
+MyPair VFreshDFSolver::nfresh_curly_list(SEXP e, OA_ptr<NameBoolDFSet> c) {
+  if (e == R_NilValue) {
+    return make_pair(false, c);
+  } else if (CDR(e) == R_NilValue) {
+    return nfresh(CAR(e), c);
+  } else {
+    return nfresh_curly_list(CDR(e), nfresh(CAR(e), c).s);
+  }
 }
 
 OA_ptr<NameBoolDFSet> VFreshDFSolver::make_universal() {
   OA_ptr<NameBoolDFSet> all; all = m_top->clone().convert<NameBoolDFSet>();
   all->setUniversal();
-  return all;
-  
+  return all;  
 }

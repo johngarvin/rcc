@@ -169,8 +169,9 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
      string body = arginit +
        "Rf_initialize_R(myargc, myargv);\n" +
        "setup_Rmainloop();\n" +
-       "SETJMP(R_Toplevel.cjmpbuf);\n" +
-       func_name + "();\n" +
+       "if (SETJMP(R_Toplevel.cjmpbuf) == 0) {" +
+       indent(func_name + "();\n") +
+       "}\n" +
        "end_Rmainloop();\n" +
        "return 0;\n";
      program += "\nint main(" + mainargs + ") \n{\n" + indent(body) + "}\n"; 

@@ -84,7 +84,7 @@ Expression SubexpBuffer::op_list(SEXP list, string rho, bool literal,
   for (i = 0; i < length; i++) {
     cars[i] = (literal ?
 	       op_literal(CAR(e), rho) :
-	       op_exp(list, rho, Unprotected, fullyEvaluatedResult));
+	       op_exp(e, rho, Unprotected, fullyEvaluatedResult));
     if (cars[i].dependence == DEPENDENT) {
       list_dep = DEPENDENT;
     }
