@@ -24,6 +24,8 @@
 
 #include "Defn.h"
 
+extern int global_dump_stats;
+
 /*  duplicate  -  object duplication  */
 
 /*  Because we try to maintain the illusion of call by
@@ -41,6 +43,9 @@
 #define DUPLICATE_ATOMIC_VECTOR(type, fun, to, from) do {\
   int __n__ = LENGTH(from);\
   PROTECT(from); \
+  if (global_dump_stats) {						\
+      fprintf(stderr, "Duplicating atomic vector\n");			\
+  }									\
   PROTECT(to = allocVector(TYPEOF(from), __n__)); \
   if (__n__ == 1) fun(to)[0] = fun(from)[0]; \
   else { \
@@ -88,6 +93,9 @@ SEXP duplicate(SEXP s)
 	return s;
     case CLOSXP:
 	PROTECT(s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating closure\n");
+	}
 	PROTECT(t = allocSExp(CLOSXP));
 	SET_FORMALS(t, FORMALS(s));
 	SET_BODY(t, BODY(s));
@@ -97,6 +105,9 @@ SEXP duplicate(SEXP s)
 	break;
     case RCC_CLOSXP:
 	PROTECT(s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating RCC closure\n");
+	}
 	PROTECT(t = allocSExp(RCC_CLOSXP));
 	RCC_CLOSXP_SET_FORMALS(t, RCC_CLOSXP_FORMALS(s));
 	RCC_CLOSXP_SET_FUN(t, RCC_CLOSXP_FUN(s));
@@ -106,8 +117,14 @@ SEXP duplicate(SEXP s)
 	break;
     case LISTSXP:
 	PROTECT(sp = s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating initial cons cell (LISTSXP)\n");
+	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
+	    if (global_dump_stats) {
+	      fprintf(stderr, "Duplicating cons cell (LISTSXP)\n");
+	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -119,8 +136,14 @@ SEXP duplicate(SEXP s)
 	break;
     case LANGSXP:
 	PROTECT(sp = s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating initial cons cell (LANGSXP)\n");
+	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
+	    if (global_dump_stats) {
+	      fprintf(stderr, "Duplicating cons cell (LANGSXP)\n");
+	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -134,8 +157,14 @@ SEXP duplicate(SEXP s)
 	break;
     case DOTSXP:
 	PROTECT(sp = s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating initial cons cell (DOTSXP)\n");
+	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
+	    if (global_dump_stats) {
+		fprintf(stderr, "Duplicating cons cell (DOTSXP)\n");
+	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -149,6 +178,9 @@ SEXP duplicate(SEXP s)
 	break;
     case CHARSXP:
 	PROTECT(s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating string\n");
+	}
 	PROTECT(t = allocString(strlen(CHAR(s))));
 	strcpy(CHAR(t), CHAR(s));
 	DUPLICATE_ATTRIB(t, s);
@@ -158,6 +190,9 @@ SEXP duplicate(SEXP s)
     case VECSXP:
 	n = LENGTH(s);
 	PROTECT(s);
+	if (global_dump_stats) {
+	  fprintf(stderr, "Duplicating generic vector\n");
+	}
 	PROTECT(t = allocVector(TYPEOF(s), n));
 	for(i = 0 ; i < n ; i++)
 	    SET_VECTOR_ELT(t, i, duplicate(VECTOR_ELT(s, i)));

@@ -611,6 +611,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options)
 {
     extern Rboolean global_stack_debug;
+    extern Rboolean global_dump_stats;
     SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
@@ -636,6 +637,14 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	formals = FORMALS(op);
 	body = BODY(op);
 	savedrho = CLOENV(op);
+    }
+
+    if (global_dump_stats) {
+	if (TYPEOF(CAR(call)) == SYMSXP) {
+	    fprintf(stderr, "Entering function %s\n", CHAR(PRINTNAME(CAR(call))));
+	} else {
+	    fprintf(stderr, "Entering function\n");
+	}
     }
 
     /*  Set up a context with the call in it so error has access to it */
@@ -847,7 +856,14 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     UNPROTECT(nprotect);
-    if (getAllocStackTop() != allocStackTop) error(_("Allocation stack imbalance"));
+    if (getAllocStackTop() != allocStackTop) {
+      error(_("Allocation stack imbalance"));
+    }
+    if (global_dump_stats) {
+      fprintf(stderr, "Returning from function: pointers returned: ");
+      printAllPointers(tmp);
+      fprintf(stderr, "\n");
+    }
     return (tmp);
 }
 
@@ -1833,6 +1849,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP expr, lhs, rhs, saverhs, tmp, tmp2;
     R_varloc_t tmploc;
     char buf[32];
+    extern Rboolean global_dump_stats;
 
     expr = CAR(args);
 
@@ -1903,6 +1920,11 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     expr = eval(expr, rho);
     UNPROTECT(5);
     unbindVar(R_TmpvalSymbol, rho);
+    if (global_dump_stats && (PRIMVAL(op)==0 || PRIMVAL(op)==2)) {
+	fprintf(stderr, "Nonlocal complex assignment: pointers: ");
+	printAllPointers(saverhs);
+	fprintf(stderr, "\n");
+    }
 #ifdef CONSERVATIVE_COPYING
     return duplicate(saverhs);
 #else
@@ -1927,6 +1949,7 @@ SEXP do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    extern Rboolean global_dump_stats;
     SEXP s;
     if (length(args) != 2)
 	WrongArgCount(asym[PRIMVAL(op)]);
@@ -1977,6 +2000,11 @@ SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    setVar(CAR(args), s, ENCLOS(rho));
 	    UNPROTECT(1);
 	    SET_NAMED(s, 1);
+	    if (global_dump_stats) {
+		fprintf(stderr, "Nonlocal assignment: pointers assigned: ");
+		printAllPointers(s);
+		fprintf(stderr, "\n");
+	    }
 	    return s;
 	}
 	else if (isLanguage(CAR(args)))

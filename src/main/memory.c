@@ -51,12 +51,94 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
 
-Rboolean global_dump_stats = FALSE;
+Rboolean global_dump_stats; /* = (getenv("R_DUMP_STATS") != NULL); */
+                            /* initialized in InitMemory()         */
+Rboolean global_stack_debug; /* = (getenv("R_STACK_DEBUG") != NULL) */
+                             /* initialized in InitMemory()         */
 Rboolean global_stack_info = FALSE;
-Rboolean global_stack_debug = FALSE;
 
-// when true, use heap allocation all the time as a fallback
+/* when true, use heap allocation all the time as a fallback */
 static Rboolean fallback_alloc = FALSE;
+
+/* for debugging: print pointers of an S-expression and all its
+   subfields. Only prints allocated expressions, not constants such as
+   R_NilValue. To avoid infinite loops, does not print components of
+   environments. */
+void printAllPointers(SEXP e)
+{
+  int i;
+  const int n_exclude = 6;
+
+  /* these don't count */
+  SEXP exclude[] = {R_NilValue, NA_STRING, R_UnboundValue, R_RestartToken, R_MissingArg, R_CommentSxp};
+  for (i = 0; i < n_exclude; i++) {
+    if (e == exclude[i]) {
+      return;
+    }
+  }
+  if (TYPEOF(e) == BUILTINSXP ||
+      TYPEOF(e) == SPECIALSXP)
+  {
+    return;
+  }
+  
+  fprintf(stderr, "0x%x ", e);
+  switch(TYPEOF(e)) {
+  case NILSXP:
+  case CHARSXP:
+  case LGLSXP:
+  case INTSXP:
+  case REALSXP:
+  case CPLXSXP:
+  case WEAKREFSXP:
+  case RAWSXP:
+  case RCC_FUNSXP:
+  case DOTSXP:
+  case SYMSXP:
+  case BCODESXP:
+    return;
+  case STRSXP:
+  case EXPRSXP:
+  case VECSXP:
+    for (i = 0; i < LENGTH(e); i++) {
+      printAllPointers(STRING_ELT(e, i));
+    }
+    break;
+  case ENVSXP:
+    /*
+    printAllPointers(FRAME(e));
+    printAllPointers(ENCLOS(e));
+    printAllPointers(HASHTAB(e));
+    */
+    break;
+  case CLOSXP:
+    printAllPointers(FORMALS(e));
+    printAllPointers(BODY(e));
+    printAllPointers(CLOENV(e));
+    break;
+  case RCC_CLOSXP:
+    printAllPointers(RCC_CLOSXP_FORMALS(e));
+    printAllPointers(RCC_CLOSXP_CLOENV(e));
+    break;
+  case PROMSXP:
+    printAllPointers(PRCODE(e));
+    printAllPointers(PRENV(e));
+    printAllPointers(PRVALUE(e));
+    break;
+  case LISTSXP:
+  case LANGSXP:
+    printAllPointers(TAG(e));
+    printAllPointers(CAR(e));
+    printAllPointers(CDR(e));
+    break;
+  case EXTPTRSXP:
+    printAllPointers(EXTPTR_PROT(e));
+    printAllPointers(EXTPTR_TAG(e));
+    break;
+  default:
+    error(_("printAllPointers: unrecognized type"));
+  }
+}
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
    as large as unsigned long.  Changed from int at 1.6.0 to (i) allow
@@ -1634,6 +1716,8 @@ void InitMemory()
     pushAllocStack(NULL, -1, &allocVectorHeap, &allocNodeHeap);
     /* default allocator uses the regular old heap */
     fallback_alloc = FALSE;
+    global_dump_stats = (getenv("R_DUMP_STATS") != NULL);
+    global_stack_debug = (getenv("R_STACK_DEBUG") != NULL);
 }
 
 /* Since memory allocated from the heap is non-moving, R_alloc just
@@ -1725,8 +1809,8 @@ void pushAllocStack(SEXP space,
 {
     AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
     elem->valid = TRUE;
-    elem->size = size;
-    elem->space = space;
+    elem->size = elem->original_size = size;
+    elem->space = elem->stack = space;
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
     elem->next = allocStackTop;
@@ -1742,7 +1826,8 @@ void popAllocStack()
     } else {
 	AllocStack * temp = allocStackTop;
 	if (global_stack_debug) {
-	    memset(temp->space, 0xfa, temp->size);
+	    // if debugging, fill deallocated space with garbage
+	    memset(temp->stack, 0xfa, temp->original_size);
 	}
 	allocStackTop = temp->next;
 	if (allocStackCurrent == temp) {
@@ -1801,7 +1886,7 @@ SEXP allocSExp(SEXPTYPE t)
     SEXP protect_on_gc[1] = {NULL};
     if (global_dump_stats) fprintf(stderr, "Alloc: SEXP type %u ", t);
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(s, t);
     CAR(s) = R_NilValue;
@@ -1831,8 +1916,6 @@ static SEXP allocSExpNonConsHeap()
 {
     SEXP s;
 
-    if (global_dump_stats) fprintf(stderr, "Alloc: allocSExpNonConsHeap %u bytes\n", sizeof(SEXPREC));
-
     if (FORCE_GC || NO_FREE_NODES()) {
 	R_gc_internal(0);
 	if (NO_FREE_NODES())
@@ -1856,7 +1939,7 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
     SEXP protect_on_gc[1] = {NULL};
     if (global_dump_stats) fprintf(stderr, "Alloc: SEXP non-cons type %u ", t);
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);
     allocSExpNonConsInPlace(t, s);
     return s;
 }
@@ -1891,7 +1974,7 @@ SEXP cons(SEXP car, SEXP cdr)
 
     if (global_dump_stats) fprintf(stderr, "Alloc: cons "); 
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);
     consInPlace(car, cdr, s);
     return s;
 }
@@ -1900,8 +1983,7 @@ SEXP consHeap(SEXP car, SEXP cdr)
 {
     SEXP s;
     
-    if (global_dump_stats) fprintf(stderr, "Alloc: consHeap %u bytes\n", sizeof(SEXPREC));
-
+    if (global_dump_stats) fprintf(stderr, "Alloc: consHeap %u bytes ", sizeof(SEXPREC));
     if (FORCE_GC || NO_FREE_NODES()) {
 	PROTECT(car);
 	PROTECT(cdr);
@@ -1912,6 +1994,7 @@ SEXP consHeap(SEXP car, SEXP cdr)
     }
     GET_FREE_NODE(s);
     CDR(s) = cdr;     /* so that we can connect cells */
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);
     return s;
 }
 
@@ -1984,7 +2067,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     SEXP protect_on_gc[4] = {namelist, valuelist, rho, NULL};
     if (global_dump_stats) fprintf(stderr, "Alloc: environment ");
     newrho = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", newrho);
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(newrho) = ENVSXP;
     FRAME(newrho) = valuelist;
@@ -2021,7 +2104,7 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
     SEXP protect_on_gc[3] = {expr, rho, NULL};
     if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "\n");    
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);    
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = PROMSXP;
     PRCODE(s) = expr;
@@ -2052,10 +2135,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     if (type == NILSXP) {
 	return R_NilValue;
     }
-    
     if (global_dump_stats) fprintf(stderr, "Alloc: vector type %u length %u ", type, length);
     s = allocStackCurrent->allocateVector(allocStackCurrent, type, length);
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", s);
     allocVectorInPlace(type, length, s);
     return s;
 }
@@ -2336,7 +2418,6 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	if (node_class < NUM_SMALL_NODE_CLASSES) {
 
 	    if (global_dump_stats) fprintf(stderr, "vector heap %u bytes ", NODE_SIZE(node_class));
-
 	    CLASS_GET_FREE_NODE(node_class, s);      /* alloc */
 	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	    SET_NODE_CLASS(s, node_class);
@@ -2682,41 +2763,17 @@ SEXP allocList(int n)
 	result = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
 	CDR(result) = prev_result;
     }
-    if (global_dump_stats) fprintf(stderr, "\n");
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", result);
     allocListInPlace(result);
     return result;
 }
-
-#if 0
-for reference
-
-SEXP consHeap(SEXP car, SEXP cdr)
-{
-    SEXP s;
-    
-    if (global_dump_stats) fprintf(stderr, "Alloc: consHeap %u bytes\n", sizeof(SEXPREC));
-
-    if (FORCE_GC || NO_FREE_NODES()) {
-	PROTECT(car);
-	PROTECT(cdr);
-	R_gc_internal(0);
-	UNPROTECT(2);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
-    GET_FREE_NODE(s);
-    CDR(s) = cdr;     /* so that we can connect cells */
-    return s;
-}
-#endif
 
 SEXP allocListHeap(int n)
 {
     int i;    
     SEXP result, s;
 
-    if (global_dump_stats) fprintf(stderr, "Alloc: allocListHeap %u cells %u bytes\n", n, sizeof(SEXPREC));
-
+    if (global_dump_stats) fprintf(stderr, "Alloc: allocListHeap %u cells %u bytes ", n, sizeof(SEXPREC));
     result = R_NilValue;
     for (i = 0; i < n; i++) {
       if (FORCE_GC || NO_FREE_NODES()) {
@@ -2730,6 +2787,7 @@ SEXP allocListHeap(int n)
       CDR(s) = result;     /* so that we can connect cells */
       result = s;
     }
+    if (global_dump_stats) fprintf(stderr, "0x%x\n", result);
     return result;
 }
 

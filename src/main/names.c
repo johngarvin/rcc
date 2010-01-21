@@ -94,7 +94,7 @@ FUNTAB R_FunTab[] =
 
 /* printname	c-entry		offset	eval	arity	points	escape	pp-kind	precedence	rightassoc
  * ---------	-------		------	----	-----	------	------	------- ----------	----------*/
-{"if",		CF(do_if),	0,	0,	-1,	-1,	-1,	{PP_IF,	     PREC_FN,	  1}},
+{"if",		CF(do_if),	0,	0,	-1,	0x3,	0x0,	{PP_IF,	     PREC_FN,	  1}},
 {"while",	CF(do_while),	0,	0,	-1,	-1,	-1,	{PP_WHILE,   PREC_FN,	  0}},
 {"for",		CF(do_for),	0,	0,	-1,	-1,	-1,	{PP_FOR,     PREC_FN,	  0}},
 {"repeat",	CF(do_repeat),	0,	0,	-1,	-1,	-1,	{PP_REPEAT,  PREC_FN,	  0}},
