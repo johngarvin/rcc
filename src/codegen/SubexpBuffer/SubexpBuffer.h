@@ -138,7 +138,7 @@ public:
   Expression op_var_def(SEXP cell, std::string rhs, std::string rho);
   Expression op_primsxp(SEXP e, std::string rho);
   Expression op_symlist(SEXP e, std::string rho);
-  Expression op_lang(SEXP e, std::string rho, Protection resultProtection,
+  Expression op_lang(SEXP cell, std::string rho, Protection resultProtection,
 		    ResultStatus resultStatus = ResultNeeded); 
   Expression op_promise(SEXP e);
   Expression op_begin(SEXP exp, std::string rho,
@@ -152,16 +152,17 @@ public:
 			  ResultStatus resultStatus = ResultNeeded);
   Expression op_while(SEXP e, std::string rho);
   Expression op_return(SEXP e, std::string rho);
+  Expression op_struct_field(SEXP e, SEXP op, std::string rho, Protection resultProtection);
   Expression op_break(SEXP e, std::string rho);
   Expression op_fundef(SEXP e, std::string rho, Protection resultProtection);
-  Expression op_special(SEXP e, SEXP op, std::string rho, 
+  Expression op_special(SEXP cell, SEXP op, std::string rho, 
 			Protection resultProtection,
 			ResultStatus resultStatus = ResultNeeded); 
   Expression op_builtin(SEXP e, SEXP op, std::string rho, 
 			Protection resultProtection);
-  Expression op_set(SEXP e, SEXP op, std::string rho,
+  Expression op_set(SEXP cell, SEXP op, std::string rho,
 		    Protection resultProtection);
-  Expression op_subscriptset(SEXP e, std::string rho, 
+  Expression op_subscriptset(SEXP cell, std::string rho, 
 			     Protection resultProtection);
   Expression op_clos_app(RAnnot::FuncInfo * fi_if_known,
 			 Expression op1,

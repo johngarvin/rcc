@@ -22,9 +22,9 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/NameBoolDFSet.h>
 #include <analysis/VFreshDFSolver.h>
 #include <analysis/VarRefFactory.h>
 
@@ -34,7 +34,7 @@ using namespace RAnnot;
 using namespace OA;
 using OA::DataFlow::DataFlowSet;
 
-typedef NameBoolDFSet MyDFSet;
+typedef ExpressionDFSet MyDFSet;
 
 MFreshCGSolver::MFreshCGSolver()
   : m_solved(false)
@@ -75,15 +75,7 @@ OA_ptr<DataFlowSet> MFreshCGSolver::initializeTop()
   RAnnot::FuncInfo * fi;
   RAnnot::Var * m;
   VarRefFactory * const fact = VarRefFactory::get_instance();
-  m_top = new MyDFSet();
-  
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_MENTION(fi, m) {
-      OA_ptr<MyDFSet::NameBoolPair> element;
-      element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
-      m_top->insert(element);
-    }
-  }
+  m_top = new MyDFSet();  // empty
   return m_top; 
 }
 
@@ -155,10 +147,10 @@ OA_ptr<DataFlowSet>  MFreshCGSolver::atCallGraphNode(
 				     OA_ptr<DataFlowSet> inSetOrig,
 				     OA::ProcHandle proc)
 {
-  OA_ptr<NameBoolDFSet> inSet; inSet = inSetOrig.convert<NameBoolDFSet>();
+  OA_ptr<ExpressionDFSet> inSet; inSet = inSetOrig.convert<ExpressionDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
   VFreshDFSolver vfresh_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameBoolDFSet> vfresh; vfresh = vfresh_solver.perform_analysis(proc, fi->get_cfg(), inSet);
+  OA_ptr<ExpressionDFSet> vfresh; vfresh = vfresh_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   return vfresh.convert<DataFlowSet>();
 }
  

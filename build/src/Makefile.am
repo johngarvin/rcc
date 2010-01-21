@@ -66,6 +66,8 @@ rcc_bin_SOURCES =				\
   EscapedCGSolver.h                             \
   EscapedDFSolver.cc                            \
   EscapedDFSolver.h                             \
+  ExpressionDFSet.cc                            \
+  ExpressionDFSet.h                             \
   ExpressionInfo.cc                             \
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
@@ -215,6 +217,7 @@ rcc_bin_SOURCES =				\
   op_set.cc					\
   op_special.cc					\
   op_string.cc					\
+  op_struct_field.cc                            \
   op_subscriptset.cc				\
   op_var_use.cc					\
   op_var_def.cc					\

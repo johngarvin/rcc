@@ -26,23 +26,19 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <analysis/ExpressionDFSet.h>
+#include <analysis/NameBoolDFSet.h>
 #include <analysis/VarRefFactory.h>
 
 class OA::CFG::CFGInterface;
 namespace OA { namespace DataFlow { class CFGDFSolver; } }
 class R_IRInterface;
-namespace RAnnot { class FuncInfo; }
 
 class ReturnedDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit ReturnedDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~ReturnedDFSolver();
-  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
+  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
 					     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
-  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
-					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
-					     OA::OA_ptr<ExpressionDFSet> in_set);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -67,22 +63,52 @@ private:
   /// intraprocedural
   OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
 						 OA::StmtHandle stmt);
+  
+  /// interprocedural
+  //! OK to modify in set and return it again as result because
+  //! solver clones the BB in sets. Proc is procedure that
+  //! contains the statement.
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::ProcHandle proc,
+						 OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
+						 OA::StmtHandle stmt); 
 
-  OA::OA_ptr<ExpressionDFSet> ret(SEXP cell, bool b, OA::OA_ptr<ExpressionDFSet> c);
-  OA::OA_ptr<ExpressionDFSet> ret_curly_list(SEXP cell, bool b, OA::OA_ptr<ExpressionDFSet> c);
-  OA::OA_ptr<ExpressionDFSet> make_universal_set();
-  OA::OA_ptr<ExpressionDFSet> conservative_call(SEXP e, OA::OA_ptr<ExpressionDFSet> in);
+  //! transfer function for the entry node of the given procedure
+  //! should manipulate incoming data-flow set in any special ways
+  //! for procedure and return outgoing data-flow set for node
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> entryTransfer(OA::ProcHandle proc,
+						      OA::OA_ptr<OA::DataFlow::DataFlowSet> in);
 
+  //! transfer function for the exit node of the given procedure
+  //! should manipulate outgoing data-flow set in any special ways
+  //! for procedure and return incoming data-flow set for node
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> exitTransfer(OA::ProcHandle proc,
+						     OA::OA_ptr<OA::DataFlow::DataFlowSet> out);
+
+  //! Propagate a data-flow set from caller to callee
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> callerToCallee(OA::ProcHandle caller,
+						       OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
+						       OA::CallHandle call,
+						       OA::ProcHandle callee);
+  
+  //! Propagate a data-flow set from callee to caller
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> calleeToCaller(OA::ProcHandle callee,
+						       OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
+						       OA::CallHandle call,
+						       OA::ProcHandle caller);
+
+  // MMA
+  //! Propagate a data-flow set from call node to return node
+  OA::OA_ptr<OA::DataFlow::DataFlowSet> callToReturn(OA::ProcHandle caller,
+						     OA::OA_ptr<OA::DataFlow::DataFlowSet> dfset,
+						     OA::CallHandle call,
+						     OA::ProcHandle callee);
 
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<ExpressionDFSet> m_top;
-  OA::OA_ptr<ExpressionDFSet> m_in;
+  OA::OA_ptr<NameBoolDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
-  VarRefFactory * const m_fact;
-  RAnnot::FuncInfo * m_func_info;
 };
 
 #endif

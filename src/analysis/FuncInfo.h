@@ -206,18 +206,18 @@ private:
   std::set<SEXP> m_returns;  // implicit return statements
 };
 
-class FuncInfoChildIterator: public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {
+class FuncInfoChildIterator : public NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo> {
 public:
-  explicit FuncInfoChildIterator(const FuncInfo *fi, bool firstToLast = true) :
+  explicit FuncInfoChildIterator(const FuncInfo * fi, bool firstToLast = true) :
     NonUniformDegreeTreeNodeChildIteratorTmpl<FuncInfo>(fi, firstToLast) {};
 };
 
-class FuncInfoIterator: public NonUniformDegreeTreeIteratorTmpl<FuncInfo> {
+class FuncInfoIterator : public NonUniformDegreeTreeIteratorTmpl<FuncInfo> {
 public:
-  explicit FuncInfoIterator(const FuncInfo* fi, TraversalOrder torder = PreOrder,
+  explicit FuncInfoIterator(const FuncInfo * fi, TraversalOrder torder = PreOrder,
 			    NonUniformDegreeTreeEnumType how =
-			    NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES) :
-    NonUniformDegreeTreeIteratorTmpl<FuncInfo>(fi, torder, how) {};
+			    NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES);
+  
 };
 
 }

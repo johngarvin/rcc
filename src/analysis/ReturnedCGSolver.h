@@ -120,7 +120,7 @@ public:
 private:
   bool m_solved;
   OA::OA_ptr<OA::DataFlow::CallGraphDFSolver> m_solver;
-  OA::OA_ptr<NameBoolDFSet> m_top;
+  OA::OA_ptr<ExpressionDFSet> m_top;
 };
 
 #endif

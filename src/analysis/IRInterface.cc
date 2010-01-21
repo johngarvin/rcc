@@ -60,6 +60,8 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
+static bool debug = false;
+
 static OA_ptr<MemRefExprIterator> make_singleton_mre_iterator(OA_ptr<MemRefExpr> mre);
 
 //--------------------------------------------------------
@@ -1037,6 +1039,10 @@ R_IRProgramCallsiteIterator::R_IRProgramCallsiteIterator(StmtHandle _h)
   // In the ExpressionInfo's call sites, collect only non-internal calls
   EXPRESSION_FOR_EACH_CALL_SITE(m_annot, csi_c) {
     if (is_var(call_lhs(CAR(csi_c))) && !is_library(call_lhs(CAR(csi_c)))) {
+      if (debug) {
+	std::cout << "ProgramCallsiteIterator: adding call site ";
+	Rf_PrintValue(CAR(csi_c));
+      }
       m_program_call_sites.push_back(csi_c);
     }
   }
@@ -1077,6 +1083,9 @@ R_ProcHandleIterator::~R_ProcHandleIterator() {
 }
 
 ProcHandle R_ProcHandleIterator::current() const {
+  assert(m_fii->IsValid());
+  assert(m_fii->Current() != 0);
+  assert(m_fii->Current()->get_sexp() != 0);
   return make_proc_h(m_fii->Current()->get_sexp());
 }
 

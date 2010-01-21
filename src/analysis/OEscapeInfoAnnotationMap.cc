@@ -34,13 +34,13 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/EscapedCGSolver.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/NameBoolDFSet.h>
+#include <analysis/MFreshCGSolver.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/OEscapeDFSolver.h>
 #include <analysis/OEscapeInfo.h>
-#include <analysis/MFreshCGSolver.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/ReturnedCGSolver.h>
 #include <analysis/ReturnedDFSolver.h>
@@ -48,6 +48,7 @@
 #include <analysis/Var.h>
 #include <analysis/VarInfo.h>
 #include <analysis/VarBinding.h>
+#include <analysis/VFreshDFSolver.h>
 
 #include "OEscapeInfoAnnotationMap.h"
 
@@ -93,17 +94,22 @@ void OEscapeInfoAnnotationMap::compute() {
   SSA::ManagerStandard ssa_man(interface);
   OA_ptr<CFG::CFGInterface> cfg;
   OA_ptr<SSA::SSAStandard> ssa;
-  OA_ptr<CallGraph::NodeInterface> node; 
-  OA_ptr<NameBoolDFSet> returned; 
-  OA_ptr<NameBoolDFSet> escaped;
-  OA_ptr<NameBoolDFSet> nfresh;
-  OA_ptr<NameBoolDFSet> oe;
-  OA_ptr<NameBoolDFSet::NameBoolDFSetIterator> iter;
-  OA_ptr<CallGraph::NodesIteratorInterface> cg_iter; 
+  OA_ptr<CallGraph::NodeInterface> cg_node;
+  OA_ptr<ExpressionDFSet> returned; 
+  OA_ptr<ExpressionDFSet> escaped;
+  OA_ptr<ExpressionDFSet> nmfresh;
+  OA_ptr<ExpressionDFSet> nvfresh;
+  //  OA_ptr<ExpressionDFSet> oe;
+  OA_ptr<ExpressionDFSet::ExpressionDFSetIterator> iter;
+  OA_ptr<CallGraph::NodesIteratorInterface> cg_iter;
 
   // use call graph to get interprocedural data
   OA_ptr<OA::CallGraph::CallGraphInterface> call_graph;
   call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
+  if (debug) {
+    std::cout << "Call graph annotation map:\n";
+    RAnnot::OACallGraphAnnotationMap::get_instance()->dump(std::cout);
+  }
   ReturnedCGSolver * ret_problem = new ReturnedCGSolver();
   ret_problem->perform_analysis(call_graph, DataFlow::ITERATIVE);
   EscapedCGSolver * esc_problem = new EscapedCGSolver();
@@ -114,36 +120,58 @@ void OEscapeInfoAnnotationMap::compute() {
   // get intraprocedural data for each procedure in call graph
   cg_iter = call_graph->getCallGraphNodesIterator();
   for(cg_iter->reset(); cg_iter->isValid(); ++*cg_iter) {
-    node = cg_iter->currentCallGraphNode();
-    proc = node->getProc();
-    cfg = getProperty(FuncInfo, HandleInterface::make_sexp(proc))->get_cfg();
-    ssa = ssa_man.performAnalysis(proc, cfg);
-    returned = ret_problem->getOutSet(node).convert<NameBoolDFSet>();
-    escaped = esc_problem->getOutSet(node).convert<NameBoolDFSet>();
-    nfresh = mfresh_problem->getOutSet(node).convert<NameBoolDFSet>();
+    cg_node = cg_iter->currentCallGraphNode();
+    proc = cg_node->getProc();
+    FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+    cfg = fi->get_cfg();
+    //    ssa = ssa_man.performAnalysis(proc, cfg);
+
+    returned = ret_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+    escaped = esc_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+    nmfresh = mfresh_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+    VFreshDFSolver * nvfresh_problem = new VFreshDFSolver(interface);
+    nvfresh = nvfresh_problem->perform_analysis(proc, cfg);
+
     if (debug) {
       std::cout << "OEscape info:" << std::endl;
-      FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
       std::cout << var_name(CAR(fi->get_first_name_c())) << std::endl;
       std::cout << "Returned:" << std::endl;
       returned->dump(std::cout);
       std::cout << "Escaped:" << std::endl;
       escaped->dump(std::cout);
-      std::cout << "NFresh:" << std::endl;
-      nfresh->dump(std::cout);
+      std::cout << "NMFresh:" << std::endl;
+      nmfresh->dump(std::cout);
+      std::cout << "NVFresh:" << std::endl;
+      nvfresh->dump(std::cout);
     }
-    OEscapeDFSolver * oe_solver = new OEscapeDFSolver(interface);
-    oe = oe_solver->perform_analysis(proc, cfg);
-    for (iter = oe->getIterator(); iter->isValid(); ++*iter) {
-      bool ret = returned->lookup(iter->current()->getName());
-      bool esc = escaped->lookup(iter->current()->getName());
-      bool nf = nfresh->lookup(iter->current()->getName());
-      if (ret || esc || nf) {
-	// may escape
-	get_map()[iter->current()->getName()->get_name()] = new OEscapeInfo(true);
-      } else {
-	// does not escape
-	get_map()[iter->current()->getName()->get_name()] = new OEscapeInfo(false);
+
+    //    OEscapeDFSolver * oe_solver = new OEscapeDFSolver(interface);
+    //    oe = oe_solver->perform_analysis(proc, cfg);
+    //    for (iter = oe->getIterator(); iter->isValid(); ++*iter) {
+    OA_ptr<CFG::NodeInterface> node;
+    StmtHandle stmt;
+    PROC_FOR_EACH_NODE(fi, node) {
+      NODE_FOR_EACH_STATEMENT(node, stmt) {
+	ExpressionInfo * ei; ei = getProperty(ExpressionInfo, HandleInterface::make_sexp(stmt));
+	SEXP cs;
+	EXPRESSION_FOR_EACH_CALL_SITE(ei, cs) {
+	  bool ret = returned->lookup(cs);
+	  bool esc = escaped->lookup(cs);
+	  bool nf = nvfresh->lookup(cs);
+	  if (debug) {
+	    std::cout << "{Call site: ";
+	    printf("%x ", cs);
+	    Rf_PrintValue(CAR(cs));
+	    std::cout << "(ret = " << ret << ", esc = " << esc << ", nf = " << nf << ")}\n";
+	  }
+	  if (ret || esc || nf) {
+	    // may escape
+	    get_map()[cs] = new OEscapeInfo(true);
+	  } else {
+	    // does not escape
+	    get_map()[cs] = new OEscapeInfo(false);
+	  }
+	}
       }
     }
   }

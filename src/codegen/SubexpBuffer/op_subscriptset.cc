@@ -31,14 +31,17 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/OEscapeInfo.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/Utils.h>
 #include <support/StringUtils.h>
 
 #include <Visibility.h>
 
 using namespace std;
+using namespace RAnnot;
 
-Expression SubexpBuffer::op_subscriptset(SEXP e, string rho, 
+Expression SubexpBuffer::op_subscriptset(SEXP cell, string rho, 
 					 Protection resultProtection)
 {
   // The interpreter handles subscript assignments A[B] <- C in the
@@ -65,6 +68,8 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   // call our version of the "[<-" operator (rcc_subassign), and
   // assign the result to A.
 
+  SEXP e = CAR(cell);
+  string fallback = "INVALID";
   string subassign;
   Expression s;
   SEXP lhs = CAR(assign_lhs_c(e));
@@ -75,6 +80,14 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
   Expression r = op_exp(assign_rhs_c(e), rho);
   if (!a.del_text.empty()) unprotcnt++;
   if (!r.del_text.empty()) unprotcnt++;
+  //  bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+  bool may_escape = true;
+  if (may_escape) {
+    fallback = new_var_unp();
+    append_decls("Rboolean " + fallback + ";\n");
+    append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+    append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+  }
   switch(Rf_length(subscript_subs(lhs))) {
   case 0:
     s = Expression::bogus_exp;
@@ -91,6 +104,9 @@ Expression SubexpBuffer::op_subscriptset(SEXP e, string rho,
     if (!s.del_text.empty()) unprotcnt++;
     subassign = appl3("rcc_subassign_cons", to_string(e), a.var, s.var, r.var, Unprotected);
     break;
+  }
+  if (may_escape) {
+    append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
   }
   // the result of the subassign is unprotected because it is
   // immediately protected by the following defineVar

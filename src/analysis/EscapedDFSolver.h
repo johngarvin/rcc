@@ -27,7 +27,7 @@
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 
-#include <analysis/NameBoolDFSet.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/VarRefFactory.h>
 
 class R_IRInterface;
@@ -38,18 +38,17 @@ namespace OA {
   }
 }
 
-
 class EscapedDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit EscapedDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~EscapedDFSolver();
-  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
+  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
 					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
-					     OA::OA_ptr<NameBoolDFSet> returned);
-  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
+					     OA::OA_ptr<ExpressionDFSet> returned);
+  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
 					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
-					     OA::OA_ptr<NameBoolDFSet> returned,
-					     OA::OA_ptr<NameBoolDFSet> in_set);
+					     OA::OA_ptr<ExpressionDFSet> returned,
+					     OA::OA_ptr<ExpressionDFSet> in_set);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -75,17 +74,17 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet>
   transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, OA::StmtHandle stmt); 
   
-  OA::OA_ptr<NameBoolDFSet> esc(SEXP e, bool b, OA::OA_ptr<NameBoolDFSet> c);
-  OA::OA_ptr<NameBoolDFSet> esc_curly_list(SEXP e, bool b, OA::OA_ptr<NameBoolDFSet> c);
-  OA::OA_ptr<NameBoolDFSet> make_universal();
-  
+  OA::OA_ptr<ExpressionDFSet> esc(SEXP e, bool b, OA::OA_ptr<ExpressionDFSet> c);
+  OA::OA_ptr<ExpressionDFSet> esc_curly_list(SEXP e, bool b, OA::OA_ptr<ExpressionDFSet> c);
+  OA::OA_ptr<ExpressionDFSet> make_universal();
+  OA::OA_ptr<ExpressionDFSet> conservative_call(SEXP e, OA::OA_ptr<ExpressionDFSet> in);
 
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<NameBoolDFSet> m_top;
-  OA::OA_ptr<NameBoolDFSet> m_returned;
+  OA::OA_ptr<ExpressionDFSet> m_top;
+  OA::OA_ptr<ExpressionDFSet> m_returned;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
   VarRefFactory * const m_fact;
   RAnnot::FuncInfo * m_func_info;

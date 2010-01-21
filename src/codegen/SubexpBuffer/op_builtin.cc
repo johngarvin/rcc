@@ -25,6 +25,7 @@
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <string>
+#include <cassert>
 
 #include <codegen/SubexpBuffer/SubexpBuffer.h>
 #include <codegen/SubexpBuffer/SplitSubexpBuffer.h>
@@ -33,6 +34,9 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Settings.h>
+#include <analysis/OEscapeInfo.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
+#include <analysis/Utils.h>
 
 #include <support/StringUtils.h>
 
@@ -44,6 +48,7 @@
 #include <Visibility.h>
 
 using namespace std;
+using namespace RAnnot;
 
 bool is_constant_expr(SEXP s) {
   switch(TYPEOF(s)) {
@@ -58,18 +63,24 @@ bool is_constant_expr(SEXP s) {
   return false;
 }
 
-Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho, 
+Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho, 
 				    Protection resultProtection)
 {
   Metrics::get_instance()->inc_builtin_calls();
 
+  string fallback = "INVALID";
   string out;
 #ifdef USE_OUTPUT_CODEGEN
   Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
 #else
   Expression op1 = ParseInfo::global_constants->op_primsxp(op, rho);
 #endif
+  assert(is_cons(cell));
+  SEXP e = CAR(cell);
   SEXP args = CDR(e);
+
+  bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+
   // special case for arithmetic operations
   if (PRIMFUN(op) == (CCODE)do_arith && Settings::get_instance()->get_special_case_arithmetic()) {
 
@@ -114,8 +125,17 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       // pass true as 4th arg here: R_binary needs args already evaluated
       Expression x = op_exp(args, rho, xprot, true);
       Expression y = op_exp(CDR(args), rho, Unprotected, true);
+      if (may_escape) {
+	fallback = new_var_unp();
+	append_decls("Rboolean " + fallback + ";\n");
+	append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+	append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+      }
       out = appl4("R_binary", to_string(e), "R_NilValue", op1.var, x.var, y.var, 
 		  Unprotected);
+      if (may_escape) {
+	append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+      }
       int unprotcnt = 0;
       if (!x.del_text.empty()) unprotcnt++;
       if (!y.del_text.empty()) unprotcnt++;
@@ -139,7 +159,16 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
       // pass true to op_exp to evaluate arguments
       Expression x = op_exp(args, rho, xprot, true);
       Expression y = op_exp(CDR(args), rho, Unprotected, true);
+      if (may_escape) {
+	fallback = new_var_unp();
+	append_decls("Rboolean " + fallback + ";\n");
+	append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+	append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+      }
       out = appl4("do_relop_dflt", to_string(e), "R_NilValue", op1.var, x.var, y.var, Unprotected);
+      if (may_escape) {
+	append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+      }
       int unprotcnt = 0;
       if (!x.del_text.empty()) unprotcnt++;
       if (!y.del_text.empty()) unprotcnt++;
@@ -164,12 +193,21 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #endif
     // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?
+    if (may_escape) {
+      fallback = new_var_unp();
+      append_decls("Rboolean " + fallback + ";\n");
+      append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+      append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+    }
     out = appl4("do_transpose_osr",
 		"op_builtin (transpose osr): " + to_string(e),
 		"R_NilValue ",
 		op1.var,
 		args1.var,
 		rho, Unprotected);
+    if (may_escape) {
+      append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+    }
     int unprotcnt = 0;
     if (!args1.del_text.empty()) unprotcnt++;
     if (unprotcnt > 0) 
@@ -194,12 +232,21 @@ Expression SubexpBuffer::op_builtin(SEXP e, SEXP op, string rho,
 #endif
     // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?
+    if (may_escape) {
+      fallback = new_var_unp();
+      append_decls("Rboolean " + fallback + ";\n");
+      append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+      append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+    }
     out = appl4(get_name(PRIMOFFSET(op)),
 		"op_builtin: " + to_string(e),
 		"R_NilValue ",
 		op1.var,
 		args1.var,
 		rho, Unprotected);
+    if (may_escape) {
+      append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+    }
     int unprotcnt = 0;
     if (!args1.del_text.empty()) unprotcnt++;
     if (unprotcnt > 0) 

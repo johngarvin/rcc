@@ -27,6 +27,7 @@
 #include <OpenAnalysis/DataFlow/CFGDFSolver.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/NameMentionMultiMap.h>
 #include <analysis/OEscapeDFSet.h>
 #include <analysis/VarRefFactory.h>
@@ -40,7 +41,7 @@ class OEscapeDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit OEscapeDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~OEscapeDFSolver();
-  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
 
   // ----- debugging -----
   void dump_node_maps();
@@ -68,7 +69,7 @@ private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<NameBoolDFSet> m_top;
+  OA::OA_ptr<ExpressionDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
 };
 

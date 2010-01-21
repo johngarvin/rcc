@@ -75,7 +75,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
     // the value is conveniently stored in the symbol, so we can just grab it
     // redefinition of specials is forbidden, so no need to check call graph
     if (is_library(call_lhs(e)) && TYPEOF(library_value(call_lhs(e))) == SPECIALSXP) {
-      return op_special(e, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
+      return op_special(cell, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
 
     if (Settings::get_instance()->get_call_graph()) {
@@ -181,7 +181,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     return sb->op_clos_app(0, func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
-    return sb->op_builtin(e, op, rho, resultProtection);
+    return sb->op_builtin(cell, op, rho, resultProtection);
   } else {
     rcc_error("Internal error: LANGSXP encountered non-function op");
     return Expression::bogus_exp;

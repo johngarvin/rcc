@@ -433,6 +433,11 @@ PropertyHndlT FuncInfo::handle() {
   return FuncInfoAnnotationMap::handle();
 }
 
-}
+FuncInfoIterator::FuncInfoIterator(const FuncInfo * fi, TraversalOrder torder, NonUniformDegreeTreeEnumType how)
+  : NonUniformDegreeTreeIteratorTmpl<FuncInfo>(fi, torder, how)
+{}
+
+} // namespace RAnnot
 
 const OA_ptr<CFG::NodeInterface> RAnnot::FuncInfo::iterator_dummy_node = OA_ptr<CFG::Node>();
+

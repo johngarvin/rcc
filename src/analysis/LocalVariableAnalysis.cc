@@ -107,6 +107,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   } else if (is_struct_field(e)) {
     build_ud_rhs(CDR(e), Var::Var_MUST);
   } else if (is_subscript(e)) {
+    m_call_sites.push_back(cell);
     build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST);
     for (SEXP sub_c = subscript_first_sub_c(e); sub_c != R_NilValue; sub_c = CDR(sub_c)) {
       build_ud_rhs(sub_c, Var::Var_MUST);
@@ -124,6 +125,8 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     // TODO
     // currently this case cannot happen
   } else if (is_while(e)) {
+    // TODO: don't add to call sites once while is handled specially
+    m_call_sites.push_back(cell);
     build_ud_rhs(while_cond_c(e), Var::Var_MUST);
   } else if (is_repeat(e)) {
     // ignore

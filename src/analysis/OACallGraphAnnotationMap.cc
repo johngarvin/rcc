@@ -41,6 +41,8 @@
 
 #include "OACallGraphAnnotationMap.h"
 
+static bool debug = false;
+
 using namespace OA;
 
 namespace RAnnot {
@@ -117,6 +119,14 @@ void OACallGraphAnnotationMap::compute() {
   OA_ptr<ProcHandleIterator> proc_iter;
   proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
   assert(!proc_iter.ptrEqual(0));
+  if (debug) {
+    std::cout << "procedures:\n";
+    for( ; proc_iter->isValid(); ++*proc_iter) {
+      Rf_PrintValue(HandleInterface::make_sexp(proc_iter->current()));
+    }
+    proc_iter->reset();
+  }
+
   // (2) alias information
   OA_ptr<Alias::ManagerFIAliasAliasTag> alias_man; alias_man = new Alias::ManagerFIAliasAliasTag(interface);
   OA_ptr<Alias::Interface> intra_alias; intra_alias = alias_man->performAnalysis(proc_iter);
@@ -125,6 +135,11 @@ void OACallGraphAnnotationMap::compute() {
   // build call graph
   m_call_graph = man.performAnalysis(proc_iter, intra_alias);
   
+  if (debug) {
+    std::cout << "Immediately after building call graph:" << std::endl;
+    m_call_graph->output(*interface);
+  }
+
   // now perform call graph data flow analysis (specifically, interprocedural side effect).
   // We need (3) param bindings and (4) intraprocedural side effect information
   SideEffect::ManagerInterSideEffectStandard solver(interface);

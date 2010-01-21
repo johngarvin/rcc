@@ -235,7 +235,8 @@ Output CodeGen::op_primsxp(SEXP e, string rho) {
   }  
 }
 
-Output CodeGen::op_lang(SEXP e, string rho) {
+Output CodeGen::op_lang(SEXP cell, string rho) {
+  SEXP e = CAR(cell);
   SEXP lhs = CAR(e);
   SEXP r_args = CDR(e);
   if (TYPEOF(lhs) == SYMSXP) {
@@ -258,7 +259,7 @@ Output CodeGen::op_lang(SEXP e, string rho) {
     } else {        // builtin function, special function, or library closure
       SEXP op = library_value(lhs);
       if (TYPEOF(op) == SPECIALSXP) {
-	return op_special(e, op, rho);
+	return op_special(cell, op, rho);
       } else if (TYPEOF(op) == BUILTINSXP) {
 	return op_builtin(e, op, rho);
       } else if (TYPEOF(op) == CLOSXP) {

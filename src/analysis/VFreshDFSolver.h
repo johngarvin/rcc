@@ -26,7 +26,7 @@
 #include <OpenAnalysis/Utils/OA_ptr.hpp>
 #include <OpenAnalysis/DataFlow/IRHandleDataFlowSet.hpp>
 
-#include <analysis/NameBoolDFSet.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/VarRefFactory.h>
 
 class OA::CFG::CFGInterface;
@@ -38,17 +38,17 @@ class VFreshDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   struct MyPair {
     bool b;
-    OA::OA_ptr<NameBoolDFSet> s;
+    OA::OA_ptr<ExpressionDFSet> s;
   };
 
   explicit VFreshDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~VFreshDFSolver();
-  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
-					     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
-  OA::OA_ptr<NameBoolDFSet> perform_analysis(OA::ProcHandle proc,
-					     OA::OA_ptr<OA::CFG::CFGInterface> cfg,
-					     OA::OA_ptr<NameBoolDFSet> in_set);
-
+  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
+					       OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,
+					       OA::OA_ptr<OA::CFG::CFGInterface> cfg,
+					       OA::OA_ptr<ExpressionDFSet> in_set);
+  
   // ----- debugging -----
   void dump_node_maps();
   void dump_node_maps(std::ostream &os);
@@ -71,17 +71,17 @@ private:
   OA::OA_ptr<OA::DataFlow::DataFlowSet> transfer(OA::OA_ptr<OA::DataFlow::DataFlowSet> in, 
 						 OA::StmtHandle stmt);
 
-  MyPair nfresh(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
-  MyPair nfresh_curly_list(SEXP cell, OA::OA_ptr<NameBoolDFSet> c);
+  MyPair nfresh(SEXP cell, OA::OA_ptr<ExpressionDFSet> c);
+  MyPair nfresh_curly_list(SEXP cell, OA::OA_ptr<ExpressionDFSet> c);
 
-  OA::OA_ptr<NameBoolDFSet> make_universal();
+  OA::OA_ptr<ExpressionDFSet> make_universal();
 
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
   OA::ProcHandle m_proc;
-  OA::OA_ptr<NameBoolDFSet> m_top;
-  OA::OA_ptr<NameBoolDFSet> m_in;
+  OA::OA_ptr<ExpressionDFSet> m_top;
+  OA::OA_ptr<ExpressionDFSet> m_in;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
   VarRefFactory * const m_fact;
   RAnnot::FuncInfo * m_func_info;

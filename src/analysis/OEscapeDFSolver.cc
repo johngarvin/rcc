@@ -30,7 +30,6 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/NameBoolDFSet.h>
 
 #include "OEscapeDFSolver.h"
 
@@ -38,7 +37,7 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-typedef NameBoolDFSet MyDFSet;
+typedef ExpressionDFSet MyDFSet;
 
 static bool debug;
 
@@ -92,15 +91,7 @@ void OEscapeDFSolver::dump_node_maps(std::ostream &os) {
 // ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::initializeTop() {
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
-  Var * mention;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
-
-  PROC_FOR_EACH_MENTION(fi, mention) {
-    OA_ptr<MyDFSet::NameBoolPair> element;
-    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*mention)->getMention_c()), false);
-    m_top->insert(element);
-  }
+  m_top = new MyDFSet();
   return m_top;
 }
 
@@ -136,10 +127,10 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
   VarRefFactory * const fact = VarRefFactory::get_instance();
 
   if (fi->is_return(cell)) {
-    // When add inter: if e is escaped, make mnfresh true for this proc
+    // TODO: When add inter: if e is escaped, make mnfresh true for this proc
     //                 in all cases propagate vnfresh to mnfresh
   } else if (is_simple_assign(e) && !is_call(CAR(assign_lhs_c(e)))) {
-    in->replace(fact->make_body_var_ref(assign_lhs_c(e)), true);
+    in->insert(assign_lhs_c(e));
   } else if (is_assign(e) && !is_simple_assign(e)) {
     // v0.f = v1 rule (may create object in R)
     // creates object. vnfresh stays false TODO: right?
@@ -147,7 +138,7 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
     // method call rule
     const SEXP callee = call_lhs(CAR(assign_rhs_c(e)));
     if (!is_library(callee) || is_library_closure(callee)) {
-      in->replace(fact->make_body_var_ref(assign_lhs_c(e)), true);
+      in->insert(assign_lhs_c(e));
     }
     // When add inter: propagate mnfresh of callee to vnfresh of v0
   }

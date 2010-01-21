@@ -32,28 +32,35 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Settings.h>
+#include <analysis/OEscapeInfo.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/Utils.h>
+
 #include <support/StringUtils.h>
+
 #include <CodeGen.h>
+#include <CodeGenUtils.h>
 #include <GetName.h>
 #include <Metrics.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 
 using namespace std;
+using RAnnot::OEscapeInfo;
 
 // e                 the expression to be translated. It is an application; its CAR is 'op'.
 // op                the operation. On entry we know its R type is SPECIALSXP.
 // rho               a string representing the environment
 // resultProtection  whether the generated expression is protected
 // resultStatus      whether the result is needed by later computation
-Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
+Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
 			Protection resultProtection,
 			ResultStatus resultStatus)
 {
+  SEXP e = CAR(cell);
   string out;
   if (PRIMFUN(op) == (CCODE)do_set) {
-    return op_set(e, op, rho, resultProtection);
+    return op_set(cell, op, rho, resultProtection);
   } else if (PRIMFUN(op) == (CCODE)do_internal) {
     // ".Internal" call
     SEXP internal_call = CADR(e);
@@ -102,6 +109,8 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
     return op_break(CAR(e), rho);
   } else if (PRIMFUN(op) == (CCODE)do_return) {
     return op_return(CDR(e), rho);
+  } else if (PRIMFUN(op) == (CCODE)do_subset3) {   // field access, e.g.  foo$bar
+    return op_struct_field(e, op, rho, resultProtection);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
     Metrics::get_instance()->inc_special_calls();
@@ -114,12 +123,23 @@ Expression SubexpBuffer::op_special(SEXP e, SEXP op, string rho,
 #endif
     string call_str = appl2("lcons", "", op1.var, args1.var);
     Expression call = Expression(call_str, CONST, VISIBLE, unp(call_str));
+    bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+    string fallback = "INVALID";
+    if (may_escape) {
+      fallback = new_var_unp();
+      append_decls("Rboolean " + fallback + ";\n");
+      append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+      append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+    }
     out = appl4(get_name(PRIMOFFSET(op)),
 		"op_special default: " + to_string(e),
 		call.var,
 		op1.var,
 		args1.var,
 		rho, resultProtection);
+    if (may_escape) {
+      append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+    }
     string cleanup;	
     if (resultProtection == Protected) cleanup = unp(out);
     del(call);

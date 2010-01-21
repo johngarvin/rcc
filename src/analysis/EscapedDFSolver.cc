@@ -30,7 +30,6 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/NameBoolDFSet.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/ReturnedDFSolver.h>
 
@@ -40,7 +39,7 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-typedef NameBoolDFSet MyDFSet;
+typedef ExpressionDFSet MyDFSet;
 
 static bool debug;
 
@@ -57,7 +56,7 @@ EscapedDFSolver::~EscapedDFSolver()
 
 OA_ptr<MyDFSet> EscapedDFSolver::perform_analysis(ProcHandle proc,
 						  OA_ptr<CFG::CFGInterface> cfg,
-						  OA_ptr<NameBoolDFSet> returned)
+						  OA_ptr<MyDFSet> returned)
 {
   OA_ptr<MyDFSet> top; top = new MyDFSet();
   return perform_analysis(proc, cfg, returned, top);
@@ -66,8 +65,8 @@ OA_ptr<MyDFSet> EscapedDFSolver::perform_analysis(ProcHandle proc,
 
 OA_ptr<MyDFSet> EscapedDFSolver::perform_analysis(ProcHandle proc,
 						  OA_ptr<CFG::CFGInterface> cfg,
-						  OA_ptr<NameBoolDFSet> returned,
-						  OA_ptr<NameBoolDFSet> in_set)
+						  OA_ptr<MyDFSet> returned,
+						  OA_ptr<MyDFSet> in_set)
 {
   m_proc = proc;
   m_cfg = cfg;
@@ -109,15 +108,7 @@ void EscapedDFSolver::dump_node_maps(std::ostream &os) {
 // ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::initializeTop() {
-  Var * mention;
-
-  VarRefFactory * const fact = VarRefFactory::get_instance();
-
-  PROC_FOR_EACH_MENTION(m_func_info, m) {
-    OA_ptr<NameBoolDFSet::NameBoolPair> element;
-    element = new NameBoolDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
-    m_top->insert(element);
-  }
+  m_top = new MyDFSet();
   return m_top;
 }
 
@@ -184,96 +175,112 @@ OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::transfer(OA_ptr<DataFlow::DataFlo
   return out.convert<DataFlow::DataFlowSet>();
 }
 
-OA_ptr<NameBoolDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<NameBoolDFSet> c) {
-  OA_ptr<NameBoolDFSet> s;
+OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
+  OA_ptr<MyDFSet> s;
   assert(is_cons(cell));
   SEXP e = CAR(cell);
+  OA_ptr<MyDFSet> new_c; new_c = old_c->clone().convert<MyDFSet>();
   if (m_func_info->is_return(cell) && !is_explicit_return(cell)) {
     b = false;
     // continue with current expression
   }
+  if (b) {
+    new_c->insert(cell);
+    if (TYPEOF(e) == SYMSXP) {
+      new_c->insert(e);
+    }
+  }
+
   if (is_explicit_return(e)) {
-    return esc(m_func_info->return_value_c(cell), false, c);
+    return esc(m_func_info->return_value_c(cell), false, new_c);
   } else if (is_fundef(e)) {
-    return c;
+    return new_c;
     // will be handled separately
   } else if (is_symbol(e)) {
-    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
-    OA_ptr<NameBoolDFSet> new_c; new_c = c->clone().convert<NameBoolDFSet>();
-    new_c->replace(v, b);
     return new_c;
   } else if (is_const(e)) {
-    return c;
+    return new_c;
   } else if (is_struct_field(e)) {
-    return esc(struct_field_lhs_c(e), false, c);
+    return esc(struct_field_lhs_c(e), false, new_c);
   } else if (is_curly_list(e)) {
-    return esc_curly_list(curly_body(e), b, c);
+    return esc_curly_list(curly_body(e), b, new_c);
+  } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
+    return esc(struct_field_lhs_c(e), false, new_c)->meet(esc(assign_rhs_c(e), true, new_c));
+  } else if (is_assign(e) && is_simple_subscript(CAR(assign_lhs_c(e)))) {
+    OA_ptr<MyDFSet> out; out = esc(subscript_first_sub_c(CAR(assign_lhs_c(e))), b, new_c);
+    out = out->meet(esc(assign_rhs_c(e), true, new_c));
+    out->insert(cell);
+    return out;
+  } else if (is_simple_assign(e) && is_local_assign(e)) {
+    return esc(assign_rhs_c(e), new_c->lookup(CAR(assign_lhs_c(e))), new_c);
+  } else if (is_simple_assign(e) && is_free_assign(e)) {
+    return esc(assign_rhs_c(e), true, new_c);
   } else if (is_call(e)) {
     if (!is_symbol(call_lhs(e))) {
-      return make_universal();
+      return conservative_call(e, new_c);
     }
     OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
     if (cga == 0) {
       if (is_library(call_lhs(e)) && !is_library_closure(call_lhs(e))) {
 	// call to library procedure
 	SEXP lib = library_value(call_lhs(e));
-	s = c->clone().convert<NameBoolDFSet>();
+	s = new_c->clone().convert<MyDFSet>();
 	int i = 1;
 	for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
 	  bool arg_ret = (PRIMESCAPE(lib, i) || (b && PRIMPOINTS(lib, i)));
-	  s = s->meet(esc(arg_c, arg_ret, c));
+	  s = s->meet(esc(arg_c, arg_ret, new_c));
 	  i++;
 	}
 	return s;
       } else {
-	return make_universal();
+	return conservative_call(e, new_c);
       }
     } else {
       ProcHandle proc = cga->get_singleton_if_exists();
       if (proc == ProcHandle(0)) {
-	return make_universal();
+	return conservative_call(e, new_c);
       }
       FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
-      s = c->clone().convert<NameBoolDFSet>();
+      s = new_c->clone().convert<MyDFSet>();
       int i = 1;
       for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
-	OA_ptr<R_VarRef> f; f = m_fact->make_arg_var_ref(callee->get_arg(i));
-	bool arg_esc = (c->lookup(f) || (b && m_returned->lookup(f)));
-	s = s->meet(esc(arg_c, arg_esc, c));
+	bool arg_esc = (new_c->lookup(callee->get_arg(i)) ||
+			(b && m_returned->lookup(callee->get_arg(i))));
+	s = s->meet(esc(arg_c, arg_esc, new_c));
 	i++;
       }
       return s;
     }
-  } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
-    return esc(struct_field_lhs_c(e), false, c)->meet(esc(assign_rhs_c(e), true, c));
-  } else if (is_simple_assign(e) && is_local_assign(e)) {
-    OA_ptr<R_VarRef> v; v = m_fact->make_body_var_ref(e);
-    return esc(assign_rhs_c(e), (b && c->lookup(v)), c);
-  } else if (is_simple_assign(e) && is_free_assign(e)) {
-    return esc(assign_rhs_c(e), true, c);
   } else {
     assert(0);
   }
 }
 
-OA_ptr<NameBoolDFSet> EscapedDFSolver::esc_curly_list(SEXP e, bool b, OA_ptr<NameBoolDFSet> c) {
+OA_ptr<MyDFSet> EscapedDFSolver::esc_curly_list(SEXP e, bool b, OA_ptr<MyDFSet> c) {
   if (e == R_NilValue) {
     return c;
   } else if (CDR(e) == R_NilValue) {
     return esc(CAR(e), b, c);
   } else {
-    OA_ptr<NameBoolDFSet> cprime; cprime = esc_curly_list(CDR(e), b, c);
+    OA_ptr<MyDFSet> cprime; cprime = esc_curly_list(CDR(e), b, c);
     return esc(CAR(e), false, cprime);
   }
 }
 
 
-OA_ptr<NameBoolDFSet> EscapedDFSolver::make_universal() {
-  OA_ptr<NameBoolDFSet> all; all = m_top->clone().convert<NameBoolDFSet>();
+OA_ptr<MyDFSet> EscapedDFSolver::make_universal() {
+  OA_ptr<MyDFSet> all; all = m_top->clone().convert<MyDFSet>();
   all->setUniversal();
   return all;
 }
 
+OA_ptr<MyDFSet> EscapedDFSolver::conservative_call(SEXP e, OA_ptr<MyDFSet> in) {
+  OA_ptr<MyDFSet> s; s = in->clone().convert<MyDFSet>();
+  for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
+    s = s->meet(esc(arg_c, true, in));
+  }
+  return s;
+}
 
 // We have an assignment X <- Y or X <<- Y. If X is a symbol, then it
 // escapes if we have <<- and doesn't escape if we have <-. If X is a

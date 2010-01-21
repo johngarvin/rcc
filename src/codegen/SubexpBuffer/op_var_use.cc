@@ -117,10 +117,15 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
       if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell))) {
 	Var * var = getProperty(Var, cell);
 	string location = binding->get_location(e, sb);
+	string fallback = sb->new_var_unp();
 
 	string h = sb->appl1("R_GetVarLocValue", to_string(e), location, Unprotected);
+	sb->append_decls("Rboolean " + fallback + ";\n");
 	sb->append_defs(emit_logical_if_stmt(emit_call1("TYPEOF", h) + " == PROMSXP",
-					     emit_in_braces(emit_assign(h, emit_call2("Rf_eval", h, rho)) +
+					     emit_in_braces(emit_assign(fallback, "getFallbackAlloc()") +
+							    emit_call1("setFallbackAlloc", "TRUE") + ";\n" +
+							    emit_assign(h, emit_call2("Rf_eval", h, rho)) +
+							    emit_call1("setFallbackAlloc", fallback) + ";\n" +
 							    emit_call2("R_SetVarLocValue", location, h) + ";\n")));
 	return Expression(h, DEPENDENT, VISIBLE, "");
       }

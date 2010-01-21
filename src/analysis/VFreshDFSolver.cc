@@ -28,10 +28,10 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/DefVar.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/NameBoolDFSet.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
@@ -42,16 +42,15 @@ using namespace OA;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-typedef NameBoolDFSet MyDFSet;
-typedef NameBoolDFSet::NameBoolDFSetIterator MyDFSetIterator;
+typedef ExpressionDFSet MyDFSet;
+typedef ExpressionDFSet::ExpressionDFSetIterator MyDFSetIterator;
 // typedef OA_ptr<std::pair<bool, OA_ptr<NameBoolDFSet> > > MyPair;
 static bool debug;
 
 typedef VFreshDFSolver::MyPair MyPair;
 
-static MyPair make_pair(bool x, OA_ptr<NameBoolDFSet> y) {
+static MyPair make_pair(bool x, OA_ptr<MyDFSet> y) {
   MyPair ret;
-  //  std::pair<bool, OA_ptr<NameBoolDFSet> > * p; p = new std::pair<bool, OA_ptr<NameBoolDFSet> >(x, y);
   ret.b = x;
   ret.s = y;
   return ret;
@@ -117,13 +116,7 @@ void VFreshDFSolver::dump_node_maps(std::ostream &os) {
 // ----- callbacks for CFGDFProblem -----
 
 OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::initializeTop() {
-  Var * m;
-
-  PROC_FOR_EACH_MENTION(m_func_info, m) {
-    OA_ptr<MyDFSet::NameBoolPair> element;
-    element = new MyDFSet::NameBoolPair(m_fact->make_body_var_ref((*m)->getMention_c()), false);
-    m_top->insert(element);
-  }
+  m_top = new MyDFSet;
   return m_top;
 }
 
@@ -195,8 +188,7 @@ MyPair VFreshDFSolver::nfresh(SEXP cell, OA_ptr<MyDFSet> c) {
       if (!is_symbol(call_lhs(e))) {
 	b = true;
       } else {
-	OA_ptr<R_VarRef> f; f = m_fact->make_arg_var_ref(call_lhs(e));
-	b = m_in->lookup(f);
+	b = m_in->lookup(call_lhs(e));
       }
       
       OA_ptr<MyDFSet> s; s = c;
@@ -220,7 +212,7 @@ MyPair VFreshDFSolver::nfresh(SEXP cell, OA_ptr<MyDFSet> c) {
   }
 }
 
-MyPair VFreshDFSolver::nfresh_curly_list(SEXP e, OA_ptr<NameBoolDFSet> c) {
+MyPair VFreshDFSolver::nfresh_curly_list(SEXP e, OA_ptr<MyDFSet> c) {
   if (e == R_NilValue) {
     return make_pair(false, c);
   } else if (CDR(e) == R_NilValue) {
@@ -230,8 +222,8 @@ MyPair VFreshDFSolver::nfresh_curly_list(SEXP e, OA_ptr<NameBoolDFSet> c) {
   }
 }
 
-OA_ptr<NameBoolDFSet> VFreshDFSolver::make_universal() {
-  OA_ptr<NameBoolDFSet> all; all = m_top->clone().convert<NameBoolDFSet>();
+OA_ptr<MyDFSet> VFreshDFSolver::make_universal() {
+  OA_ptr<MyDFSet> all; all = m_top->clone().convert<MyDFSet>();
   all->setUniversal();
   return all;  
 }

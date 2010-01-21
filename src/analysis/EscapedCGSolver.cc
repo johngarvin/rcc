@@ -22,9 +22,9 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/ExpressionDFSet.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/NameBoolDFSet.h>
 #include <analysis/EscapedDFSolver.h>
 #include <analysis/VarRefFactory.h>
 
@@ -34,7 +34,7 @@ using namespace RAnnot;
 using namespace OA;
 using OA::DataFlow::DataFlowSet;
 
-typedef NameBoolDFSet MyDFSet;
+typedef ExpressionDFSet MyDFSet;
 
 EscapedCGSolver::EscapedCGSolver()
   : m_solved(false)
@@ -48,7 +48,7 @@ EscapedCGSolver::~EscapedCGSolver()
 void EscapedCGSolver::perform_analysis(OA_ptr<CallGraph::CallGraphInterface> call_graph,
 						       DataFlow::DFPImplement algorithm)
 {
-  m_solver = new DataFlow::CallGraphDFSolver(DataFlow::CallGraphDFSolver::BottomUp, *this);
+  m_solver = new DataFlow::CallGraphDFSolver(DataFlow::CallGraphDFSolver::TopDown, *this);
   m_solver->solve(call_graph, algorithm);
   m_solved = true;
 }
@@ -72,18 +72,7 @@ OA_ptr<DataFlow::DataFlowSet> EscapedCGSolver::getOutSet(OA_ptr<CallGraph::NodeI
 //! Return an initialized top set
 OA_ptr<DataFlowSet> EscapedCGSolver::initializeTop()
 {
-  RAnnot::FuncInfo * fi;
-  RAnnot::Var * m;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
   m_top = new MyDFSet();
-  
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_MENTION(fi, m) {
-      OA_ptr<MyDFSet::NameBoolPair> element;
-      element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
-      m_top->insert(element);
-    }
-  }
   return m_top; 
 }
 
@@ -155,10 +144,10 @@ OA_ptr<DataFlowSet>  EscapedCGSolver::atCallGraphNode(
 				     OA_ptr<DataFlowSet> inSetOrig,
 				     OA::ProcHandle proc)
 {
-  OA_ptr<NameBoolDFSet> inSet; inSet = inSetOrig.convert<NameBoolDFSet>();
+  OA_ptr<MyDFSet> inSet; inSet = inSetOrig.convert<MyDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
   EscapedDFSolver esc_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg(), inSet);
+  OA_ptr<MyDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   return escaped.convert<DataFlowSet>();
 }
  

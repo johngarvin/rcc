@@ -47,9 +47,10 @@ using namespace std;
 using RAnnot::OEscapeInfo;
 
 /// Output an assignment statement
-Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho, 
+Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho, 
 				Protection resultProtection)
 {
+  SEXP e = CAR(cell);
   string out;
   Expression retval;
   assert(is_assign_prim(op));
@@ -59,10 +60,10 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
     lhs = CAR(assign_lhs_c(e));
   }
   if (is_symbol(lhs)) {
-    OEscapeInfo * ei = getProperty(OEscapeInfo, lhs);
-    if (ei->may_escape()) {
-      emit_call0("upAllocStack");
-    }
+    // OEscapeInfo * ei = getProperty(OEscapeInfo, lhs);
+    // if (ei->may_escape()) {
+    //   emit_call0("upAllocStack");
+    // }
     string name = make_symbol(lhs);
     SEXP rhs_c = assign_rhs_c(e);
     SEXP rhs = CAR(assign_rhs_c(e));
@@ -89,7 +90,7 @@ Expression SubexpBuffer::op_set(SEXP e, SEXP op, string rho,
       append_defs("UNPROTECT(1);\n");
     }
   } else if (is_simple_subscript(lhs) && Settings::get_instance()->get_subscript_assignment()) {
-    retval = op_subscriptset(e, rho, resultProtection);
+    retval = op_subscriptset(cell, rho, resultProtection);
   } else if (Rf_isLanguage(lhs)) {
 #ifdef USE_OUTPUT_CODEGEN
     Expression func = output_to_expression(CodeGen::op_primsxp(op, rho));
