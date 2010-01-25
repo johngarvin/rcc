@@ -97,6 +97,14 @@ Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho,
     Expression args = output_to_expression(CodeGen::op_list(CDR(e), rho, true, Protected));
 #else
     Expression func = ParseInfo::global_constants->op_primsxp(op, rho);
+    bool may_escape = true; // TODO  // getProperty(OEscapeInfo, assign_rhs_c(e))->may_escape();
+    string fallback = "INVALID";
+    if (may_escape) {
+      fallback = new_var_unp();
+      append_decls("Rboolean " + fallback + ";\n");
+      append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+      append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+    }
     Expression args = op_list(CDR(e), rho, true, Protected);
 #endif
     out = appl4("do_set",
@@ -105,6 +113,9 @@ Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho,
 		func.var,
 		args.var,
 		rho, resultProtection);
+    if (may_escape) {
+      append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+    }
     string cleanup;
     if (resultProtection == Protected) cleanup = unp(out);
     del(func);

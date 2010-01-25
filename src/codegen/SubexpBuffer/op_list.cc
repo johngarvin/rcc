@@ -32,7 +32,9 @@
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Utils.h>
+
 #include <support/StringUtils.h>
+
 #include <CodeGenUtils.h>
 #include <ParseInfo.h>
 #include <Dependence.h>

@@ -103,8 +103,6 @@ Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 ///  easily with "...", default arguments, etc.) The second is the
 ///  environment in which the function is to be executed.
 string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
-  const string size = i_to_s(4096);
-
   SEXP args = fundef_args(fndef);
 
   string f, header;
@@ -164,6 +162,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
 
   // emit stack allocation
   string alloc_function = Settings::get_instance()->get_stack_debug() ? "malloc" : "alloca";
+  string size = "global_alloc_stack_space_size";
   if (stack_alloc_obj) {
     f += indent(emit_assign("stack", "(SEXP)" + emit_call1(alloc_function, size)));
     f += indent(emit_call4("pushAllocStack", "stack", size, "&allocVectorStack", "&allocNodeStack") + ";\n");

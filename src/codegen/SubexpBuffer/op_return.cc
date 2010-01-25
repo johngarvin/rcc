@@ -29,23 +29,27 @@
 
 #include <include/R/R_RInternals.h>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/LexicalContext.h>
+#include <analysis/OEscapeInfo.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/Settings.h>
 
-#include <ParseInfo.h>
-#include <Dependence.h>
-#include <Visibility.h>
 #include <CodeGen.h>
+#include <CodeGenUtils.h>
+#include <Dependence.h>
+#include <ParseInfo.h>
+#include <Visibility.h>
 
 using namespace std;
 using namespace RAnnot;
 
-Expression SubexpBuffer::op_return(SEXP e, string rho) {
+Expression SubexpBuffer::op_return(SEXP cell, string rho) {
   FuncInfo *fi = 
     lexicalContext.IsEmpty() ? NULL : lexicalContext.Top();
 
-
+  SEXP e = CDR(CAR(cell));
   Expression value;
   string v;
   switch(Rf_length(e)) {
@@ -69,12 +73,26 @@ Expression SubexpBuffer::op_return(SEXP e, string rho) {
       }
       exp = CDR(exp);
     }
+
+    // obviously this is going to return, but we may do something
+    // different if also escapes by other means
+    bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+    string fallback = "INVALID";
+    if (may_escape) {
+      fallback = new_var_unp();
+      append_decls("Rboolean " + fallback + ";\n");
+      append_defs(emit_assign(fallback, "getFallbackAlloc()"));
+      append_defs(emit_call1("setFallbackAlloc","TRUE") + ";\n");
+    }
 #ifdef USE_OUTPUT_CODEGEN
     value = output_to_expression(CodeGen::op_list(e, rho, false, true));
 #else
     value = op_list(e, rho, false, Protected, true);
 #endif
     v = appl1("PairToVectorList", "", value.var, Unprotected);
+    if (may_escape) {
+      append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
+    }
     del(value);
     break;
   }

@@ -62,6 +62,8 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
     exec_decls += "extern Rboolean global_stack_debug;\n";
     exec_defs += emit_assign("global_stack_debug", "TRUE");
   }
+  ParseInfo::global_constants->append_decls("extern int global_alloc_stack_space_size;\n");
+
   // output top-level expressions (Expression version)
   for(i=0; i<n_exprs; i++, e = CDR(e)) {
     SubexpBuffer subexps;

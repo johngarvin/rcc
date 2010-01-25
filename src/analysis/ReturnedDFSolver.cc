@@ -221,7 +221,11 @@ OA_ptr<MyDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) 
 	}
 	return s;
       } else {
+	// TODO: handle wrappers around .Internal calls here
 	return conservative_call(e, new_c);
+
+	// temporary: calling all library closures non-returning
+	//turn new_c;
       }
     } else {
       ProcHandle proc = cga->get_singleton_if_exists();

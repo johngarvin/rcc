@@ -238,10 +238,10 @@ OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
 	return s;
       } else {
 	// TODO: handle wrappers around .Internal here
-		return conservative_call(e, new_c);
+	return conservative_call(e, new_c);
 
 	// temporary: call all closure libraries non-escaping
-	// return new_c;
+	//return new_c;
       }
     } else {
       ProcHandle proc = cga->get_singleton_if_exists();
