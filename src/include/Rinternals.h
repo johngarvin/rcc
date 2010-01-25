@@ -545,7 +545,7 @@ typedef enum {
     AC_STACK_CLOSURE = 32,
     AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
 } ApplyClosureOptions;
-SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions);
+SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions, char *);
 SEXP Rf_applyRccClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_asChar(SEXP);
 Rcomplex Rf_asComplex(SEXP);

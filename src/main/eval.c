@@ -604,11 +604,11 @@ typedef enum {
 
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
-  return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT);
+  return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, NULL);
 }
 
 /* Apply SEXP op of type CLOSXP to actuals */
-SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options)
+SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, char * name)
 {
     extern Rboolean global_stack_debug;
     extern Rboolean global_dump_stats;
@@ -640,7 +640,9 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     if (global_dump_stats) {
-	if (TYPEOF(CAR(call)) == SYMSXP) {
+	if (name != NULL) {
+	    fprintf(stderr, "Entering function %s\n", name);
+	} else if (TYPEOF(CAR(call)) == SYMSXP) {
 	    fprintf(stderr, "Entering function %s\n", CHAR(PRINTNAME(CAR(call))));
 	} else {
 	    fprintf(stderr, "Entering function\n");
@@ -655,7 +657,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     if (options & AC_STACK_CLOSURE) {
 	/* stack allocate matchArgs list, environment, promises */
-	const int size = 4096;
+	extern int global_alloc_stack_space_size;
+	int size = global_alloc_stack_space_size;
 	stack_space = (global_stack_debug ? malloc(size) : alloca(size));
 	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
     } else {
