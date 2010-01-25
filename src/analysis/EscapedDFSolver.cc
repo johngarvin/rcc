@@ -208,8 +208,12 @@ OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
     return esc(struct_field_lhs_c(e), false, new_c)->meet(esc(assign_rhs_c(e), true, new_c));
   } else if (is_assign(e) && is_simple_subscript(CAR(assign_lhs_c(e)))) {
     OA_ptr<MyDFSet> out; out = esc(subscript_first_sub_c(CAR(assign_lhs_c(e))), b, new_c);
-    out = out->meet(esc(assign_rhs_c(e), true, new_c));
-    out->insert(cell);
+    if (is_local_assign(e)) {
+      out = out->meet(esc(assign_rhs_c(e), b, new_c));
+    } else {
+      out = out->meet(esc(assign_rhs_c(e), true, new_c));
+      out->insert(cell);
+    }
     return out;
   } else if (is_simple_assign(e) && is_local_assign(e)) {
     return esc(assign_rhs_c(e), new_c->lookup(CAR(assign_lhs_c(e))), new_c);
@@ -233,7 +237,11 @@ OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
 	}
 	return s;
       } else {
-	return conservative_call(e, new_c);
+	// TODO: handle wrappers around .Internal here
+		return conservative_call(e, new_c);
+
+	// temporary: call all closure libraries non-escaping
+	// return new_c;
       }
     } else {
       ProcHandle proc = cga->get_singleton_if_exists();

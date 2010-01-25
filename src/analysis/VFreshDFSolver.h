@@ -40,7 +40,6 @@ public:
     bool b;
     OA::OA_ptr<ExpressionDFSet> s;
   };
-
   explicit VFreshDFSolver(OA::OA_ptr<R_IRInterface> rir);
   ~VFreshDFSolver();
   OA::OA_ptr<ExpressionDFSet> perform_analysis(OA::ProcHandle proc,

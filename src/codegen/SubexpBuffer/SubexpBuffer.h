@@ -123,6 +123,17 @@ public:
 		    std::string arg6, 
 		    Protection resultProtection = Protected);
 
+  std::string appl7(std::string func,
+		    std::string cmnt,
+		    std::string arg1,
+		    std::string arg2,
+		    std::string arg3,
+		    std::string arg4,
+		    std::string arg5,
+		    std::string arg6, 
+		    std::string arg7, 
+		    Protection resultProtection = Protected);
+
   std::string op_program(SEXP e, std::string rho, std::string func_name,
 			 bool output_main_program, bool output_default_args);
   Expression op_exp(SEXP cell, std::string rho, 

@@ -121,6 +121,13 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     //    }
   }
 
+  string name;
+  if (TYPEOF(CAR(e)) == SYMSXP) {
+    name = quote(CHAR(PRINTNAME(CAR(e))));
+  } else {
+    name = "NULL";
+  }
+
   bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
 
   if (may_escape) {
@@ -131,7 +138,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   }
   // Unlike most R internal functions, applyClosure actually uses its
   // 'call' argument, so we can't just make it R_NilValue.
-  string out = appl6(apply_closure_string,
+  string out = appl7(apply_closure_string,
 		     "op_clos_app: " + to_string(e) + " " + laziness_string,
 		     call_str,
 		     op1.var,
@@ -139,6 +146,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 		     rho,
 		     "R_NilValue",
 		     options,
+		     name,
 		     Unprotected);
   if (may_escape) {
     append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");

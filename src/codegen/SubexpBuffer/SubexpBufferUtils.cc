@@ -257,3 +257,19 @@ std::string SubexpBuffer::appl6(std::string func,
   appl(var, resultProtection, func, cmnt, 6, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6);
   return var;
 }
+
+std::string SubexpBuffer::appl7(std::string func,
+				std::string cmnt,
+				std::string arg1, 
+				std::string arg2, 
+				std::string arg3, 
+				std::string arg4,
+				std::string arg5,
+				std::string arg6,
+				std::string arg7,
+				Protection resultProtection)
+{
+  std::string var = new_sexp_unp();
+  appl(var, resultProtection, func, cmnt, 7, &arg1, &arg2, &arg3, &arg4, &arg5, &arg6, &arg7);
+  return var;
+}
