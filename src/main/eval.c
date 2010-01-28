@@ -269,6 +269,21 @@ SEXP do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* NEEDED: A fixup is needed in browser, because it can trap errors,
  *	and currently does not reset the limit to the right value. */
 
+static SEXP call_func_alloc(CCODE func, SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP stack;
+    SEXP out;
+    extern int global_alloc_stack_space_size;
+    /*
+    stack = (SEXP)alloca(global_alloc_stack_space_size);
+    pushAllocStack(stack, global_alloc_stack_space_size, &allocVectorStack, &allocNodeStack);
+    */
+    out = func(call, op, args, rho);
+    /*
+    popAllocStack();
+    */
+    return out;
+}
 
 /* Return value of "e" evaluated in "rho". */
 
@@ -379,7 +394,7 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 	    int save = R_PPStackTop;
 	    PROTECT(CDR(e));
 	    R_Visible = 1 - PRIMPRINT(op);
-	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
+	    tmp = call_func_alloc(PRIMFUN(op), e, op, CDR(e), rho);
 	    UNPROTECT(1);
 	    if(save != R_PPStackTop) {
 		Rprintf("stack imbalance in %s, %d then %d\n",
@@ -395,14 +410,14 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 		R_Visible = 1 - PRIMPRINT(op);
 		begincontext(&cntxt, CTXT_BUILTIN, e,
 			     R_NilValue, R_NilValue, R_NilValue, R_NilValue);
-		tmp = PRIMFUN(op) (e, op, tmp, rho);
+		tmp = call_func_alloc(PRIMFUN(op), e, op, tmp, rho);
 		endcontext(&cntxt);
 		UNPROTECT(1);
 	    } else {
 #endif /* R_PROFILING */
 		PROTECT(tmp = evalList(CDR(e), rho));
 		R_Visible = 1 - PRIMPRINT(op);
-		tmp = PRIMFUN(op) (e, op, tmp, rho);
+		tmp = call_func_alloc(PRIMFUN(op), e, op, tmp, rho);
 		UNPROTECT(1);
 #ifdef R_PROFILING
 	    }
@@ -612,6 +627,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 {
     extern Rboolean global_stack_debug;
     extern Rboolean global_dump_stats;
+    extern int global_alloc_stack_space_size;
+    int size = global_alloc_stack_space_size;
     SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
@@ -620,6 +637,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     int nprotect = 0;
     int old_heap_alloc;
     const void * const allocStackTop = getAllocStackTop();
+    const void * allocStackTop2;
 
     if (TYPEOF(op) == RCC_CLOSXP) {
       options |= AC_RCC;
@@ -639,27 +657,26 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	savedrho = CLOENV(op);
     }
 
-    if (global_dump_stats) {
-	if (name != NULL) {
-	    fprintf(stderr, "Entering function %s\n", name);
-	} else if (TYPEOF(CAR(call)) == SYMSXP) {
-	    fprintf(stderr, "Entering function %s\n", CHAR(PRINTNAME(CAR(call))));
+    if (name == NULL) {
+	if (TYPEOF(CAR(call)) == SYMSXP) {
+	    name = CHAR(PRINTNAME(CAR(call)));
 	} else {
-	    fprintf(stderr, "Entering function\n");
+	    name = "";
 	}
     }
 
+    if (global_dump_stats) fprintf(stderr, "Entering function %s\n", name);
+    
     /*  Set up a context with the call in it so error has access to it */
-
+    
     if (options & AC_CONTEXT) {
 	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
     }
 
     if (options & AC_STACK_CLOSURE) {
 	/* stack allocate matchArgs list, environment, promises */
-	extern int global_alloc_stack_space_size;
 	int size = global_alloc_stack_space_size;
-	stack_space = (global_stack_debug ? malloc(size) : alloca(size));
+	stack_space = alloca(size); /* (global_stack_debug ? malloc(size) : alloca(size)); */
 	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
     } else {
 	old_heap_alloc = getFallbackAlloc();
@@ -710,12 +727,14 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	}
     }
 
-#if 0
     if (options & AC_STACK_CLOSURE) {
-      upAllocStack();
-	/* don't stack allocate in the body unless we're supposed to */
+	/* we have already pushed the allocation stack space */
+    } else {
+	/* end the fallback alloc for the environment and args; alloc a new pool */
+	setFallbackAlloc(old_heap_alloc);
+	stack_space = alloca(size);
+	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
     }
-#endif
 
     /*  Fix up any extras that were supplied by usemethod. */
 
@@ -803,17 +822,15 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
-    if (!(options & AC_STACK_CLOSURE)) {
-	setFallbackAlloc(old_heap_alloc);
-    }
-
-    if (!(options & AC_RCC) &&
+    if  (!(options & AC_RCC) &&
 	TYPEOF(body) == LANGSXP &&
 	CAR(body) == Rf_install("UseMethod"))
     {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
     }
+
+    allocStackTop2 = getAllocStackTop();
 
     /*  Set a longjmp target which will catch any explicit returns
 	from the function body.  */
@@ -828,6 +845,10 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 		}
 	    } else {
 		PROTECT(tmp = R_ReturnedValue);
+		/* recover from pushes that have happened */
+		while (getAllocStackTop() != allocStackTop2) {
+		    popAllocStack();
+		}
 	    }
     } else {
 	if (options & AC_RCC) {
@@ -838,15 +859,12 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
     nprotect++;
 
-    if (!(options & AC_RCC) &&
-	TYPEOF(body) == LANGSXP &&
-	CAR(body) == Rf_install("UseMethod"))
-    {
-        setFallbackAlloc(old_heap_alloc);
-    }
-
     if (options & AC_CONTEXT) {
 	endcontext(&cntxt);
+    }
+
+    if (getAllocStackTop() != allocStackTop2) {
+	error(_("Allocation stack imbalance in eval"));
     }
 
     if (DEBUG(op)) {
@@ -854,19 +872,31 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PrintValueRec(call, rho);
     }
 
-    if (options & AC_STACK_CLOSURE) {
-	popAllocStack();  /* stack space for closure */
+    if (!(options & AC_RCC) &&
+	TYPEOF(body) == LANGSXP &&
+	CAR(body) == Rf_install("UseMethod"))
+    {
+        setFallbackAlloc(old_heap_alloc);
+    } else {
+	/* duplicate return value in parent pool */
+	upAllocStack();
+	tmp = duplicate(tmp);
+	downAllocStack();
+    }
+
+    if (global_dump_stats) {
+	fprintf(stderr, "Returning from function %s: pointers returned: ", name);
+	printAllPointers(tmp);
+	fprintf(stderr, "\n");
+    }
+
+    popAllocStack();
+
+    if (getAllocStackTop() != allocStackTop) {
+	error(_("Allocation stack imbalance"));
     }
 
     UNPROTECT(nprotect);
-    if (getAllocStackTop() != allocStackTop) {
-      error(_("Allocation stack imbalance"));
-    }
-    if (global_dump_stats) {
-      fprintf(stderr, "Returning from function: pointers returned: ");
-      printAllPointers(tmp);
-      fprintf(stderr, "\n");
-    }
     return (tmp);
 }
 

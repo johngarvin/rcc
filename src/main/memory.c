@@ -444,8 +444,6 @@ static void UNSNAP_NODE(SEXP s) {
 } while(0)
 */
 
-/* temporary debugging hack for andre1 --garvin */
-
 /* snap in node s before node t */
 
 static void SNAP_NODE(SEXP s, SEXP t) {
@@ -453,6 +451,8 @@ static void SNAP_NODE(SEXP s, SEXP t) {
   SEXP next = (t);
   SEXP prev = PREV_NODE(next);
   /*
+    temporary debugging hack for andre1 --garvin
+
   if ((unsigned long)s > 0x700000000000) error(_("SNAP_NODE: non-heap object in heap"));
   if ((unsigned long)t > 0x700000000000) error(_("SNAP_NODE: non-heap object in heap"));
   */
@@ -1794,6 +1794,7 @@ char *S_realloc(char *p, long new, long old, int size)
 
 static AllocStack * allocStackTop = NULL;
 static AllocStack * allocStackCurrent = NULL;
+static int max_alloc_stack_id = 0;
 
 void * getAllocStackTop()
 {
@@ -1814,12 +1815,16 @@ void pushAllocStack(SEXP space,
 		    AllocNodeFunction alloc_node_function)
 {
     AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
+    /*     fprintf(stderr, "A\n"); */
     elem->valid = TRUE;
+    elem->id = max_alloc_stack_id++;
     elem->size = elem->original_size = size;
     elem->space = elem->stack = space;
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
-    elem->next = allocStackTop;
+    elem->up = allocStackTop;
+    elem->down = NULL;
+    if (elem->up != NULL) elem->up->down = elem;
     allocStackTop = allocStackCurrent = elem;
 }
 
@@ -1827,6 +1832,7 @@ void pushAllocStack(SEXP space,
    the top, unchanged otherwise. */
 void popAllocStack()
 {
+    /*     fprintf(stderr, "B\n"); */
     if (allocStackTop == NULL) {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
     } else {
@@ -1835,7 +1841,8 @@ void popAllocStack()
 	    // if debugging, fill deallocated space with garbage
 	    memset(temp->stack, 0xfa, temp->original_size);
 	}
-	allocStackTop = temp->next;
+	allocStackTop = temp->up;
+	allocStackTop->down = NULL;
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
@@ -1854,19 +1861,32 @@ void upAllocStack()
 {
     if (allocStackCurrent == NULL) {
 	errorcall(R_NilValue, _("cannot up empty allocation stack"));
-    } else if (allocStackCurrent->next == NULL) {
+    } else if (allocStackCurrent->up == NULL) {
 	errorcall(R_NilValue, _("cannot up allocator; current allocator has no parent"));
     } else {
-	allocStackCurrent = allocStackCurrent->next;
+	allocStackCurrent = allocStackCurrent->up;
     }
 }
 
+void downAllocStack()
+{
+    if (allocStackCurrent == NULL) {
+	errorcall(R_NilValue, _("cannot down empty allocation stack"));
+    } else if (allocStackCurrent->down == NULL) {
+	errorcall(R_NilValue, _("cannot down allocator; current allocator has no child"));
+    } else {
+	allocStackCurrent = allocStackCurrent->down;
+    }
+}
+
+#if 0
 /* Makes allocStackCurrent point to the top of the stack again. Useful
    for undoing an upAllocStack call. */
 void restoreAllocStack()
 {
   allocStackCurrent = allocStackTop;
 }
+#endif
 
 Rboolean getFallbackAlloc()
 {
@@ -2507,10 +2527,10 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	if (global_dump_stats) {
 	    fprintf(stderr, "parent ");
 	}
-	return allocator->next->allocateVector(allocator->next, type, length); /* parent */
+	return allocator->up->allocateVector(allocator->up, type, length); /* parent */
     } else {
 	SEXP space = allocator->space;
-	if (global_dump_stats) fprintf(stderr, "vector stack %u bytes ", size);
+	if (global_dump_stats) fprintf(stderr, "vector stack %u bytes from pool %u ", size, allocator->id);
 	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	SET_NEXT_NODE(space, NULL);
 	SET_PREV_NODE(space, NULL);
@@ -2522,6 +2542,18 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	return space;
     }
 }
+
+#if 0
+int get_stack_depth(AllocStack * p) {
+    int depth = 0;
+    while (p) {
+	depth++;
+	p = p->up;
+    }
+    return depth;
+}
+#endif
+
 
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 {
@@ -2538,10 +2570,10 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 	    fprintf(stderr, "parent ");
 	}
 	SEXP protect_on_gc[1] = {NULL};
-	return (*allocator->next->allocateNode)(allocator->next, protect_on_gc); /* parent */
+	return (*allocator->up->allocateNode)(allocator->up, protect_on_gc); /* parent */
     } else {
 	SEXP space = allocator->space;
-	if (global_dump_stats) fprintf(stderr, "node stack %u bytes ", node_size);
+	if (global_dump_stats) fprintf(stderr, "node stack %u bytes from pool %u ", node_size, allocator->id);
 	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	SET_NEXT_NODE(space, NULL);
 	SET_PREV_NODE(space, NULL);

@@ -496,13 +496,15 @@ SEXP Rf_EnsureString(SEXP);
 
 typedef struct AllocStackStruct {
     Rboolean valid;
+    int id;
     R_len_t original_size;
     R_len_t size;
     SEXP stack;
     SEXP space;
     SEXP (*allocateVector)(struct AllocStackStruct * allocator, SEXPTYPE type, R_len_t length);
     SEXP (*allocateNode)(struct AllocStackStruct * allocator, SEXP * protect_on_gc);
-    struct AllocStackStruct * next;
+    struct AllocStackStruct * up;
+    struct AllocStackStruct * down;
 } AllocStack;
   /* AllocStack * allocStackTop; */
 typedef SEXP (*AllocVectorFunction)(AllocStack * allocator, SEXPTYPE type, R_len_t length);
@@ -515,7 +517,7 @@ void pushAllocStack(SEXP space,
 		    AllocNodeFunction alloc_node_function);
 void popAllocStack();
 void upAllocStack();
-void restoreAllocStack();
+void downAllocStack();
 Rboolean getFallbackAlloc();
 void setFallbackAlloc(Rboolean x);
 SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length);
