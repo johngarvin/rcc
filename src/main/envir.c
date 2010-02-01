@@ -1368,13 +1368,14 @@ R_varloc_t findNonSystemFunLoc(SEXP symbol, SEXP rho)
 
 void defineVar(SEXP symbol, SEXP value, SEXP rho)
 {
-  defineVarUseHeap(symbol, value, rho, FALSE);
+  defineVarUseHeap(symbol, value, rho, TRUE);
 }
 
 void defineVarUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean heap)
 {
     int hashcode;
     SEXP frame, c;
+    int old_alloc;
 
     /* if rho != env of nearest context (define is nonlocal) do
        something to say we are escaping */
@@ -1408,7 +1409,14 @@ void defineVarUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean heap)
 	    if (FRAME_IS_LOCKED(rho))
 		error(_("cannot add bindings to a locked environment"));
 	    
-	    SET_FRAME(rho, (heap ? consHeap(value, FRAME(rho)) : CONS(value, FRAME(rho))));
+	    if (heap) {
+	      old_alloc = getFallbackAlloc();
+	      setFallbackAlloc(TRUE);
+	    }
+	    SET_FRAME(rho, CONS(value, FRAME(rho)));
+	    if (heap) {
+	      setFallbackAlloc(old_alloc);
+	    }
 	    SET_TAG(FRAME(rho), symbol);
 	}
 	else {

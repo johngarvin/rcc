@@ -2201,6 +2201,10 @@ SEXP R_lazyLoadDBfetch(SEXP key, SEXP file, SEXP compsxp, SEXP hook)
     PROTECT_INDEX vpi;
     Rboolean compressed = asLogical(compsxp);
     SEXP val;
+    int old_alloc;
+    
+    old_alloc = getFallbackAlloc();
+    setFallbackAlloc(TRUE);
 
     PROTECT_WITH_INDEX(val = readStringFromFile(file, key), &vpi);
     if (compressed)
@@ -2212,5 +2216,8 @@ SEXP R_lazyLoadDBfetch(SEXP key, SEXP file, SEXP compsxp, SEXP hook)
         SET_NAMED(val, 2);
     }
     UNPROTECT(1);
+
+    setFallbackAlloc(old_alloc);
+
     return val;
 }

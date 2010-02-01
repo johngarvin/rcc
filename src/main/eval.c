@@ -622,6 +622,42 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
   return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, NULL);
 }
 
+Rboolean stack_alloc_unsafe(SEXP body, ApplyClosureOptions options, char * name)
+{
+    if (!(options & AC_RCC) &&
+	TYPEOF(body) == LANGSXP &&
+	CAR(body) == Rf_install("UseMethod")) {
+	return TRUE;
+    }
+    if (strcmp(name, "eval") == 0) {
+	return TRUE;
+    }
+    if (strcmp(name, "assign") == 0) {
+	return TRUE;
+    }
+    return FALSE;
+}
+
+SEXP mem_duplicate(SEXP x)
+{
+    SEXP out;
+    PROTECT(out = duplicate(x));
+    if (TYPEOF(x) == CLOSXP) {
+	SET_FORMALS(out, duplicate(FORMALS(x)));
+	SET_BODY(out, duplicate(BODY(x)));
+    }
+    UNPROTECT(1);
+    return out;
+}
+
+Rboolean pointer_within(SEXP p, AllocStack * as)
+{
+    if (as->stack == NULL) {
+	error("internal error: pointer_within called with base of allocation stack");
+    }
+    return (as->stack <= p && p < (SEXP)(((R_size_t)as->stack) + as->original_size));
+}
+
 /* Apply SEXP op of type CLOSXP to actuals */
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, char * name)
 {
@@ -822,10 +858,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
-    if  (!(options & AC_RCC) &&
-	TYPEOF(body) == LANGSXP &&
-	CAR(body) == Rf_install("UseMethod"))
-    {
+    if (stack_alloc_unsafe(body, options, name)) {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
     }
@@ -872,16 +905,16 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PrintValueRec(call, rho);
     }
 
-    if (!(options & AC_RCC) &&
-	TYPEOF(body) == LANGSXP &&
-	CAR(body) == Rf_install("UseMethod"))
-    {
+    if (stack_alloc_unsafe(body, options, name)) {
         setFallbackAlloc(old_heap_alloc);
-    } else {
+    } else if (getFallbackAlloc() == FALSE) {
 	/* duplicate return value in parent pool */
-	upAllocStack();
-	tmp = duplicate(tmp);
-	downAllocStack();
+	/*	upAllocStack(); */
+	old_heap_alloc = getFallbackAlloc();
+	setFallbackAlloc(TRUE);
+	tmp = mem_duplicate(tmp);
+	/* downAllocStack(); */
+	setFallbackAlloc(old_heap_alloc);
     }
 
     if (global_dump_stats) {

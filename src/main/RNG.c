@@ -335,6 +335,7 @@ void PutRNGstate()
     /* Copy out seeds to  .Random.seed  */
     int len_seed, j;
     SEXP seeds;
+    int old_alloc;
     
     if (RNG_kind < 0 || RNG_kind > KNUTH_TAOCP2 ||
 	N01_kind < 0 || N01_kind > KINDERMAN_RAMAGE) {
@@ -344,7 +345,10 @@ void PutRNGstate()
     
     len_seed = RNG_Table[RNG_kind].n_seed;
    
+    old_alloc = getFallbackAlloc();
+    setFallbackAlloc(TRUE);
     PROTECT(seeds = allocVector(INTSXP, len_seed + 1));
+    setFallbackAlloc(old_alloc);
 
     INTEGER(seeds)[0] = RNG_kind + 100 * N01_kind;
     for(j = 0; j < len_seed; j++)
