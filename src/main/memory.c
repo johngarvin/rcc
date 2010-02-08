@@ -58,12 +58,15 @@ Rboolean global_stack_debug; /* = (getenv("R_STACK_DEBUG") != NULL) */
 Rboolean global_stack_info = FALSE;
 
 const int global_default_alloc_stack_space_size = 4096;
-int global_alloc_stack_space_size;  /* R_ALLOC_STACK_SPACE_SIZE    */
+int global_alloc_stack_space_size;  /* value of env variable R_ALLOC_STACK_SPACE_SIZE */
                                     /* initialized in InitMemory() */
 
 /* when true, use heap allocation all the time as a fallback */
 static Rboolean fallback_alloc = TRUE;
 
+static AllocStack * allocStackTop = NULL;
+static AllocStack * allocStackCurrent = NULL;
+static int max_alloc_stack_id = 0;
 
 /* for debugging: print pointers of an S-expression and all its
    subfields. Only prints allocated expressions, not constants such as
@@ -419,6 +422,29 @@ static R_size_t R_NodesInUse = 0;
 #define SET_NEXT_NODE(s,t) (NEXT_NODE(s) = (t))
 #define SET_PREV_NODE(s,t) (PREV_NODE(s) = (t))
 
+/* platform-dependent */
+static Rboolean is_stack(SEXP s) {
+    return (((R_size_t)s) >= 0x7fff00000000);
+}
+
+static Rboolean is_good_stack(SEXP s) {
+    AllocStack * sp;
+
+    if (!is_stack(s)) return FALSE;
+
+    sp = allocStackTop;
+    while(sp->id != 0) {
+	if (sp->stack <= s && (R_size_t)s < (R_size_t)((void *)sp->stack + sp->original_size)) {
+	    return TRUE;
+	}
+	sp = sp->up;
+    }
+    return FALSE;
+}
+
+static Rboolean is_bad_stack(SEXP s) {
+    return (is_stack(s) && !is_good_stack(s));
+}
 
 /* Node List Manipulation */
 
@@ -428,7 +454,7 @@ static void UNSNAP_NODE(SEXP s) {
   SEXP un__n__ = (s);
   SEXP next = NEXT_NODE(un__n__);
   SEXP prev = PREV_NODE(un__n__);
-  if (!prev) error(_("UNSNAP_NODE: non-heap object in heap"));
+  if (is_stack(un__n__)) error(_("UNSNAP_NODE: non-heap object in heap"));
   SET_NEXT_NODE(prev, next);
   SET_PREV_NODE(next, prev);
 }
@@ -444,18 +470,21 @@ static void UNSNAP_NODE(SEXP s) {
 } while(0)
 */
 
+/* alloc_stack_objects_in_heap:
+ * 
+ * If true, stack-allocated objects can appear in the GC rings, but
+ * garbage collection ignores them. If false, never add
+ * stack-allocated objects to a GC ring.
+ */
+static Rboolean allow_stack_objects_in_heap = FALSE;
+
 /* snap in node s before node t */
 
 static void SNAP_NODE(SEXP s, SEXP t) {
   SEXP sn__n__ = (s);
   SEXP next = (t);
   SEXP prev = PREV_NODE(next);
-  /*
-    temporary debugging hack for andre1 --garvin
-
-  if ((unsigned long)s > 0x700000000000) error(_("SNAP_NODE: non-heap object in heap"));
-  if ((unsigned long)t > 0x700000000000) error(_("SNAP_NODE: non-heap object in heap"));
-  */
+  if (!allow_stack_objects_in_heap && is_stack(s)) return;
   SET_NEXT_NODE(sn__n__, next);
   SET_PREV_NODE(next, sn__n__);
   SET_NEXT_NODE(prev, sn__n__);
@@ -546,6 +575,56 @@ static void SNAP_NODE(SEXP s, SEXP t) {
   } \
 } while(0)
 
+void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
+    if (ATTRIB(n) != R_NilValue) 
+	action(ATTRIB(n), extra); 
+    switch (TYPEOF(n)) { 
+    case NILSXP: 
+    case BUILTINSXP: 
+    case SPECIALSXP: 
+    case CHARSXP: 
+    case LGLSXP: 
+    case INTSXP: 
+    case REALSXP: 
+    case CPLXSXP: 
+    case WEAKREFSXP: 
+    case RAWSXP: 
+    case RCC_FUNSXP: 
+	break; 
+    case STRSXP: 
+    case EXPRSXP: 
+    case VECSXP: 
+	{ 
+	    int i; 
+	    for (i = 0; i < LENGTH(n); i++) 
+		action(STRING_ELT(n, i), extra); 
+	} 
+	break; 
+    case ENVSXP: 
+	action(FRAME(n), extra); 
+	action(ENCLOS(n), extra); 
+	action(HASHTAB(n), extra); 
+	break; 
+    case CLOSXP: 
+    case RCC_CLOSXP: 
+    case PROMSXP: 
+    case LISTSXP: 
+    case LANGSXP: 
+    case DOTSXP: 
+    case SYMSXP: 
+    case BCODESXP: 
+	action(TAG(n), extra); 
+	action(CAR(n), extra); 
+	action(CDR(n), extra); 
+	break; 
+    case EXTPTRSXP: 
+	action(EXTPTR_PROT(n), extra); 
+	action(EXTPTR_TAG(n), extra); 
+	break; 
+    default: 
+	abort(); 
+    } 
+}
 
 /* Forwarding Nodes.  These macros mark nodes or children of nodes and
    place them on the forwarding list.  The forwarding list is assumed
@@ -574,14 +653,13 @@ static void SNAP_NODE(SEXP s, SEXP t) {
 #define FORWARD_NODE(s) FORWARD_NODE_f(s, &forwarded_nodes)
 
 void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
-    SEXP fn__n__ = (s); 
-    if (fn__n__ && ! NODE_IS_MARKED(fn__n__)) {
-	MARK_NODE(fn__n__);
-	if (PREV_NODE(fn__n__) != NULL) {
-	    UNSNAP_NODE(fn__n__);
+    if (s && ! is_bad_stack(s) && ! NODE_IS_MARKED(s)) {
+	MARK_NODE(s);
+	if (!is_stack(s)) {
+	    UNSNAP_NODE(s);
 	}
-	SET_NEXT_NODE(fn__n__, *forwarded_nodes);
-	*forwarded_nodes = fn__n__;
+	SET_NEXT_NODE(s, *forwarded_nodes);
+	*forwarded_nodes = s;
     }
 }
 
@@ -915,21 +993,52 @@ static void AdjustHeapSize(R_size_t size_needed)
 
 /* Managing Old-to-New References. */
 
-#define AGE_NODE(s,g) do { \
-  SEXP an__n__ = (s); \
-  int an__g__ = (g); \
-  if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
-    if (NODE_IS_MARKED(an__n__) && PREV_NODE(an__n__) != NULL)	\
-      R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \
-    else \
-      MARK_NODE(an__n__); \
-    SET_NODE_GENERATION(an__n__, an__g__); \
-    if (PREV_NODE(an__n__) != NULL) \
-	UNSNAP_NODE(an__n__);		     \
-    SET_NEXT_NODE(an__n__, forwarded_nodes); \
-    forwarded_nodes = an__n__; \
-  } \
-} while (0)
+/* #define AGE_NODE(s,g) do {						\ */
+/*     SEXP an__n__ = (s);							\ */
+/*     int an__g__ = (g);							\ */
+/*     if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) {		\ */
+/*         if (!PREV_NODE(an__n__)) {					\ */
+/* 	    if (!allow_stack_objects_in_heap) {				\ */
+/* 		error(_("AGE_NODE: attempt to add stack node to heap")); \ */
+/* 	    } else {							\ */
+/* 		MARK_NODE(an__n__);					\ */
+/* 		SET_NODE_GENERATION(an__n__, an__g__);			\ */
+/* 	} else {							\ */
+/* 	    if (NODE_IS_MARKED(an__n__)) {				\ */
+/* 		R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \ */
+/* 	    } else {							\ */
+/* 	        MARK_NODE(an__n__);					\ */
+/* 	    }								\ */
+/* 	SET_NODE_GENERATION(an__n__, an__g__);			\ */
+/* 	UNSNAP_NODE(an__n__);						\ */
+/*     }								\ */
+/*     SET_NEXT_NODE(an__n__, forwarded_nodes);			\ */
+/*     forwarded_nodes = an__n__;						\ */
+/*     }								\ */
+/* } while (0) */
+
+#define AGE_NODE(s,g) AGE_NODE_f(s, g, &forwarded_nodes)
+
+static void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
+{
+    if (s && NODE_GEN_IS_YOUNGER(s, g)) {
+        if (is_stack(s)) {
+	    MARK_NODE(s); 
+	    SET_NODE_GENERATION(s, g);
+	} else {
+	    if (NODE_IS_MARKED(s)) {
+		R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]--; 
+	    } else {
+	        MARK_NODE(s); 
+	    } 
+	    SET_NODE_GENERATION(s, g); 
+	    UNSNAP_NODE(s); 
+	} 
+	SET_NEXT_NODE(s, *forwarded_nodes); 
+	*forwarded_nodes = s;
+    }
+}
+
 
 static void AgeNodeAndChildren(SEXP s, int gen)
 {
@@ -940,7 +1049,12 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	forwarded_nodes = NEXT_NODE(forwarded_nodes);
 	if (NODE_GENERATION(s) != gen)
 	    REprintf("****snapping into wrong generation\n");
-	if (PREV_NODE(s) != NULL) {
+
+	if (is_bad_stack(s)) {
+	    continue;
+	} else if (is_good_stack(s)) {
+	    /* no-op */
+	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
 	}
@@ -950,15 +1064,14 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 
 static void old_to_new(SEXP x, SEXP y)
 {
-    /*    if (!PREV_NODE(x) || !PREV_NODE(y)) error(_("old_to_new: non-heap object in heap")); */
-    if (!PREV_NODE(x) || !PREV_NODE(y)) return;
+    if (is_stack(x) || is_stack(y)) {
+	return;
+    }
 #ifdef EXPEL_OLD_TO_NEW
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
-    if (PREV_NODE(x) != NULL) {
-	UNSNAP_NODE(x);
-	SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
-    }
+    UNSNAP_NODE(x);
+    SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
 #endif
 }
 
@@ -1275,31 +1388,23 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
    they may be heap allocated. --garvin */
 
 
-#define PROCESS_NODES() do {	      \
-    while (forwarded_nodes != NULL) { \
-	s = forwarded_nodes; \
-	forwarded_nodes = NEXT_NODE(forwarded_nodes); \
-	if (PREV_NODE(s) != NULL) { \
-	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]); \
-	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;	\
-	} else {							\
-	    SET_NEXT_NODE(s, NULL);					\
-	}								\
-	FORWARD_CHILDREN(s);			\
-    } \
-} while (0)
+#define PROCESS_NODES() PROCESS_NODES_f(&forwarded_nodes)
 
-void PROCESS_NODES_f(SEXP * forwarded_nodes) {
+static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
+    volatile SEXP s;
     while(*forwarded_nodes != NULL) {
-	SEXP s = *forwarded_nodes;
+	s = *forwarded_nodes;
 	*forwarded_nodes = NEXT_NODE(*forwarded_nodes);
-	if (PREV_NODE(s) != NULL) {
+	if (is_bad_stack(s)) {
+	    continue;
+	} else if (is_good_stack(s)) {
+	    SET_NEXT_NODE(s, NULL);
+	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
-	} else {
-	    SET_NEXT_NODE(s, NULL); 
-	} 
-	FORWARD_CHILDREN_f(s);
+	}
+	DO_CHILDREN_f(s, FORWARD_NODE_f, forwarded_nodes);
+	/* FORWARD_CHILDREN_f(s); */
     }
 }
 	    
@@ -1790,10 +1895,6 @@ char *S_realloc(char *p, long new, long old, int size)
 	q[i] = 0;
     return q;
 }
-
-static AllocStack * allocStackTop = NULL;
-static AllocStack * allocStackCurrent = NULL;
-static int max_alloc_stack_id = 0;
 
 void * getAllocStackTop()
 {
