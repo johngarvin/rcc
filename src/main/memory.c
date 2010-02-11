@@ -1064,14 +1064,19 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 
 static void old_to_new(SEXP x, SEXP y)
 {
-    if (is_stack(x) || is_stack(y)) {
+    if (is_stack(y)) {
 	return;
     }
+    
 #ifdef EXPEL_OLD_TO_NEW
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
-    UNSNAP_NODE(x);
-    SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
+    if (is_stack(x)) {
+	AgeNodeAndChildren(y, NODE_GENERATION(x));
+    } else {
+	UNSNAP_NODE(x);
+	SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
+    }
 #endif
 }
 
@@ -1939,7 +1944,7 @@ void popAllocStack()
 	AllocStack * temp = allocStackTop;
 	if (global_stack_debug) {
 	    // if debugging, fill deallocated space with garbage
-	    memset(temp->stack, 0xfa, temp->original_size);
+	    memset(temp->stack, 0xfd, temp->original_size);
 	}
 	allocStackTop = temp->up;
 	allocStackTop->down = NULL;
