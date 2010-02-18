@@ -164,6 +164,7 @@ public:
   Expression op_while(SEXP e, std::string rho);
   Expression op_return(SEXP e, std::string rho);
   Expression op_struct_field(SEXP e, SEXP op, std::string rho, Protection resultProtection);
+  Expression op_subscript(SEXP e, SEXP op, std::string rho, Protection resultProtection);
   Expression op_break(SEXP e, std::string rho);
   Expression op_fundef(SEXP e, std::string rho, Protection resultProtection);
   Expression op_special(SEXP cell, SEXP op, std::string rho, 

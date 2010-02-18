@@ -219,6 +219,7 @@ rcc_bin_SOURCES =				\
   op_string.cc					\
   op_struct_field.cc                            \
   op_subscriptset.cc				\
+  op_subscript.cc                               \
   op_var_use.cc					\
   op_var_def.cc					\
   op_vector.cc					\

@@ -161,11 +161,11 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   }
 
   // emit stack allocation
-  string alloc_function = Settings::get_instance()->get_stack_debug() ? "malloc" : "alloca";
+  //  string alloc_function = Settings::get_instance()->get_stack_debug() ? "malloc" : "alloca";
   string size = "global_alloc_stack_space_size";
   if (stack_alloc_obj) {
-    f += indent(emit_assign("stack", "(SEXP)" + emit_call1(alloc_function, size)));
-    f += indent(emit_call4("pushAllocStack", "stack", size, "&allocVectorStack", "&allocNodeStack") + ";\n");
+    //    f += indent(emit_assign("stack", "(SEXP)" + emit_call1(alloc_function, size)));
+    f += indent(emit_call2("pushAllocStack", "&allocVectorStack", "&allocNodeStack") + ";\n");
   }
 
   // emit the function body

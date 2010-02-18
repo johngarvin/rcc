@@ -109,6 +109,8 @@ Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
     return op_break(CAR(e), rho);
   } else if (PRIMFUN(op) == (CCODE)do_return) {
     return op_return(cell, rho);
+  } else if (PRIMFUN(op) == (CCODE)do_subset) {
+    return op_subscript(e, op, rho, resultProtection);
   } else if (PRIMFUN(op) == (CCODE)do_subset3) {   // field access, e.g.  foo$bar
     return op_struct_field(e, op, rho, resultProtection);
   } else {

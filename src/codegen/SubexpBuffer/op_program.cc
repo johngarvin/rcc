@@ -144,6 +144,7 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   for(i=0; i<ParseInfo::global_constants->get_n_inits(); i++) {
     header += indent(ParseInfo::global_constants->get_init_str() + i_to_s(i) + "();\n");
   }
+  header += indent("setFallbackAlloc(FALSE);\n");
   header += indent("exec();\n");
   header += indent("finish();\n");
   header += "}\n";
