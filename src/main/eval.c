@@ -650,14 +650,6 @@ SEXP mem_duplicate(SEXP x)
     return out;
 }
 
-Rboolean pointer_within(SEXP p, AllocStack * as)
-{
-    if (as->stack == NULL) {
-	error("internal error: pointer_within called with base of allocation stack");
-    }
-    return (as->stack <= p && p < (SEXP)(((R_size_t)as->stack) + as->original_size));
-}
-
 /* Apply SEXP op of type CLOSXP to actuals */
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, char * name)
 {
@@ -712,8 +704,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     if (options & AC_STACK_CLOSURE) {
 	/* stack allocate matchArgs list, environment, promises */
 	int size = global_alloc_stack_space_size;
-	stack_space = alloca(size); /* (global_stack_debug ? malloc(size) : alloca(size)); */
-	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
+	pushAllocStack(&allocVectorStack, &allocNodeStack);
     } else {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
@@ -768,8 +759,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     } else {
 	/* end the fallback alloc for the environment and args; alloc a new pool */
 	setFallbackAlloc(old_heap_alloc);
-	stack_space = alloca(size);
-	pushAllocStack(stack_space, size, &allocVectorStack, &allocNodeStack);
+	pushAllocStack(&allocVectorStack, &allocNodeStack);
     }
 
     /*  Fix up any extras that were supplied by usemethod. */

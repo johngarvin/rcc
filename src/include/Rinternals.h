@@ -494,13 +494,17 @@ SEXP Rf_StringFromReal(double, int*);
 SEXP Rf_StringFromComplex(Rcomplex, int*);
 SEXP Rf_EnsureString(SEXP);
 
-typedef struct AllocStackStruct {
-    Rboolean valid;
-    int id;
+typedef struct StackPageStruct {
     R_len_t original_size;
     R_len_t size;
-    SEXP stack;
     SEXP space;
+    SEXP free_space;
+    struct StackPageStruct * next;
+} StackPage;
+
+typedef struct AllocStackStruct {
+    int id;
+    StackPage * page;
     SEXP (*allocateVector)(struct AllocStackStruct * allocator, SEXPTYPE type, R_len_t length);
     SEXP (*allocateNode)(struct AllocStackStruct * allocator, SEXP * protect_on_gc);
     struct AllocStackStruct * up;
@@ -511,9 +515,7 @@ typedef SEXP (*AllocVectorFunction)(AllocStack * allocator, SEXPTYPE type, R_len
 typedef SEXP (*AllocNodeFunction)(AllocStack * allocator, SEXP * protect_on_gc);
 void * getAllocStackTop();
 void * getAllocStackCurrent();
-void pushAllocStack(SEXP space,
-		    R_len_t size,
-		    AllocVectorFunction alloc_vector_function,
+void pushAllocStack(AllocVectorFunction alloc_vector_function,
 		    AllocNodeFunction alloc_node_function);
 void popAllocStack();
 void upAllocStack();

@@ -422,19 +422,26 @@ static R_size_t R_NodesInUse = 0;
 #define SET_NEXT_NODE(s,t) (NEXT_NODE(s) = (t))
 #define SET_PREV_NODE(s,t) (PREV_NODE(s) = (t))
 
-/* platform-dependent */
-static Rboolean is_stack(SEXP s) {
-    return (((R_size_t)s) >= 0x7fff00000000);
+Rboolean pointer_within(SEXP p, AllocStack * as)
+{
+    StackPage * page;
+    page = as->page;
+    while(page != NULL) {
+	if (as->page->space <= p && p < (SEXP)(((R_size_t)as->page->space) + as->page->original_size)) {
+	    return TRUE;
+	}
+	page = page->next;
+    }
+    return FALSE;
 }
 
 static Rboolean is_good_stack(SEXP s) {
     AllocStack * sp;
 
-    if (!is_stack(s)) return FALSE;
-
     sp = allocStackTop;
     while(sp->id != 0) {
-	if (sp->stack <= s && (R_size_t)s < (R_size_t)((void *)sp->stack + sp->original_size)) {
+	if (pointer_within(s, sp)) {
+		/*	if (sp->stack <= s && (R_size_t)s < (R_size_t)((void *)sp->stack + sp->original_size)) { */
 	    return TRUE;
 	}
 	sp = sp->up;
@@ -443,7 +450,12 @@ static Rboolean is_good_stack(SEXP s) {
 }
 
 static Rboolean is_bad_stack(SEXP s) {
-    return (is_stack(s) && !is_good_stack(s));
+    return (!is_good_stack(s));
+}
+
+static Rboolean is_stack(SEXP s) {
+    /*    return (((R_size_t)s) >= 0x7fff00000000); */
+    return is_good_stack(s);
 }
 
 /* Node List Manipulation */
@@ -653,7 +665,7 @@ void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
 #define FORWARD_NODE(s) FORWARD_NODE_f(s, &forwarded_nodes)
 
 void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
-    if (s && ! is_bad_stack(s) && ! NODE_IS_MARKED(s)) {
+    if (s && ! NODE_IS_MARKED(s)) {
 	MARK_NODE(s);
 	if (!is_stack(s)) {
 	    UNSNAP_NODE(s);
@@ -842,7 +854,7 @@ static void ReleasePage(PAGE_HEADER *page, int node_class)
 
     /* added to debug memory corruption errors */
     if (global_stack_debug) {
-	memset(page, 0xfa, R_PAGE_SIZE);
+	memset(page, 0xfb, R_PAGE_SIZE);
     }
     free(page);
 }
@@ -938,7 +950,7 @@ static void ReleaseLargeFreeVectors(void)
 	    R_LargeVallocSize -= size;
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
 	    if (global_stack_debug) {
-		memset(s, 0xfa, size_b);
+		memset(s, 0xfc, size_b);
 	    }
 	    free(s);
 	}
@@ -1050,9 +1062,7 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	if (NODE_GENERATION(s) != gen)
 	    REprintf("****snapping into wrong generation\n");
 
-	if (is_bad_stack(s)) {
-	    continue;
-	} else if (is_good_stack(s)) {
+	if (is_good_stack(s)) {
 	    /* no-op */
 	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
@@ -1067,7 +1077,6 @@ static void old_to_new(SEXP x, SEXP y)
     if (is_stack(y)) {
 	return;
     }
-    
 #ifdef EXPEL_OLD_TO_NEW
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
@@ -1396,13 +1405,11 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 #define PROCESS_NODES() PROCESS_NODES_f(&forwarded_nodes)
 
 static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
-    volatile SEXP s;
+    volatile SEXP s; /* temporarily volatile for debugging */
     while(*forwarded_nodes != NULL) {
 	s = *forwarded_nodes;
 	*forwarded_nodes = NEXT_NODE(*forwarded_nodes);
-	if (is_bad_stack(s)) {
-	    continue;
-	} else if (is_good_stack(s)) {
+	if (is_good_stack(s)) {
 	    SET_NEXT_NODE(s, NULL);
 	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
@@ -1791,6 +1798,8 @@ void InitMemory()
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
 
+    pushAllocStack(&allocVectorHeap, &allocNodeHeap);
+
     /* R_NilValue */
     /* THIS MUST BE THE FIRST CONS CELL ALLOCATED */
     /* OR ARMAGEDDON HAPPENS. */
@@ -1828,7 +1837,6 @@ void InitMemory()
     R_HandlerStack = R_RestartStack = R_NilValue;
 #endif
 
-    pushAllocStack(NULL, -1, &allocVectorHeap, &allocNodeHeap);
     /* default allocator uses the regular old heap */
     global_dump_stats = (getenv("R_DUMP_STATS") != NULL);
     global_stack_debug = (getenv("R_STACK_DEBUG") != NULL);
@@ -1911,22 +1919,28 @@ void * getAllocStackCurrent()
   return (void *)allocStackCurrent;
 }
 
+void addStackPage(AllocStack * stack)
+{
+    StackPage * page;
+    page = (StackPage *)malloc(sizeof(StackPage));
+    page->original_size = page->size = global_alloc_stack_space_size;
+    page->space = page->free_space = (SEXP)malloc(global_alloc_stack_space_size);
+    page->next = stack->page;
+    stack->page = page;
+}
+
 /* pushes new allocator on the stack. Sets both allocStackTop and
  * allocStackCurrent to the new allocator.
  */
-void pushAllocStack(SEXP space,
-		    R_len_t size,
-		    AllocVectorFunction alloc_vector_function,
+void pushAllocStack(AllocVectorFunction alloc_vector_function,
 		    AllocNodeFunction alloc_node_function)
 {
     AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
-    /*     fprintf(stderr, "A\n"); */
-    elem->valid = TRUE;
     elem->id = max_alloc_stack_id++;
-    elem->size = elem->original_size = size;
-    elem->space = elem->stack = space;
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
+    elem->page = NULL;
+    addStackPage(elem);
     elem->up = allocStackTop;
     elem->down = NULL;
     if (elem->up != NULL) elem->up->down = elem;
@@ -1937,25 +1951,29 @@ void pushAllocStack(SEXP space,
    the top, unchanged otherwise. */
 void popAllocStack()
 {
-    /*     fprintf(stderr, "B\n"); */
+    StackPage * page;
+    StackPage * prev_page;
     if (allocStackTop == NULL) {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
     } else {
 	AllocStack * temp = allocStackTop;
-	if (global_stack_debug) {
-	    // if debugging, fill deallocated space with garbage
-	    memset(temp->stack, 0xfd, temp->original_size);
-	}
 	allocStackTop = temp->up;
 	allocStackTop->down = NULL;
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
-	if (global_stack_debug) {
-	    temp->valid = FALSE;
-	} else {
-	    free(temp);
+	page = temp->page;
+	while(page != NULL) {
+	    if (global_stack_debug) {
+		/* if debugging, fill deallocated space with visible garbage */
+		memset(page->space, 0xfd, page->original_size);
+	    }
+	    free(page->space);
+	    prev_page = page;
+	    page = page->next;
+	    free(prev_page);
 	}
+	free(temp);
     }
 }
 
@@ -2612,40 +2630,30 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
     return s;
 }
 
-const int max_vector_stack_length = 100;
+/* vectors with length greater than this will be heap allocated
+   instead of stack allocated. Set to R_LEN_T_MAX to remove length
+   restrictions. */
+const R_len_t max_vector_stack_length = R_LEN_T_MAX;
 
 SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 {
     R_size_t size;
-    
-    if (!allocator->valid) {
-	error("allocVectorStack: invalid allocation stack node");
-    }
     if (fallback_alloc) return allocVectorHeap(NULL, type, length);
     if (length > max_vector_stack_length) return allocVectorHeap(NULL, type, length);
 
     size = allocVectorGetSize(type, length);
-    if (allocator->size == -1) { /* -1 means heap allocator */
-	error("allocVectorStack called on heap allocator");
+    if (size > allocator->page->original_size) return allocVectorHeap(NULL, type, length);
+    if (size > allocator->page->size) {
+	addStackPage(allocator);
     }
-    if (size > allocator->size) {
-	if (global_dump_stats) {
-	    fprintf(stderr, "parent ");
-	}
-	return allocator->up->allocateVector(allocator->up, type, length); /* parent */
-    } else {
-	SEXP space = allocator->space;
-	if (global_dump_stats) fprintf(stderr, "vector stack %u bytes from pool %u ", size, allocator->id);
-	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	SET_NEXT_NODE(space, NULL);
-	SET_PREV_NODE(space, NULL);
-	allocator->space = (SEXP)(((R_size_t)allocator->space) + size);
-	allocator->size -= size;
-	if (global_stack_info) {
-	    fprintf(stderr, "allocVectorStack allocated %u bytes; %u bytes available in this allocator\n", size, allocator->size);
-	}
-	return space;
-    }
+    SEXP space = allocator->page->free_space;
+    if (global_dump_stats) fprintf(stderr, "vector stack %u bytes from pool %u ", size, allocator->id);
+    space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    SET_NEXT_NODE(space, NULL);
+    SET_PREV_NODE(space, NULL);
+    allocator->page->free_space = (SEXP)(((R_size_t)allocator->page->free_space) + size);
+    allocator->page->size -= size;
+    return space;
 }
 
 #if 0
@@ -2663,32 +2671,24 @@ int get_stack_depth(AllocStack * p) {
 SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
 {
     const R_size_t node_size = sizeof(SEXPREC);
-    if (!allocator->valid) {
-	error("allocNodeStack: invalid allocation stack node");
-    }
     if (fallback_alloc) return allocNodeHeap(allocator, protect_on_gc);
     if (allocator == NULL) {
 	error("allocNodeStack called on null allocator");
     }
-    if (node_size > allocator->size) {
-	if (global_dump_stats) {
-	    fprintf(stderr, "parent ");
-	}
-	SEXP protect_on_gc[1] = {NULL};
-	return (*allocator->up->allocateNode)(allocator->up, protect_on_gc); /* parent */
-    } else {
-	SEXP space = allocator->space;
-	if (global_dump_stats) fprintf(stderr, "node stack %u bytes from pool %u ", node_size, allocator->id);
-	space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	SET_NEXT_NODE(space, NULL);
-	SET_PREV_NODE(space, NULL);
-	allocator->space++;  /* space is an SEXP, so incrementing ptr will add size of node */
-	allocator->size -= node_size;
-	if (global_stack_info) {
-	  fprintf(stderr,"allocNodeStack allocated %u bytes; %u bytes available in this allocator\n", node_size, allocator->size);
-	}
-	return space;
+    if (node_size > allocator->page->original_size) {
+	error("Stack page size too small to contain S-expression");
     }
+    if (node_size > allocator->page->size) {
+	addStackPage(allocator);
+    }
+    SEXP space = allocator->page->free_space;
+    if (global_dump_stats) fprintf(stderr, "node stack %u bytes from pool %u ", node_size, allocator->id);
+    space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    SET_NEXT_NODE(space, NULL);
+    SET_PREV_NODE(space, NULL);
+    allocator->page->free_space++;  /* free_space is an SEXP, so incrementing ptr will add size of node */
+    allocator->page->size -= node_size;
+    return space;
 }
     
 
