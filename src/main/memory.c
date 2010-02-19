@@ -441,7 +441,6 @@ static Rboolean is_good_stack(SEXP s) {
     sp = allocStackTop;
     while(sp->id != 0) {
 	if (pointer_within(s, sp)) {
-		/*	if (sp->stack <= s && (R_size_t)s < (R_size_t)((void *)sp->stack + sp->original_size)) { */
 	    return TRUE;
 	}
 	sp = sp->up;
@@ -455,8 +454,39 @@ static Rboolean is_bad_stack(SEXP s) {
 
 static Rboolean is_stack(SEXP s) {
     /*    return (((R_size_t)s) >= 0x7fff00000000); */
-    return is_good_stack(s);
+    /*    return is_good_stack(s); */
+    return (PREV_NODE(s) == NULL);
 }
+
+#if 0
+is_heap is no longer needed
+
+static Rboolean is_heap(SEXP s) {
+    int i;
+    int c;
+    SEXP t;
+    PAGE_HEADER * p;
+
+    return TRUE;
+
+    // breaks
+    for(c = 0; c < NUM_SMALL_NODE_CLASSES; c++) {
+	p = R_GenHeap[c].pages;
+	for(i = 0; i < R_GenHeap[c].PageCount; i++) {
+	    if ((void*)p <= (void*)s && (void*)s < (void*)p + R_PAGE_SIZE) {
+		return TRUE;
+	    }
+	    p = p->next;
+	}
+    }
+    t = NEXT_NODE(R_GenHeap[LARGE_NODE_CLASS].New);
+    while (t != R_GenHeap[LARGE_NODE_CLASS].New) {
+	if (s == t) return TRUE;
+	t = NEXT_NODE(t);
+    }
+    return FALSE;
+}
+#endif
 
 /* Node List Manipulation */
 
@@ -496,7 +526,7 @@ static void SNAP_NODE(SEXP s, SEXP t) {
   SEXP sn__n__ = (s);
   SEXP next = (t);
   SEXP prev = PREV_NODE(next);
-  if (!allow_stack_objects_in_heap && is_stack(s)) return;
+  if (is_stack(s)) error(_("SNAP_NODE: tried to snap stack object"));
   SET_NEXT_NODE(sn__n__, next);
   SET_PREV_NODE(next, sn__n__);
   SET_NEXT_NODE(prev, sn__n__);
@@ -515,6 +545,17 @@ static void SNAP_NODE(SEXP s, SEXP t) {
 } while (0)
 */
 
+/* snap_node even if prev is null. Use when s is guaranteed to be heap storage. */
+
+static void SNAP_NODE_force(SEXP s, SEXP t) {
+  SEXP sn__n__ = (s);
+  SEXP next = (t);
+  SEXP prev = PREV_NODE(next);
+  SET_NEXT_NODE(sn__n__, next);
+  SET_PREV_NODE(next, sn__n__);
+  SET_NEXT_NODE(prev, sn__n__);
+  SET_PREV_NODE(sn__n__, prev);
+}
 
 /* move all nodes on from_peg to to_peg */
 #define BULK_MOVE(from_peg,to_peg) do { \
@@ -827,7 +868,7 @@ static void GetNewPage(int node_class)
     for (i = 0; i < page_count; i++, data += node_size) {
 	s = (SEXP) data;
 	R_GenHeap[node_class].AllocCount++;
-	SNAP_NODE(s, base);
+	SNAP_NODE_force(s, base);
 	s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	SET_NODE_CLASS(s, node_class);
 	base = s;
@@ -1044,8 +1085,8 @@ static void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
 	        MARK_NODE(s); 
 	    } 
 	    SET_NODE_GENERATION(s, g); 
-	    UNSNAP_NODE(s); 
-	} 
+	    UNSNAP_NODE(s);
+	}
 	SET_NEXT_NODE(s, *forwarded_nodes); 
 	*forwarded_nodes = s;
     }
@@ -1062,9 +1103,7 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	if (NODE_GENERATION(s) != gen)
 	    REprintf("****snapping into wrong generation\n");
 
-	if (is_good_stack(s)) {
-	    /* no-op */
-	} else {
+	if (!is_stack(s)) {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
 	}
@@ -1409,7 +1448,7 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
     while(*forwarded_nodes != NULL) {
 	s = *forwarded_nodes;
 	*forwarded_nodes = NEXT_NODE(*forwarded_nodes);
-	if (is_good_stack(s)) {
+	if (is_stack(s)) {
 	    SET_NEXT_NODE(s, NULL);
 	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
@@ -1419,7 +1458,7 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	/* FORWARD_CHILDREN_f(s); */
     }
 }
-	    
+
 
 /*
 #define PROCESS_NODES() do { \
@@ -1966,14 +2005,14 @@ void popAllocStack()
 	while(page != NULL) {
 	    if (global_stack_debug) {
 		/* if debugging, fill deallocated space with visible garbage */
-		memset(page->space, 0xfd, page->original_size);
+		// memset(page->space, 0xfd, page->original_size);
 	    }
-	    free(page->space);
+	    //free(page->space);
 	    prev_page = page;
 	    page = page->next;
-	    free(prev_page);
+	    //free(prev_page);
 	}
-	free(temp);
+	//free(temp);
     }
 }
 
@@ -2600,7 +2639,7 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	    R_LargeVallocSize += size;
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
 	    R_NodesInUse++;
-	    SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
+	    SNAP_NODE_force(s, R_GenHeap[LARGE_NODE_CLASS].New);
 	}
     }
     else {
