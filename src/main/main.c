@@ -488,7 +488,7 @@ void setup_Rmainloop(void)
 #if defined(Win32) && defined(SUPPORT_UTF8)
     utf8locale = mbcslocale = TRUE;
 #endif
-    /* gc_inhibit_torture = 0; */
+    gc_inhibit_torture = (getenv("R_GC_TORTURE") == NULL);
 
     /* Initialize the global context for error handling. */
     /* This provides a target for any non-local gotos */

@@ -422,6 +422,38 @@ static R_size_t R_NodesInUse = 0;
 #define SET_NEXT_NODE(s,t) (NEXT_NODE(s) = (t))
 #define SET_PREV_NODE(s,t) (PREV_NODE(s) = (t))
 
+static AllocStack * deadStack;
+
+void addToDeadStack(AllocStack * s)
+{
+    s->down = deadStack;
+    deadStack = s;
+}
+
+void freeDeadStack()
+{
+    AllocStack * prev_s;
+    StackPage * page;
+    StackPage * prev_page;
+
+    while(deadStack != NULL) {
+	page = deadStack->page;
+	while(page != NULL) {
+	    if (global_stack_debug) {
+		/* if debugging, fill deallocated space with visible garbage */
+		memset(page->space, 0xfd, page->original_size);
+	    }
+	    free(page->space);
+	    prev_page = page;
+	    page = page->next;
+	    free(prev_page);
+	}
+	prev_s = deadStack;
+	deadStack = deadStack->down;
+	free(prev_s);
+    }
+}
+
 Rboolean pointer_within(SEXP p, AllocStack * as)
 {
     StackPage * page;
@@ -435,7 +467,7 @@ Rboolean pointer_within(SEXP p, AllocStack * as)
     return FALSE;
 }
 
-static Rboolean is_good_stack(SEXP s) {
+static Rboolean is_live_stack(SEXP s) {
     AllocStack * sp;
 
     sp = allocStackTop;
@@ -448,8 +480,17 @@ static Rboolean is_good_stack(SEXP s) {
     return FALSE;
 }
 
-static Rboolean is_bad_stack(SEXP s) {
-    return (!is_good_stack(s));
+static Rboolean is_dead_stack(SEXP s) {
+    AllocStack * sp;
+
+    sp = deadStack;
+    while (sp != NULL) {
+	if (pointer_within(s, sp)) {
+	    return TRUE;
+	}
+	sp = sp->down;
+    }
+    return FALSE;
 }
 
 static Rboolean is_stack(SEXP s) {
@@ -469,7 +510,6 @@ static Rboolean is_heap(SEXP s) {
 
     return TRUE;
 
-    // breaks
     for(c = 0; c < NUM_SMALL_NODE_CLASSES; c++) {
 	p = R_GenHeap[c].pages;
 	for(i = 0; i < R_GenHeap[c].PageCount; i++) {
@@ -716,11 +756,83 @@ void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     }
 }
 
+void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
+{
+    if (is_stack(parent) || is_stack(s)) {
+	if (is_dead_stack(parent)) {
+	    error(_("Dead stack parent\n"));
+	}
+	if (is_dead_stack(s)) {
+	    error(_("Tried to forward dead stack object with live parent; this should not happen\n"));
+	}
+    }
+    if (s && ! NODE_IS_MARKED(s)) {
+	MARK_NODE(s);
+	if (!is_stack(s)) {
+	    UNSNAP_NODE(s);
+	}
+	SET_NEXT_NODE(s, *forwarded_nodes);
+	*forwarded_nodes = s;
+    }
+    
+}
+
 #define FC_FORWARD_NODE_f(__n__,__dummy__) FORWARD_NODE_f(__n__,forwarded_nodes)
 #define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
-#define FORWARD_CHILDREN_f(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE_f, 0)
 #define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
 
+void FORWARD_CHILDREN_f(SEXP n, SEXP * forwarded_nodes) {
+    if (ATTRIB(n) != R_NilValue) {
+	FORWARD_NODE_check(n, ATTRIB(n), forwarded_nodes);
+    }
+    switch (TYPEOF(n)) { 
+    case NILSXP: 
+    case BUILTINSXP: 
+    case SPECIALSXP: 
+    case CHARSXP: 
+    case LGLSXP: 
+    case INTSXP: 
+    case REALSXP: 
+    case CPLXSXP: 
+    case WEAKREFSXP: 
+    case RAWSXP: 
+    case RCC_FUNSXP: 
+	break; 
+    case STRSXP: 
+    case EXPRSXP: 
+    case VECSXP: 
+	{ 
+	    int i; 
+	    for (i = 0; i < LENGTH(n); i++) {
+		FORWARD_NODE_check(n, STRING_ELT(n, i), forwarded_nodes);
+	    }
+	} 
+	break; 
+    case ENVSXP: 
+	FORWARD_NODE_check(n, FRAME(n), forwarded_nodes);
+	FORWARD_NODE_check(n, ENCLOS(n), forwarded_nodes);
+	FORWARD_NODE_check(n, HASHTAB(n), forwarded_nodes); 
+	break; 
+    case CLOSXP: 
+    case RCC_CLOSXP: 
+    case PROMSXP: 
+    case LISTSXP: 
+    case LANGSXP: 
+    case DOTSXP: 
+    case SYMSXP: 
+    case BCODESXP:
+	FORWARD_NODE_check(n, TAG(n), forwarded_nodes); 
+	FORWARD_NODE_check(n, CAR(n), forwarded_nodes); 
+	FORWARD_NODE_check(n, CDR(n), forwarded_nodes);
+	break; 
+    case EXTPTRSXP: 
+	FORWARD_NODE_check(n, EXTPTR_PROT(n), forwarded_nodes);
+	FORWARD_NODE_check(n, EXTPTR_TAG(n), forwarded_nodes);
+	break; 
+    default: 
+	abort(); 
+    } 
+}
 
 /* Node Allocation. */
 
@@ -1120,7 +1232,8 @@ static void old_to_new(SEXP x, SEXP y)
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
     if (is_stack(x)) {
-	AgeNodeAndChildren(y, NODE_GENERATION(x));
+	/* 	AgeNodeAndChildren(y, NODE_GENERATION(x)); */
+	AgeNodeAndChildren(y, NUM_OLD_GENERATIONS - 1); /* temporary */
     } else {
 	UNSNAP_NODE(x);
 	SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
@@ -1454,8 +1567,8 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
 	}
-	DO_CHILDREN_f(s, FORWARD_NODE_f, forwarded_nodes);
-	/* FORWARD_CHILDREN_f(s); */
+	/* DO_CHILDREN_f(s, FORWARD_NODE_f, forwarded_nodes); */
+	FORWARD_CHILDREN_f(s, forwarded_nodes);
     }
 }
 
@@ -1543,7 +1656,7 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	    for (s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
 		 s != R_GenHeap[i].OldToNew[gen];
 		 s = NEXT_NODE(s))
-		FORWARD_CHILDREN(s);
+		FORWARD_CHILDREN_f(s, &forwarded_nodes);
 #endif
 
     /* forward all roots */
@@ -1647,6 +1760,8 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	FORWARD_NODE(WEAKREF_FINALIZER(s));
     }
     PROCESS_NODES_f(&forwarded_nodes);
+
+    /*    freeDeadStack(); */
 
     DEBUG_CHECK_NODE_COUNTS("after processing forwarded list");
 
@@ -1799,6 +1914,7 @@ void InitMemory()
     int i;
     int gen;
 
+    deadStack = NULL;
     gc_reporting = R_Verbose;
     R_StandardPPStackSize = R_PPStackSize;
     R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
@@ -1837,6 +1953,7 @@ void InitMemory()
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
 
+    /* default allocator uses the regular old heap */
     pushAllocStack(&allocVectorHeap, &allocNodeHeap);
 
     /* R_NilValue */
@@ -1876,10 +1993,10 @@ void InitMemory()
     R_HandlerStack = R_RestartStack = R_NilValue;
 #endif
 
-    /* default allocator uses the regular old heap */
     global_dump_stats = (getenv("R_DUMP_STATS") != NULL);
     global_stack_debug = (getenv("R_STACK_DEBUG") != NULL);
     global_alloc_stack_space_size = getenv("R_ALLOC_STACK_SPACE_SIZE") ? atoi(getenv("R_ALLOC_STACK_SPACE_SIZE")) : global_default_alloc_stack_space_size;
+    /*    gc_inhibit_torture = (getenv("R_GC_TORTURE") == NULL);   moved to main */
 }
 
 /* Since memory allocated from the heap is non-moving, R_alloc just
@@ -1948,6 +2065,8 @@ char *S_realloc(char *p, long new, long old, int size)
     return q;
 }
 
+/* stack allocation functions */
+
 void * getAllocStackTop()
 {
   return (void *)allocStackTop;
@@ -1990,8 +2109,6 @@ void pushAllocStack(AllocVectorFunction alloc_vector_function,
    the top, unchanged otherwise. */
 void popAllocStack()
 {
-    StackPage * page;
-    StackPage * prev_page;
     if (allocStackTop == NULL) {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
     } else {
@@ -2001,18 +2118,7 @@ void popAllocStack()
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
-	page = temp->page;
-	while(page != NULL) {
-	    if (global_stack_debug) {
-		/* if debugging, fill deallocated space with visible garbage */
-		// memset(page->space, 0xfd, page->original_size);
-	    }
-	    //free(page->space);
-	    prev_page = page;
-	    page = page->next;
-	    //free(prev_page);
-	}
-	//free(temp);
+	addToDeadStack(temp);
     }
 }
 
