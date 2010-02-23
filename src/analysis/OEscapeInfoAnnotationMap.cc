@@ -126,11 +126,20 @@ void OEscapeInfoAnnotationMap::compute() {
     cfg = fi->get_cfg();
     //    ssa = ssa_man.performAnalysis(proc, cfg);
 
-    returned = ret_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
-    escaped = esc_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
-    nmfresh = mfresh_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
-    VFreshDFSolver * nvfresh_problem = new VFreshDFSolver(interface);
-    nvfresh = nvfresh_problem->perform_analysis(proc, cfg);
+    if (fi == R_Analyst::get_instance()->get_scope_tree_root()) {
+      // The scope of the whole program. Obviously we don't care about
+      // escapes/returns from the global scope.
+      returned = new ExpressionDFSet();
+      escaped = new ExpressionDFSet();
+      nmfresh = new ExpressionDFSet();
+      nvfresh = new ExpressionDFSet();
+    } else {
+      returned = ret_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+      escaped = esc_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+      nmfresh = mfresh_problem->getOutSet(cg_node).convert<ExpressionDFSet>();
+      VFreshDFSolver * nvfresh_problem = new VFreshDFSolver(interface);
+      nvfresh = nvfresh_problem->perform_analysis(proc, cfg);
+    }
 
     if (debug) {
       std::cout << "OEscape info:" << std::endl;

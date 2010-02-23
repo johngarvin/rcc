@@ -115,10 +115,9 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     options = "AC_DEFAULT";
   } else {
     options = "AC_RCC | AC_MATCH_ARGS | AC_ENVIRONMENT | AC_USEMETHOD";
-    // TODO: think about how to implement return values with applyClosureOpt
-    //    if (!getProperty(CEscapeInfo, fi_if_known->get_sexp())->may_escape()) {
-    //      options += " | AC_STACK_CLOSURE";
-    //    }
+    if (!getProperty(CEscapeInfo, fi_if_known->get_sexp())->may_escape()) {
+      options += " | AC_STACK_CLOSURE";
+    }
   }
 
   string name;
