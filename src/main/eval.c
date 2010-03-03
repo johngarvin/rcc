@@ -655,8 +655,6 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 {
     extern Rboolean global_stack_debug;
     extern Rboolean global_dump_stats;
-    extern int global_alloc_stack_space_size;
-    int size = global_alloc_stack_space_size;
     SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
@@ -703,7 +701,6 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     if (options & AC_STACK_CLOSURE) {
 	/* stack allocate matchArgs list, environment, promises */
-	int size = global_alloc_stack_space_size;
 	pushAllocStack(&allocVectorStack, &allocNodeStack);
     } else {
 	old_heap_alloc = getFallbackAlloc();
@@ -899,12 +896,9 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
         setFallbackAlloc(old_heap_alloc);
     } else if (getFallbackAlloc() == FALSE) {
 	/* duplicate return value in parent pool */
-	/*	upAllocStack(); */
-	old_heap_alloc = getFallbackAlloc();
-	setFallbackAlloc(TRUE);
+	upAllocStack();
 	tmp = mem_duplicate(tmp);
-	/* downAllocStack(); */
-	setFallbackAlloc(old_heap_alloc);
+	downAllocStack();
     }
 
     if (global_dump_stats) {

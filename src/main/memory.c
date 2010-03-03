@@ -424,8 +424,28 @@ static R_size_t R_NodesInUse = 0;
 
 static AllocStack * deadStack;
 
+static void dumpPageStats(AllocStack * s)
+{
+    StackPage * p = s->page;
+    int n = 0;
+    while(p != NULL) {
+	n++;
+	p = p->next;
+    }
+    if (n == 0) {
+	fprintf(stderr, "AllocStack: empty\n");
+    } else if (n == 1) {
+	fprintf(stderr, "AllocStack: one page, %d bytes used\n", s->page->original_size - s->page->size);
+    } else {
+	fprintf(stderr, "AllocStack: %d pages\n", n);
+    }
+}
+
 void addToDeadStack(AllocStack * s)
 {
+    if (global_dump_stats) {
+	dumpPageStats(s);
+    }
     s->down = deadStack;
     deadStack = s;
 }
@@ -567,6 +587,7 @@ static void SNAP_NODE(SEXP s, SEXP t) {
   SEXP next = (t);
   SEXP prev = PREV_NODE(next);
   if (is_stack(s)) error(_("SNAP_NODE: tried to snap stack object"));
+  if (is_stack(next)) error(_("SNAP_NODE: stack object in heap"));
   SET_NEXT_NODE(sn__n__, next);
   SET_PREV_NODE(next, sn__n__);
   SET_NEXT_NODE(prev, sn__n__);
@@ -746,7 +767,9 @@ void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
 #define FORWARD_NODE(s) FORWARD_NODE_f(s, &forwarded_nodes)
 
 void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
-    if (s && ! NODE_IS_MARKED(s)) {
+    if (s && ((! is_stack(s) && ! NODE_IS_MARKED(s)) ||
+	      (is_stack(s) && NEXT_NODE(s) == NULL)))
+    {
 	MARK_NODE(s);
 	if (!is_stack(s)) {
 	    UNSNAP_NODE(s);
@@ -758,23 +781,15 @@ void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
 
 void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
 {
-    if (is_stack(parent) || is_stack(s)) {
+    if (global_stack_debug && (parent != NULL) && (s != NULL) && (is_stack(parent) || is_stack(s))) {
 	if (is_dead_stack(parent)) {
 	    error(_("Dead stack parent\n"));
 	}
 	if (is_dead_stack(s)) {
-	    error(_("Tried to forward dead stack object with live parent; this should not happen\n"));
+	    error(_("Dead stack object with live parent\n"));
 	}
     }
-    if (s && ! NODE_IS_MARKED(s)) {
-	MARK_NODE(s);
-	if (!is_stack(s)) {
-	    UNSNAP_NODE(s);
-	}
-	SET_NEXT_NODE(s, *forwarded_nodes);
-	*forwarded_nodes = s;
-    }
-    
+    FORWARD_NODE_f(s, forwarded_nodes);
 }
 
 #define FC_FORWARD_NODE_f(__n__,__dummy__) FORWARD_NODE_f(__n__,forwarded_nodes)
@@ -1225,9 +1240,6 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 
 static void old_to_new(SEXP x, SEXP y)
 {
-    if (is_stack(y)) {
-	return;
-    }
 #ifdef EXPEL_OLD_TO_NEW
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
@@ -1617,6 +1629,9 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	    while (s != R_GenHeap[i].OldToNew[gen]) {
 		SEXP next = NEXT_NODE(s);
 		DO_CHILDREN(s, AgeNodeAndChildren, gen);
+		if (is_stack(s)) {
+		    error(_("Unexpected stack node in OldToNew\n"));
+		}
 		UNSNAP_NODE(s);
 		if (NODE_GENERATION(s) != gen)
 		    REprintf("****snapping into wrong generation\n");
@@ -1761,7 +1776,7 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
     }
     PROCESS_NODES_f(&forwarded_nodes);
 
-    /*    freeDeadStack(); */
+    /* freeDeadStack(); */
 
     DEBUG_CHECK_NODE_COUNTS("after processing forwarded list");
 
@@ -2098,7 +2113,7 @@ void pushAllocStack(AllocVectorFunction alloc_vector_function,
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
     elem->page = NULL;
-    addStackPage(elem);
+    /*    addStackPage(elem); */
     elem->up = allocStackTop;
     elem->down = NULL;
     if (elem->up != NULL) elem->up->down = elem;
@@ -2787,10 +2802,10 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
     if (length > max_vector_stack_length) return allocVectorHeap(NULL, type, length);
 
     size = allocVectorGetSize(type, length);
-    if (size > allocator->page->original_size) return allocVectorHeap(NULL, type, length);
-    if (size > allocator->page->size) {
+    if (allocator->page == NULL || size > allocator->page->size) {
 	addStackPage(allocator);
     }
+    if (size > allocator->page->original_size) return allocVectorHeap(NULL, type, length);
     SEXP space = allocator->page->free_space;
     if (global_dump_stats) fprintf(stderr, "vector stack %u bytes from pool %u ", size, allocator->id);
     space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
@@ -2820,11 +2835,11 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
     if (allocator == NULL) {
 	error("allocNodeStack called on null allocator");
     }
+    if (allocator->page == NULL || node_size > allocator->page->size) {
+	addStackPage(allocator);
+    }
     if (node_size > allocator->page->original_size) {
 	error("Stack page size too small to contain S-expression");
-    }
-    if (node_size > allocator->page->size) {
-	addStackPage(allocator);
     }
     SEXP space = allocator->page->free_space;
     if (global_dump_stats) fprintf(stderr, "node stack %u bytes from pool %u ", node_size, allocator->id);

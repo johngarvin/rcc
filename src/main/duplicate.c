@@ -126,6 +126,9 @@ SEXP duplicate(SEXP s)
 	      fprintf(stderr, "Duplicating cons cell (LISTSXP)\n");
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
+	    if (global_dump_stats) {
+	      fprintf(stderr, "End of duplication\n");
+	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
 	    DUPLICATE_ATTRIB(t, sp);
@@ -145,6 +148,9 @@ SEXP duplicate(SEXP s)
 	      fprintf(stderr, "Duplicating cons cell (LANGSXP)\n");
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
+	    if (global_dump_stats) {
+	      fprintf(stderr, "End of duplication\n");
+	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
 	    DUPLICATE_ATTRIB(t, sp);
@@ -166,6 +172,9 @@ SEXP duplicate(SEXP s)
 		fprintf(stderr, "Duplicating cons cell (DOTSXP)\n");
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
+	    if (global_dump_stats) {
+	      fprintf(stderr, "End of duplication\n");
+	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
 	    DUPLICATE_ATTRIB(t, sp);
@@ -220,6 +229,9 @@ SEXP duplicate(SEXP s)
     }
     if(TYPEOF(t) == TYPEOF(s) ) /* surely it only makes sense in this case*/
 	SET_OBJECT(t, OBJECT(s));
+    if (global_dump_stats) {
+      fprintf(stderr, "End of duplication\n");
+    }
     return t;
 }
 
