@@ -2413,7 +2413,7 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
     SEXP protect_on_gc[3] = {expr, rho, NULL};
     if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-    if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);    
+    if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = PROMSXP;
     PRCODE(s) = expr;

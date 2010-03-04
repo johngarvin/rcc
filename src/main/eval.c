@@ -289,6 +289,7 @@ static SEXP call_func_alloc(CCODE func, SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP eval(SEXP e, SEXP rho)
 {
+    Rboolean fallback;
     SEXP op, tmp, val;
     static int evalcount = 0;
 
@@ -373,7 +374,10 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 		errorcall(R_GlobalContext->call,
 			  _("recursive default argument reference"));
 	    SET_PRSEEN(e, 1);
+	    fallback = getFallbackAlloc();
+	    setFallbackAlloc(TRUE);
 	    val = eval(PRCODE(e), PRENV(e));
+	    setFallbackAlloc(fallback);
 	    SET_PRSEEN(e, 0);
 	    SET_PRVALUE(e, val);
 	    /* allow GC to reclaim; useful for fancy games with delay() */
