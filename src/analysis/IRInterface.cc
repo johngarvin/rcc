@@ -44,6 +44,7 @@
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
+#include <analysis/SpecialProcSymMap.h>
 #include <analysis/SymbolTableFacade.h>
 #include <analysis/Var.h>
 #include <analysis/VarAnnotationMap.h>
@@ -440,8 +441,10 @@ ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
     rcc_warn("getProcHandle: procedure symbol has no definitions");
     return HellProcedure::get_instance();
   }
-  //  std::cout << to_string((*iter)->getRhs_c());
-  //  std::cout << to_string(CAR((*iter)->getRhs_c()));
+  if (!is_procedure(CAR((*iter)->getRhs_c()))) {
+    rcc_warn("getProcHandle: symbol bound to expression that is not a fundef or a closure");
+    return HellProcedure::get_instance();
+  }
   ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
   if (++iter != vi->end_defs()) {  // if more than one def
     rcc_warn("getProcHandle: procedure symbol has more than one definition");
@@ -455,12 +458,16 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
   /// TODO: R procedures are first class. We need to find a way to
   /// handle more than one procedure bound to the same name in the same
   /// scope. For now we're just giving the first name assigned.
+  SpecialProcSymMap * special_map = SpecialProcSymMap::get_instance();
   SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
   if (h == HellProcedure::get_instance()) {
-    return SymHandle(0);
+    return special_map->get_hell();
   }
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
   SEXP name = fi->get_first_name_c();
+  if (fi == R_Analyst::get_instance()->get_scope_tree_root()) {
+    return special_map->get_global();
+  }
   if (VarAnnotationMap::get_instance()->is_valid(name)) {
     VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
     if (sym->size_defs() == 1) {
@@ -470,9 +477,8 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
       throw AnalysisException("getSymHandle: more than one definition of procedure");
     }
   } else {
-    // the global-scope procedure and anonymous functions won't have a Var annotation.
-    // In this case, return 0.
-    return SymHandle(0);
+    // anonymous function
+    return special_map->get_anon(h);
   }
 }
 
@@ -719,6 +725,8 @@ std::string R_IRInterface::toString(ProcHandle h) const {
     return "ProcHandle(0)";
   } else if (h == HellProcedure::get_instance()) {
     return "*Hell Procedure*";
+  } else if (SpecialProcSymMap::get_instance()->is_anon(h)) {
+    return SpecialProcSymMap::get_instance()->get_anon(h);
   } else {
     FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
     return var_name(CAR(fi->get_first_name_c()));
@@ -742,9 +750,16 @@ std::string R_IRInterface::toString(MemRefHandle h) const {
 }
 
 std::string R_IRInterface::toString(SymHandle h) const {
+  SpecialProcSymMap * special = SpecialProcSymMap::get_instance();
   VarInfo * vi = make_var_info(h);
   if (vi == 0) {
     return "SymHandle(0)";
+  } else if (h == special->get_hell()) {
+    return "*Hell Procedure*";
+  } else if (h == special->get_global()) {
+    return "*global*";
+  } else if (special->is_anon(h)) {
+    return "*anonymous*";
   } else if (vi->has_scope()) {
     return to_string(vi->get_name()) + "@" + vi->get_scope()->get_name();
   } else {

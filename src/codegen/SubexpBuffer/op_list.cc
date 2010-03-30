@@ -86,7 +86,7 @@ Expression SubexpBuffer::op_list(SEXP list, string rho, bool literal,
   for (i = 0; i < length; i++) {
     cars[i] = (literal ?
 	       op_literal(CAR(e), rho) :
-	       op_exp(e, rho, Unprotected, fullyEvaluatedResult));
+	       op_exp(e, rho, Protected, fullyEvaluatedResult));
     if (cars[i].dependence == DEPENDENT) {
       list_dep = DEPENDENT;
     }
@@ -133,8 +133,16 @@ Expression SubexpBuffer::op_list(SEXP list, string rho, bool literal,
   } else {
     subexp->append_decls("static SEXP " + var + ";\n");
   }
+
+  if (unp_count > 0) {
+    append_defs("UNPROTECT(" + i_to_s(unp_count) + ");\n");
+  }
+  string delete_text;
   subexp->append_defs(emit_assign(var, call));
-  return Expression(var, list_dep, VISIBLE, list_dep == DEPENDENT ? unp(var) : "");
+  if (list_dep == DEPENDENT) {
+    delete_text = unp(var);
+  }
+  return Expression(var, list_dep, VISIBLE, delete_text);
 }
 
 #if 0 

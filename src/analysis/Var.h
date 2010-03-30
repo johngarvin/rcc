@@ -25,6 +25,7 @@
 #ifndef ANNOTATION_VAR_H
 #define ANNOTATION_VAR_H
 
+#include <cassert>
 #include <ostream>
 
 #include <include/R/R_RInternals.h>
@@ -79,9 +80,9 @@ public:
 
   // Mention (cons cell that contains the name)
   SEXP getMention_c() const
-    { return mSEXP; }
+  { return mSEXP; }
   void setMention_c(SEXP x)
-    { mSEXP = x; }
+  { mSEXP = x; }
 
   bool is_first_on_some_path() const
     { return m_first_on_some_path; }

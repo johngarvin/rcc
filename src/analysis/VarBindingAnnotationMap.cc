@@ -198,7 +198,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	  }
 	}
 	// for R internal names, add the library scope
-	if (is_library(CAR(v->getMention_c()))) {
+	if (CAR(v->getMention_c()) == R_MissingArg || is_library(CAR(v->getMention_c()))) {
 	  scopes->insert(R_Analyst::get_instance()->get_library_scope());
 	}
 	

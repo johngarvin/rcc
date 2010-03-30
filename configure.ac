@@ -209,6 +209,8 @@ AM_CONDITIONAL(IS_HOST_AR, test "${HOST_AR}" != "")
 # config for "real-world" directory removed in distribution version so
 # we're not distributing files that don't belong to us
 
+# also "benchmarks" directory
+
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
 		 lib/Makefile
@@ -216,8 +218,8 @@ AC_CONFIG_FILES([Makefile
 		 build/src/Makefile
 		 macros/Makefile
 		 tests/Makefile
-		 tests/regression/Makefile
 		 tests/performance/Makefile
+		 tests/regression/Makefile
 		 tools/Makefile
 		 tools/rcc
 		 tools/rcc-cc
@@ -247,5 +249,14 @@ AC_CONFIG_FILES([tests/regression/run-interpreted],
 
 AC_CONFIG_FILES([tests/performance/run-test],
                 [chmod +x tests/performance/run-test])
+
+#AC_CONFIG_FILES([tests/benchmarks/run-test],
+#                [chmod +x tests/benchmarks/run-test])
+
+#AC_CONFIG_FILES([tests/benchmarks/run-compiled],
+#                [chmod +x tests/benchmarks/run-compiled])
+
+#AC_CONFIG_FILES([tests/benchmarks/run-interpreted],
+#                [chmod +x tests/benchmarks/run-interpreted])
 
 AC_OUTPUT

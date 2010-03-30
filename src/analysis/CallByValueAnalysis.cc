@@ -20,6 +20,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <set>
+
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
@@ -78,9 +80,14 @@ void CallByValueAnalysis::perform_analysis() {
       formal->set_pre_debut_side_effect(compute_pre_debut_side_effect(fi, formal));
     }
   }
+
+  // set of library procedures that cannot be called by value for any
+  // reason. For example, 'library' calls deparsing functions on its
+  // arguments.
+  std::set<SEXP> unsafe_libs;
+  unsafe_libs.insert(Rf_install("library"));
   
   // analyze call sites (those that can be analyzed) and figure out whether each arg can be made CBV
-
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, csi_c) {
       SEXP cs = CAR(*csi_c);
@@ -99,12 +106,15 @@ void CallByValueAnalysis::perform_analysis() {
       {
 	// for each arg, safe to make eager if it's trivial
 	int i = 0;
-	for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
-	  SEXP actual_c = argi.current();
-	  if (getProperty(SideEffect, actual_c)->is_trivial()) {
-	    call_expr->set_eager_lazy(i, EAGER);
-	  } else {
+	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
+	  if (unsafe_libs.find(call_lhs(cs)) != unsafe_libs.end()) {
 	    call_expr->set_eager_lazy(i, LAZY);
+	  } else {
+	    if (getProperty(SideEffect, argi.current())->is_trivial()) {
+	      call_expr->set_eager_lazy(i, EAGER);
+	    } else {
+	      call_expr->set_eager_lazy(i, LAZY);
+	    }
 	  }
 	}
 	// TODO: add case to check if callee is strict or side effect free
@@ -125,7 +135,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  if (def->getSourceType() == DefVar::DefVar_ASSIGN && is_fundef(CAR(def->getRhs_c()))) {
 	    callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
 	  } else {
-	    rcc_error("Callee name defined as a non-fundef");
+	    rcc_warn("No CBV information for callee name defined as a non-fundef");
 	    continue;
 	  }
 	} else {
@@ -141,7 +151,7 @@ void CallByValueAnalysis::perform_analysis() {
 	
 	// for each arg
 	int i = 0;
-	for(R_ListIterator argi(call_args(cs)); argi.isValid(); argi++, i++) {
+	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
 	  FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
 	  SEXP actual_c = argi.current();
 	  call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);

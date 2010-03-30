@@ -58,6 +58,11 @@ VarInfo::VarInfo(const SEXP name)
 {
 }
 
+VarInfo::VarInfo()
+  : m_name(), m_scope(), m_c_location(""), m_param(false)
+{
+}
+
 VarInfo::~VarInfo()
 {
 }

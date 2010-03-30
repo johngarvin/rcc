@@ -20,11 +20,11 @@ endif
 foreach f ( $* ) 
     echo --- $f ---
     echo "  running and timing $f with the original R interpreter..."
-    ${Rorig} --slave < $f >  `basename $f .r`.interpreted
-    ${Rorig} CMD Rprof Rprof.out | grep "^Total run time"
+    time ${Rorig} --slave < $f >  `basename $f .r`.interpreted
+#    ${Rorig} CMD Rprof Rprof.out | grep "^Total run time"
     echo "  running and timing $f with the modified R interpreter..."
-    ${Rplain} --slave < $f >  `basename $f .r`.interpreted
-    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
+    time ${Rplain} --slave < $f >  `basename $f .r`.interpreted
+#    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
     if ($opt == 'full') then
 	foreach f1 ( no-for-loop-range-deforestation for-loop-range-deforestation )
 	    foreach f2 ( no-subscript-assignment subscript-assignment )

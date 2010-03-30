@@ -66,6 +66,9 @@ public:
   // constructor for special SymbolTable for ambiguous references
   explicit VarInfo(const SEXP name);
 
+  // constructor for global, HellProcedure, and anonymous functions
+  explicit VarInfo();
+
   virtual ~VarInfo();
 
   // -------------------------------------------------------

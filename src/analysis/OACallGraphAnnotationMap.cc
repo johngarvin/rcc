@@ -37,6 +37,7 @@
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 #include "OACallGraphAnnotationMap.h"
@@ -57,6 +58,7 @@ typedef OACallGraphAnnotationMap::const_iterator const_iterator;
 // ----- constructor, destructor -----
 
 OACallGraphAnnotationMap::OACallGraphAnnotationMap() {
+  RCC_DEBUG("RCC_OACallGraphAnnotationMap", debug);
 }
 
 OACallGraphAnnotationMap::~OACallGraphAnnotationMap() {
@@ -134,7 +136,7 @@ void OACallGraphAnnotationMap::compute() {
 
   // build call graph
   m_call_graph = man.performAnalysis(proc_iter, intra_alias);
-  
+
   if (debug) {
     std::cout << "Immediately after building call graph:" << std::endl;
     m_call_graph->output(*interface);

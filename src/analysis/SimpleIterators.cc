@@ -86,6 +86,41 @@ void R_ListIterator::reset() {
 }
 
 //--------------------------------------------------------------------
+// R_CallArgsIterator methods
+//--------------------------------------------------------------------
+
+R_CallArgsIterator::R_CallArgsIterator(SEXP call) : m_call(call) {
+  // make sure it's of list type: data cons cell, language cons cell, or nil
+  assert(TYPEOF(call) == LISTSXP || TYPEOF(call) == LANGSXP || call == R_NilValue);
+  reset();
+}
+
+R_CallArgsIterator::~R_CallArgsIterator() {
+}
+
+SEXP R_CallArgsIterator::current() const {
+  return m_curr;
+}
+
+bool R_CallArgsIterator::isValid() const {
+  return (m_curr != R_NilValue);
+}
+
+// prefix
+void R_CallArgsIterator::operator++() {
+  // must be a data or language cons cell to be able to take the CDR
+  assert(TYPEOF(m_curr) == LISTSXP || TYPEOF(m_curr) == LANGSXP);
+  m_curr = CDR(m_curr);
+}
+
+// postfix
+void R_CallArgsIterator::operator++(int) { ++*this; }
+
+void R_CallArgsIterator::reset() {
+  m_curr = CDR(m_call);
+}
+
+//--------------------------------------------------------------------
 // R_PreorderIterator methods
 //--------------------------------------------------------------------
 

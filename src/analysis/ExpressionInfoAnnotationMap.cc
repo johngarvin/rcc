@@ -79,10 +79,15 @@ void ExpressionInfoAnnotationMap::compute() {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	// statements
 	ExpressionInfo * annot = make_annot(make_sexp(stmt));
+	if (is_for(CAR(make_sexp(stmt)))) {
+	  make_annot(for_range_c(CAR(make_sexp(stmt))));
+	}
 	for(ExpressionInfo::const_call_site_iterator csi = annot->begin_call_sites(); csi != annot->end_call_sites(); ++csi) {
 	  // call sites
 	  make_annot(*csi);
-	  for(R_ListIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
+	  // LHS
+	  make_annot(CAR(*csi));
+	  for(R_CallArgsIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
 	    // actual arguments
 	    make_annot(arg_it.current());
 	  }

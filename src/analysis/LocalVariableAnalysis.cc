@@ -56,7 +56,8 @@ LocalVariableAnalysis::LocalVariableAnalysis(const SEXP _stmt)
 /// Traverse the given SEXP and set variable annotations with local
 /// syntactic information.
 void LocalVariableAnalysis::perform_analysis() {
-  build_ud_rhs(m_stmt, Var::Var_MUST);  // we're not in an actual arg to any function, so must-use
+  build_ud_rhs(m_stmt, Var::Var_MUST, true);  // we're not in an actual arg to any function, so must-use
+  // pass true as last argument: initial call to build_ud_rhs, not recursive call
 }
 
 const_use_iterator LocalVariableAnalysis::begin_uses() const {
@@ -84,11 +85,16 @@ const_call_site_iterator LocalVariableAnalysis::end_call_sites() const { return 
 /// may_must_type = whether var uses should be may-use or must-use
 ///                 (usually must-use; may-use if we're looking at an actual argument
 ///                 to a call-by-need function)
-void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must_type) {
+/// is_stmt       = true if we're calling build_ud_rhs from outside, false if sub-SEXP
+void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must_type, bool is_stmt) {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
   if (is_const(e)) {
     // ignore
+    /*
+  } else if (e == R_MissingArg) {
+    // ignore
+    */
   } else if (is_var(e)) {
     UseVar * var_annot = new UseVar();
     var_annot->setMention_c(cell);
@@ -98,45 +104,64 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     m_uses.push_back(var_annot);
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
-    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST);
+    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST, false);
   } else if (is_free_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_FREE_ASSIGN);
-    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST);
+    build_ud_rhs(assign_rhs_c(e), Var::Var_MUST, false);
   } else if (is_fundef(e)) {
     // ignore
   } else if (is_struct_field(e)) {
-    build_ud_rhs(CDR(e), Var::Var_MUST);
+    build_ud_rhs(CDR(e), Var::Var_MUST, false);
   } else if (is_subscript(e)) {
     m_call_sites.push_back(cell);
-    build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST);
+    // use of '[' symbol
+    UseVar * var_annot = new UseVar();
+    var_annot->setMention_c(e);
+    var_annot->setPositionType(UseVar::UseVar_FUNCTION);
+    var_annot->setMayMustType(Var::Var_MUST);
+    var_annot->setScopeType(Locality::Locality_TOP);
+    m_uses.push_back(var_annot);
+    // left side of subscript
+    build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST, false);
+    // subscript args
     for (SEXP sub_c = subscript_first_sub_c(e); sub_c != R_NilValue; sub_c = CDR(sub_c)) {
-      build_ud_rhs(sub_c, Var::Var_MUST);
+      build_ud_rhs(sub_c, Var::Var_MUST, false);
     }
   } else if (is_if(e)) {
-    build_ud_rhs(if_cond_c(e), Var::Var_MUST);
+    build_ud_rhs(if_cond_c(e), Var::Var_MUST, false);
+    if (!is_stmt) {
+      build_ud_rhs(if_truebody_c(e), Var::Var_MAY, false);
+      if (CAR(if_falsebody_c(e)) != R_NilValue) build_ud_rhs(if_falsebody_c(e), Var::Var_MAY, false);
+    }
   } else if (is_for(e)) {
     // defines the induction variable, uses the range
     build_ud_lhs(for_iv_c(e), for_range_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
-    build_ud_rhs(for_range_c(e), Var::Var_MUST);
+    build_ud_rhs(for_range_c(e), Var::Var_MUST, false);
   } else if (is_loop_header(e)) {
     // TODO
     // currently this case cannot happen
   } else if (is_loop_increment(e)) {
     // TODO
     // currently this case cannot happen
+    /*
   } else if (is_while(e)) {
     // TODO: don't add to call sites once while is handled specially
     m_call_sites.push_back(cell);
+    UseVar * while_annot = new UseVar();
+    while_annot->setMention_c(e);
+    while_annot->setPositionType(UseVar::UseVar_FUNCTION);
+    while_annot->setMayMustType(Var::Var_MUST);
+    while_annot->setScopeType(Locality::Locality_TOP);
+    m_uses.push_back(while_annot);
     build_ud_rhs(while_cond_c(e), Var::Var_MUST);
   } else if (is_repeat(e)) {
     // ignore
-
-    //  } else if (is_paren_exp(e)) {
-    //    build_ud_rhs(paren_body_c(e));
-
+    */
+  } else if (is_paren_exp(e)) {
+    build_ud_rhs(paren_body_c(e), Var::Var_MUST, false);
   } else if (is_curly_list(e)) {
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
-      build_ud_rhs(stmt, Var::Var_MUST);
+      build_ud_rhs(stmt, Var::Var_MUST, false);
     }
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
     m_call_sites.push_back(cell);
@@ -148,7 +173,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
       var_annot->setScopeType(Locality::Locality_TOP);
       m_uses.push_back(var_annot);
     } else {
-      build_ud_rhs(e, Var::Var_MUST);
+      build_ud_rhs(e, Var::Var_MUST, false);
     }
     // recur on args
     // Because R functions are call-by-need, var uses that appear in
@@ -156,9 +181,9 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
     // so vars passed as args should stay MUST.
     for (SEXP stmt = CDR(e); stmt != R_NilValue; stmt = CDR(stmt)) {
       if (is_var(CAR(e)) && TYPEOF(Rf_findFunUnboundOK(CAR(e), R_GlobalEnv, TRUE)) == BUILTINSXP) {
-	build_ud_rhs(stmt, Var::Var_MUST);
+	build_ud_rhs(stmt, Var::Var_MUST, false);
       } else {
-	build_ud_rhs(stmt, Var::Var_MAY);
+	build_ud_rhs(stmt, Var::Var_MAY, false);
       }
     }
   } else {
@@ -179,7 +204,11 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
   assert(is_cons(cell));
   assert(is_cons(rhs_c));
   SEXP e = CAR(cell);
-  if (is_var(e)) {
+  if (is_var(e) || Rf_isString(e)) {
+    if (Rf_isString(e)) {
+      SETCAR(cell, Rf_install(CHAR(STRING_ELT(e, 0))));
+      e = CAR(cell);
+    }
     DefVar * var_annot = new DefVar();
     var_annot->setMention_c(cell);
     var_annot->setMayMustType(may_must_type);
@@ -193,33 +222,42 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
     // locality has to be resolved with data flow analysis. Example:
     // in both 'x[3] <- 10' and 'x[3] <<- 10', we have to look at data
     // flow to figure out the scope of x.
-    if (may_must_type == Var::Var_MUST) {
-      if (lhs_type == IN_LOCAL_ASSIGN) {
-	var_annot->setScopeType(Locality::Locality_LOCAL);
-      } else {
-	var_annot->setScopeType(Locality::Locality_FREE);
-      }
-    } else {                                             // may-def
-      var_annot->setScopeType(Locality::Locality_TOP);
+    // NOTE: I don't think this is true anymore.
+
+    // if (may_must_type == Var::Var_MUST) {
+    //   if (lhs_type == IN_LOCAL_ASSIGN) {
+    // 	var_annot->setScopeType(Locality::Locality_LOCAL);
+    //   } else {
+    // 	var_annot->setScopeType(Locality::Locality_FREE);
+    //   }
+    // } else {                                             // may-def
+    //   var_annot->setScopeType(Locality::Locality_TOP);
+    // }
+
+    if (lhs_type == IN_LOCAL_ASSIGN) {
+      var_annot->setScopeType(Locality::Locality_LOCAL);
+    } else {
+      var_annot->setScopeType(Locality::Locality_FREE);
     }
+    
     m_defs.push_back(var_annot);
   } else if (is_struct_field(e)) {
     build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {
     build_ud_lhs(subscript_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
     for (SEXP sub_c = subscript_first_sub_c(e); sub_c != R_NilValue; sub_c = CDR(sub_c)) {    
-      build_ud_rhs(sub_c, Var::Var_MUST);
+      build_ud_rhs(sub_c, Var::Var_MUST, false);
     }
   } else if (TYPEOF(e) == LANGSXP) {  // regular function call
     // Function application as lvalue. Examples: dim(x) <- foo, attr(x, "dim") <- c(2, 5)
     //
     // TODO: We should really be checking if the function is valid;
     // only some functions applied to arguments make a valid lvalue.
-    build_ud_rhs(e, Var::Var_MUST);                        // assignment function
+    build_ud_rhs(e, Var::Var_MUST, false);                 // assignment function
     build_ud_lhs(CDR(e), rhs_c, Var::Var_MAY, lhs_type);   // first arg is lvalue
     SEXP arg = CDDR(e);                                    // other args are rvalues if they exist
     while (arg != R_NilValue) {
-      build_ud_rhs(arg, Var::Var_MUST);
+      build_ud_rhs(arg, Var::Var_MUST, false);
       arg = CDR(arg);
     }
   } else {

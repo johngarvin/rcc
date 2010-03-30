@@ -151,6 +151,8 @@ rcc_bin_SOURCES =				\
   SideEffectAnnotationMap.h                     \
   SimpleIterators.cc				\
   SimpleIterators.h				\
+  SpecialProcSymMap.cc                          \
+  SpecialProcSymMap.h                           \
   StrictnessDFSet.cc                            \
   StrictnessDFSet.h                             \
   StrictnessDFSetElement.cc                     \

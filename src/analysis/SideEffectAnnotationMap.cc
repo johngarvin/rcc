@@ -104,7 +104,9 @@ void SideEffectAnnotationMap::compute() {
     }  // next node
 
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
-      for (R_ListIterator arg_it(call_args(CAR(*csi))); arg_it.isValid(); ++arg_it) {
+      // left side
+      make_side_effect(fi, CAR(*csi));
+      for (R_CallArgsIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
 	if (debug) {
 	  std::cout << "making side effect for actual arg: ";
 	  Rf_PrintValue(CAR(arg_it.current()));

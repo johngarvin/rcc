@@ -34,22 +34,19 @@ SymbolTableFacade::~SymbolTableFacade() {
 }
 
 VarInfo * SymbolTableFacade::find_entry(const Var * var) const {
+  VarInfo * vi;
   VarBinding * binding = getProperty(VarBinding, var->getMention_c());
   if (binding->is_unbound()) {
     SymbolTable * table = UnboundLexicalScope::get_instance()->get_symbol_table();
-    VarInfo * vi = (*table)[var->getName()];
-    assert(vi != 0);
-    return vi;
+    vi = (*table)[var->getName()];
   } else if (binding->is_single()) {
     SymbolTable * table = (*binding->begin())->get_symbol_table();
-    VarInfo * vi = (*table)[var->getName()];
-    assert(vi != 0);
-    return vi;
+    vi = (*table)[var->getName()];
   } else {
-    VarInfo * vi = (*SymbolTable::get_ambiguous_st())[var->getName()];
-    assert(vi != 0);
-    return vi;
+    vi = (*SymbolTable::get_ambiguous_st())[var->getName()];
   }
+  assert(vi != 0);
+  return vi;
 }
 
 SymbolTableFacade * SymbolTableFacade::get_instance() {

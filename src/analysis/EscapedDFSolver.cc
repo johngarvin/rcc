@@ -177,9 +177,12 @@ OA_ptr<DataFlow::DataFlowSet> EscapedDFSolver::transfer(OA_ptr<DataFlow::DataFlo
 
 OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
   OA_ptr<MyDFSet> s;
+  OA_ptr<MyDFSet> new_c; new_c = old_c->clone().convert<MyDFSet>();
+  if (cell == R_NilValue) {
+    return new_c;
+  }
   assert(is_cons(cell));
   SEXP e = CAR(cell);
-  OA_ptr<MyDFSet> new_c; new_c = old_c->clone().convert<MyDFSet>();
   if (m_func_info->is_return(cell) && !is_explicit_return(cell)) {
     b = false;
     // continue with current expression
@@ -205,7 +208,7 @@ OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
   } else if (is_curly_list(e)) {
     return esc_curly_list(curly_body(e), b, new_c);
   } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
-    return esc(struct_field_lhs_c(e), false, new_c)->meet(esc(assign_rhs_c(e), true, new_c));
+    return esc(struct_field_lhs_c(CAR(assign_lhs_c(e))), false, new_c)->meet(esc(assign_rhs_c(e), true, new_c));
   } else if (is_assign(e) && is_simple_subscript(CAR(assign_lhs_c(e)))) {
     OA_ptr<MyDFSet> out; out = esc(subscript_first_sub_c(CAR(assign_lhs_c(e))), b, new_c);
     if (is_local_assign(e)) {

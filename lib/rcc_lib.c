@@ -56,7 +56,7 @@ void my_init_memory(SEXP mem, int n) {
 
 SEXP tagged_cons(SEXP car, SEXP tag, SEXP cdr) {
   SEXP ls = cons(car, cdr);
-  TAG(ls) = tag;
+  SET_TAG(ls, tag);
   return ls;
 }
 

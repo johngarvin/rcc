@@ -45,15 +45,18 @@ Expression SubexpBuffer::op_subscript(SEXP e, SEXP op, string rho, Protection re
 
   Expression op1 = ParseInfo::global_constants->op_primsxp(op, rho);
   Expression args1 = op_list(CDR(e), rho, false, Protected, true);
-  string out = appl4("do_subset_dflt",
-		     "op_subset: " + to_string(e),
-		     "NULL",
+  string call_str = appl2("lcons", "", op1.var, args1.var);
+  Expression call = Expression(call_str, CONST, VISIBLE, unp(call_str));
+  string out = appl4("do_subset",
+		     "op_subscript: " + to_string(e),
+		     call.var,
 		     op1.var,
 		     args1.var,
 		     rho,
 		     resultProtection);
   string cleanup;
   if (resultProtection == Protected) cleanup = unp(out);
+  del(call);
   del(op1);
   del(args1);
   return Expression(out, DEPENDENT,

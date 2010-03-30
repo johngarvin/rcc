@@ -312,7 +312,11 @@ SEXP FuncInfo::return_value_c(const SEXP cell) const {
   assert(is_return(cell));
   SEXP e = CAR(cell);
   if (is_explicit_return(e)) {
-    return call_nth_arg_c(e,1);
+    if (CDR(e) == R_NilValue) {
+      return R_NilValue;
+    } else {
+      return call_nth_arg_c(e,1);
+    }
   } else {
     return cell;
   }

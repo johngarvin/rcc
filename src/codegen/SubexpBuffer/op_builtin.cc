@@ -79,7 +79,12 @@ Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho,
   SEXP e = CAR(cell);
   SEXP args = CDR(e);
 
-  bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+  bool may_escape;
+  if (OEscapeInfoAnnotationMap::get_instance()->is_valid(cell)) {
+    may_escape = getProperty(OEscapeInfo, cell)->may_escape();
+  } else {
+    may_escape = true;
+  }
 
   // special case for arithmetic operations
   if (PRIMFUN(op) == (CCODE)do_arith && Settings::get_instance()->get_special_case_arithmetic()) {
@@ -189,7 +194,7 @@ Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho,
 #if USE_OUTPUT_CODEGEN
     Expression args1 = output_to_expression(CodeGen::op_list(args, rho, false, true));
 #else
-    Expression args1 = op_list(args, rho, false, Protected, true);
+    Expression args1 = op_list(args, rho, false, Unprotected, true);
 #endif
     // TODO:
     // here: don't we need to check whether args1 is dependent? Also op1?

@@ -78,6 +78,21 @@ private:
   SEXP m_curr;
 };
 
+class R_CallArgsIterator : public R_SEXPIterator {
+public:
+  explicit R_CallArgsIterator(SEXP _call);
+  virtual ~R_CallArgsIterator();
+
+  SEXP current() const;
+  bool isValid() const;
+  void operator++();       // prefix
+  void operator++(int);    // postfix
+  void reset();
+private:
+  const SEXP m_call;
+  SEXP m_curr;
+};
+
 /// preorder traversal of an R object through CARs and CDRs
 class R_PreorderIterator {
 public:

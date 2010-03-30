@@ -86,6 +86,10 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 			 bool fullyEvaluatedResult, LookupType lookup_type)
 {
   SEXP e = CAR(cell);
+  if (e == R_MissingArg) {
+    return Expression("R_MissingArg", CONST, VISIBLE, "");
+  }
+
   string name = var_name(e);
   string lookup_function = (lookup_type == FUNCTION_VAR ? "Rf_findFun" : "Rf_findVar");
   VarBinding * binding = getProperty(VarBinding, cell);

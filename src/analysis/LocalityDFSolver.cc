@@ -125,6 +125,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       // DF problem only analyzes uses and may-defs. Locality flags of
       // must-defs are already determined statically, so don't reset
       // them!
+      // NOTE: I think this applies to may-defs also.
       
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       // set locality flag for all uses
@@ -133,12 +134,12 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
 	use->setScopeType(elem->get_locality_type());
       }
       // set locality flag for may-defs
-      EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
-	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_def(def));
-	if (def->getMayMustType() == Var::Var_MAY) {
-	  def->setScopeType(elem->get_locality_type());
-	}
-      }
+      //EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
+      //OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_def(def));
+	//	if (def->getMayMustType() == Var::Var_MAY) {
+	// def->setScopeType(elem->get_locality_type());
+	//	}
+      //}
       // ++*si; assert(!si->isValid());  // if >1 statement per node, something went wrong
       // TODO: add back assertion. Why does this sometimes fail?
     }
@@ -214,7 +215,7 @@ void LocalityDFSolver::initialize_sets() {
   CFG_FOR_EACH_NODE(m_cfg, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       if (debug) {
-	Rf_PrintValue(make_sexp(stmt));
+	Rf_PrintValue(CAR(make_sexp(stmt)));
       }
 
       // getProperty will trigger lower-level analysis if necessary

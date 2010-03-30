@@ -105,7 +105,7 @@ Expression SubexpBuffer::op_return(SEXP cell, string rho) {
   }
 
   if (Settings::get_instance()->get_stack_alloc_obj()) {
-    append_defs("popAllocStack();\n");
+    append_defs("endStackAlloc();\n");
   }
 
 #ifdef CHECK_PROTECT

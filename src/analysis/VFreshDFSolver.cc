@@ -164,6 +164,9 @@ OA_ptr<DataFlow::DataFlowSet> VFreshDFSolver::transfer(OA_ptr<DataFlow::DataFlow
 }
 
 MyPair VFreshDFSolver::nfresh(SEXP cell, OA_ptr<MyDFSet> c) {
+  if (cell == R_NilValue) {
+    return make_pair(false, c);
+  }
   assert(is_cons(cell));
   SEXP e = CAR(cell);
   if (is_explicit_return(e)) {

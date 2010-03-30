@@ -30,6 +30,7 @@
 #include <OpenAnalysis/SSA/SSAStandard.hpp>
 
 #include <support/Debug.h>
+#include <support/RccError.h>
 
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
@@ -37,6 +38,7 @@
 #include <analysis/ExpressionDFSet.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/HellProcedure.h>
 #include <analysis/MFreshCGSolver.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/OEscapeDFSolver.h>
@@ -93,7 +95,7 @@ void OEscapeInfoAnnotationMap::compute() {
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
   SSA::ManagerStandard ssa_man(interface);
   OA_ptr<CFG::CFGInterface> cfg;
-  OA_ptr<SSA::SSAStandard> ssa;
+  //  OA_ptr<SSA::SSAStandard> ssa;
   OA_ptr<CallGraph::NodeInterface> cg_node;
   OA_ptr<ExpressionDFSet> returned; 
   OA_ptr<ExpressionDFSet> escaped;
@@ -122,10 +124,14 @@ void OEscapeInfoAnnotationMap::compute() {
   for(cg_iter->reset(); cg_iter->isValid(); ++*cg_iter) {
     cg_node = cg_iter->currentCallGraphNode();
     proc = cg_node->getProc();
-    FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+    if (HandleInterface::make_sexp(proc) == 0) {
+      rcc_warn("OEscapeInfoAnnotationMap: no data for unknown procedure");
+      continue;
+    }
+    fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
     cfg = fi->get_cfg();
     //    ssa = ssa_man.performAnalysis(proc, cfg);
-
+    
     if (fi == R_Analyst::get_instance()->get_scope_tree_root()) {
       // The scope of the whole program. Obviously we don't care about
       // escapes/returns from the global scope.
@@ -140,7 +146,6 @@ void OEscapeInfoAnnotationMap::compute() {
       VFreshDFSolver * nvfresh_problem = new VFreshDFSolver(interface);
       nvfresh = nvfresh_problem->perform_analysis(proc, cfg);
     }
-
     if (debug) {
       std::cout << "OEscape info:" << std::endl;
       std::cout << var_name(CAR(fi->get_first_name_c())) << std::endl;
@@ -153,7 +158,6 @@ void OEscapeInfoAnnotationMap::compute() {
       std::cout << "NVFresh:" << std::endl;
       nvfresh->dump(std::cout);
     }
-
     //    OEscapeDFSolver * oe_solver = new OEscapeDFSolver(interface);
     //    oe = oe_solver->perform_analysis(proc, cfg);
     //    for (iter = oe->getIterator(); iter->isValid(); ++*iter) {

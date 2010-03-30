@@ -165,9 +165,12 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
 
 OA_ptr<MyDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
   OA_ptr<MyDFSet> s;
+  OA_ptr<MyDFSet> new_c; new_c = old_c->clone().convert<MyDFSet>();
+  if (cell == R_NilValue) {
+    return new_c;
+  }
   assert(is_cons(cell));
   SEXP e = CAR(cell);
-  OA_ptr<MyDFSet> new_c; new_c = old_c->clone().convert<MyDFSet>();
   if (m_func_info->is_return(cell) && !is_explicit_return(e)) {
     b = true;
     // continue with current expression
@@ -197,7 +200,7 @@ OA_ptr<MyDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) 
   } else if (is_curly_list(e)) {
     return ret_curly_list(curly_body(e), b, new_c);
   } else if (is_assign(e) && is_struct_field(CAR(assign_lhs_c(e)))) {
-    return ret(struct_field_lhs_c(e), false, new_c)->meet(ret(assign_rhs_c(e), false, new_c));
+    return ret(struct_field_lhs_c(CAR(assign_lhs_c(e))), false, new_c)->meet(ret(assign_rhs_c(e), false, new_c));
   } else if (is_simple_assign(e) && is_local_assign(e)) {
     bool symbol_returns = new_c->lookup(CAR(assign_lhs_c(e)));
     return ret(assign_rhs_c(e), symbol_returns, new_c);

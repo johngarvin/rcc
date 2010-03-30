@@ -73,8 +73,12 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
     // TODO
     throw AnalysisException("ExprTreeBuilder: fundefs not yet implemented");
   } else if (is_struct_field(e)) {
-    // TODO
-    throw AnalysisException("ExprTreeBuilder: structure fields not yet implemented");
+    if (debug) std::cout << "ExprTreeBuilder: building structure field" << std::endl;
+    OA_ptr<OpBasicInterface> op = RccBasicInterface::make_op(e);
+    OA_ptr<ExprTree::OpNode> expr; expr = new ExprTree::OpNode(op);
+    OA_ptr<ExprTree> lhs; lhs = build_c(struct_field_lhs_c(e));
+    tree->addNode(expr);
+    tree->copyAndConnectSubTree(expr, lhs);
   } else if (is_subscript(e)) {
     if (debug) std::cout << "ExprTreeBuilder: building subscript" << std::endl;
     OA_ptr<IRHandlesIRInterface> iface; iface = R_Analyst::get_instance()->get_interface();
