@@ -191,6 +191,9 @@ else
     valgrind*)
       args_ok=yes
       ;;
+    hpcrun*)
+      args_ok=yes
+      ;;
   esac
   if test -n "${args}" && test "${args_ok}" = no; then
     echo "*** Further command line arguments ('${args}') disregarded"

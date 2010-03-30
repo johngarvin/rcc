@@ -223,6 +223,7 @@ static void R_HashSet(int hashcode, SEXP symbol, SEXP table, SEXP value,
 		      Rboolean frame_locked)
 {
     SEXP chain;
+    Rboolean fallback;
 
     /* Grab the chain from the hashtable */
     chain = VECTOR_ELT(table, hashcode);
@@ -239,7 +240,11 @@ static void R_HashSet(int hashcode, SEXP symbol, SEXP table, SEXP value,
     if (isNull(chain)) {
 	SET_HASHPRI(table, HASHPRI(table) + 1);
     }
+
+    fallback = getFallbackAlloc();
+    setFallbackAlloc(TRUE);
     SET_VECTOR_ELT(table, hashcode, CONS(value, VECTOR_ELT(table, hashcode)));
+    setFallbackAlloc(fallback);
     SET_TAG(VECTOR_ELT(table, hashcode), symbol);
     return;
 }
@@ -564,8 +569,7 @@ static SEXP R_HashFrame(SEXP rho)
 
 */
 
-// #define USE_GLOBAL_CACHE
-// caching turned off for RCC
+#define USE_GLOBAL_CACHE
 
 #ifdef USE_GLOBAL_CACHE
 /* Global variable caching.  A cache is maintained in a hash table,
@@ -981,6 +985,28 @@ static SEXP findGlobalVar(SEXP symbol)
 	R_AddGlobalCache(symbol, symbol);
     return vl;
 }
+
+static R_varloc_t findGlobalVarLoc(SEXP symbol)
+{
+    SEXP vl, rho;
+    Rboolean canCache = TRUE;
+    vl = R_GetGlobalCache(symbol);
+    if (vl != R_UnboundValue)
+	return (R_varloc_t)vl;
+    for (rho = R_GlobalEnv; rho != R_NilValue; rho = ENCLOS(rho)) {
+	vl = findVarLocInFrame(rho, symbol, &canCache);
+	if (vl != R_NilValue) {
+            if(canCache)
+		R_AddGlobalCache(symbol, vl);
+	    return (R_varloc_t)BINDING_VALUE(vl);
+	}
+    }
+    vl = SYMBOL_BINDING_VALUE(symbol);
+    if (vl != R_UnboundValue)
+	R_AddGlobalCache(symbol, symbol);
+    return (R_varloc_t)vl;
+}
+
 #endif
 
 SEXP findVar(SEXP symbol, SEXP rho)
@@ -1023,6 +1049,8 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
 */
 
+#if 0
+not used?
 R_varloc_t findNonSystemVarLoc(SEXP symbol, SEXP rho)
 {
     R_varloc_t vl;
@@ -1038,6 +1066,8 @@ R_varloc_t findNonSystemVarLoc(SEXP symbol, SEXP rho)
     error(_("Couldn't find variable \"%s\""), CHAR(PRINTNAME(symbol)));
 #endif  
 }
+
+#endif
 
 /*----------------------------------------------------------------------
 
@@ -1323,9 +1353,13 @@ R_varloc_t findNonSystemFunLocUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundO
     SEXP vl;
     while (rho != R_NilValue) {
 #ifdef USE_GLOBAL_CACHE
-#error "findFunLoc with global caching not implemented"
+	if (rho == R_GlobalEnv) {
+	    loc = findGlobalVarLoc(symbol);
+	} else {
+	    loc = R_findVarLocInFrame(rho, symbol);
+	}
 #else
-	loc = R_findVarLocInFrame(rho, symbol);
+        loc = R_findVarLocInFrame(rho, symbol);
 #endif
 	if (loc != NULL) {
 	  vl = R_GetVarLocValue(loc);

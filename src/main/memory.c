@@ -55,9 +55,11 @@ Rboolean global_dump_stats; /* = (getenv("R_DUMP_STATS") != NULL); */
                             /* initialized in InitMemory()         */
 Rboolean global_stack_debug; /* = (getenv("R_STACK_DEBUG") != NULL) */
                              /* initialized in InitMemory()         */
+Rboolean global_always_use_fallback_alloc; /* = (getenv("R_ALWAYS_USE_FALLBACK_ALLOC") != NULL) */
+                                           /* initialized in InitMemory() */
 Rboolean global_stack_info = FALSE;
 
-const int global_default_alloc_stack_space_size = 4096;
+const int global_default_alloc_stack_space_size = 8000;
 int global_alloc_stack_space_size;  /* value of env variable R_ALLOC_STACK_SPACE_SIZE */
                                     /* initialized in InitMemory() */
 
@@ -67,6 +69,10 @@ static Rboolean fallback_alloc = TRUE;
 static AllocStack * allocStackTop = NULL;
 static AllocStack * allocStackCurrent = NULL;
 static int max_alloc_stack_id = 0;
+
+static void pushAllocStack(AllocVectorFunction alloc_vector_function,
+		    AllocNodeFunction alloc_node_function);
+static void popAllocStack();
 
 /* for debugging: print pointers of an S-expression and all its
    subfields. Only prints allocated expressions, not constants such as
@@ -146,6 +152,18 @@ void printAllPointers(SEXP e)
   default:
     error(_("printAllPointers: unrecognized type"));
   }
+}
+
+/* convenient for debugging. Returns protection stack index or -1 if not protected */
+int is_protected(SEXP e)
+{
+    int i;
+    for(i = 0; i < R_PPStackTop; i++) {
+	if (R_PPStack[i] == e) {
+	    return i;
+	}
+    }
+    return -1;
 }
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
@@ -764,9 +782,9 @@ void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
     } while (0)
 */
 
-#define FORWARD_NODE(s) FORWARD_NODE_f(s, &forwarded_nodes)
+#define FORWARD_NODE(s) FORWARD_NODE_check(NULL, s, &forwarded_nodes)
 
-void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
+static void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     if (s && ((! is_stack(s) && ! NODE_IS_MARKED(s)) ||
 	      (is_stack(s) && NEXT_NODE(s) == NULL)))
     {
@@ -779,9 +797,13 @@ void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     }
 }
 
-void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
+static void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
 {
-    if (global_stack_debug && (parent != NULL) && (s != NULL) && (is_stack(parent) || is_stack(s))) {
+    if (global_stack_debug &&
+	(parent != NULL) &&
+	(s != NULL) &&
+	(is_stack(parent) || is_stack(s)))
+    {
 	if (is_dead_stack(parent)) {
 	    error(_("Dead stack parent\n"));
 	}
@@ -792,7 +814,6 @@ void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
     FORWARD_NODE_f(s, forwarded_nodes);
 }
 
-#define FC_FORWARD_NODE_f(__n__,__dummy__) FORWARD_NODE_f(__n__,forwarded_nodes)
 #define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
 #define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
 
@@ -1569,18 +1590,18 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 #define PROCESS_NODES() PROCESS_NODES_f(&forwarded_nodes)
 
 static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
-    volatile SEXP s; /* temporarily volatile for debugging */
+    SEXP s;
     while(*forwarded_nodes != NULL) {
 	s = *forwarded_nodes;
 	*forwarded_nodes = NEXT_NODE(*forwarded_nodes);
-	if (is_stack(s)) {
-	    SET_NEXT_NODE(s, NULL);
-	} else {
+	if (!is_stack(s)) {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
 	}
-	/* DO_CHILDREN_f(s, FORWARD_NODE_f, forwarded_nodes); */
 	FORWARD_CHILDREN_f(s, forwarded_nodes);
+	if (is_stack(s)) {
+	    SET_NEXT_NODE(s, NULL);
+	}
     }
 }
 
@@ -1775,8 +1796,10 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	FORWARD_NODE(WEAKREF_FINALIZER(s));
     }
     PROCESS_NODES_f(&forwarded_nodes);
-
-    /* freeDeadStack(); */
+    
+    /*     if (!global_stack_debug) { */
+	freeDeadStack();
+	/* } */
 
     DEBUG_CHECK_NODE_COUNTS("after processing forwarded list");
 
@@ -2010,6 +2033,7 @@ void InitMemory()
 
     global_dump_stats = (getenv("R_DUMP_STATS") != NULL);
     global_stack_debug = (getenv("R_STACK_DEBUG") != NULL);
+    global_always_use_fallback_alloc = (getenv("R_ALWAYS_USE_FALLBACK_ALLOC") != NULL);
     global_alloc_stack_space_size = getenv("R_ALLOC_STACK_SPACE_SIZE") ? atoi(getenv("R_ALLOC_STACK_SPACE_SIZE")) : global_default_alloc_stack_space_size;
     /*    gc_inhibit_torture = (getenv("R_GC_TORTURE") == NULL);   moved to main */
 }
@@ -2102,11 +2126,23 @@ void addStackPage(AllocStack * stack)
     stack->page = page;
 }
 
+void beginStackAlloc() {
+    if (!global_always_use_fallback_alloc) {
+	pushAllocStack(&allocVectorStack, &allocNodeStack);
+    }
+}
+
+void endStackAlloc() {
+    if (!global_always_use_fallback_alloc) {
+	popAllocStack();
+    }
+}
+
 /* pushes new allocator on the stack. Sets both allocStackTop and
  * allocStackCurrent to the new allocator.
  */
-void pushAllocStack(AllocVectorFunction alloc_vector_function,
-		    AllocNodeFunction alloc_node_function)
+static void pushAllocStack(AllocVectorFunction alloc_vector_function,
+			   AllocNodeFunction alloc_node_function)
 {
     AllocStack * elem = (AllocStack *)malloc(sizeof(AllocStack));
     elem->id = max_alloc_stack_id++;
@@ -2122,7 +2158,7 @@ void pushAllocStack(AllocVectorFunction alloc_vector_function,
 
 /* pops top of allocator stack. allocStackCurrent is updated if it is
    the top, unchanged otherwise. */
-void popAllocStack()
+static void popAllocStack()
 {
     if (allocStackTop == NULL) {
 	errorcall(R_NilValue,  _("cannot pop empty allocation stack"));
@@ -2173,12 +2209,12 @@ void restoreAllocStack()
 
 Rboolean getFallbackAlloc()
 {
-    return fallback_alloc;
+    return (global_always_use_fallback_alloc ? TRUE : fallback_alloc);
 }
 
 void setFallbackAlloc(Rboolean x)
 {
-    fallback_alloc = x;
+    if (!global_always_use_fallback_alloc) fallback_alloc = x;
 }
 
 SEXP allocSExp(SEXPTYPE t)
@@ -3058,7 +3094,6 @@ void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s)
   
 SEXP allocList(int n)
 {
-    /* TODO: two passes through the list. Too much of an efficiency hit? */
     int i;
     SEXP result = R_NilValue;
 
@@ -3066,12 +3101,12 @@ SEXP allocList(int n)
     for (i = 0; i < n; i++) {
 	/* protect CDR (result), but CAR is always R_NilValue and doesn't need protection */
 	SEXP prev_result = result;
-	SEXP protect_on_gc[2] = {result, NULL};
+	SEXP protect_on_gc[2] = {prev_result, NULL};
 	result = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
-	CDR(result) = prev_result;
+	consInPlace(R_NilValue, prev_result, result);
     }
     if (global_dump_stats) fprintf(stderr, "0x%lx\n", result);
-    allocListInPlace(result);
+
     return result;
 }
 

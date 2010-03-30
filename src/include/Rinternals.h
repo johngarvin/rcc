@@ -515,9 +515,8 @@ typedef SEXP (*AllocVectorFunction)(AllocStack * allocator, SEXPTYPE type, R_len
 typedef SEXP (*AllocNodeFunction)(AllocStack * allocator, SEXP * protect_on_gc);
 void * getAllocStackTop();
 void * getAllocStackCurrent();
-void pushAllocStack(AllocVectorFunction alloc_vector_function,
-		    AllocNodeFunction alloc_node_function);
-void popAllocStack();
+void beginStackAlloc();
+void endStackAlloc();
 void upAllocStack();
 void downAllocStack();
 Rboolean getFallbackAlloc();

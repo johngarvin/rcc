@@ -626,29 +626,58 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
   return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, NULL);
 }
 
-Rboolean stack_alloc_unsafe(SEXP body, ApplyClosureOptions options, char * name)
+Rboolean stack_alloc_unsafe(SEXP body, ApplyClosureOptions options, SEXP callee_sym, char * name)
 {
+    static SEXP sym_usemethod;
+    static SEXP sym_eval;
+    static SEXP sym_assign;
+    static SEXP sym_postscript;
+
+    sym_usemethod = Rf_install("UseMethod");
+    sym_eval = Rf_install("eval");
+    sym_assign = Rf_install("assign");
+    sym_postscript = Rf_install("postscript");  /* calls gsetVar */
+
     if (!(options & AC_RCC) &&
 	TYPEOF(body) == LANGSXP &&
-	CAR(body) == Rf_install("UseMethod")) {
+	(CAR(body) == sym_usemethod ||
+	 CAR(body) == sym_eval ||
+	 CAR(body) == sym_assign ||
+	 callee_sym == sym_postscript ||
+	 strcmp(name, "axis") == 0
+	 ))
+    {
 	return TRUE;
     }
+    /*
     if (strcmp(name, "eval") == 0) {
 	return TRUE;
     }
     if (strcmp(name, "assign") == 0) {
 	return TRUE;
     }
+*/
     return FALSE;
 }
 
+/* For a variety of reasons, the duplication function for return
+   values has to be different than duplicate(). */
 SEXP mem_duplicate(SEXP x)
 {
+    int i;
     SEXP out;
     PROTECT(out = duplicate(x));
     if (TYPEOF(x) == CLOSXP) {
-	SET_FORMALS(out, duplicate(FORMALS(x)));
-	SET_BODY(out, duplicate(BODY(x)));
+	SET_FORMALS(out, mem_duplicate(FORMALS(x)));
+	SET_BODY(out, mem_duplicate(BODY(x)));
+    } else if (TYPEOF(x) == STRSXP) {
+	for(i = 0; i < LENGTH(x); i++) {
+	    SET_STRING_ELT(out, i, mem_duplicate(STRING_ELT(x, i)));
+	}
+    } else if (TYPEOF(x) == PROMSXP) {
+	SET_PRCODE(out, mem_duplicate(PRCODE(x)));
+	SET_PRENV(out, mem_duplicate(PRENV(x)));
+	SET_PRVALUE(out, mem_duplicate(PRVALUE(x)));
     }
     UNPROTECT(1);
     return out;
@@ -705,7 +734,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     if (options & AC_STACK_CLOSURE) {
 	/* stack allocate matchArgs list, environment, promises */
-	pushAllocStack(&allocVectorStack, &allocNodeStack);
+	beginStackAlloc();
     } else {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
@@ -760,7 +789,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     } else {
 	/* end the fallback alloc for the environment and args; alloc a new pool */
 	setFallbackAlloc(old_heap_alloc);
-	pushAllocStack(&allocVectorStack, &allocNodeStack);
+	beginStackAlloc();
     }
 
     /*  Fix up any extras that were supplied by usemethod. */
@@ -849,7 +878,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
-    if (stack_alloc_unsafe(body, options, name)) {
+    if (stack_alloc_unsafe(body, options, CAR(call), name)) {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
     }
@@ -871,7 +900,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 		PROTECT(tmp = R_ReturnedValue);
 		/* recover from pushes that have happened */
 		while (getAllocStackTop() != allocStackTop2) {
-		    popAllocStack();
+		    endStackAlloc();
 		}
 	    }
     } else {
@@ -896,7 +925,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PrintValueRec(call, rho);
     }
 
-    if (stack_alloc_unsafe(body, options, name)) {
+    if (stack_alloc_unsafe(body, options, CAR(call), name)) {
         setFallbackAlloc(old_heap_alloc);
     } else if (getFallbackAlloc() == FALSE) {
 	/* duplicate return value in parent pool */
@@ -911,7 +940,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	fprintf(stderr, "\n");
     }
 
-    popAllocStack();
+    endStackAlloc();
 
     if (getAllocStackTop() != allocStackTop) {
 	error(_("Allocation stack imbalance"));
