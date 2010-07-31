@@ -120,7 +120,7 @@ Expression SubexpBuffer::op_for(SEXP e, string rho,
     append_defs("REPROTECT(ans = " + ans.var + ", api);\n");
   }
   append_defs("}\n");
-  append_defs(thisLoop.breakLabel() + ":;\n");
+  append_defs(thisLoop.breakLabel() + ":\n");
   if (resultStatus == ResultNeeded) {
     append_defs(emit_unprotect("ans"));
   }

@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2009 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,21 +16,22 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: Settings.cc
+// File: IntIncMap.h
 //
-// Settings for analyses and optimizations. Default is to turn all optimizations on.
+// Maps ints to ints that can only be incremented and read.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "Settings.h"
+#include <map>
 
-Settings * Settings::s_instance = 0;
-
-Settings * Settings::get_instance() {
-  if (s_instance == 0) {
-    s_instance = new Settings();
-  }
-  return s_instance;
-}
-
-
+class IntIncMap {
+public:
+  explicit IntIncMap();
+  void inc(int key);
+  int get(int key) const;
+  int total() const;
+  int max_key() const;
+private:
+  mutable std::map<int,int> m_map;
+  int m_max_key;
+};

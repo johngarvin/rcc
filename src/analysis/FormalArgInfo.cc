@@ -38,7 +38,11 @@ namespace RAnnot {
 //****************************************************************************
 
 FormalArgInfo::FormalArgInfo(SEXP sexp)
-  : m_sexp(sexp), m_is_value(false), m_is_strict(false), m_default(0), m_name(0)
+  : m_sexp(sexp),
+    m_is_value(false),
+    m_is_strict(false),
+    m_default(CAR(sexp) == R_MissingArg ? 0 : CAR(sexp)),
+    m_name(TAG(sexp) == R_NilValue ? 0 : TAG(sexp))
 {
 }
 

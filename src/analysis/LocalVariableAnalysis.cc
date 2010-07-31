@@ -91,10 +91,8 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   SEXP e = CAR(cell);
   if (is_const(e)) {
     // ignore
-    /*
   } else if (e == R_MissingArg) {
     // ignore
-    */
   } else if (is_var(e)) {
     UseVar * var_annot = new UseVar();
     var_annot->setMention_c(cell);
@@ -143,20 +141,10 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   } else if (is_loop_increment(e)) {
     // TODO
     // currently this case cannot happen
-    /*
   } else if (is_while(e)) {
-    // TODO: don't add to call sites once while is handled specially
-    m_call_sites.push_back(cell);
-    UseVar * while_annot = new UseVar();
-    while_annot->setMention_c(e);
-    while_annot->setPositionType(UseVar::UseVar_FUNCTION);
-    while_annot->setMayMustType(Var::Var_MUST);
-    while_annot->setScopeType(Locality::Locality_TOP);
-    m_uses.push_back(while_annot);
-    build_ud_rhs(while_cond_c(e), Var::Var_MUST);
+    build_ud_rhs(while_cond_c(e), Var::Var_MUST, false);
   } else if (is_repeat(e)) {
     // ignore
-    */
   } else if (is_paren_exp(e)) {
     build_ud_rhs(paren_body_c(e), Var::Var_MUST, false);
   } else if (is_curly_list(e)) {

@@ -180,20 +180,58 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
      program += "\nint main(" + mainargs + ") \n{\n" + indent(body) + "}\n"; 
   }
 
-  // output metrics
+  // output metrics and settings
   const Metrics * m = Metrics::get_instance();
-  string metrics;
-  metrics += comment("Compile-time metrics:") + "\n";
-  metrics += comment("procedures: "                     + i_to_s(m->get_procedures())) + "\n";
-  metrics += comment("builtin calls: "                  + i_to_s(m->get_builtin_calls())) + "\n";
-  metrics += comment("special calls: "                  + i_to_s(m->get_special_calls())) + "\n";
-  metrics += comment("library calls: "                  + i_to_s(m->get_library_calls())) + "\n";
-  metrics += comment("calls to symbols in call graph: " + i_to_s(m->get_user_calls())) + "\n";
-  metrics += comment("calls to unknown symbols: "       + i_to_s(m->get_unknown_symbol_calls())) + "\n";
-  metrics += comment("calls to non-symbols: "           + i_to_s(m->get_non_symbol_calls())) + "\n";
-  metrics += comment("eager actual args: "              + i_to_s(m->get_eager_actual_args())) + "\n";
-  metrics += comment("lazy actual args: "               + i_to_s(m->get_lazy_actual_args())) + "\n";
-  program = metrics + program;
+  string stats;
+  stats += comment("Compile-time metrics:") + "\n";
+  stats += comment("procedures: "                     + i_to_s(m->get_procedures())) + "\n";
+
+  stats += comment("builtin calls: "                  + i_to_s(m->total_builtin_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_builtin_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_builtin_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("special calls (not compiled): "   + i_to_s(m->total_special_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_special_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_special_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("library calls: "                  + i_to_s(m->total_library_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_library_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_library_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("calls to symbols in call graph: " + i_to_s(m->total_user_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_user_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_user_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("calls to unknown symbols: "       + i_to_s(m->total_unknown_symbol_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_unknown_symbol_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_unknown_symbol_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("calls to non-symbols: "           + i_to_s(m->total_non_symbol_calls())) + "\n";
+  stats += comment(indent("by #args:")) + "\n";
+  for(int i = 0; i <= m->max_key_non_symbol_calls(); i++) {
+    stats += comment(indent(i_to_s(i) + "\t" + i_to_s(m->get_non_symbol_calls(i)) + "\t")) + "\n";
+  }
+
+  stats += comment("local assignments (<-, =): "      + i_to_s(m->get_local_assignments())) + "\n";
+  stats += comment("free assignments (<<-): "         + i_to_s(m->get_free_assignments())) + "\n";  
+  stats += comment("eager actual args: "              + i_to_s(m->get_eager_actual_args())) + "\n";
+  stats += comment("lazy actual args: "               + i_to_s(m->get_lazy_actual_args())) + "\n";
+  stats += comment("strict formal args: "             + i_to_s(m->get_strict_formal_args())) + "\n";
+  stats += comment("nonstrict formal args: "          + i_to_s(m->get_nonstrict_formal_args())) + "\n";
+  stats += "\n";
+  stats += comment("RCC settings:") + "\n";
+  stats += comment("\n" + Settings::get_instance()->get_pp_info()) + "\n";
+  program = stats + program;
   
   return program;
 }

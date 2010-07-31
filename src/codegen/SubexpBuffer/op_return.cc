@@ -104,9 +104,12 @@ Expression SubexpBuffer::op_return(SEXP cell, string rho) {
     append_defs("endcontext(&context);\n"); 
   }
 
+#if 0
+now performed in applyClosureOpt
   if (Settings::get_instance()->get_stack_alloc_obj()) {
     append_defs("endStackAlloc();\n");
   }
+#endif
 
 #ifdef CHECK_PROTECT
   append_defs("assert(topval == R_PPStackTop);\n");

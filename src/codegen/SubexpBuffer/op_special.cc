@@ -101,10 +101,10 @@ Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
     } else {
       return op_for(e, rho, resultStatus);
     }
-    //
-    // } else if (PRIMFUN(op) == (CCODE)do_while) {
-    //   return op_while(e, rho);
-    //
+  } else if (PRIMFUN(op) == (CCODE)do_while) {
+    return op_while(e, rho, resultStatus);
+  } else if (PRIMFUN(op) == (CCODE)do_repeat) {
+    return op_repeat(e, rho);
   } else if (PRIMFUN(op) == (CCODE)do_break) {
     return op_break(CAR(e), rho);
   } else if (PRIMFUN(op) == (CCODE)do_return) {
@@ -115,7 +115,7 @@ Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
     return op_struct_field(e, op, rho, resultProtection);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
-    Metrics::get_instance()->inc_special_calls();
+    Metrics::get_instance()->inc_special_calls(Rf_length(call_args(e)));
 #ifdef USE_OUTPUT_CODEGEN
     Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
     Expression args1 = output_to_expression(CodeGen::op_list(CDR(e), rho, true, true));

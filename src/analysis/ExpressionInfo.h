@@ -117,6 +117,7 @@ public:
   // indexed from 0
   EagerLazyT get_eager_lazy(int arg) const;
   void set_eager_lazy(int arg, EagerLazyT x);
+  MyLazyInfoSetT get_lazy_info() const;
 
   static PropertyHndlT handle();
 
@@ -147,8 +148,6 @@ private:
 				//   be evaulated eagerly for
 				//   performance or must conservatively
 				//   be called lazy. Indexed from 0.
-  SEXP m_resolved_args;         // arguments in the correct order with
-				//   default args filled in
 };
 
 }

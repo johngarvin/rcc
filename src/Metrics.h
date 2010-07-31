@@ -25,12 +25,24 @@
 #ifndef METRICS_H
 #define METRICS_H
 
+#include <support/IntIncMap.h>
+
 #define INT_GETTER_INCREMENTER(__a__)		     \
 public:                                              \
   int get_ ## __a__() const { return m_ ## __a__; }  \
   void inc_ ## __a__() { m_ ## __a__ ++; }           \
 private:                                             \
   int m_ ## __a__;
+
+#define INT_MULTI_GETTER_INCREMENTER(__a__)				\
+public:									\
+ void inc_ ## __a__(int __x__) { m_ ## __a__.inc(__x__); }		\
+ int get_ ## __a__(int __x__) const { return m_ ## __a__.get(__x__); }	\
+ int total_ ## __a__() const { return m_ ## __a__.total(); }		\
+ int max_key_ ## __a__() const { return m_ ## __a__.max_key(); }	\
+private:								\
+  IntIncMap m_ ## __a__;
+
 
 class Metrics {
 public:
@@ -39,21 +51,20 @@ public:
 public:
   INT_GETTER_INCREMENTER(procedures)
 
-  INT_GETTER_INCREMENTER(builtin_calls)
-  INT_GETTER_INCREMENTER(special_calls)
-  INT_GETTER_INCREMENTER(library_calls)
-  INT_GETTER_INCREMENTER(user_calls)
-  INT_GETTER_INCREMENTER(unknown_symbol_calls)
-  INT_GETTER_INCREMENTER(non_symbol_calls)
+  INT_MULTI_GETTER_INCREMENTER(builtin_calls)
+  INT_MULTI_GETTER_INCREMENTER(special_calls)
+  INT_MULTI_GETTER_INCREMENTER(library_calls)
+  INT_MULTI_GETTER_INCREMENTER(user_calls)
+  INT_MULTI_GETTER_INCREMENTER(unknown_symbol_calls)
+  INT_MULTI_GETTER_INCREMENTER(non_symbol_calls)
 
-//   int strict_formal_args;
-//   int nonstrict_formal_args;
+  INT_GETTER_INCREMENTER(local_assignments)
+  INT_GETTER_INCREMENTER(free_assignments)
 
+  INT_GETTER_INCREMENTER(strict_formal_args)
+  INT_GETTER_INCREMENTER(nonstrict_formal_args)
   INT_GETTER_INCREMENTER(eager_actual_args)
   INT_GETTER_INCREMENTER(lazy_actual_args)
-
-//   int single_arrow_assignments;
-//   int double_arrow_assignments;
 
 //   int uses;
 //   int defs;
@@ -66,14 +77,18 @@ public:
 
 private:
   Metrics() : m_procedures(0),
-	      m_builtin_calls(0),
-	      m_special_calls(0),
-	      m_library_calls(0),
-	      m_user_calls(0),
-	      m_unknown_symbol_calls(0),
-	      m_non_symbol_calls(0),
-	      m_eager_actual_args(0),
-	      m_lazy_actual_args(0)
+	      m_builtin_calls(),
+	      m_special_calls(),
+	      m_library_calls(),
+	      m_user_calls(),
+	      m_unknown_symbol_calls(),
+	      m_non_symbol_calls(),
+	      m_local_assignments(0),
+	      m_free_assignments(0),
+              m_eager_actual_args(0),
+              m_lazy_actual_args(0),
+              m_strict_formal_args(0),
+              m_nonstrict_formal_args(0)
   {}
 private:
   static Metrics * s_instance;

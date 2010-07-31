@@ -40,6 +40,7 @@
 #include <CodeGen.h>
 #include <CodeGenUtils.h>
 #include <GetName.h>
+#include <Metrics.h>
 #include <ParseInfo.h>
 #include <Visibility.h>
 
@@ -50,6 +51,11 @@ using RAnnot::OEscapeInfo;
 Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho, 
 				Protection resultProtection)
 {
+  if (is_local_assign_prim(op)) {
+    Metrics::get_instance()->inc_local_assignments();
+  } else if (is_free_assign_prim(op)) {
+    Metrics::get_instance()->inc_free_assignments();
+  }
   SEXP e = CAR(cell);
   string out;
   Expression retval;
@@ -126,6 +132,5 @@ Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho,
     retval = Expression("<<assignment with unrecognized LHS>>",
 			DEPENDENT, INVISIBLE, "");
   }
-  emit_call0("restoreAllocStack");
   return retval;
 }

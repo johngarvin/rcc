@@ -72,7 +72,6 @@ FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP sexp) :
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
   m_requires_context = functionRequiresContext(sexp);
-
   // make formal argument annotations
   SEXP args = get_args();
   for (SEXP e = args; e != R_NilValue; e = CDR(e)) {

@@ -35,6 +35,8 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/OEscapeInfo.h>
 #include <analysis/OEscapeInfoAnnotationMap.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
 #include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <analysis/VFreshDFSolver.h>
@@ -64,7 +66,7 @@ static Expression op_arglist(SubexpBuffer * sb,
 			     const string rho);
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
-				 const ExpressionInfo * const ei, 
+				 const std::vector<EagerLazyT> & lazy_info,
 				 const int n,
 				 int * const unprotcnt,
 				 string & laziness_string,
@@ -74,6 +76,7 @@ static Expression op_promise_args(SubexpBuffer * sb,
 				  SEXP args,
 				  int * unprotcnt,
 				  string rho);
+static bool safe_to_stack_alloc_env(SEXP e);
 
 /// Output an application of a closure to actual arguments.
 Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
@@ -84,47 +87,69 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 				     EagerLazyT laziness)
 {
   SEXP e = CAR(cell);
-  SEXP args = call_args(e);
+  SEXP original_args = call_args(e);
+  SEXP args;
   int unprotcnt = 0;
   string laziness_string;  // string of E's and L's, one for each arg, saying whether it's eager or lazy
   Expression args1;
   string fallback = "INVALID";
+  ResolvedArgs * args_annot;
+  std::vector<EagerLazyT> lazy_info;
+  bool args_resolved;
 
-//   if (fi_if_known != 0) {
-//     ArgMatcher matcher(fi_if_known->get_args(), args);
-//     args = matcher.match();
-//   }
+  if (Settings::get_instance()->get_resolve_arguments() && fi_if_known != 0) {
+    args_annot = getProperty(ResolvedArgs, cell);
+    lazy_info = args_annot->get_lazy_info();
+    args = args_annot->get_args();
+    args_resolved = true;
+  } else {
+    ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
+    lazy_info = ei->get_lazy_info();
+    args = original_args;
+    args_resolved = false;
+  }
 
   if (laziness == EAGER) {
-#ifdef USE_OUTPUT_CODEGEN
-    args1 = output_to_expression(CodeGen::op_list(args, rho, false));  // pass false to output compiled list
-#else
-    args1 = op_list(args, rho, false, Protected);                      // pass false to output compiled list
-#endif
+    args1 = op_list(args, rho, false, Protected);   // pass false to output compiled list
     laziness_string = "eager";
   } else {
     ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
-    args1 = op_arglist_rec(this, args, ei, 0, &unprotcnt, laziness_string, rho);
+    args1 = op_arglist_rec(this, args, lazy_info, 0, &unprotcnt, laziness_string, rho);
   }
+
   string call_str = appl2("lcons", "", op1.var, args1.var);
   unprotcnt++;  // call_str
   string apply_closure_string = "applyClosureOpt ";
 
   string options;
-  if (fi_if_known == 0) {
+  if (fi_if_known == 0) {    // library procedure
     options = "AC_DEFAULT";
+    if (safe_to_stack_alloc_env(e)) {
+      options += " | AC_STACK_CLOSURE";
+    }
   } else {
-    options = "AC_RCC | AC_MATCH_ARGS | AC_ENVIRONMENT | AC_USEMETHOD";
+    options = "AC_RCC | AC_ENVIRONMENT | AC_USEMETHOD";
     if (!getProperty(CEscapeInfo, fi_if_known->get_sexp())->may_escape()) {
       options += " | AC_STACK_CLOSURE";
     }
   }
+  if (!args_resolved) {
+    options += "| AC_MATCH_ARGS";
+  }
 
+  /*
   string name;
   if (TYPEOF(CAR(e)) == SYMSXP) {
     name = quote(CHAR(PRINTNAME(CAR(e))));
   } else {
     name = "NULL";
+  }
+  */
+  string callee_sym;
+  if (TYPEOF(CAR(e)) == SYMSXP) {
+    callee_sym = make_symbol(CAR(e));
+  } else {
+    callee_sym = make_symbol(Rf_install("*anonymous*"));
   }
 
   bool may_escape = getProperty(OEscapeInfo, cell)->may_escape();
@@ -145,22 +170,17 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 		     rho,
 		     "R_NilValue",
 		     options,
-		     name,
+		     callee_sym,
 		     Unprotected);
   if (may_escape) {
     append_defs(emit_call1("setFallbackAlloc", fallback) + ";\n");
   }
   if (!op1.del_text.empty()) unprotcnt++;
   if (!args1.del_text.empty()) unprotcnt++;
-  if (unprotcnt > 0)
-    append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
+  append_defs("UNPROTECT(" + i_to_s(unprotcnt) + ");\n");
   string cleanup;
   if (resultProtection == Protected) {
-    if (unprotcnt > 0)
-      append_defs("SAFE_PROTECT(" + out + ");\n");
-    else {
-      append_defs("PROTECT(" + out + ");\n");
-    }
+    append_defs("SAFE_PROTECT(" + out + ");\n");
     cleanup = unp(out);
   }
   return Expression(out, DEPENDENT, CHECK_VISIBLE, cleanup);
@@ -195,23 +215,38 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
 //   end if
 //   return appl2("cons", head_exp, tail_exp)
 
+static bool safe_to_stack_alloc_env(SEXP e) {
+  // As far as I know, no library procedures can have nested functions
+  // that outlive their enclosed scope.
+  return true;
+}
+
+#if 0
+not used
+
 static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * const unprotcnt, string & laziness_string, string rho) {
   SEXP e = CAR(cell);
   ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
-  Expression out = op_arglist_rec(sb, call_args(e), ei, 0, unprotcnt, laziness_string, rho);
+  Expression out = op_arglist_rec(sb, call_args(e), 0, unprotcnt, laziness_string, rho);
   return out;
 }
+#endif
 
-static Expression op_arglist_rec(SubexpBuffer * const sb, const SEXP args, const ExpressionInfo * const ei, 
-				 const int n, int * const unprotcnt, string & laziness_string, const string rho)
+static Expression op_arglist_rec(SubexpBuffer * const sb,
+				 const SEXP args,
+				 const std::vector<EagerLazyT> & lazy_info,
+				 const int n,
+				 int * const unprotcnt,
+				 string & laziness_string,
+				 const string rho)
 {
   if (args == R_NilValue) {
     return Expression::nil_exp;
   }
 
-  Expression tail_exp = op_arglist_rec(sb, CDR(args), ei, n+1, unprotcnt, laziness_string, rho);
+  Expression tail_exp = op_arglist_rec(sb, CDR(args), lazy_info, n+1, unprotcnt, laziness_string, rho);
   Expression head_exp;
-  if (ei->get_eager_lazy(n) == EAGER && Settings::get_instance()->get_strictness()) {
+  if (lazy_info[n] == EAGER && Settings::get_instance()->get_strictness()) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
     laziness_string = "E" + laziness_string;
     Metrics::get_instance()->inc_eager_actual_args();

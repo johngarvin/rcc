@@ -67,7 +67,7 @@ string emit_logical_if_stmt(const string expn, const string stmt)
 {
   string ifstmt;
   if (expn.length() > 0) ifstmt += emit_logical_if(expn);
-  ifstmt += stmt + eos;
+  ifstmt += stmt;
   return ifstmt;
 }
 

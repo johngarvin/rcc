@@ -79,22 +79,25 @@ void CEscapeInfoAnnotationMap::compute() {
   FOR_EACH_PROC(fi) {
     CEscapeInfo * annot = new CEscapeInfo(false);
     
-    // for now, get the first name assigned to the function if it exists.
-    SEXP name = fi->get_first_name_c();
-    // if no name (anonymous or the whole-program procedure), conservatively say true
-    if (!VarAnnotationMap::get_instance()->is_valid(name)) {
-      annot->set_may_escape(true);
-    } else {
-      SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
-      
-      VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
-      VarInfo::ConstUseIterator use_iter;
-      for (use_iter = sym->begin_uses(); use_iter != sym->end_uses(); use_iter++) {
-	// if in arg position, then escape is true (conservative unless
-	// we have escape information on whether procedures escape their
-	// arguments)
-	if ((*use_iter)->getPositionType() == UseVar::UseVar_ARGUMENT) {
-	  annot->set_may_escape(true);
+    if (fi->has_children()) { // if no lexical children, this cannot escape
+
+      // for now, get the first name assigned to the function if it exists.
+      SEXP name = fi->get_first_name_c();
+      // if no name (anonymous or the whole-program procedure), conservatively say true
+      if (!VarAnnotationMap::get_instance()->is_valid(name)) {
+	annot->set_may_escape(true);
+      } else {
+	SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+	
+	VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
+	VarInfo::ConstUseIterator use_iter;
+	for (use_iter = sym->begin_uses(); use_iter != sym->end_uses(); use_iter++) {
+	  // if in arg position, then escape is true (conservative unless
+	  // we have escape information on whether procedures escape their
+	  // arguments)
+	  if ((*use_iter)->getPositionType() == UseVar::UseVar_ARGUMENT) {
+	    annot->set_may_escape(true);
+	  }
 	}
       }
     }

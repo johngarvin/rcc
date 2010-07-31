@@ -163,10 +163,14 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   // emit stack allocation
   //  string alloc_function = Settings::get_instance()->get_stack_debug() ? "malloc" : "alloca";
   string size = "global_alloc_stack_space_size";
+
+#if 0
+now performed in applyClosureOpt
   if (stack_alloc_obj) {
     //    f += indent(emit_assign("stack", "(SEXP)" + emit_call1(alloc_function, size)));
     f += indent(emit_call0("beginStackAlloc") + ";\n");
   }
+#endif
 
   // emit the function body
   Expression outblock = out_subexps.op_exp(fundef_body_c(fndef),
@@ -180,9 +184,12 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   f += indent(indent(indent("out = " + outblock.var + ";\n")));
   f += indent(indent("}\n"));
 
+#if 0
+now performed in applyClosureOpt
   if (stack_alloc_obj) {
     f += indent(emit_call0("endStackAlloc") + ";\n");
   }
+#endif
 
   if (fi->requires_context()) {
     f += indent("}\n");
@@ -326,8 +333,10 @@ string output_strictness(SEXP args) {
   while(args != R_NilValue) {
     if (getProperty(FormalArgInfo, args)->is_strict()) {
       str += "S";
+      Metrics::get_instance()->inc_strict_formal_args();
     } else {
       str += "N";
+      Metrics::get_instance()->inc_nonstrict_formal_args();
     }
     args = CDR(args);
   }

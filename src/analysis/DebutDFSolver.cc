@@ -188,7 +188,7 @@ DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_ha
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   // only local name can be debuts
   //
-  // What about TOP? Since we are solving the
+  // What about AMBIGUOUS? Since we are solving the
   // must-have-been-mentioned problem, if it might be local or free
   // we conservatively say it hasn't been mentioned.
   EXPRESSION_FOR_EACH_USE(annot, use) {

@@ -29,9 +29,10 @@
 
 #include <support/Parser.h>
 
-// forward declaration of internal function
+// forward declaration of internal functions
 
 static bool is_simple_source_call(SEXP e);
+static bool is_simple_library_call(SEXP e);
 
 void init_R() {
   char *myargs[5];
@@ -49,6 +50,10 @@ void init_R() {
 ///
 /// If the parser encounters a call to 'source' at top level with one
 /// non-named argument, it parses the named file at compile time.
+///
+/// If the parser encounters a call to 'library' at top level, it
+/// evaluates the call in the compiler so that RCC will recognize the
+/// added names.
 void parse_R(FILE *in_file, SEXP *p_exps[]) {
   int n = 0;
   SEXP e;
@@ -84,6 +89,13 @@ void parse_R(FILE *in_file, SEXP *p_exps[]) {
 	  exps = (SEXP *)realloc((void *)exps, (n+1)*sizeof(SEXP));
 	  exps[n-1] = *new_exps;
 	}
+
+	// special handling for library()
+      } else if (is_simple_library_call(e)) {
+	Rf_eval(e, R_GlobalEnv);  // add to compiler's environment
+	n++;
+	exps = (SEXP *)realloc((void *)exps, (n+1)*sizeof(SEXP));
+	exps[n-1] = e;
       } else {
 	n++;
 	exps = (SEXP *)realloc((void *)exps, (n+1)*sizeof(SEXP));
@@ -159,6 +171,14 @@ SEXP parse_R_as_function(FILE *in_file) {
 static bool is_simple_source_call(SEXP e) {
   return (TYPEOF(e) == LANGSXP &&
 	  CAR(e) == Rf_install("source") &&
+	  CDR(e) != R_NilValue &&
+	  TAG(CDR(e)) == R_NilValue &&
+	  CDDR(e) == R_NilValue);
+}
+
+static bool is_simple_library_call(SEXP e) {
+  return (TYPEOF(e) == LANGSXP &&
+	  CAR(e) == Rf_install("library") &&
 	  CDR(e) != R_NilValue &&
 	  TAG(CDR(e)) == R_NilValue &&
 	  CDDR(e) == R_NilValue);

@@ -32,6 +32,9 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
+#include <analysis/Settings.h>
 #include <analysis/SideEffect.h>
 #include <analysis/SimpleIterators.h>
 
@@ -44,6 +47,29 @@ using namespace HandleInterface;
 static bool debug;
 
 namespace RAnnot {
+
+// ----- SideEffectLibMap methods
+
+SideEffectLibMap::SideEffectLibMap() : m_map()
+{
+}
+
+void SideEffectLibMap::insert(std::string key, bool side_effects, bool expensive, bool error) {
+  std::vector<bool> value(3);
+  value[0] = side_effects;
+  value[1] = expensive;
+  value[2] = error;
+  m_map[key] = value;
+}
+
+bool SideEffectLibMap::get(std::string key, int which) {
+  if (m_map.find(key) == m_map.end()) {
+    return true;
+  } else {
+    return m_map[key][which];
+  }
+}
+
 
 //  ----- constructor/destructor ----- 
   
@@ -83,7 +109,7 @@ PropertyHndlT SideEffectAnnotationMap::s_handle = "SideEffect";
 
 // compute all Var annotation information
 void SideEffectAnnotationMap::compute() {
-  init_non_action_libs();
+  init_lib_data();
 
   FuncInfo * fi;
   OA_ptr<CFG::NodeInterface> node;
@@ -106,6 +132,8 @@ void SideEffectAnnotationMap::compute() {
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       // left side
       make_side_effect(fi, CAR(*csi));
+
+      // actual args
       for (R_CallArgsIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
 	if (debug) {
 	  std::cout << "making side effect for actual arg: ";
@@ -113,6 +141,21 @@ void SideEffectAnnotationMap::compute() {
 	}
 	make_side_effect(fi, arg_it.current());
       }
+
+#if 0
+      // resolved args
+      if (ResolvedArgsAnnotationMap::get_instance()->is_valid(*csi)) {
+	SEXP resolved_args = getProperty(ResolvedArgs, *csi)->get_args();
+	for (R_ListIterator arg_it(resolved_args); arg_it.isValid(); ++arg_it) {
+	  if (debug) {
+	    std::cout << "making side effect for resolved actual arg: ";
+	    Rf_PrintValue(CAR(arg_it.current()));
+	  }
+	  make_side_effect(fi, arg_it.current());
+	}
+      }
+#endif
+
     }
   }  // next function
 }
@@ -222,72 +265,120 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
   if (is_const(e) || is_var(e) || is_subscript(e)) {
     return true;
-    /*
-      doesn't account for calls that throw errors/exceptions
 
-  } else if (is_call(e) && ! call_may_have_action(e)) {
-    for(SEXP x = call_args(e); x != R_NilValue; x = CDR(x)) {
-      if (! expression_is_trivial(CAR(x))) {
-	return false;
+    // TODO: and (assume-correct-program or call cannot throw error)
+  } else if (is_call(e) &&
+	     ! call_may_have_action(e) &&
+	     ! call_may_throw_error(e))
+    {
+      for(SEXP x = call_args(e); x != R_NilValue; x = CDR(x)) {
+	if (! expression_is_trivial(CAR(x))) {
+	  return false;
+	}
       }
-    }
-    return true;
-    */
-  } else {
+      return true;
+    } else {
     return false;
   }
 }
 
+    
+  
 // "cheaply evaluable" expressions take a "reasonably short" amount of
 // time to evaluate. This is used for the call-by-value
 // transformation: the transformation may be unprofitable if the
 // callee is nonstrict in the formal argument and the corresponding
 // actual argument is expensive to evaluate.
 bool SideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
-  return (is_const(e) || is_var(e));
+  if (is_const(e) || is_var(e)) {
+    return true;
+  } else if (is_call(e) && ! call_may_be_expensive(e)) {
+    for(SEXP x = call_args(e); x != R_NilValue; x = CDR(x)) {
+      if (!expression_is_cheap(CAR(x))) {
+	return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
 }
 
+bool is_library_call(const SEXP e) {
+  return (is_var(call_lhs(e)) && is_library(call_lhs(e)));
+}
 // true if the library call may perform a visible action, such as
 // 'print' printing something to the screen.
 bool SideEffectAnnotationMap::call_may_have_action(const SEXP e) {
-  if (is_var(call_lhs(e)) && is_library(call_lhs(e))) {
-    // conservatively say true if not in the "safe" set
-    return (m_non_action_libs.find(var_name(call_lhs(e))) == m_non_action_libs.end());
+  if (is_library_call(e)) {
+    return (m_non_action_libs.get(var_name(call_lhs(e)), 0));
   } else {
     return true;
   }
 }
 
-// add library procedures that don't produce actions when called
-// TODO: what about errors/exceptions?
-void SideEffectAnnotationMap::init_non_action_libs() {
-  m_non_action_libs.insert("+");
-  m_non_action_libs.insert("-");
-  m_non_action_libs.insert("*");
-  m_non_action_libs.insert("/");
-  m_non_action_libs.insert("^");
-  m_non_action_libs.insert("==");
-  m_non_action_libs.insert("!=");
-  m_non_action_libs.insert("<");
-  m_non_action_libs.insert(">");
-  m_non_action_libs.insert("<=");
-  m_non_action_libs.insert(">=");
-  m_non_action_libs.insert("%*%");
-  m_non_action_libs.insert("c");
-  m_non_action_libs.insert("rep");
-  m_non_action_libs.insert("length");
-  m_non_action_libs.insert("sum");
-  m_non_action_libs.insert("vector");
-  m_non_action_libs.insert("matrix");
-  m_non_action_libs.insert("(");
-  m_non_action_libs.insert(":");
-  m_non_action_libs.insert("[");
-  m_non_action_libs.insert("sqrt");
-  m_non_action_libs.insert("mean");
-  m_non_action_libs.insert("t");
-  m_non_action_libs.insert("log");
-  m_non_action_libs.insert("append");
-  m_non_action_libs.insert("$");
+bool SideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
+  if (Settings::get_instance()->get_aggressive_cbv()) {
+    return false;
+  } else if (is_library_call(e)) {
+    return m_non_action_libs.get(var_name(call_lhs(e)), 1);
+  } else {
+    return true;
+  }
+}
+
+bool SideEffectAnnotationMap::call_may_throw_error(const SEXP e) {
+  if (Settings::get_instance()->get_assume_correct_program()) {
+    return false;
+  } else if (is_library_call(e)) {
+    return m_non_action_libs.get(var_name(call_lhs(e)), 2);
+  } else {
+    return true;
+  }
+}
+
+// init_lib_data: provide analysis data for library procedures
+//
+// If a library is not in the map, side_effects, expensive, and error
+// are all considered true.
+//
+// side_effects: this procedure may have side effects
+//   example: rnorm modifies the random number generator seed
+// expensive: this procedure may be expensive (generally, more than O(1))
+//   example: arithmetic if arguments are large arrays
+// error: this procedure may throw an error or exception
+//   example: relational operators given non-conformable arrays
+void SideEffectAnnotationMap::init_lib_data() {
+  //                       lib          side_effects expensive error
+  m_non_action_libs.insert("+",         false,       true,     false);
+  m_non_action_libs.insert("-",         false,       true,     false);
+  m_non_action_libs.insert("*",         false,       true,     false);
+  m_non_action_libs.insert("/",         false,       true,     false);
+  m_non_action_libs.insert("^",         false,       true,     false);
+  m_non_action_libs.insert("%%",        false,       true,     false);
+  m_non_action_libs.insert("%/%",       false,       true,     false);
+  m_non_action_libs.insert("==",        false,       true,     true);
+  m_non_action_libs.insert("!=",        false,       true,     true);
+  m_non_action_libs.insert("<",         false,       true,     true);
+  m_non_action_libs.insert(">",         false,       true,     true);
+  m_non_action_libs.insert("<=",        false,       true,     true);
+  m_non_action_libs.insert(">=",        false,       true,     true);
+  m_non_action_libs.insert("%*%",       false,       true,     false);
+  m_non_action_libs.insert("c",         false,       true,     false);
+  m_non_action_libs.insert("rep",       false,       true,     false);
+  m_non_action_libs.insert("length",    false,       true,     false);
+  m_non_action_libs.insert("sum",       false,       true,     false);
+  m_non_action_libs.insert("vector",    false,       false,    false);
+  m_non_action_libs.insert("matrix",    false,       false,    false);
+  m_non_action_libs.insert("(",         false,       false,    false);
+  m_non_action_libs.insert(":",         false,       false,    false);
+  m_non_action_libs.insert("[",         false,       false,    false);
+  m_non_action_libs.insert("sqrt",      false,       true,     false);
+  m_non_action_libs.insert("mean",      false,       true,     false);
+  m_non_action_libs.insert("t",         false,       true,     false);
+  m_non_action_libs.insert("log",       false,       true,     false);
+  m_non_action_libs.insert("append",    false,       true,     false);
+  m_non_action_libs.insert("$",         false,       false,    false);
 }
 
 } // end namespace RAnnot

@@ -23,27 +23,28 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef RESOLVED_ARG_ANNOTATION_MAP_H
-#define RESOLVED_ARG_ANNOTATION_MAP_H
+#ifndef RESOLVED_ARGS_ANNOTATION_MAP_H
+#define RESOLVED_ARGS_ANNOTATION_MAP_H
 
 #include <include/R/R_Internal.h>
 
 #include <analysis/DefaultAnnotationMap.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
 
-class ResolvedArgAnnotationMap : public DefaultAnnotationMap
+class ResolvedArgsAnnotationMap : public DefaultAnnotationMap
 {
 public:
   // singleton pattern
-  static ResolvedArgAnnotationMap * get_instance();
+  static ResolvedArgsAnnotationMap * get_instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
 private:
   // singleton pattern
-  explicit ResolvedArgAnnotationMap();
+  explicit ResolvedArgsAnnotationMap();
 
   // implement pure virtual from DefaultAnnotationMap
   void compute();
@@ -52,8 +53,10 @@ private:
   // with the default arguments filled in from the list of formals.
   SEXP resolve_defaults(SEXP formals, SEXP actuals);
 
-  static ResolvedArgAnnotationMap * s_instance;
-  static PropertyHndl s_handle;
+  static ResolvedArgsAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
 };
   
 }
+
+#endif

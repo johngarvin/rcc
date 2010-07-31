@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2009 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,21 +16,37 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: Settings.cc
-//
-// Settings for analyses and optimizations. Default is to turn all optimizations on.
+// File: IntIncMap.cc
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "Settings.h"
+#include "IntIncMap.h"
 
-Settings * Settings::s_instance = 0;
-
-Settings * Settings::get_instance() {
-  if (s_instance == 0) {
-    s_instance = new Settings();
-  }
-  return s_instance;
+IntIncMap::IntIncMap() 
+  : m_map(), m_max_key(0)
+{
 }
 
+void IntIncMap::inc(int key) {
+  m_map[key]++;
+  if (key > m_max_key) {
+    m_max_key = key;
+  }
+}
 
+int IntIncMap::get(int key) const {
+  return m_map[key];
+}
+
+int IntIncMap::total() const {
+  int total = 0;
+  std::map<int,int>::const_iterator it;
+  for (it = m_map.begin(); it != m_map.end(); it++) {
+    total += it->second;
+  }
+  return total;
+}
+
+int IntIncMap::max_key() const {
+  return m_max_key;
+}

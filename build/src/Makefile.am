@@ -51,8 +51,6 @@ rcc_bin_SOURCES =				\
   CEscapeInfoAnnotationMap.h                    \
   CommandLineArgs.cc                            \
   CommandLineArgs.h                             \
-  Debug.cc                                      \
-  Debug.h                                       \
   DebutDFSolver.cc                              \
   DebutDFSolver.h                               \
   DefaultAnnotationMap.cc                       \
@@ -137,6 +135,10 @@ rcc_bin_SOURCES =				\
   RccBasicInterface.h                           \
   RequiresContext.cc				\
   RequiresContext.h				\
+  ResolvedArgs.cc                               \
+  ResolvedArgs.h                                \
+  ResolvedArgsAnnotationMap.cc                  \
+  ResolvedArgsAnnotationMap.h                   \
   ReturnedCGSolver.cc                           \
   ReturnedCGSolver.h                            \
   ReturnedDFSolver.cc                           \
@@ -215,6 +217,7 @@ rcc_bin_SOURCES =				\
   op_primsxp.cc					\
   op_program.cc                                 \
   op_promise.cc					\
+  op_repeat.cc                                  \
   op_return.cc					\
   op_set.cc					\
   op_special.cc					\
@@ -231,6 +234,11 @@ rcc_bin_SOURCES =				\
   TransformMatMul.h				\
   TransposeMatMul.c				\
 						\
+  Debug.cc                                      \
+  Debug.h                                       \
+  DumpMacros.h                                  \
+  IntIncMap.cc                                  \
+  IntIncMap.h                                   \
   Parser.cc Parser.h				\
   RccError.cc RccError.h                        \
   StringUtils.cc StringUtils.h			\

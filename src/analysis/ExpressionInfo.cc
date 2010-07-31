@@ -138,6 +138,10 @@ void ExpressionInfo::set_eager_lazy(int arg, EagerLazyT x) {
   m_lazy_info.at(arg) = x;
 }
 
+std::vector<EagerLazyT> ExpressionInfo::get_lazy_info() const {
+  return m_lazy_info;
+}
+
 
 AnnotationBase * ExpressionInfo::clone() {
   return new ExpressionInfo(*this);

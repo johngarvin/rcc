@@ -16,9 +16,9 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: op_while.cc
+// File: op_repeat.cc
 //
-// Output a while loop.
+// Output a repeat loop.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
@@ -39,33 +39,17 @@
 
 using namespace std;
 
-Expression SubexpBuffer::op_while(SEXP e, string rho, ResultStatus resultStatus) {
+Expression SubexpBuffer::op_repeat(SEXP e, string rho) {
   string in_loop;
   SubexpBuffer loop;
   LoopContext loop_context;
 
-  if (resultStatus == ResultNeeded) {
-    append_decls("SEXP ans;\n");
-    append_decls("PROTECT_INDEX api;\n");
-    append_defs("ans = R_NilValue;\n");
-    append_defs("PROTECT_WITH_INDEX(ans, &api);\n");
-  }
-
   // output code in loop
-  Expression condition = loop.op_exp(while_cond_c(e), rho, Unprotected, false);
-  loop.append_defs("if (!my_asLogicalNoNA(" + condition.var + ")) break;\n");
-  Expression body = loop.op_exp(while_body_c(e), rho, Unprotected, false, resultStatus);
-  if (resultStatus == ResultNeeded) {
-    loop.append_defs("REPROTECT(ans = " + body.var + ", api);\n");
-  }
-  in_loop = "/* while loop */\n" + loop.output_decls() + loop.output_defs();
+  Expression body = loop.op_exp(repeat_body_c(e), rho, Unprotected, false, NoResultNeeded);
+  in_loop = indent("/* repeat loop */\n" + loop.output_decls() + loop.output_defs());
 
   // output loop
   append_defs("while(1) " + emit_in_braces(in_loop));
-  append_defs(loop_context.breakLabel() + ":\n");
-  if (resultStatus == ResultNeeded) {
-    append_defs(emit_unprotect("ans"));
-  }
-  return Expression("ans", DEPENDENT, VISIBLE, "");
+  append_defs(loop_context.breakLabel() + ":;\n");
+  return Expression::nil_exp;
 }
-

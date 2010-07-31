@@ -48,7 +48,12 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
 
   if (debug) std::cout << "Begin ExprTreeBuilder::build_c" << std::endl;
 
-  if (is_const(e)) {
+  if (e == R_MissingArg) {
+    // like consts. Will this work?
+    OA_ptr<ConstValBasicInterface> val = RccBasicInterface::make_const_val(e);
+    OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(val);
+    tree->addNode(n);
+  } else if (is_const(e)) {
     //    OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(make_const_val_h(e));
     OA_ptr<ConstValBasicInterface> val = RccBasicInterface::make_const_val(e);
     OA_ptr<ExprTree::ConstValNode> n; n = new ExprTree::ConstValNode(val);

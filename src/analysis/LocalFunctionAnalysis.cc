@@ -123,6 +123,7 @@ void LocalFunctionAnalysis::analyze_strictness() {
   assert(!cfg.ptrEqual(0));
   Strictness::StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
   OA_ptr<Strictness::StrictnessResult> strict; strict = strict_solver.perform_analysis(make_proc_h(m_fi->get_sexp()), cfg);
+  m_fi->set_strictness(strict);
   OA_ptr<Strictness::DFSet> strict_set = strict->get_args_on_exit();
   if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
   OA_ptr<Strictness::DFSetIterator> it = strict_set->get_iterator();

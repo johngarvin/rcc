@@ -66,7 +66,7 @@ bool is_constant_expr(SEXP s) {
 Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho, 
 				    Protection resultProtection)
 {
-  Metrics::get_instance()->inc_builtin_calls();
+  Metrics::get_instance()->inc_builtin_calls(Rf_length(call_args(CAR(cell))));
 
   string fallback = "INVALID";
   string out;

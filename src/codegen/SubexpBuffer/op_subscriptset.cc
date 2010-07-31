@@ -74,7 +74,6 @@ Expression SubexpBuffer::op_subscriptset(SEXP cell, string rho,
   Expression s;
   SEXP lhs = CAR(assign_lhs_c(e));
   SEXP array_c = subscript_lhs_c(lhs);
-  Expression a_sym = op_literal(CAR(array_c), rho);
   int unprotcnt = 0;
   Expression a = op_exp(array_c, rho, Protected, true);  // fully evaluated; need to force promise
   Expression r = op_exp(assign_rhs_c(e), rho);
@@ -110,11 +109,13 @@ Expression SubexpBuffer::op_subscriptset(SEXP cell, string rho,
   }
   // the result of the subassign is unprotected because it is
   // immediately protected by the following defineVar
-  append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
+  // Expression a_sym = op_literal(CAR(array_c), rho);
+  // append_defs(emit_call3("defineVar", a_sym.var, subassign, rho) + ";\n");
+  r = op_var_def(array_c, subassign, rho);
   if (unprotcnt > 0) {
     append_defs(emit_call1("UNPROTECT", i_to_s(unprotcnt)) + ";\n");
   }
-  r.visibility = INVISIBLE;
-  r.del_text.clear();        // we have already unprotected everything necessary
+  //  r.visibility = INVISIBLE;
+  //  r.del_text.clear();        // we have already unprotected everything necessary
   return r;
 }

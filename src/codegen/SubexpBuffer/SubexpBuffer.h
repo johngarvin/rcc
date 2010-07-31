@@ -161,7 +161,8 @@ public:
 		   ResultStatus resultStatus = ResultNeeded); 
   Expression op_for_colon(SEXP e, std::string rho,
 			  ResultStatus resultStatus = ResultNeeded);
-  Expression op_while(SEXP e, std::string rho);
+  Expression op_while(SEXP e, std::string rho, ResultStatus resultStatus = ResultNeeded);
+  Expression op_repeat(SEXP e, std::string rho);
   Expression op_return(SEXP e, std::string rho);
   Expression op_struct_field(SEXP e, SEXP op, std::string rho, Protection resultProtection);
   Expression op_subscript(SEXP e, SEXP op, std::string rho, Protection resultProtection);

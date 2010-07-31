@@ -39,10 +39,11 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/Settings.h>
 #include <analysis/SideEffect.h>
 #include <analysis/SideEffectAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
-#include <analysis/StrictnessDFSolver.h>
 #include <analysis/StrictnessResult.h>
 #include <analysis/SymbolTableFacade.h>
 #include <analysis/VarInfo.h>
@@ -68,11 +69,8 @@ void CallByValueAnalysis::perform_analysis() {
   // compute pre-debut side effects for each formal arg
 
   FOR_EACH_PROC(fi) {
-    StrictnessDFSolver * strictness_solver; strictness_solver = new StrictnessDFSolver(R_Analyst::get_instance()->get_interface());
-    OA_ptr<StrictnessResult> strictness;
-    strictness = strictness_solver->perform_analysis(make_proc_h(fi->get_sexp()), fi->get_cfg());
+    OA_ptr<StrictnessResult> strictness; strictness = fi->get_strictness();
     if (debug) strictness->dump(std::cout);
-    fi->set_strictness(strictness);
     
     // formals are indexed by 1
     for(int i=1; i<=fi->get_num_args(); i++) {
@@ -86,8 +84,10 @@ void CallByValueAnalysis::perform_analysis() {
   // arguments.
   std::set<SEXP> unsafe_libs;
   unsafe_libs.insert(Rf_install("library"));
+  unsafe_libs.insert(Rf_install("summary"));
   
-  // analyze call sites (those that can be analyzed) and figure out whether each arg can be made CBV
+  // analyze call sites (those that can be analyzed) and figure out
+  // whether each arg can be made CBV
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_CALL_SITE(fi, csi_c) {
       SEXP cs = CAR(*csi_c);
@@ -97,8 +97,8 @@ void CallByValueAnalysis::perform_analysis() {
 	std::cout << std::endl;
       }
       
-      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c);
-      
+      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c); 
+     
       // if the callee is a library that's not user-redefined...
       if (is_var(call_lhs(cs)) && 
 	  is_library(call_lhs(cs)) &&
@@ -143,19 +143,28 @@ void CallByValueAnalysis::perform_analysis() {
 	  continue;
 	}
 	
-	if (callee->get_num_args() != Rf_length(call_args(cs))) {
-	  // TODO: handle default args and "..."
-	  rcc_warn("No CBV information for default args or \"...\"");
-	  continue;
-	}
+	if (callee->get_has_var_args()) continue; // next call site
 	
-	// for each arg
+	// set eager/lazy for each actual arg
 	int i = 0;
 	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
 	  FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
 	  SEXP actual_c = argi.current();
 	  call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
 	}
+
+	if (Settings::get_instance()->get_resolve_arguments()) {
+	  // set eager/lazy for each resolved arg
+	  ResolvedArgs * args_annot = getProperty(ResolvedArgs, *csi_c);
+	  SEXP resolved_args = args_annot->get_args();
+	  i = 0;
+	  for(R_ListIterator argi(resolved_args); argi.isValid(); argi++, i++) {
+	    FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
+	    SEXP actual_c = argi.current();
+	    args_annot->set_eager_lazy(i, EAGER);
+	    // TODO: for now, assuming all eager. Figure out side effects instead.
+	  }
+	}  
       }
     }
   }
@@ -164,7 +173,15 @@ void CallByValueAnalysis::perform_analysis() {
 bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   // get side effect of the pre-debut part of the callee
   SideEffect * pre_debut = formal->get_pre_debut_side_effect();
+
+  if (TYPEOF(CAR(actual_c)) == DOTSXP) {
+    return false;
+  }
   
+  if (CAR(actual_c) == R_MissingArg) {
+    return true;
+  }
+
   // get the actual argument's side effect
   SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
 
@@ -234,23 +251,24 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
     return pre_debut;                          // if we have a "..." argument, give it an empty side effect
   }
 
+  // For any formal arg, statements in the function can be
+  // divided into pre-debut, post-debut, and non-strict. We're
+  // only interested in pre-debut statements. Since we're already
+  // excluding non-strict functions (functions with non-strict
+  // statements), we can get this set by excluding post-debut
+  // statements.
+  OA_ptr<StrictnessResult> strictness = fi->get_strictness();
+  OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
+  
   PROC_FOR_EACH_NODE(fi, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-      // For this formal arg, statements in the function can be
-      // divided into pre-debut, post-debut, and non-strict. We're
-      // only interested in pre-debut statements. Since we're already
-      // excluding non-strict functions (functions with non-strict
-      // statements), we can get this set by excluding post-debut
-      // statements.
-      OA_ptr<StrictnessResult> strictness = fi->get_strictness();
-      OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
-
       // TODO: refactor this. Maybe post_debuts should be a vector of sets, not a multimap
-      std::pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range = post_debuts->equal_range(TAG(fai->get_sexp()));
+      std::pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range;
+      range = post_debuts->equal_range(TAG(fai->get_sexp()));
       bool stmt_is_post_debut = false;
       // TODO: we need to differentiate between missing formal
-      // (compiler error) and formal with no post-debut side effect
+      // (compiler error) and formal with no post-debut side effect.
       // Then check for missing formal here with something like
       // if (range.first == range.second) {
       //   rcc_error(...);

@@ -171,6 +171,18 @@ Rboolean my_asLogicalNoNA(SEXP s) {
     return cond;
 }
 
+/* for a single subscript */
+SEXP rcc_subset_1(SEXP x, SEXP s, SEXP rho) {
+}
+
+SEXP rcc_subset(SEXP call, SEXP op, SEXP args, SEXP rho) {
+  if (isObject(CAR(args))) {
+    return do_subset(call, op, args, rho);
+  } else {
+    return do_subset_dflt(call, op, args, rho);
+  }
+}
+
 /* rcc_subassign functions                            */
 /* All modified from do_subassign_dflt in subassign.c */
 

@@ -38,6 +38,7 @@
 #include <analysis/IRInterface.h>
 #include <analysis/NameMentionMultiMap.h>
 #include <analysis/NameStmtMultiMap.h>
+#include <analysis/Settings.h>
 #include <analysis/StrictnessDFSet.h>
 #include <analysis/StrictnessDFSetElement.h>
 #include <analysis/StrictnessDFSetIterator.h>
@@ -57,6 +58,7 @@ using namespace Strictness;
 
 static StrictnessType var_meet(StrictnessType x, StrictnessType y);
 static OA_ptr<DFSet> set_meet(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
+static OA_ptr<StrictnessResult> generate_null_info(OA_ptr<DFSet> formals);
 
 static bool debug;
 
@@ -79,14 +81,20 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   SEXP formals = procedure_args(make_sexp(m_proc));
   m_formal_args = new DFSet;
   m_formal_args->insert_varset(R_VarRefSet::refs_from_arglist(formals), Strictness_TOP);
-
-  // call the solver, which returns the set of args associated with StrictnessTypes on exit
-  OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
-  if (debug) dump_node_maps();
-
-  OA_ptr<NameMentionMultiMap> debut_map = compute_debut_map();
-  OA_ptr<NameStmtMultiMap> post_debut_map = compute_post_debut_map(args_on_exit);
-  OA_ptr<StrictnessResult> result; result = new StrictnessResult(args_on_exit, debut_map, post_debut_map);
+  OA_ptr<NameMentionMultiMap> debut_map;
+  OA_ptr<NameStmtMultiMap> post_debut_map;
+  OA_ptr<StrictnessResult> result;
+   
+  if (Settings::get_instance()->get_strictness()) {
+    // call the solver, which returns the set of args associated with StrictnessTypes on exit
+    OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
+    if (debug) dump_node_maps();  
+    debut_map = compute_debut_map();
+    post_debut_map = compute_post_debut_map(args_on_exit);
+    result = new StrictnessResult(args_on_exit, debut_map, post_debut_map);
+  } else {
+    result = generate_null_info(m_formal_args);
+  }
   return result;
 }
 
@@ -291,4 +299,16 @@ OA_ptr<DFSet> set_meet(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2) {
     retval->replace(elem->get_loc(), new_type);
   }
   return retval;
+}
+
+// Produce a StrictnessResult representing a total lack of strictness
+// analysis and information.
+OA_ptr<StrictnessResult> generate_null_info(OA_ptr<DFSet> formals) {
+  OA_ptr<StrictnessResult> result;
+  OA_ptr<NameMentionMultiMap> empty_nm;
+  OA_ptr<NameStmtMultiMap> empty_ns;
+  empty_nm = new NameMentionMultiMap();
+  empty_ns = new NameStmtMultiMap();
+  result = new StrictnessResult(formals, empty_nm, empty_ns);
+  return result;
 }

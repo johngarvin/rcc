@@ -188,7 +188,7 @@ private:
 
 private:
   unsigned int m_num_args;         // number of known arguments
-  bool m_has_var_args;             // variable number of arguments
+  bool m_has_var_args;             // variable number of arguments (uses "...")
   std::string m_c_name;            // C linkage name
   std::string m_closure;           // C closure (CLOSXP) name
   bool m_requires_context;         // is an R context object needed for the function?

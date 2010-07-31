@@ -60,8 +60,13 @@ using namespace std;
 using namespace RAnnot;
 using namespace HandleInterface;
 
-static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
-				   string rho, Protection resultProtection, ResultStatus resultStatus);
+static Expression op_internal_call(SubexpBuffer * sb,
+				   const SEXP op,
+				   SEXP cell,
+				   string rho,
+				   Protection resultProtection,
+				   ResultStatus resultStatus,
+				   int n_args);
 
 static bool debug = false;
 
@@ -70,6 +75,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 				 ResultStatus resultStatus)
 {
   SEXP e = CAR(cell);
+  int n_args = Rf_length(call_args(CAR(cell)));
   if (TYPEOF(call_lhs(e)) == SYMSXP) {
     // check for SPECIALSXP type
     // the value is conveniently stored in the symbol, so we can just grab it
@@ -84,7 +90,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       if (cga == 0) {
 	// not in call graph; call to internal procedure
 	if (is_library(call_lhs(e))) {
-	  return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
+	  return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus, n_args);
 	} else {
 	  rcc_error("Unexpected procedure symbol in neither call graph nor R library");
 	}
@@ -93,7 +99,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	if (ph != OA::ProcHandle(0)) {  // singleton exists
 	  FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
 	  Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-	  Metrics::get_instance()->inc_user_calls();
+	  Metrics::get_instance()->inc_user_calls(n_args);
 	  // check for eager assertion
 	  if (CDR(call_args(e)) != R_NilValue) {
 	    SEXP second_arg = CADR(call_args(e));
@@ -111,7 +117,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	  }
 	  return op_clos_app(fi, closure_exp, cell, rho, resultProtection);
 	} else {
-	  Metrics::get_instance()->inc_unknown_symbol_calls();
+	  Metrics::get_instance()->inc_unknown_symbol_calls(n_args);
 	  Expression func = op_fun_use(e, rho);
 	  return op_clos_app(0, func, cell, rho, resultProtection);
 	}
@@ -119,9 +125,9 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
     } else {
       // no call graph
       if (is_library(call_lhs(e))) {
-	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus);
+	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus, n_args);
       } else {
-	Metrics::get_instance()->inc_unknown_symbol_calls();
+	Metrics::get_instance()->inc_unknown_symbol_calls(n_args);
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(0, func, cell, rho, resultProtection);
       }
@@ -141,7 +147,7 @@ old code with home-grown call graph
 	Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
 	return op_clos_app(closure_exp, call_args(e), rho, resultProtection);
       } else if (const LibraryCallGraphNode * lib = dynamic_cast<const LibraryCallGraphNode *>(node)) {
-	return op_internal_call(this, lib->get_value(), cell, rho, resultProtection, resultStatus);
+	return op_internal_call(this, lib->get_value(), cell, rho, resultProtection, resultStatus, n_args);
       } else if (const UnknownValueCallGraphNode * uv = dynamic_cast<const UnknownValueCallGraphNode *>(node)) {
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(func, call_args(e), rho, resultProtection);
@@ -155,7 +161,7 @@ old code with home-grown call graph
 
 #endif
   } else {  // left side is not a symbol
-    Metrics::get_instance()->inc_non_symbol_calls();
+    Metrics::get_instance()->inc_non_symbol_calls(n_args);
     
     // generate closure and application
     Expression op1;
@@ -166,8 +172,13 @@ old code with home-grown call graph
 }
 
 /// Output a call to a library or builtin bound in the R environment.
-static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
-				   string rho, Protection resultProtection, ResultStatus resultStatus)
+static Expression op_internal_call(SubexpBuffer * sb,
+				   const SEXP op,
+				   SEXP cell,
+				   string rho,
+				   Protection resultProtection,
+				   ResultStatus resultStatus,
+				   int n_args)
 {
   SEXP e = CAR(cell);
   Expression ret_val;
@@ -177,7 +188,7 @@ static Expression op_internal_call(SubexpBuffer * sb, const SEXP op, SEXP cell,
     // For internals, find call-by-value status like this:
     //     EagerLazyT func_eager_lazy = (R_FunTab[prim->u.primsxp.offset].eval) % 10 ? EAGER : LAZY;
 
-    Metrics::get_instance()->inc_library_calls();
+    Metrics::get_instance()->inc_library_calls(n_args);
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     return sb->op_clos_app(0, func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {
