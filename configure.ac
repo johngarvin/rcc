@@ -79,15 +79,15 @@ AC_TYPE_SIZE_T
 #AC_FUNC_REALLOC
 #AC_FUNC_ALLOCA
 AC_FUNC_ERROR_AT_LINE
-AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor])
+AC_CHECK_FUNCS([memset pow sqrt strchr strdup strerror floor mmap])
 
 R_LIB_PATH=${R_HOME}/lib
 
-RCC_MACRO_PATH=${prefix}/macros
-RCC_INCLUDE_PATH=${prefix}/include/rcc
-RCC_R_INCLUDE_PATH=${prefix}/include
-RCC_LIB_PATH=${prefix}/lib
 RCC_BIN_PATH=${prefix}/bin
+RCC_INCLUDE_PATH=${prefix}/include/rcc
+RCC_LIB_PATH=${prefix}/lib
+RCC_MACRO_PATH=${prefix}/macros
+RCC_R_INCLUDE_PATH=${prefix}/include
 
 AC_SUBST(CC)
 
@@ -98,10 +98,11 @@ AC_SUBST(R_HOME)
 AC_SUBST(R_PREFIX)
 
 AC_SUBST(RCC_BIN_PATH)
-AC_SUBST(RCC_MACRO_PATH)
 AC_SUBST(RCC_INCLUDE_PATH)
-AC_SUBST(RCC_R_INCLUDE_PATH)
 AC_SUBST(RCC_LIB_PATH)
+AC_SUBST(RCC_MACRO_PATH)
+AC_SUBST(RCC_R_INCLUDE_PATH)
+
 AC_SUBST(OA_PREFIX)
 
 ### ** Platform.
@@ -206,10 +207,9 @@ AC_SUBST([HOST_AR])
 AC_SUBST([HOST_LIBADD])
 AM_CONDITIONAL(IS_HOST_AR, test "${HOST_AR}" != "")
 
-# config for "real-world" directory removed in distribution version so
-# we're not distributing files that don't belong to us
-
-# also "benchmarks" directory
+# Note: the "real world" test programs are not included here because
+# we don't want to distribute programs that don't belong to us with
+# RCC.
 
 AC_CONFIG_FILES([Makefile
 		 rcc.pc
@@ -218,52 +218,21 @@ AC_CONFIG_FILES([Makefile
 		 build/src/Makefile
 		 macros/Makefile
 		 tests/Makefile
-		 tests/performance/Makefile
 		 tests/regression/Makefile
-		 tests/dump/Makefile
+		 tests/scripts/Makefile
 		 tools/Makefile
 		 tools/rcc
 		 tools/rcc-cc
 		 tools/rcc-run
                  ])
 
-# config files currently unused
-#		 tests/hand-opt/Makefile tests/temp/Makefile
-#		 src/Makefile
-#		 src/macros/Makefile
-#		 src/analysis/Makefile
-#		 src/support/Makefile
-#		 src/matmul/Makefile
-#		 tests/real-world/Makefile
+AC_CONFIG_FILES([tests/scripts/run-compiled],
+                [chmod +x tests/scripts/run-compiled])
 
-AC_CONFIG_FILES([tests/regression/run-compiled],
-                [chmod +x tests/regression/run-compiled])
+AC_CONFIG_FILES([tests/scripts/run-interpreted],
+                [chmod +x tests/scripts/run-interpreted])
 
-AC_CONFIG_FILES([tests/regression/run-interpreted],
-                [chmod +x tests/regression/run-interpreted])
-
-AC_CONFIG_FILES([tests/dump/run-compiled],
-                [chmod +x tests/dump/run-compiled])
-
-AC_CONFIG_FILES([tests/dump/run-interpreted],
-                [chmod +x tests/dump/run-interpreted])
-
-#AC_CONFIG_FILES([tests/real-world/run-compiled],
-#                [chmod +x tests/real-world/run-compiled])
-
-#AC_CONFIG_FILES([tests/real-world/run-interpreted],
-#                [chmod +x tests/real-world/run-interpreted])
-
-AC_CONFIG_FILES([tests/performance/run-test],
-                [chmod +x tests/performance/run-test])
-
-#AC_CONFIG_FILES([tests/benchmarks/run-test],
-#                [chmod +x tests/benchmarks/run-test])
-
-#AC_CONFIG_FILES([tests/benchmarks/run-compiled],
-#                [chmod +x tests/benchmarks/run-compiled])
-
-#AC_CONFIG_FILES([tests/benchmarks/run-interpreted],
-#                [chmod +x tests/benchmarks/run-interpreted])
+AC_CONFIG_FILES([tests/scripts/run-test],
+                [chmod +x tests/scripts/run-test])
 
 AC_OUTPUT

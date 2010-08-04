@@ -1,1 +1,1 @@
-SUBDIRS = regression performance # hand-opt temp
+SUBDIRS = regression scripts

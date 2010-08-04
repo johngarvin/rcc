@@ -11,6 +11,7 @@ Rnew=/home/garvin/research/rcompiler-install/R-new/bin/R
 
 export PATH=@RCC_BIN_PATH@:${PATH}
 export RCC_R_INCLUDE_PATH=@RCC_R_INCLUDE_PATH@
+export RCC_DATA_PATH=@RCC_DATA_PATH@
 TIMECMD=/usr/bin/time
 
 OPT=''
@@ -27,14 +28,17 @@ if [[ $1 == '-n' ]] ; then
     shift
 fi
 
+# for f1 in no-aggressive-CBV aggressive-CBV ; do
+# for f2 in no-assume-correct-program assume-correct-program ; do
+
 for f in $* ; do
     echo --- $f ---
     echo "  running and timing $f with the original R interpreter 2.1.1..."
     for (( i=0 ; $i < $N_TIMES ; i=$i+1 )) ; do $TIMECMD ${Rorig} --vanilla --slave < $f >  `basename $f .r`.interpreted.orig ; done
-#    ${Rorig} CMD Rprof Rprof.out | grep "^Total run time"
+
     echo "  running and timing $f with the modified R interpreter 2.1.1..."
     for (( i=0 ; $i < $N_TIMES ; i=$i+1 )) ; do $TIMECMD ${Rplain} --vanilla --slave < $f >  `basename $f .r`.interpreted.plain ; done
-#    ${Rplain} CMD Rprof Rprof.out | grep "^Total run time"
+
     echo "  running and timing $f with R interpreter 2.10.1..."
     for (( i=0 ; $i < $N_TIMES ; i=$i+1 )) ; do $TIMECMD ${Rnew} --vanilla --slave < $f >  `basename $f .r`.interpreted.new ; done
     if [[ $OPT == 'full' ]] ; then
@@ -56,7 +60,7 @@ for f in $* ; do
 	done
     else
 	echo "  compiling $f with rcc ..."
-	rcc $f
+	rcc $f -o `basename $f .r`.c
 	echo "  compiling" `basename $f .r`.c "with rcc-cc..."
 	rcc-cc -o `basename $f .r` -g `basename $f .r`.c
 	echo "  running" `basename $f .r` "with rcc-run (heap alloc only)..."
