@@ -30,6 +30,7 @@
 
 #include "Defn.h"
 
+extern Rboolean global_dump_stats;
 
 #ifdef BYTECODE
 static SEXP bcEval(SEXP, SEXP);
@@ -623,11 +624,124 @@ typedef enum {
 
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
-  return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, NULL);
+    return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, TYPEOF(CAR(call)) == SYMSXP ? CAR(call) : Rf_install("*anonymous*"));
 }
 
-Rboolean stack_alloc_unsafe(SEXP body, ApplyClosureOptions options, SEXP callee_sym, char * name)
+/* non-escaping symbols: these procedures are safe to call with pool
+   allocation. This is because objects they allocate cannot escape
+   except by their return value. */
+
+/* UNSAFE functions: lapply, apply, eval, UseMethod, assign,
+   postscript (calls gsetVar), axis */
+
+static SEXP sym_dnorm;
+static SEXP sym_pnorm;
+static SEXP sym_qnorm;
+static SEXP sym_dunif;
+static SEXP sym_punif;
+static SEXP sym_qunif;
+static SEXP sym_sum;
+static SEXP sym_vector;
+static SEXP sym_append;
+static SEXP sym_max;
+static SEXP sym_any;
+static SEXP sym_names;
+static SEXP sym_names_default;
+static SEXP sym_namesgets;
+static SEXP sym_namesgets_default;
+static SEXP sym_prod;
+static SEXP sym_t;
+static SEXP sym_t_default;
+static SEXP sym_log;
+static SEXP sym_matrix;
+static SEXP sym_as_vector;
+static SEXP sym_c;
+static SEXP sym_unlist;
+static SEXP sym_aperm;
+
+static void init_symbols() {
+    sym_dnorm = Rf_install("dnorm");
+    sym_pnorm = Rf_install("pnorm");
+    sym_qnorm = Rf_install("qnorm");
+    sym_dunif = Rf_install("dunif");
+    sym_punif = Rf_install("punif");
+    sym_qunif = Rf_install("qunif");
+    sym_sum = Rf_install("sum");
+    sym_vector = Rf_install("vector");
+    sym_append = Rf_install("append");
+    sym_max = Rf_install("max");
+    sym_any = Rf_install("any");
+    sym_names = Rf_install("names");
+    sym_names_default = Rf_install("names.default");
+    sym_namesgets = Rf_install("names<-");
+    sym_namesgets_default = Rf_install("names<-.default");
+    sym_prod = Rf_install("prod");
+    sym_t = Rf_install("t");
+    sym_t_default = Rf_install("t.default");
+    sym_log = Rf_install("log");
+    sym_matrix = Rf_install("matrix");
+    sym_as_vector = Rf_install("as.vector");
+    sym_c = Rf_install("c");
+    sym_unlist = Rf_install("unlist");
+    sym_aperm = Rf_install("aperm");
+}
+ 
+Rboolean stack_alloc_safe(SEXP body, ApplyClosureOptions options, SEXP callee_sym)
 {
+    /* to avoid a lot of calls to Rf_install */
+    static Rboolean init_done = FALSE;
+    if (!init_done) {
+	init_symbols();
+	init_done = TRUE;
+    }
+    
+    if (options & AC_RCC) {
+	return (options & AC_STACK_CLOSURE);
+	/* Safe only if the environment does not escape. This is
+	   conservative. If the environment is not safe to stack
+	   allocate, then neither are the things the environment
+	   points to, which includes any object bound to a variable.
+	   Temporary values that are never pointed to could be stack
+	   allocated, but an unstackable environment is rare enough
+	   that we might as well prohibit stack allocation altogether.
+	   (The environment is determined to be unstackable only if
+	   closure conversion determines that the closure might
+	   escape.) */
+    }
+    if (callee_sym == sym_dnorm ||
+	callee_sym == sym_pnorm ||
+	callee_sym == sym_qnorm ||
+	callee_sym == sym_dunif ||
+	callee_sym == sym_punif ||
+	callee_sym == sym_qunif ||
+	callee_sym == sym_sum ||
+	callee_sym == sym_vector ||
+	callee_sym == sym_append ||
+	callee_sym == sym_max ||
+	callee_sym == sym_any ||
+	callee_sym == sym_names ||
+	callee_sym == sym_names_default ||
+	callee_sym == sym_namesgets ||
+	callee_sym == sym_namesgets_default ||
+	callee_sym == sym_prod ||
+	callee_sym == sym_t ||
+	callee_sym == sym_t_default ||
+	callee_sym == sym_log ||
+	callee_sym == sym_matrix ||
+	callee_sym == sym_as_vector ||
+	callee_sym == sym_c ||
+	callee_sym == sym_unlist ||
+	callee_sym == sym_aperm
+	)
+    {
+	return TRUE;
+    }
+    return FALSE;
+}
+
+#if 0
+previously defined stack_alloc_unsafe; too many cases
+
     static SEXP sym_usemethod;
     static SEXP sym_eval;
     static SEXP sym_assign;
@@ -649,16 +763,11 @@ Rboolean stack_alloc_unsafe(SEXP body, ApplyClosureOptions options, SEXP callee_
     {
 	return TRUE;
     }
-    /*
-    if (strcmp(name, "eval") == 0) {
-	return TRUE;
-    }
-    if (strcmp(name, "assign") == 0) {
-	return TRUE;
-    }
-*/
     return FALSE;
-}
+#endif
+
+#if 0
+/* moved to duplicate.c */
 
 /* For a variety of reasons, the duplication function for return
    values has to be different than duplicate(). */
@@ -679,15 +788,18 @@ SEXP mem_duplicate(SEXP x)
 	SET_PRENV(out, mem_duplicate(PRENV(x)));
 	SET_PRVALUE(out, mem_duplicate(PRVALUE(x)));
     }
+    if (ATTRIB(x) != R_NilValue) {
+	SET_ATTRIB(out, mem_duplicate(ATTRIB(x)));
+    }
     UNPROTECT(1);
     return out;
 }
+#endif
 
 /* Apply SEXP op of type CLOSXP to actuals */
-SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, char * name)
+SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, SEXP callee_sym)
 {
     extern Rboolean global_stack_debug;
-    extern Rboolean global_dump_stats;
     SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
@@ -716,6 +828,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	savedrho = CLOENV(op);
     }
 
+    /*
     if (name == NULL) {
 	if (TYPEOF(CAR(call)) == SYMSXP) {
 	    name = CHAR(PRINTNAME(CAR(call)));
@@ -723,9 +836,21 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	    name = "";
 	}
     }
+    */
 
-    if (global_dump_stats) fprintf(stderr, "Entering function %s\n", name);
-    
+    if (global_dump_stats) {
+      SEXP arg;
+      fprintf(stderr, "Entering function %s [", CHAR(PRINTNAME(callee_sym)));
+      for(arg = arglist; arg != R_NilValue; arg = CDR(arg)) {
+	if (TYPEOF(CAR(arg)) == PROMSXP) {
+	  fprintf(stderr, "P");
+	} else {
+	  fprintf(stderr, "N");
+	}
+      }
+      fprintf(stderr, "]\n");
+    }
+
     /*  Set up a context with the call in it so error has access to it */
     
     if (options & AC_CONTEXT) {
@@ -733,7 +858,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
     }
 
     if (options & AC_STACK_CLOSURE) {
-	/* stack allocate matchArgs list, environment, promises */
+	/* stack allocate matchArgs list (possibly), environment, promises */
 	beginStackAlloc();
     } else {
 	old_heap_alloc = getFallbackAlloc();
@@ -771,7 +896,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
        environment layout.  We can live with it for now since it only
        happens immediately after the environment creation.  LT */
 
-    if (options & AC_MATCH_ARGS) {
+    //    if (options & AC_MATCH_ARGS) {
 	f = formals;
 	a = actuals;
 	while (f != R_NilValue) {
@@ -782,7 +907,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	    f = CDR(f);
 	    a = CDR(a);
 	}
-    }
+	//    }
 
     if (options & AC_STACK_CLOSURE) {
 	/* we have already pushed the allocation stack space */
@@ -878,7 +1003,7 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 #endif
 #undef  HASHING
 
-    if (stack_alloc_unsafe(body, options, CAR(call), name)) {
+    if (!stack_alloc_safe(body, options, callee_sym)) {
 	old_heap_alloc = getFallbackAlloc();
 	setFallbackAlloc(TRUE);
     }
@@ -925,17 +1050,17 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 	PrintValueRec(call, rho);
     }
 
-    if (stack_alloc_unsafe(body, options, CAR(call), name)) {
+    if (!stack_alloc_safe(body, options, callee_sym)) {
         setFallbackAlloc(old_heap_alloc);
     } else if (getFallbackAlloc() == FALSE) {
 	/* duplicate return value in parent pool */
 	upAllocStack();
-	tmp = mem_duplicate(tmp);
+	tmp = duplicate(tmp);
 	downAllocStack();
     }
 
     if (global_dump_stats) {
-	fprintf(stderr, "Returning from function %s: pointers returned: ", name);
+	fprintf(stderr, "Returning from function %s: pointers returned: ", CHAR(PRINTNAME(callee_sym)));
 	printAllPointers(tmp);
 	fprintf(stderr, "\n");
     }
@@ -1932,7 +2057,6 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP expr, lhs, rhs, saverhs, tmp, tmp2;
     R_varloc_t tmploc;
     char buf[32];
-    extern Rboolean global_dump_stats;
 
     expr = CAR(args);
 
@@ -2032,7 +2156,6 @@ SEXP do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    extern Rboolean global_dump_stats;
     SEXP s;
     if (length(args) != 2)
 	WrongArgCount(asym[PRIMVAL(op)]);
@@ -2459,8 +2582,8 @@ int DispatchOrEval(SEXP call, SEXP op, char *generic, SEXP args, SEXP rho,
 	    }
 	    else {
 		dots = FALSE;
-	    x = eval(CAR(args), rho);
-	    break;
+		x = eval(CAR(args), rho);
+		break;
 	    }
 	}
 	PROTECT(x); nprotect++;

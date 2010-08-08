@@ -504,7 +504,8 @@ typedef struct StackPageStruct {
 
 typedef struct AllocStackStruct {
     int id;
-    StackPage * page;
+    StackPage * first_page;
+    StackPage * last_page;
     SEXP (*allocateVector)(struct AllocStackStruct * allocator, SEXPTYPE type, R_len_t length);
     SEXP (*allocateNode)(struct AllocStackStruct * allocator, SEXP * protect_on_gc);
     struct AllocStackStruct * up;
@@ -526,6 +527,7 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
 SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 SEXP allocNodeHeap(AllocStack * allocator, SEXP * protect_on_gc);
 void printAllPointers(SEXP e);
+Rboolean is_stack(SEXP s);
 
 /* Other Internally Used Functions */
 
@@ -534,10 +536,10 @@ SEXP Rf_allocMatrix(SEXPTYPE, int, int);
 SEXP Rf_allocSExp(SEXPTYPE);
 SEXP Rf_allocString(int);
 SEXP Rf_allocVector(SEXPTYPE, R_len_t);
-void Rf_allocVectorInPlace(SEXPTYPE, R_len_t, SEXP);
+  /* void Rf_allocVectorInPlace(SEXPTYPE, R_len_t, SEXP); */
 SEXP Rf_allocList(int);
 SEXP Rf_allocListHeap(int);
-void Rf_allocListInPlace(SEXP);
+  /* void Rf_allocListInPlace(SEXP); */
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 typedef enum {
     AC_RCC = 1,
@@ -548,7 +550,7 @@ typedef enum {
     AC_STACK_CLOSURE = 32,
     AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
 } ApplyClosureOptions;
-SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions, char *);
+SEXP Rf_applyClosureOpt(SEXP, SEXP, SEXP, SEXP, SEXP, ApplyClosureOptions, SEXP);
 SEXP Rf_applyRccClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_asChar(SEXP);
 Rcomplex Rf_asComplex(SEXP);
@@ -560,10 +562,10 @@ SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
 SEXP Rf_classgets(SEXP, SEXP);
 Rboolean Rf_conformable(SEXP, SEXP);
-void Rf_allocSExpNonConsInPlace(SEXPTYPE, SEXP);
+  /* void Rf_allocSExpNonConsInPlace(SEXPTYPE, SEXP); */
 SEXP Rf_cons(SEXP, SEXP);
 SEXP Rf_consHeap(SEXP, SEXP);
-void Rf_consInPlace(SEXP, SEXP, SEXP);
+  /* void Rf_consInPlace(SEXP, SEXP, SEXP); */
 void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);

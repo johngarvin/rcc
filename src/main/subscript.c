@@ -235,6 +235,9 @@ static SEXP nullSubscript(int n)
     return indx;
 }
 
+#if 0
+original version
+
 static SEXP logicalSubscript(SEXP s, int ns, int nx, int *stretch)
 {
     int canstretch, count, i, nmax;
@@ -259,6 +262,42 @@ static SEXP logicalSubscript(SEXP s, int ns, int nx, int *stretch)
 	    else
 		INTEGER(indx)[count++] = i + 1;
 	}
+    return indx;
+}
+#endif
+
+static SEXP logicalSubscript(SEXP s, int ns, int nx, int *stretch)
+{
+    int canstretch, count, i, ii, nmax;
+    SEXP indx;
+    canstretch = *stretch;
+    if (!canstretch && ns > nx)
+	error(_("(subscript) logical subscript too long"));
+    nmax = (ns > nx) ? ns : nx;
+    *stretch = (ns > nx) ? ns : 0;
+    if (ns == 0)
+	return(allocVector(INTSXP, 0));
+    count = 0;
+    ii = 0;
+    for (i = 0; i < nmax; i++) {
+	if (LOGICAL(s)[ii]) {
+	    count++;
+	}
+	ii++; if (ii == ns) ii = 0;
+    }
+    indx = allocVector(INTSXP, count);
+    count = 0;
+    ii = 0;
+    for (i = 0; i < nmax; i++) {
+	if (LOGICAL(s)[ii]) {
+	    if (LOGICAL(s)[ii] == NA_LOGICAL) {
+		INTEGER(indx)[count++] = NA_INTEGER;
+	    } else {
+		INTEGER(indx)[count++] = i + 1;
+	    }
+	}
+	ii++; if (ii == ns) ii = 0;
+    }
     return indx;
 }
 

@@ -1492,7 +1492,7 @@ R_varloc_t defineVarReturnLoc(SEXP symbol, SEXP value, SEXP rho)
 R_varloc_t defineVarReturnLocUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean heap)
 {
     int hashcode;
-    SEXP frame, c;
+    SEXP frame, c, node;
     R_varloc_t loc;
     R_DirtyImage = 1;
     if (rho != R_BaseNamespace && rho != R_NilValue) {
@@ -1517,7 +1517,8 @@ R_varloc_t defineVarReturnLocUseHeap(SEXP symbol, SEXP value, SEXP rho, Rboolean
 	    }
 	    if (FRAME_IS_LOCKED(rho))
 		error(_("cannot add bindings to a locked environment"));
-	    SET_FRAME(rho, (heap ? consHeap(value, FRAME(rho)) : CONS(value, FRAME(rho))));
+	    node = (heap ? consHeap(value, FRAME(rho)) : CONS(value, FRAME(rho)));
+	    SET_FRAME(rho, node);
 	    SET_TAG(FRAME(rho), symbol);
 	    return R_GetBindingVarLoc(FRAME(rho), symbol);
 	}

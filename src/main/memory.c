@@ -31,6 +31,9 @@
 
 #define USE_RINTERNALS
 
+#include <assert.h>
+#include <unistd.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,11 +62,11 @@ Rboolean global_always_use_fallback_alloc; /* = (getenv("R_ALWAYS_USE_FALLBACK_A
                                            /* initialized in InitMemory() */
 Rboolean global_stack_info = FALSE;
 
-const int global_default_alloc_stack_space_size = 8000;
+int global_default_alloc_stack_space_size;
 int global_alloc_stack_space_size;  /* value of env variable R_ALLOC_STACK_SPACE_SIZE */
                                     /* initialized in InitMemory() */
 
-/* when true, use heap allocation all the time as a fallback */
+/* when true, use heap allocation */
 static Rboolean fallback_alloc = TRUE;
 
 static AllocStack * allocStackTop = NULL;
@@ -73,6 +76,9 @@ static int max_alloc_stack_id = 0;
 static void pushAllocStack(AllocVectorFunction alloc_vector_function,
 		    AllocNodeFunction alloc_node_function);
 static void popAllocStack();
+static void consInPlace(SEXP car, SEXP cdr, SEXP s);
+static void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s);
+static void allocListInPlace(SEXP s);
 
 /* for debugging: print pointers of an S-expression and all its
    subfields. Only prints allocated expressions, not constants such as
@@ -440,22 +446,23 @@ static R_size_t R_NodesInUse = 0;
 #define SET_NEXT_NODE(s,t) (NEXT_NODE(s) = (t))
 #define SET_PREV_NODE(s,t) (PREV_NODE(s) = (t))
 
-static AllocStack * deadStack;
+static StackPage * firstDeadPage;
+static StackPage * lastDeadPage;
 
 static void dumpPageStats(AllocStack * s)
 {
-    StackPage * p = s->page;
+    StackPage * p = s->first_page;
     int n = 0;
     while(p != NULL) {
 	n++;
 	p = p->next;
     }
     if (n == 0) {
-	fprintf(stderr, "AllocStack: empty\n");
+	fprintf(stderr, "Dead stack: empty\n");
     } else if (n == 1) {
-	fprintf(stderr, "AllocStack: one page, %d bytes used\n", s->page->original_size - s->page->size);
+	fprintf(stderr, "Dead stack: one page, %d bytes used\n", s->first_page->original_size - s->first_page->size);
     } else {
-	fprintf(stderr, "AllocStack: %d pages\n", n);
+	fprintf(stderr, "Dead stack: %d pages\n", n);
     }
 }
 
@@ -464,12 +471,32 @@ void addToDeadStack(AllocStack * s)
     if (global_dump_stats) {
 	dumpPageStats(s);
     }
-    s->down = deadStack;
-    deadStack = s;
+    if (s->first_page == NULL) {
+	return;  /* no pages to add */
+    } else {
+	assert(s->last_page != NULL);
+	assert(s->last_page->next == NULL);
+	s->last_page->next = firstDeadPage;
+	firstDeadPage = s->first_page;
+    }
 }
 
 void freeDeadStack()
 {
+    StackPage * prev_page;
+    while (firstDeadPage != NULL) {
+	if (global_stack_debug) {
+	    /* if debugging, fill deallocated space with visible garbage */
+	    memset(firstDeadPage->space, 0xfd, firstDeadPage->original_size);
+	}
+	free(firstDeadPage->space);
+	prev_page = firstDeadPage;
+	firstDeadPage = firstDeadPage->next;
+	free(prev_page);
+    }
+    lastDeadPage = NULL;
+
+#if 0
     AllocStack * prev_s;
     StackPage * page;
     StackPage * prev_page;
@@ -490,14 +517,34 @@ void freeDeadStack()
 	deadStack = deadStack->down;
 	free(prev_s);
     }
+#endif
 }
 
-Rboolean pointer_within(SEXP p, AllocStack * as)
+SEXP getUnusedPageSpace()
 {
     StackPage * page;
-    page = as->page;
+
+    assert(firstDeadPage != NULL);
+    page = firstDeadPage;
+    firstDeadPage = firstDeadPage->next;
+    if (firstDeadPage == NULL) {
+	lastDeadPage = NULL;
+    }
+    return page->space;
+}
+
+Rboolean pointer_within_page(SEXP p, StackPage * page)
+{
+    return (page->space <= p &&
+	    p < (SEXP)(((R_size_t)page->space) + page->original_size));
+}
+
+Rboolean pointer_within_stack(SEXP p, AllocStack * as)
+{
+    StackPage * page;
+    page = as->first_page;
     while(page != NULL) {
-	if (as->page->space <= p && p < (SEXP)(((R_size_t)as->page->space) + as->page->original_size)) {
+	if (pointer_within_page(p, page)) {
 	    return TRUE;
 	}
 	page = page->next;
@@ -510,7 +557,7 @@ static Rboolean is_live_stack(SEXP s) {
 
     sp = allocStackTop;
     while(sp->id != 0) {
-	if (pointer_within(s, sp)) {
+	if (pointer_within_stack(s, sp)) {
 	    return TRUE;
 	}
 	sp = sp->up;
@@ -519,19 +566,19 @@ static Rboolean is_live_stack(SEXP s) {
 }
 
 static Rboolean is_dead_stack(SEXP s) {
-    AllocStack * sp;
+    StackPage * page;
+    page = firstDeadPage;
 
-    sp = deadStack;
-    while (sp != NULL) {
-	if (pointer_within(s, sp)) {
+    while (page != NULL) {
+	if (pointer_within_page(s, page)) {
 	    return TRUE;
 	}
-	sp = sp->down;
+	page = page->next;
     }
     return FALSE;
 }
 
-static Rboolean is_stack(SEXP s) {
+Rboolean is_stack(SEXP s) {
     /*    return (((R_size_t)s) >= 0x7fff00000000); */
     /*    return is_good_stack(s); */
     return (PREV_NODE(s) == NULL);
@@ -570,7 +617,7 @@ static Rboolean is_heap(SEXP s) {
 
 /* unsnap node s from its list */
 
-static void UNSNAP_NODE(SEXP s) {
+static inline void UNSNAP_NODE(SEXP s) {
   SEXP un__n__ = (s);
   SEXP next = NEXT_NODE(un__n__);
   SEXP prev = PREV_NODE(un__n__);
@@ -600,7 +647,7 @@ static Rboolean allow_stack_objects_in_heap = FALSE;
 
 /* snap in node s before node t */
 
-static void SNAP_NODE(SEXP s, SEXP t) {
+static inline void SNAP_NODE(SEXP s, SEXP t) {
   SEXP sn__n__ = (s);
   SEXP next = (t);
   SEXP prev = PREV_NODE(next);
@@ -707,7 +754,7 @@ static void SNAP_NODE_force(SEXP s, SEXP t) {
   } \
 } while(0)
 
-void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
+inline void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
     if (ATTRIB(n) != R_NilValue) 
 	action(ATTRIB(n), extra); 
     switch (TYPEOF(n)) { 
@@ -784,7 +831,7 @@ void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP * extra) {
 
 #define FORWARD_NODE(s) FORWARD_NODE_check(NULL, s, &forwarded_nodes)
 
-static void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
+static inline void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     if (s && ((! is_stack(s) && ! NODE_IS_MARKED(s)) ||
 	      (is_stack(s) && NEXT_NODE(s) == NULL)))
     {
@@ -797,7 +844,24 @@ static void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     }
 }
 
-static void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
+static void FORWARD_NODE_stack(SEXP s, SEXP * forwarded_nodes) {
+    if (NEXT_NODE(s) == NULL) {
+	MARK_NODE(s);
+	SET_NEXT_NODE(s, *forwarded_nodes);
+	*forwarded_nodes = s;
+    }
+}
+
+static inline void FORWARD_NODE_heap(SEXP s, SEXP * forwarded_nodes) {
+    if (s && !NODE_IS_MARKED(s)) {
+	MARK_NODE(s);
+	UNSNAP_NODE(s);
+	SET_NEXT_NODE(s, *forwarded_nodes);
+	*forwarded_nodes = s;
+    }
+}
+
+static inline void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
 {
     if (global_stack_debug &&
 	(parent != NULL) &&
@@ -811,13 +875,17 @@ static void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
 	    error(_("Dead stack object with live parent\n"));
 	}
     }
-    FORWARD_NODE_f(s, forwarded_nodes);
+    if (global_always_use_fallback_alloc) {
+	FORWARD_NODE_heap(s, forwarded_nodes);
+    } else {
+	FORWARD_NODE_f(s, forwarded_nodes);
+    }
 }
 
 #define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
 #define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
 
-void FORWARD_CHILDREN_f(SEXP n, SEXP * forwarded_nodes) {
+static inline void FORWARD_CHILDREN_f(SEXP n, SEXP * forwarded_nodes) {
     if (ATTRIB(n) != R_NilValue) {
 	FORWARD_NODE_check(n, ATTRIB(n), forwarded_nodes);
     }
@@ -1220,11 +1288,11 @@ static void AdjustHeapSize(R_size_t size_needed)
 
 #define AGE_NODE(s,g) AGE_NODE_f(s, g, &forwarded_nodes)
 
-static void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
+static inline void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
 {
     if (s && NODE_GEN_IS_YOUNGER(s, g)) {
         if (is_stack(s)) {
-	    MARK_NODE(s); 
+	    MARK_NODE(s);
 	    SET_NODE_GENERATION(s, g);
 	} else {
 	    if (NODE_IS_MARKED(s)) {
@@ -1251,7 +1319,9 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	if (NODE_GENERATION(s) != gen)
 	    REprintf("****snapping into wrong generation\n");
 
-	if (!is_stack(s)) {
+	if (is_stack(s)) {
+	    SET_NEXT_NODE(s, NULL);
+	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
 	}
@@ -1275,7 +1345,9 @@ static void old_to_new(SEXP x, SEXP y)
 }
 
 #define CHECK_OLD_TO_NEW(x,y) do { \
-  if (NODE_IS_OLDER(x, y)) old_to_new(x,y);  } while (0)
+  if (NODE_IS_OLDER(x, y)) old_to_new(x,y); \
+  if (is_stack(y) && !is_stack(x)) y = duplicate(y); \
+  } while (0)
 
 
 /* Node Sorting.  SortNodes attempts to improve locality of reference
@@ -1589,19 +1661,18 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #define PROCESS_NODES() PROCESS_NODES_f(&forwarded_nodes)
 
-static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
+static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
     SEXP s;
     while(*forwarded_nodes != NULL) {
 	s = *forwarded_nodes;
 	*forwarded_nodes = NEXT_NODE(*forwarded_nodes);
-	if (!is_stack(s)) {
+	if (is_stack(s)) {
+	    SET_NEXT_NODE(s, NULL);
+	} else {
 	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
 	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
 	}
 	FORWARD_CHILDREN_f(s, forwarded_nodes);
-	if (is_stack(s)) {
-	    SET_NEXT_NODE(s, NULL);
-	}
     }
 }
 
@@ -1636,6 +1707,10 @@ static void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	    num_old_gens_to_collect++;
 	}
 	else break;
+    }
+
+    if (global_dump_stats) {
+	fprintf(stderr, "GC%d ", num_old_gens_to_collect);
     }
 
  again:
@@ -1952,7 +2027,8 @@ void InitMemory()
     int i;
     int gen;
 
-    deadStack = NULL;
+    firstDeadPage = NULL;
+    lastDeadPage = NULL;
     gc_reporting = R_Verbose;
     R_StandardPPStackSize = R_PPStackSize;
     R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
@@ -2034,6 +2110,7 @@ void InitMemory()
     global_dump_stats = (getenv("R_DUMP_STATS") != NULL);
     global_stack_debug = (getenv("R_STACK_DEBUG") != NULL);
     global_always_use_fallback_alloc = (getenv("R_ALWAYS_USE_FALLBACK_ALLOC") != NULL);
+    global_default_alloc_stack_space_size = sysconf(_SC_PAGESIZE);
     global_alloc_stack_space_size = getenv("R_ALLOC_STACK_SPACE_SIZE") ? atoi(getenv("R_ALLOC_STACK_SPACE_SIZE")) : global_default_alloc_stack_space_size;
     /*    gc_inhibit_torture = (getenv("R_GC_TORTURE") == NULL);   moved to main */
 }
@@ -2121,9 +2198,19 @@ void addStackPage(AllocStack * stack)
     StackPage * page;
     page = (StackPage *)malloc(sizeof(StackPage));
     page->original_size = page->size = global_alloc_stack_space_size;
-    page->space = page->free_space = (SEXP)malloc(global_alloc_stack_space_size);
-    page->next = stack->page;
-    stack->page = page;
+    
+    /*    if (firstDeadPage == NULL) { */
+	page->space = page->free_space = (SEXP)malloc(global_alloc_stack_space_size);
+	/*
+    } else {
+	page->space = page->free_space = getUnusedPageSpace();
+    }
+	*/
+    page->next = stack->first_page;
+    stack->first_page = page;
+    if (stack->last_page == NULL) {
+	stack->last_page = page;
+    }
 }
 
 void beginStackAlloc() {
@@ -2148,12 +2235,14 @@ static void pushAllocStack(AllocVectorFunction alloc_vector_function,
     elem->id = max_alloc_stack_id++;
     elem->allocateVector = alloc_vector_function;
     elem->allocateNode = alloc_node_function;
-    elem->page = NULL;
+    elem->first_page = NULL;
+    elem->last_page = NULL;
     /*    addStackPage(elem); */
     elem->up = allocStackTop;
     elem->down = NULL;
     if (elem->up != NULL) elem->up->down = elem;
     allocStackTop = allocStackCurrent = elem;
+    if (global_dump_stats) fprintf(stderr, "Pushing pool %d\n", elem->id);
 }
 
 /* pops top of allocator stack. allocStackCurrent is updated if it is
@@ -2169,6 +2258,7 @@ static void popAllocStack()
 	if (allocStackCurrent == temp) {
 	    allocStackCurrent = allocStackTop;
 	}
+	if (global_dump_stats) fprintf(stderr, "Popping pool %d\n", temp->id);
 	addToDeadStack(temp);
     }
 }
@@ -2343,7 +2433,7 @@ SEXP consHeap(SEXP car, SEXP cdr)
     return s;
 }
 
-void consInPlace(SEXP car, SEXP cdr, SEXP s)
+static void consInPlace(SEXP car, SEXP cdr, SEXP s)
 {
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = LISTSXP;
@@ -2800,6 +2890,7 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	}
     }
     else {
+	if (global_dump_stats) fprintf(stderr, "empty vector heap %u bytes ", sizeof(SEXPREC));
 	GC_PROT(s = allocSExpNonConsHeap(type));
 	allocSExpNonConsInPlace(type, s);
     }
@@ -2838,17 +2929,17 @@ SEXP allocVectorStack(AllocStack * allocator, SEXPTYPE type, R_len_t length)
     if (length > max_vector_stack_length) return allocVectorHeap(NULL, type, length);
 
     size = allocVectorGetSize(type, length);
-    if (allocator->page == NULL || size > allocator->page->size) {
+    if (allocator->first_page == NULL || size > allocator->first_page->size) {
 	addStackPage(allocator);
     }
-    if (size > allocator->page->original_size) return allocVectorHeap(NULL, type, length);
-    SEXP space = allocator->page->free_space;
+    if (size > allocator->first_page->original_size) return allocVectorHeap(NULL, type, length);
+    SEXP space = allocator->first_page->free_space;
     if (global_dump_stats) fprintf(stderr, "vector stack %u bytes from pool %u ", size, allocator->id);
     space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_NEXT_NODE(space, NULL);
     SET_PREV_NODE(space, NULL);
-    allocator->page->free_space = (SEXP)(((R_size_t)allocator->page->free_space) + size);
-    allocator->page->size -= size;
+    allocator->first_page->free_space = (SEXP)(((R_size_t)allocator->first_page->free_space) + size);
+    allocator->first_page->size -= size;
     return space;
 }
 
@@ -2871,19 +2962,19 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc)
     if (allocator == NULL) {
 	error("allocNodeStack called on null allocator");
     }
-    if (allocator->page == NULL || node_size > allocator->page->size) {
+    if (allocator->first_page == NULL || node_size > allocator->first_page->size) {
 	addStackPage(allocator);
     }
-    if (node_size > allocator->page->original_size) {
+    if (node_size > allocator->first_page->original_size) {
 	error("Stack page size too small to contain S-expression");
     }
-    SEXP space = allocator->page->free_space;
+    SEXP space = allocator->first_page->free_space;
     if (global_dump_stats) fprintf(stderr, "node stack %u bytes from pool %u ", node_size, allocator->id);
     space->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_NEXT_NODE(space, NULL);
     SET_PREV_NODE(space, NULL);
-    allocator->page->free_space++;  /* free_space is an SEXP, so incrementing ptr will add size of node */
-    allocator->page->size -= node_size;
+    allocator->first_page->free_space++;  /* free_space is an SEXP, so incrementing ptr will add size of node */
+    allocator->first_page->size -= node_size;
     return space;
 }
     
@@ -2991,7 +3082,7 @@ R_size_t allocVectorGetSize(SEXPTYPE type, R_len_t length)
     }
 }
 
-void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s)
+static void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s)
 {
     R_len_t i;
     Rboolean positive_size = FALSE;
@@ -3097,7 +3188,7 @@ SEXP allocList(int n)
     int i;
     SEXP result = R_NilValue;
 
-    if (global_dump_stats) fprintf(stderr, "Alloc: list length %u ", n);
+    if (global_dump_stats && n > 0) fprintf(stderr, "Alloc: list length %u ", n);
     for (i = 0; i < n; i++) {
 	/* protect CDR (result), but CAR is always R_NilValue and doesn't need protection */
 	SEXP prev_result = result;
@@ -3133,7 +3224,7 @@ SEXP allocListHeap(int n)
     return result;
 }
 
-void allocListInPlace(SEXP s)
+static void allocListInPlace(SEXP s)
 {
     while (s != R_NilValue) {
 	consInPlace(R_NilValue, CDR(s), s);

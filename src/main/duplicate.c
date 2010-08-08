@@ -94,11 +94,16 @@ SEXP duplicate(SEXP s)
     case CLOSXP:
 	PROTECT(s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating closure\n");
+	    fprintf(stderr, "Duplicating closure\n");
 	}
 	PROTECT(t = allocSExp(CLOSXP));
-	SET_FORMALS(t, FORMALS(s));
-	SET_BODY(t, BODY(s));
+	if (is_stack(s)) {
+	    SET_FORMALS(t, duplicate(FORMALS(s)));
+	    SET_BODY(t, duplicate(BODY(s)));
+	} else {
+	    SET_FORMALS(t, FORMALS(s));
+	    SET_BODY(t, BODY(s));
+	}
 	SET_CLOENV(t, CLOENV(s));
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
@@ -106,7 +111,7 @@ SEXP duplicate(SEXP s)
     case RCC_CLOSXP:
 	PROTECT(s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating RCC closure\n");
+	    fprintf(stderr, "Duplicating RCC closure\n");
 	}
 	PROTECT(t = allocSExp(RCC_CLOSXP));
 	RCC_CLOSXP_SET_FORMALS(t, RCC_CLOSXP_FORMALS(s));
@@ -118,16 +123,16 @@ SEXP duplicate(SEXP s)
     case LISTSXP:
 	PROTECT(sp = s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating initial cons cell (LISTSXP)\n");
+	    fprintf(stderr, "Duplicating initial cons cell (LISTSXP)\n");
 	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
 	    if (global_dump_stats) {
-	      fprintf(stderr, "Duplicating cons cell (LISTSXP)\n");
+		fprintf(stderr, "Duplicating cons cell (LISTSXP)\n");
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    if (global_dump_stats) {
-	      fprintf(stderr, "End of duplication\n");
+		fprintf(stderr, "End of duplication\n");
 	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -140,16 +145,16 @@ SEXP duplicate(SEXP s)
     case LANGSXP:
 	PROTECT(sp = s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating initial cons cell (LANGSXP)\n");
+	    fprintf(stderr, "Duplicating initial cons cell (LANGSXP)\n");
 	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
 	    if (global_dump_stats) {
-	      fprintf(stderr, "Duplicating cons cell (LANGSXP)\n");
+		fprintf(stderr, "Duplicating cons cell (LANGSXP)\n");
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    if (global_dump_stats) {
-	      fprintf(stderr, "End of duplication\n");
+		fprintf(stderr, "End of duplication\n");
 	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -164,7 +169,7 @@ SEXP duplicate(SEXP s)
     case DOTSXP:
 	PROTECT(sp = s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating initial cons cell (DOTSXP)\n");
+	    fprintf(stderr, "Duplicating initial cons cell (DOTSXP)\n");
 	}
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
@@ -173,7 +178,7 @@ SEXP duplicate(SEXP s)
 	    }
 	    SETCDR(t, CONS(duplicate(CAR(sp)), R_NilValue));
 	    if (global_dump_stats) {
-	      fprintf(stderr, "End of duplication\n");
+		fprintf(stderr, "End of duplication\n");
 	    }
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
@@ -188,7 +193,7 @@ SEXP duplicate(SEXP s)
     case CHARSXP:
 	PROTECT(s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating string\n");
+	    fprintf(stderr, "Duplicating string\n");
 	}
 	PROTECT(t = allocString(strlen(CHAR(s))));
 	strcpy(CHAR(t), CHAR(s));
@@ -200,7 +205,7 @@ SEXP duplicate(SEXP s)
 	n = LENGTH(s);
 	PROTECT(s);
 	if (global_dump_stats) {
-	  fprintf(stderr, "Duplicating generic vector\n");
+	    fprintf(stderr, "Duplicating generic vector\n");
 	}
 	PROTECT(t = allocVector(TYPEOF(s), n));
 	for(i = 0 ; i < n ; i++)
@@ -215,13 +220,33 @@ SEXP duplicate(SEXP s)
     case CPLXSXP: DUPLICATE_ATOMIC_VECTOR(Rcomplex, COMPLEX, t, s); break;
     case RAWSXP: DUPLICATE_ATOMIC_VECTOR(Rbyte, RAW, t, s); break;
     case STRSXP:
-	/* direct copying and bypassing the write barrier is OK since
-	   t was just allocated and so it cannot be older than any of
-	   the elements in s.  LT */
-	DUPLICATE_ATOMIC_VECTOR(SEXP, STRING_PTR, t, s);
+	n = LENGTH(s);
+	if (is_stack(s)) {
+	    if (global_dump_stats) {
+		fprintf(stderr, "Duplicating string\n");
+	    }
+	    PROTECT(t = allocVector(STRSXP, LENGTH(s)));
+	    for(i = 0; i < n; i++) {
+		SET_STRING_ELT(t, i, duplicate(STRING_ELT(s, i)));	       
+	    }
+	    UNPROTECT(1);
+	} else {
+	    /* direct copying and bypassing the write barrier is OK since
+	       t was just allocated and so it cannot be older than any of
+	       the elements in s.  LT */
+	    DUPLICATE_ATOMIC_VECTOR(SEXP, STRING_PTR, t, s);
+	}
+	DUPLICATE_ATTRIB(t, s);
 	break;
     case PROMSXP:
-	return s;
+	if (is_stack(s)) {
+	    if (global_dump_stats) {
+		fprintf(stderr, "Duplicating promise\n");
+	    }
+	    t = mkPROMISE(duplicate(PRCODE(s)), duplicate(PRENV(s)));
+	} else {
+	    return s;
+	}
 	break;
     default:
 	UNIMPLEMENTED_TYPE("duplicate", s);

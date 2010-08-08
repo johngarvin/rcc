@@ -418,6 +418,7 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 
 void setup_Rmainloop(void)
 {
+    extern Rboolean global_dump_stats;
     volatile int doneit;
     volatile SEXP baseEnv;
     SEXP cmd;
@@ -652,6 +653,7 @@ void setup_Rmainloop(void)
 	REprintf(_("During startup - "));
 	PrintWarnings();
     }
+    if (global_dump_stats) fprintf(stderr, "end of setup\n");
 }
 
 void end_Rmainloop(void)
