@@ -57,6 +57,10 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
     tmp_e = CDR(tmp_e);
   }
   
+  // for debugging dump, say we've reached exec
+  exec_decls += "extern Rboolean global_dump_stats;\n";
+  exec_defs += "if (global_dump_stats) fprintf(stderr, \"exec\\n\");";
+
   // if stack debug is on, turn it on in the interpreter memory system
   if (Settings::get_instance()->get_stack_debug()) {
     exec_decls += "extern Rboolean global_stack_debug;\n";

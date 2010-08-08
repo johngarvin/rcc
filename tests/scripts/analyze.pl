@@ -1,31 +1,37 @@
 #!/usr/bin/perl -w
 
-# Gather allocation stats from memory debugging output. The debugging
-# information is produced by the R-2.1.1rcc interpreter or
-# RCC-compiled code if the R_DUMP_STATS environment variable is
-# defined.
+# Gather allocation stats from memory debugging output. Set the
+# R_DUMP_STATS environment variable to produce debugging output on
+# stderr. Works for R-2.1.1rcc interpretation and RCC-compiled code.
 #
 # author: John Garvin
 
 use strict;
 use warnings;
 
-my %objects;  # key = pointer of allocated object
+my %objects;  # key = address of allocated object
               # value = (output string,
               #          stack depth on allocation,
-              #          minimum stack depth to which object may escape)
+              #          minimum stack depth to which object may escape,
+              #          whether allocation is in R inititialization)
 
-my @stack;
-my $dup = 0;
+my @callstack;    # procedure call stack
+
+my $dup = 0;  # true if objects being allocated are part of a
+	      # duplicate() call
+
 my $in_env = 0;  # whether objects currently being allocated are part
 		 # of an environment (environment allocation takes
 		 # place after entering a procedure until allocation
 		 # the actual environment object)
+
+my $in_init = 1;  # true if program is in R initialization
+
 my $debug = 0;
 
 my %stats = ('alloc'       => 0,    # total objects allocated
              'heap'        => 0,    # objects allocated on heap
-             'stack'       => 0,    # objects allocated on stack
+             'locally'     => 0,    # objects allocated locally
              'dup'         => 0,    # objects allocated by duplicate()
 	     'escape'      => 0,    # objects that escape (returned or assigned)
 	     'assigns'     => 0,    # number of nonlocal assignments that occur
@@ -33,21 +39,7 @@ my %stats = ('alloc'       => 0,    # total objects allocated
 	     'p_assigned'  => 0,    # inc. for each pointer escaping by nonlocal assignment
 	     'p_returned'  => 0,    # inc. for each pointer escaping by return
 
-	     'heap_cons'        => 0,    # objects allocated by cons()
-	     'heap_vector'      => 0,    # objects allocated by allocVector()
-	     'heap_SEXP'        => 0,    # objects allocated by allocSExp()
-	     'heap_promise'     => 0,    # objects allocated by mkPROMISE()
-	     'heap_environment' => 0,    # objects allocated by NewEnvironment()
-	     'heap_list'        => 0,    # objects allocated by allocList()
-
-	     'stack_cons'        => 0,    # objects allocated by cons()
-	     'stack_vector'      => 0,    # objects allocated by allocVector()
-	     'stack_SEXP'        => 0,    # objects allocated by allocSExp()
-	     'stack_promise'     => 0,    # objects allocated by mkPROMISE()
-	     'stack_environment' => 0,    # objects allocated by NewEnvironment()
-	     'stack_list'        => 0,    # objects allocated by allocList()
-
-	     'unknown'           => 0,    # objects where we don't know how they got allocated
+	     'unknown'     => 0,    # objects where we don't know how they got allocated
 	     
 	     'in_env'      => 0,    # objects that are part of an
 				    # environment (both cons cells and
@@ -60,17 +52,98 @@ my %stats = ('alloc'       => 0,    # total objects allocated
 	     'gc2' => 0,
     );
 
-sub min {
-    my $x = shift;
-    my $y = shift;
-    if ($x < $y) {
-	return $x;
-    } else {
-	return $y;
-    }
-}
+my %proto_calls = (
+    'calls'       => 0,    # number of procedure calls that occur
+    'promise'     => 0,    # arguments that are promises
+    'nonpromise'  => 0,    # arguments that are not promises
+    );
+
+my %setup_calls = %proto_calls;
+my %post_calls = %proto_calls;
+
+# prototype hash for allocation stats
+my %proto_alloc = (
+	     'cons'        => 0,    # objects allocated by cons()
+	     'vector'      => 0,    # objects allocated by allocVector()
+	     'SEXP'        => 0,    # objects allocated by allocSExp()
+	     'promise'     => 0,    # objects allocated by mkPROMISE()
+	     'environment' => 0,    # objects allocated by NewEnvironment()
+	     'list'        => 0,    # objects allocated by allocList()
+    );
+
+my %setup = %proto_alloc;     # objects allocated in R initialization
+my %heap = %proto_alloc;      # after init, heap allocated
+my %locally = %proto_alloc;   # after init, locally allocated
 
 while (<>) {
+    chomp();
+    analyze_line();
+}
+
+foreach my $ptr (keys(%objects)) {
+    my ($v0, $v1, $v2, $v3) = @{ $objects{$ptr} };
+    if ($debug) {
+	print("pushing (b): ");
+	print($v0);
+	print($v1, "\n");
+	print($v2, "\n");
+	print($v3, "\n");
+    }
+    analyze_alloc_line($v0, $v1, $v2, $v3);
+}
+
+print($setup_calls{calls} + $post_calls{calls}, " procedure calls\n");
+print("  in setup:\n");
+print("    ", $setup_calls{calls}, " calls\n");
+print("    ", $setup_calls{promise} + $setup_calls{nonpromise}, " total args\n");
+print("    ", $setup_calls{promise}, " promise args\n");
+print("    ", $setup_calls{nonpromise}, " non-promise args\n");
+print("  post-setup:\n");
+print("    ", $post_calls{calls}, " calls\n");
+print("    ", $post_calls{promise} + $post_calls{nonpromise}, " total args\n");
+print("    ", $post_calls{promise}, " promise args\n");
+print("    ", $post_calls{nonpromise}, " non-promise args\n");
+print($stats{returns}, " procedure returns\n");
+print($stats{assigns}, " nonlocal assignments\n");
+print($stats{p_returned}, " pointers escaping by return\n");
+print($stats{p_assigned}, " pointers escaping by nonlocal assignment\n");
+print($stats{gc0} + $stats{gc1} + $stats{gc2}, " total garbage collections\n");
+print("  ", $stats{gc0}, " GC in generation 0\n");
+print("  ", $stats{gc1}, " GC in generation 1\n");
+print("  ", $stats{gc2}, " GC in generation 2\n");
+print("\n");
+print($stats{alloc}, " total allocations\n");
+print($stats{heap}, " heap allocations ", percent($stats{heap}), "%\n");
+print($stats{locally}, " local allocations ", percent($stats{locally}), "%\n");
+print($stats{dup}, " duplicates ", percent($stats{dup}), "%\n");
+print($stats{escape}, " escape ", percent($stats{escape}), "%\n\n");
+print($stats{in_env}, " part of environment ", percent($stats{in_env}), "%\n");
+print($stats{parent}, " allocated in parent pool at least once ", percent($stats{parent}), "%\n");
+print($stats{unknown}, " unknown allocations ", percent($stats{unknown}), "%\n");
+print($setup{cons} + $heap{cons} + $locally{cons}, " cons cells ", percent($heap{cons} + $locally{cons}), "%\n");
+print($setup{vector} + $heap{vector} + $locally{vector}, " vectors ", percent($heap{vector} + $locally{vector}), "%\n");
+print($setup{SEXP} + $heap{SEXP} + $locally{SEXP}, " SEXPs ", percent($heap{SEXP} + $locally{SEXP}), "%\n");
+print($setup{promise} + $heap{promise} + $locally{promise}, " promises ", percent($heap{promise} + $locally{promise}), "%\n");
+print($setup{environment} + $heap{environment} + $locally{environment}, " environments ", percent($heap{environment} + $locally{environment}), "%\n");
+print($setup{list} + $heap{list} + $locally{list}, " lists ", percent($heap{list} + $locally{list}), "%\n");
+print("In setup:\n");
+breakdown(\%setup);
+print("In heap (post-setup):\n");
+breakdown(\%heap);
+print("Procedure-local (post-setup):\n");
+breakdown(\%locally);
+
+sub breakdown {
+    my $h = shift;
+    print("  ", $$h{cons}, " cons cells ", percent($$h{cons}), "%\n");
+    print("  ", $$h{vector}, " vectors ", percent($$h{vector}), "%\n");
+    print("  ", $$h{SEXP}, " SEXPs ", percent($$h{SEXP}), "%\n");
+    print("  ", $$h{promise}, " promises ", percent($$h{promise}), "%\n");
+    print("  ", $$h{environment}, " environments ", percent($$h{environment}), "%\n");
+    print("  ", $$h{list}, " lists ", percent($$h{list}), "%\n");
+}
+
+sub analyze_line {
     my @words = split();
 
     if (/^Alloc:/) {
@@ -86,22 +159,38 @@ while (<>) {
 	    $in_env = 0;
 	}
 	if (defined($objects{$ptr})) {
-	    my ($v0, $v1, $v2) = @{ $objects{$ptr} };
+	    my ($v0, $v1, $v2, $v3) = @{ $objects{$ptr} };
 	    if ($debug) {
 		print("pushing (a): ");
 		print($ptr, "\n");
 		print($v0);
 		print($v1, "\n");
 		print($v2, "\n");
+		print($v3, "\n");
 	    }
-	    analyze_line($v0, $v1, $v2);
+	    analyze_alloc_line($v0, $v1, $v2, $v3);
 	}
-	$objects{$ptr} = [$_, scalar(@stack), scalar(@stack)];
+	$objects{$ptr} = [$_, scalar(@callstack), scalar(@callstack), $in_init];
     } elsif (/^Entering/) {
-	push(@stack, $words[-1]);
+	push(@callstack, $words[2]);
+	my $arguments = $words[3];
+	$arguments =~ /^\[.*\]$/ or die "bad args info in \"Entering\" line";
+	my $h;
+	if ($in_init) {
+	    $h = \%setup_calls;
+	} else {
+	    $h = \%post_calls;
+	}
+	$$h{calls}++;
+	while ($arguments =~ /P/g) {
+	    $$h{promise}++;
+	}
+	while ($arguments =~ /N/g) {
+	    $$h{nonpromise}++;
+	}
 	$in_env = 1;
     } elsif (/^Returning/) {
-	pop(@stack);
+	pop(@callstack);
 	$stats{returns}++;
 	if (scalar(@words) > 6) {
 	    my $ptr;
@@ -109,7 +198,7 @@ while (<>) {
 		# returned pointers may be used in caller
 		if (!defined($objects{$ptr})) { die("pointer $ptr not found: $!\n"); }
 		$stats{p_returned}++;
-		$objects{$ptr}[2] = min($objects{$ptr}[2], scalar(@stack));
+		$objects{$ptr}[2] = min($objects{$ptr}[2], scalar(@callstack));
 	    }
 	}
     } elsif (/^Duplicating/) {
@@ -127,26 +216,16 @@ while (<>) {
 		$objects{$ptr}[2] = 0;
 	    }
 	}
+    } elsif (/^end of setup/) {
+	$in_init = 0;
     } else {
-	# no-op
+	# ignore all other lines
     }
 }
 
-foreach my $ptr (keys(%objects)) {
-    my ($v0, $v1, $v2) = @{ $objects{$ptr} };
-    if ($debug) {
-	print("pushing (b): ");
-	print($v0);
-	print($v1, "\n");
-	print($v2, "\n");
-    }
-    analyze_line($v0, $v1, $v2);
-}
-
-sub analyze_line {
-    my ($str, $alloc_depth, $esc_depth) = @_;
-    if ($alloc_depth == $esc_depth) {
-    } else {
+sub analyze_alloc_line {
+    my ($str, $alloc_depth, $esc_depth, $in_init) = @_;
+    if ($alloc_depth != $esc_depth) {
 	$stats{escape}++;
     }
     if ($str =~ 'parent') {
@@ -163,47 +242,38 @@ sub analyze_line {
 	die "unrecognized GC line: $_"
     }
 
-    if ($str =~ 'heap') {
+    my $h;
+    if ($in_init) {
+	$h = \%setup;
+    } elsif ($str =~ 'heap') {
 	$stats{heap}++;
-	if ($str =~ 'cons') {
-	    $stats{heap_cons}++;
-	} elsif ($str =~ 'vector') {
-	    $stats{heap_vector}++;
-	} elsif ($str =~ 'SEXP') {
-	    $stats{heap_SEXP}++;
-	} elsif ($str =~ 'promise') {
-	    $stats{heap_promise}++;
-	} elsif ($str =~ 'environment') {
-	    $stats{heap_environment}++;
-	} elsif ($str =~ 'list') {
-	    $stats{heap_list}++;
-	} else {
-	    $stats{unknown}++;
-	    print("Warning: unknown alloc line: ", $str);
-	}
+	$h = \%heap;
     } elsif ($str =~ 'stack') {
-	$stats{stack}++;
-	if ($str =~ 'cons') {
-	    $stats{stack_cons}++;
-	} elsif ($str =~ 'vector') {
-	    $stats{stack_vector}++;
-	} elsif ($str =~ 'SEXP') {
-	    $stats{stack_SEXP}++;
-	} elsif ($str =~ 'promise') {
-	    $stats{stack_promise}++;
-	} elsif ($str =~ 'environment') {
-	    $stats{stack_environment}++;
-	} elsif ($str =~ 'list') {
-	    $stats{stack_list}++;
-	} else {
-	    $stats{unknown}++;
-	    print("Warning: unknown alloc line: ", $str);
-	}
+	$stats{locally}++;
+	$h = \%locally;
     } else {
 	$stats{unknown}++;
 	print("Warning: unknown alloc line: ", $str);
+	return;
     }
 
+    if ($str =~ 'cons') {
+	$$h{cons}++;
+    } elsif ($str =~ 'vector') {
+	$$h{vector}++;
+    } elsif ($str =~ 'SEXP') {
+	$$h{SEXP}++;
+    } elsif ($str =~ 'promise') {
+	$$h{promise}++;
+    } elsif ($str =~ 'environment') {
+	$$h{environment}++;
+    } elsif ($str =~ 'list') {
+	$$h{list}++;
+    } else {
+	$stats{unknown}++;
+	print("Warning: unknown alloc line: ", $str);
+	return;
+    }
 }
 
 sub percent {
@@ -211,40 +281,13 @@ sub percent {
     return $n / $stats{alloc}*100;
 }
 
-print($stats{returns}, " procedure returns\n");
-print($stats{assigns}, " nonlocal assignments\n");
-print($stats{p_returned}, " pointers escaping by return\n");
-print($stats{p_assigned}, " pointers escaping by nonlocal assignment\n");
-print($stats{gc0} + $stats{gc1} + $stats{gc2}, " total garbage collections\n");
-print("  ", $stats{gc0}, " GC in generation 0\n");
-print("  ", $stats{gc1}, " GC in generation 1\n");
-print("  ", $stats{gc2}, " GC in generation 2\n");
-print("\n");
-print($stats{alloc}, " total allocations\n");
-print($stats{heap}, " heap allocations ", percent($stats{heap}), "%\n");
-print($stats{stack}, " stack allocations ", percent($stats{stack}), "%\n");
-print($stats{dup}, " duplicates ", percent($stats{dup}), "%\n");
-print($stats{escape}, " escape ", percent($stats{escape}), "%\n\n");
-print($stats{in_env}, " part of environment ", percent($stats{in_env}), "%\n");
-print($stats{parent}, " allocated in parent pool at least once ", percent($stats{parent}), "%\n");
-print($stats{unknown}, " unknown allocations ", percent($stats{unknown}), "%\n");
-print($stats{heap_cons} + $stats{stack_cons}, " cons cells ", percent($stats{heap_cons} + $stats{stack_cons}), "%\n");
-print($stats{heap_vector} + $stats{stack_vector}, " vectors ", percent($stats{heap_vector} + $stats{stack_vector}), "%\n");
-print($stats{heap_SEXP} + $stats{stack_SEXP}, " SEXPs ", percent($stats{heap_SEXP} + $stats{stack_SEXP}), "%\n");
-print($stats{heap_promise} + $stats{stack_promise}, " promises ", percent($stats{heap_promise} + $stats{stack_promise}), "%\n");
-print($stats{heap_environment} + $stats{stack_environment}, " environments ", percent($stats{heap_environment} + $stats{stack_environment}), "%\n");
-print($stats{heap_list} + $stats{stack_list}, " lists ", percent($stats{heap_list} + $stats{stack_list}), "%\n");
-print("In heap:\n");
-print($stats{heap_cons}, " cons cells ", percent($stats{heap_cons}), "%\n");
-print($stats{heap_vector}, " vectors ", percent($stats{heap_vector}), "%\n");
-print($stats{heap_SEXP}, " SEXPs ", percent($stats{heap_SEXP}), "%\n");
-print($stats{heap_promise}, " promises ", percent($stats{heap_promise}), "%\n");
-print($stats{heap_environment}, " environments ", percent($stats{heap_environment}), "%\n");
-print($stats{heap_list}, " lists ", percent($stats{heap_list}), "%\n");
-print("In stack:\n");
-print($stats{stack_cons}, " cons cells ", percent($stats{stack_cons}), "%\n");
-print($stats{stack_vector}, " vectors ", percent($stats{stack_vector}), "%\n");
-print($stats{stack_SEXP}, " SEXPs ", percent($stats{stack_SEXP}), "%\n");
-print($stats{stack_promise}, " promises ", percent($stats{stack_promise}), "%\n");
-print($stats{stack_environment}, " environments ", percent($stats{stack_environment}), "%\n");
-print($stats{stack_list}, " lists ", percent($stats{stack_list}), "%\n");
+sub min {
+    my $x = shift;
+    my $y = shift;
+    if ($x < $y) {
+	return $x;
+    } else {
+	return $y;
+    }
+}
+
