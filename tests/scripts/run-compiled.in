@@ -1,12 +1,17 @@
-#!/bin/csh 
+#!/bin/bash 
 # @configure_input@
-setenv PATH @RCC_BIN_PATH@:${PATH}
-foreach f ( $* ) 
-	echo --- $f ---                                    
-	echo compiling with rcc...
-	rcc $f -o ./`basename $f .r`.c && \
-	echo compiling with rcc-cc...
-	rcc-cc -o ./`basename $f .r` -g ./`basename $f .r`.c  && \
-	echo running with rcc-run...
-	rcc-run ./`basename $f .r`
-end
+export PATH=@RCC_BIN_PATH@:${PATH}
+export LOUD=true
+if [[ "$1" == "-q" ]] ; then
+    export LOUD=false
+    shift
+fi
+for f in $* ; do 
+    echo --- $f --- &&
+    if $LOUD ; then echo compiling with rcc... ; fi &&
+    rcc $f -o ./`basename $f .r`.c &&
+    if $LOUD ; then echo compiling with rcc-cc... ; fi &&
+    rcc-cc -o ./`basename $f .r` -g ./`basename $f .r`.c &&
+    if $LOUD ; then echo running with rcc-run... ; fi &&
+    rcc-run ./`basename $f .r`
+done

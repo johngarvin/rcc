@@ -1,8 +1,12 @@
-#!/bin/csh 
+#!/bin/bash
 # @configure_input@
-setenv PATH @R_PREFIX@/bin:${PATH}
-setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
-foreach f ( $* ) 
-    echo --- $f ---                                    
-	R --slave < $f | grep -v '^>' | grep -v '^+'
-end
+export PATH=@R_PREFIX@/bin:${PATH}
+export RCC_R_INCLUDE_PATH=@RCC_R_INCLUDE_PATH@
+for f in $* ; do 
+    echo --- $f --- ;
+    if [[ -n $PRERUN ]] ; then
+	R -d $PRERUN
+    else 
+	R --slave < $f | grep -v '^>' | grep -v '^+' ;
+    fi
+done
