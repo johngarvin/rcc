@@ -392,14 +392,14 @@ SEXP R_syscall(int n, RCNTXT *cptr)
     while (cptr->nextcontext != NULL) {
 	if (cptr->callflag & CTXT_FUNCTION ) {
 	    if (n == 0)
-		return (duplicate(cptr->call));
+		return lcons(duplicate(CAR(cptr->call)), CDR(cptr->call));
 	    else
 		n--;
 	}
 	cptr = cptr->nextcontext;
     }
     if (n == 0 && cptr->nextcontext == NULL)
-	return (duplicate(cptr->call));
+        return lcons(duplicate(CAR(cptr->call)), CDR(cptr->call));
     errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
