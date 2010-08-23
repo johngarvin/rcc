@@ -11,7 +11,7 @@ for f in $* ; do
     if $LOUD ; then echo compiling with rcc... ; fi &&
     rcc $f -o ./`basename $f .r`.c &&
     if $LOUD ; then echo compiling with rcc-cc... ; fi &&
-    rcc-cc -o ./`basename $f .r` -g ./`basename $f .r`.c &&
+    rcc-cc -O2 -o ./`basename $f .r` -g ./`basename $f .r`.c &&
     if $LOUD ; then echo running with rcc-run... ; fi &&
     rcc-run ./`basename $f .r`
 done

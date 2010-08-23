@@ -4,10 +4,15 @@
 # R_DUMP_STATS environment variable to produce debugging output on
 # stderr. Works for R-2.1.1rcc interpretation and RCC-compiled code.
 #
+# Option -s: print summary only, no call graph
+#
 # author: John Garvin
 
 use strict;
 use warnings;
+
+use List::Util("min", "sum");
+use Graph::Directed;
 
 my %objects;  # key = address of allocated object
               # value = (output string,
@@ -16,6 +21,9 @@ my %objects;  # key = address of allocated object
               #          whether allocation is in R inititialization)
 
 my @callstack;    # procedure call stack
+push @callstack, "<MAIN>";
+
+my $callgraph = Graph::Directed->new(countedged => 1);
 
 my $dup = 0;  # true if objects being allocated are part of a
 	      # duplicate() call
@@ -30,8 +38,6 @@ my $in_init = 1;  # true if program is in R initialization
 my $debug = 0;
 
 my %stats = ('alloc'       => 0,    # total objects allocated
-             'heap'        => 0,    # objects allocated on heap
-             'locally'     => 0,    # objects allocated locally
              'dup'         => 0,    # objects allocated by duplicate()
 	     'escape'      => 0,    # objects that escape (returned or assigned)
 	     'assigns'     => 0,    # number of nonlocal assignments that occur
@@ -75,7 +81,13 @@ my %setup = %proto_alloc;     # objects allocated in R initialization
 my %heap = %proto_alloc;      # after init, heap allocated
 my %locally = %proto_alloc;   # after init, locally allocated
 
-while (<>) {
+my $print_callgraph = 1;
+if (defined($ARGV[0]) and $ARGV[0] eq "-s") {
+    $print_callgraph = 0;
+    shift;
+}
+
+while (<STDIN>) {
     chomp();
     analyze_line();
 }
@@ -92,6 +104,16 @@ foreach my $ptr (keys(%objects)) {
     analyze_alloc_line($v0, $v1, $v2, $v3);
 }
 
+if ($print_callgraph) {
+    print("digraph dynamic_call_graph {\n");
+    foreach my $edge ($callgraph->unique_edges) {
+	my $a = $edge->[0];
+	my $b = $edge->[1];
+	print("  \"", $a, "\" -> \"", $b, "\" [label=", $callgraph->get_edge_count($a,$b), "];\n");
+    }
+    print("}\n");
+}
+print("/*\n") if $print_callgraph;
 print($setup_calls{calls} + $post_calls{calls}, " procedure calls\n");
 print("  in setup:\n");
 print("    ", $setup_calls{calls}, " calls\n");
@@ -113,8 +135,9 @@ print("  ", $stats{gc1}, " GC in generation 1\n");
 print("  ", $stats{gc2}, " GC in generation 2\n");
 print("\n");
 print($stats{alloc}, " total allocations\n");
-print($stats{heap}, " heap allocations ", percent($stats{heap}), "%\n");
-print($stats{locally}, " local allocations ", percent($stats{locally}), "%\n");
+print(sum(values(%setup)), " allocations during setup ", percent(sum(values(%setup))), "%\n");
+print(sum(values(%heap)), " heap allocations after setup ", percent(sum(values(%heap))), "%\n");
+print(sum(values(%locally)), " local allocations after setup ", percent(sum(values(%locally))), "%\n");
 print($stats{dup}, " duplicates ", percent($stats{dup}), "%\n");
 print($stats{escape}, " escape ", percent($stats{escape}), "%\n\n");
 print($stats{in_env}, " part of environment ", percent($stats{in_env}), "%\n");
@@ -132,6 +155,7 @@ print("In heap (post-setup):\n");
 breakdown(\%heap);
 print("Procedure-local (post-setup):\n");
 breakdown(\%locally);
+print("*/\n") if $print_callgraph;
 
 sub breakdown {
     my $h = shift;
@@ -172,7 +196,9 @@ sub analyze_line {
 	}
 	$objects{$ptr} = [$_, scalar(@callstack), scalar(@callstack), $in_init];
     } elsif (/^Entering/) {
-	push(@callstack, $words[2]);
+	my $func = $words[2];
+	$callgraph->add_edge($callstack[$#callstack], $func) unless $in_init;
+	push(@callstack, $func);
 	my $arguments = $words[3];
 	$arguments =~ /^\[.*\]$/ or die "bad args info in \"Entering\" line";
 	my $h;
@@ -246,10 +272,8 @@ sub analyze_alloc_line {
     if ($in_init) {
 	$h = \%setup;
     } elsif ($str =~ 'heap') {
-	$stats{heap}++;
 	$h = \%heap;
     } elsif ($str =~ 'stack') {
-	$stats{locally}++;
 	$h = \%locally;
     } else {
 	$stats{unknown}++;
@@ -281,13 +305,13 @@ sub percent {
     return $n / $stats{alloc}*100;
 }
 
-sub min {
-    my $x = shift;
-    my $y = shift;
-    if ($x < $y) {
-	return $x;
-    } else {
-	return $y;
-    }
-}
+# sub min {
+#     my $x = shift;
+#     my $y = shift;
+#     if ($x < $y) {
+# 	return $x;
+#     } else {
+# 	return $y;
+#     }
+# }
 
