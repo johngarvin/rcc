@@ -156,7 +156,7 @@ void CallByValueAnalysis::perform_analysis() {
 	if (Settings::get_instance()->get_resolve_arguments()) {
 	  // set eager/lazy for each resolved arg
 	  ResolvedArgs * args_annot = getProperty(ResolvedArgs, *csi_c);
-	  SEXP resolved_args = args_annot->get_args();
+	  SEXP resolved_args = args_annot->get_resolved();
 	  i = 0;
 	  for(R_ListIterator argi(resolved_args); argi.isValid(); argi++, i++) {
 	    FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));

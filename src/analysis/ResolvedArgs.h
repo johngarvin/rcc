@@ -23,6 +23,7 @@
 #ifndef RESOLVED_ARGS_H
 #define RESOLVED_ARGS_H
 
+#include <map>
 #include <vector>
 
 #include <include/R/R_RInternals.h>
@@ -35,13 +36,18 @@ namespace RAnnot {
 
 class ResolvedArgs : public AnnotationBase {
 public:
-  explicit ResolvedArgs(SEXP given, SEXP formals);
+  explicit ResolvedArgs(SEXP actuals, SEXP formals);
 
+  enum ResolvedSource { RESOLVED_ACTUAL, RESOLVED_FORMAL };
   typedef std::vector<EagerLazyT> MyLazyInfoSetT;
+  typedef std::map<SEXP, SEXP> ActualToResolvedMap;
+  typedef std::map<SEXP, std::pair<ResolvedSource, SEXP> > ResolvedToSourceMap;
 
-  SEXP get_args();
-  SEXP given_from_resolved(SEXP cell);
-  SEXP resolved_from_given(SEXP cell);
+  void resolve();
+
+  SEXP get_resolved() const;
+  std::pair<ResolvedSource, SEXP> source_from_resolved(SEXP cell);
+  SEXP resolved_from_actual(SEXP cell);
 
   // indexed from 0
   EagerLazyT get_eager_lazy(int arg) const;
@@ -53,9 +59,12 @@ public:
   static PropertyHndlT handle();
 
 private:
-  SEXP m_given;
+  SEXP m_actuals;
+  SEXP m_formals;
   SEXP m_resolved;
   MyLazyInfoSetT m_lazy_info;
+  ActualToResolvedMap m_actual_to_resolved;
+  ResolvedToSourceMap m_resolved_to_source;
 };
 
 } // namespace RAnnot

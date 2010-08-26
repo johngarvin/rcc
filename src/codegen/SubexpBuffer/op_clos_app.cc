@@ -100,7 +100,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   if (Settings::get_instance()->get_resolve_arguments() && fi_if_known != 0) {
     args_annot = getProperty(ResolvedArgs, cell);
     lazy_info = args_annot->get_lazy_info();
-    args = args_annot->get_args();
+    args = args_annot->get_resolved();
     args_resolved = true;
   } else {
     ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
