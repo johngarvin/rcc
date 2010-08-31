@@ -90,6 +90,14 @@ void DefaultAnnotationMap::compute_if_necessary() {
   m_computation_in_progress = false;
 }
 
+void DefaultAnnotationMap::reset() {
+  std::map<MyKeyT, MyMappedT>::iterator iter;
+  for (iter = m_map.begin(); iter != m_map.end(); ++iter) {
+    m_map.erase(iter);
+  }
+  m_computed = false;
+}
+
 iterator DefaultAnnotationMap::begin() { return m_map.begin(); }
 
 const_iterator DefaultAnnotationMap::begin() const { return m_map.begin(); }
@@ -104,7 +112,7 @@ std::map<MyKeyT, MyMappedT> & DefaultAnnotationMap::get_map() {
 
 void DefaultAnnotationMap::delete_map_values() {
   std::map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = m_map.begin(); iter != m_map.end(); ++iter) {
+  for (iter = m_map.begin(); iter != m_map.end(); ++iter) {
     delete(iter->second);
   }
 }

@@ -41,6 +41,10 @@ rcc_bin_SOURCES =				\
   AnnotationMap.h				\
   Assertion.cc					\
   Assertion.h					\
+  BasicFuncInfo.cc                              \
+  BasicFuncInfo.h                               \
+  BasicFuncInfoAnnotationMap.cc                 \
+  BasicFuncInfoAnnotationMap.h                  \
   CallByValueAnalysis.cc                        \
   CallByValueAnalysis.h                         \
   CallType.cc                                   \

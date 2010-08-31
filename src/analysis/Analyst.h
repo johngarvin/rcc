@@ -36,7 +36,7 @@
 
 // macro for convenient loops
 
-#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(R_Analyst::get_instance()->get_scope_tree_root()); \
+#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()); \
                               fii.IsValid() && ((fi) = fii.Current()) != 0;                                                      \
                               ++fii, (fi) = fii.Current())
 
@@ -55,7 +55,6 @@ public:
 
   SEXP get_program() { return m_program; }
 
-  RAnnot::FuncInfo * get_scope_tree_root();
   LexicalScope * get_library_scope();
   LexicalScope * get_global_scope();
 
@@ -77,7 +76,6 @@ private:
   SEXP m_program;
   OA::OA_ptr<R_IRInterface> m_interface;
 
-  RAnnot::FuncInfo * m_scope_tree_root;
   LexicalScope * m_library_scope;
   LexicalScope * m_global_scope;
   

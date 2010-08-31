@@ -49,10 +49,6 @@ private:
   // implement pure virtual from DefaultAnnotationMap
   void compute();
 
-  // Given a list of actual arguments, return the actual argument list
-  // with the default arguments filled in from the list of formals.
-  SEXP resolve_defaults(SEXP formals, SEXP actuals);
-
   static ResolvedArgsAnnotationMap * s_instance;
   static PropertyHndlT s_handle;
 };

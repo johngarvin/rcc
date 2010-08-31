@@ -65,7 +65,7 @@ private:
 	       m_stack_debug(false),
 	       m_assume_correct_program(false),
 	       m_aggressive_cbv(false),
-	       m_resolve_arguments(false)
+	       m_resolve_arguments(true)
   { }
   static Settings * s_instance;
   static std::string as_string(bool b) {

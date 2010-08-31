@@ -31,6 +31,7 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/BasicFuncInfo.h>
 #include <analysis/CallByValueAnalysis.h>
 #include <analysis/EscapedDFSolver.h>
 #include <analysis/ExpressionInfoAnnotationMap.h>
@@ -77,7 +78,6 @@ R_Analyst * R_Analyst::get_instance() {
 R_Analyst::R_Analyst(SEXP _program)
   : m_program(_program),
     m_interface(),
-    m_scope_tree_root(0),
     m_global_scope(0)
   {}
 
@@ -86,8 +86,7 @@ R_Analyst::R_Analyst(SEXP _program)
 void R_Analyst::perform_analysis() {
   // initialize what's not initialized by the constructor
   m_interface = new R_IRInterface();
-  m_scope_tree_root = getProperty(FuncInfo, CAR(assign_rhs_c(m_program)));
-  m_global_scope = m_scope_tree_root->get_scope();
+  m_global_scope = FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()->get_scope();
   
   if (ParseInfo::allow_oo()           ||
       ParseInfo::allow_envir_manip())
@@ -96,32 +95,6 @@ void R_Analyst::perform_analysis() {
     }
   build_local_function_info();
   (new CallByValueAnalysis())->perform_analysis();
-
-  // temporary
-#if 0
-  FuncInfo * fi;
-  FOR_EACH_PROC(fi) {
-    const OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-    const OA::OA_ptr<OA::CFG::CFGInterface> cfg = fi->get_cfg();
-
-    ReturnedDFSolver ret_solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> returned; returned = ret_solver.perform_analysis(proc, cfg);
-    EscapedDFSolver esc_solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> escaped; escaped = esc_solver.perform_analysis(proc, cfg);
-    OEscapeDFSolver oe_solver(m_interface);
-    OA::OA_ptr<NameBoolDFSet> oe; oe = oe_solver.perform_analysis(proc,cfg);
-    // std::cout << "RETURNED nodes\n";
-    // ret_solver.dump_node_maps();
-    // std::cout << "ESCAPED nodes\n";
-    // esc_solver.dump_node_maps();
-    std::cout << "RETURNED summary\n";
-    returned->dump();
-    std::cout << "ESCAPED summary\n";
-    escaped->dump();
-    std::cout << "NFRESH summary\n";
-    oe->dump();
-  }
-#endif
 }
 
 /// Discovers local information on procedures: arguments, names
@@ -142,7 +115,10 @@ void R_Analyst::collect_libraries() {
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       SEXP lhs = call_lhs(CAR(*csi));
       if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
-	FuncInfo * new_fi; new_fi = new FuncInfo(0, library_value(lhs), library_value(lhs));
+	BasicFuncInfo * new_bfi; new_bfi = new BasicFuncInfo(0, library_value(lhs), library_value(lhs));
+	new_bfi->perform_analysis();
+	putProperty(BasicFuncInfo, library_value(lhs), new_bfi);
+	FuncInfo * new_fi; new_fi = new FuncInfo(0, new_bfi);
 	new_fi->perform_analysis();
 	putProperty(FuncInfo, library_value(lhs), new_fi);
 	libs.insert(library_value(lhs));
@@ -160,10 +136,6 @@ void R_Analyst::collect_libraries() {
     }
     VarAnnotationMap::get_instance()->compute_proc(fi);
   }
-}
-
-FuncInfo * R_Analyst::get_scope_tree_root() {
-  return m_scope_tree_root;
 }
 
 LexicalScope * R_Analyst::get_library_scope() {

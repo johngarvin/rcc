@@ -34,9 +34,9 @@ namespace RAnnot {
 
 // forward declarations
 
-class FuncInfo;
+class BasicFuncInfo;
 
-void process_assert(SEXP e, FuncInfo* fi);
+void process_assert(SEXP e, BasicFuncInfo * fi);
 
 } // end of RAnnot namespace
 

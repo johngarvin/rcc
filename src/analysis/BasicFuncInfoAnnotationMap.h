@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 //
-// File: FuncInfoAnnotationMap.h
+// File: BasicFuncInfoAnnotationMap.h
 //
 // Set of FuncInfo annotations representing function information,
 // including the methods for computing the information. We use a
@@ -29,51 +29,55 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef FUNC_INFO_ANNOTATION_MAP_H
-#define FUNC_INFO_ANNOTATION_MAP_H
-
-#include <map>
+#ifndef BASIC_FUNC_INFO_ANNOTATION_MAP_H
+#define BASIC_FUNC_INFO_ANNOTATION_MAP_H
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
-
-class FuncInfo;
-
-class FuncInfoAnnotationMap : public DefaultAnnotationMap {
+  
+class BasicFuncInfoAnnotationMap : public DefaultAnnotationMap {
 public:
   // deconstructor
-  virtual ~FuncInfoAnnotationMap();
+  virtual ~BasicFuncInfoAnnotationMap();
   
   // singleton
-  static FuncInfoAnnotationMap * get_instance();
-
+  static BasicFuncInfoAnnotationMap * get_instance();
+  
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
-  FuncInfo * get_scope_tree_root();
+  // BasicFuncInfo that represents the whole program
+  BasicFuncInfo * get_scope_tree_root();
+  
 private:
   /// private constructor for singleton pattern
-  explicit FuncInfoAnnotationMap();
-
+  explicit BasicFuncInfoAnnotationMap();
+  
   /// traverse the program, create a FuncInfo for each function
   /// definition with the whole program as the root
   void compute();
-
-  /// recursively build FuncInfo around basic with the given parent
-  void build_tree(FuncInfo * parent, BasicFuncInfo * basic);
-
+  
+  /// Build the scope tree with the given SEXP as the root, using the
+  /// recursive version. Precondition: root must be an assignment
+  /// where the right side is a function.
+  void build_scope_tree(SEXP root);
+  
+  /// Recursively traverse e to build the scope tree. 'parent' is a
+  /// pointer to the parent lexical scope.
+  void build_scope_tree_rec(SEXP e, BasicFuncInfo * parent);
+  
   /// Get FuncInfos for libraries called in the program
   void collect_libraries();
-
+  
   static void create();
 
-  static FuncInfoAnnotationMap * s_instance;
+  static BasicFuncInfoAnnotationMap * s_instance;
   static PropertyHndlT s_handle;
-  FuncInfo * m_root;
+  BasicFuncInfo * m_root;
 };
-
+  
 }
 
-#endif
+#endif // BASIC_FUNC_INFO_ANNOTATION_MAP_H

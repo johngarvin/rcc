@@ -34,7 +34,7 @@
 
 namespace RAnnot {
 
-void process_assert(SEXP assertion, FuncInfo * fi) {
+void process_assert(SEXP assertion, BasicFuncInfo * fi) {
   if (is_rcc_assert(assertion)) {
     // .rcc.assert
     SEXP list = CDR(assertion);

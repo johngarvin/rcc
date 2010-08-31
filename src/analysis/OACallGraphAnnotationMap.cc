@@ -119,7 +119,7 @@ void OACallGraphAnnotationMap::compute() {
 
   // (1) procedure iterator
   OA_ptr<ProcHandleIterator> proc_iter;
-  proc_iter = new R_ProcHandleIterator(R_Analyst::get_instance()->get_scope_tree_root());
+  proc_iter = new R_ProcHandleIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root());
   assert(!proc_iter.ptrEqual(0));
   if (debug) {
     std::cout << "procedures:\n";

@@ -1,0 +1,303 @@
+// -*- Mode: C++ -*-
+//
+// Copyright (c) 2010 Rice University
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+
+// File: BasicFuncInfo.cc
+//
+// Annotation for a function.
+//
+// Author: John Garvin (garvin@cs.rice.edu)
+
+#include <include/R/R_RInternals.h>
+
+#include <OpenAnalysis/CFG/ManagerCFG.hpp>
+
+#include <ParseInfo.h>
+#include <codegen/SubexpBuffer/SubexpBuffer.h>
+
+#include <support/DumpMacros.h>
+#include <support/StringUtils.h>
+
+#include <analysis/AnalysisResults.h>
+#include <analysis/Analyst.h>
+#include <analysis/BasicFuncInfoAnnotationMap.h>
+#include <analysis/FormalArgInfo.h>
+#include <analysis/HandleInterface.h>
+#include <analysis/RequiresContext.h>
+#include <analysis/Utils.h>
+
+#include "BasicFuncInfo.h"
+
+using namespace OA;
+using namespace HandleInterface;
+
+namespace RAnnot {
+
+  // ----- static function -----
+
+static void accum_implicit_returns(SEXP cell);
+
+  // ----- typedefs for readability -----
+
+typedef FuncInfo::mention_iterator mention_iterator;
+typedef FuncInfo::const_mention_iterator const_mention_iterator;
+typedef FuncInfo::call_site_iterator call_site_iterator;
+typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
+
+BasicFuncInfo::BasicFuncInfo(BasicFuncInfo * parent, SEXP name_c, SEXP sexp) :
+  m_parent(parent),
+  m_first_name_c(name_c),
+  m_sexp(sexp),
+  m_c_name(""),
+  m_closure(""),
+  NonUniformDegreeTreeNodeTmpl<BasicFuncInfo>(parent)
+{
+  m_requires_context = functionRequiresContext(sexp);
+  // make formal argument annotations
+  SEXP args = get_args();
+  for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
+    FormalArgInfo * formal_info = new FormalArgInfo(e);
+    putProperty(FormalArgInfo, e, formal_info);
+  }
+
+  // this is a new lexical scope
+  m_scope = new FundefLexicalScope(sexp);
+}
+
+BasicFuncInfo::~BasicFuncInfo()
+{
+}
+
+AnnotationBase * BasicFuncInfo::clone()
+{
+  return 0;  // should not be cloned
+}
+
+PropertyHndlT BasicFuncInfo::handle()
+{
+  return BasicFuncInfoAnnotationMap::handle();
+}
+
+unsigned int BasicFuncInfo::get_num_args() const 
+{
+  return m_num_args;
+}
+
+void BasicFuncInfo::set_num_args(unsigned int x) 
+{
+  m_num_args = x;
+}
+
+SEXP BasicFuncInfo::get_sexp() const
+{
+  return m_sexp;
+}
+
+SEXP BasicFuncInfo::get_first_name_c() const
+{
+  return m_first_name_c;
+}
+
+bool BasicFuncInfo::get_has_var_args() const
+{
+  return m_has_var_args;
+}
+
+void BasicFuncInfo::set_has_var_args(bool x)
+{
+  m_has_var_args = x;
+}
+
+bool BasicFuncInfo::requires_context() const
+{ 
+  return m_requires_context;
+}
+
+SEXP BasicFuncInfo::get_args() const
+{ 
+  return procedure_args(m_sexp);
+}
+
+bool BasicFuncInfo::is_arg(SEXP sym) const
+{
+  SEXP args = get_args();
+  SEXP e;
+  for (e = args; e != R_NilValue; e = CDR(e)) {
+    if (TAG(e) == sym) return true;
+  }
+  return false;
+}
+
+int BasicFuncInfo::find_arg_position(char* name) const
+{
+  SEXP args = get_args();
+  int pos = 1;
+  SEXP e;
+  for (e = args; e != R_NilValue; e = CDR(e), pos++) {
+    char* arg_name = CHAR(PRINTNAME(INTERNAL(e)));
+    if (!strcmp(arg_name, name)) break;
+  }
+  assert (e != R_NilValue);
+  return pos;
+}
+
+SEXP BasicFuncInfo::get_arg(int position) const
+{
+  SEXP args = get_args();
+  int p = 1;
+  SEXP e;
+  for (e = args; e != R_NilValue && p != position; e = CDR(e), p++);
+  assert (e != R_NilValue);
+  return e;
+}
+
+bool BasicFuncInfo::is_arg_value(SEXP arg) const
+{
+  FormalArgInfo* formal_info = getProperty(FormalArgInfo, arg);
+  bool isvalue = formal_info->is_value();
+  return isvalue;
+}
+
+bool BasicFuncInfo::are_all_value() const
+{
+  bool allvalue = true;
+  SEXP args = get_args();
+  for (SEXP e = args; e != R_NilValue && allvalue; e = CDR(e)) {
+    if (!is_arg_value(e)) allvalue = false;
+  }
+  return allvalue;
+}
+
+const std::string& BasicFuncInfo::get_c_name()
+{
+  if (m_c_name == "") {
+    SEXP name_sym = CAR(get_first_name_c());
+    if (name_sym == R_NilValue) {
+      m_c_name = make_c_id("anon" + ParseInfo::global_fundefs->new_var_unp());
+    } else {
+      m_c_name = make_c_id(ParseInfo::global_fundefs->new_var_unp_name(var_name(name_sym)));
+    }
+  }
+  return m_c_name;
+}
+
+const std::string& BasicFuncInfo::get_closure()
+{
+  if (m_closure == "") {
+    m_closure = ParseInfo::global_fundefs->new_sexp_unp();
+  }
+  return m_closure;
+}
+
+OA_ptr<CFG::CFG> BasicFuncInfo::get_cfg() const
+{
+  return m_cfg;
+}
+
+FundefLexicalScope * BasicFuncInfo::get_scope() const
+{
+  return m_scope;
+}
+
+BasicFuncInfo * BasicFuncInfo::get_parent() const
+{
+  return m_parent;
+}
+
+/// perform local function analysis
+void BasicFuncInfo::perform_analysis() {
+  // compute CFG
+  // pass 'true' as second arg to build statement-level CFG
+  CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
+  m_cfg = cfg_man.performAnalysis(make_proc_h(m_sexp));
+
+  // find all explicit and implicit returns
+  if (is_fundef(m_sexp)) {
+    accum_implicit_returns(fundef_body_c(m_sexp));
+  }
+}
+
+const std::set<SEXP> * BasicFuncInfo::get_implicit_returns() const {
+  return &m_returns;
+}
+
+bool BasicFuncInfo::is_return(SEXP cell) const {
+  assert(is_cons(cell));
+  SEXP e = CAR(cell);
+  return (is_explicit_return(e) || (m_returns.find(cell) != m_returns.end()));
+}
+
+SEXP BasicFuncInfo::return_value_c(const SEXP cell) const {
+  assert(is_return(cell));
+  SEXP e = CAR(cell);
+  if (is_explicit_return(e)) {
+    if (CDR(e) == R_NilValue) {
+      return R_NilValue;
+    } else {
+      return call_nth_arg_c(e,1);
+    }
+  } else {
+    return cell;
+  }
+}
+
+void BasicFuncInfo::accum_implicit_returns(SEXP cell) {
+  SEXP e = CAR(cell);
+  if (is_curly_list(e)) {
+    SEXP last_c = curly_body(e);
+    while (CDR(last_c) != R_NilValue) {
+      last_c = CDR(last_c);
+    }
+    accum_implicit_returns(last_c);
+  } else if (is_if(e)) {
+    accum_implicit_returns(if_truebody_c(e));
+    accum_implicit_returns(if_falsebody_c(e));
+  } else if (is_loop(e)) {
+    accum_implicit_returns(loop_body_c(e));
+  } else {
+    m_returns.insert(cell);
+  }
+}
+
+bool BasicFuncInfo::has_children() const {
+  return !(ChildCount() == 0);
+}
+
+std::ostream& BasicFuncInfo::dump(std::ostream& os) const
+{
+  beginObjDump(os, BasicFuncInfo);
+  dumpPtr(os, this);
+  SEXP name = CAR(m_first_name_c);
+  dumpSEXP(os, name);
+  dumpVar(os, m_num_args);
+  dumpVar(os, m_has_var_args);
+  dumpVar(os, m_c_name);
+  dumpVar(os, m_requires_context);
+  R_Analyst::get_instance()->dump_cfg(os, m_sexp); // can't call CFG::dump; it requires the IRInterface
+  dumpSEXP(os, m_sexp);
+  dumpPtr(os, m_parent);
+  os << "Begin arguments:" << std::endl;
+  for (SEXP arg = get_args(); arg != R_NilValue; arg = CDR(arg)) {
+    FormalArgInfo * arg_annot = getProperty(FormalArgInfo, arg);
+    arg_annot->dump(os);
+  }
+  endObjDump(os, BasicFuncInfo);
+}
+
+}  // end namespace RAnnot
+
+const OA_ptr<CFG::NodeInterface> RAnnot::BasicFuncInfo::iterator_dummy_node = OA_ptr<CFG::Node>();

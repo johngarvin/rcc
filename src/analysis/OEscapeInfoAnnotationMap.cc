@@ -132,9 +132,10 @@ void OEscapeInfoAnnotationMap::compute() {
     cfg = fi->get_cfg();
     //    ssa = ssa_man.performAnalysis(proc, cfg);
     
-    if (fi == R_Analyst::get_instance()->get_scope_tree_root()) {
-      // The scope of the whole program. Obviously we don't care about
-      // escapes/returns from the global scope.
+    if (fi == FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()) {
+      // The scope of the whole program. Create empty sets because we
+      // obviously don't care about escapes/returns from the global
+      // scope.
       returned = new ExpressionDFSet();
       escaped = new ExpressionDFSet();
       nmfresh = new ExpressionDFSet();

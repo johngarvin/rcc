@@ -42,6 +42,7 @@ public:
   virtual bool is_valid(const MyKeyT & k);
   virtual bool is_computed() const;
   virtual bool computation_in_progress() const;
+  virtual void reset();
 
   // iterators
   virtual iterator begin();

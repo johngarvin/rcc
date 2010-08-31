@@ -30,8 +30,12 @@
 #include <analysis/ExpressionInfo.h>
 #include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/OEscapeInfoAnnotationMap.h>
+#include <analysis/SideEffectAnnotationMap.h>
+#include <analysis/VarAnnotationMap.h>
 
 #include <analysis/ResolvedArgs.h>
 
@@ -57,7 +61,7 @@ PropertyHndlT ResolvedArgsAnnotationMap::handle() {
 }
 
 void ResolvedArgsAnnotationMap::compute() {
-  SEXP formals, actuals, resolved;
+  SEXP formals, actuals;
   FuncInfo * fi;
   FuncInfo::const_call_site_iterator csi;
   FOR_EACH_PROC(fi) {
@@ -75,27 +79,32 @@ void ResolvedArgsAnnotationMap::compute() {
       ResolvedArgs * value =  new ResolvedArgs(actuals, formals);
       value->resolve();
       get_map()[cell] = value;
-      
-      // sneak each resolved actual into ExpressionInfo map. This is
-      // so that we can do CBV analysis, which wants SideEffect info,
-      // which wants ExpressionInfo.
-      for (SEXP x = value->get_resolved(); x != R_NilValue; x = CDR(x)) {
-	ExpressionInfoAnnotationMap::get_instance()->make_annot(x);
-	// give an answer for call sites that are already resolved.
-	if (is_call(CAR(x))) {
-	  std::pair<ResolvedArgs::ResolvedSource, SEXP> pair = value->source_from_resolved(x);
-	  if (pair.first == ResolvedArgs::RESOLVED_ACTUAL) {
-	    assert(is_call(CAR(pair.second)));
-	    get_map()[x] = get_map()[pair.second];
-	  }
+    }
+  }
+
+  // sneak each resolved actual into ExpressionInfo map. This is
+  // so that we can do CBV analysis, which wants SideEffect info,
+  // which wants ExpressionInfo.
+  for (const_iterator it = begin(); it != end(); it++) {
+    ResolvedArgs * value = dynamic_cast<ResolvedArgs *>(it->second);
+    for (SEXP x = value->get_resolved(); x != R_NilValue; x = CDR(x)) {
+      ExpressionInfoAnnotationMap::get_instance()->make_annot(x);
+      // give an answer for call sites that are already resolved.
+      if (is_call(CAR(x))) {
+	std::pair<ResolvedArgs::ResolvedSource, SEXP> pair = value->source_from_resolved(x);
+	if (pair.first == ResolvedArgs::RESOLVED_ACTUAL) {
+	  assert(is_call(CAR(pair.second)));
+	  const_iterator res = get_map().find(pair.second);
+	  if (res == get_map().end()) continue;
+	  get_map()[x] = dynamic_cast<ResolvedArgs *>(res->second);
 	}
       }
     }
   }
-}
-
-SEXP ResolvedArgsAnnotationMap::resolve_defaults(SEXP formals, SEXP actuals) {
-  
+  FuncInfoAnnotationMap::get_instance()->reset();
+  VarAnnotationMap::get_instance()->reset();
+  SideEffectAnnotationMap::get_instance()->reset();
+  OEscapeInfoAnnotationMap::get_instance()->reset();
 }
 
 ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::s_instance = 0;

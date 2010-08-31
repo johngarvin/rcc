@@ -26,6 +26,7 @@
 
 #include <OpenAnalysis/CFG/CFG.hpp>
 
+#include <support/Debug.h>
 #include <support/RccError.h>
 
 #include <analysis/Analyst.h>
@@ -43,6 +44,8 @@ using namespace HandleInterface;
 
 typedef CFG::CFGInterface MyCFG;
 
+static bool debug;
+
 namespace RAnnot {
   
 // ----- type definitions for readability -----
@@ -55,7 +58,9 @@ typedef VarAnnotationMap::const_iterator const_iterator;
 //  ----- constructor/destructor ----- 
   
 VarAnnotationMap::VarAnnotationMap()
-{}
+{
+  RCC_DEBUG("RCC_VarAnnotationMap", debug);
+}
   
 VarAnnotationMap::~VarAnnotationMap()
 {}
@@ -114,13 +119,20 @@ void VarAnnotationMap::compute_proc_syntactic_info(FuncInfo * fi) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
       EXPRESSION_FOR_EACH_USE(expr, use) {
 	assert(use != 0);
+	if (debug) {
+	  std::cout << "VarAnnotationMap adding use: ";
+	  use->dump(std::cout);
+	}
 	get_map()[use->getMention_c()] = use;
       }
       EXPRESSION_FOR_EACH_DEF(expr, def) {
 	assert(def != 0);
+	if (debug) {
+	  std::cout << "VarAnnotationmap adding def: ";
+	  def->dump(std::cout);
+	}
 	get_map()[def->getMention_c()] = def;
-      }
-      
+      }      
     }
   }
 }

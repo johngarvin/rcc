@@ -63,24 +63,10 @@ typedef FuncInfo::const_mention_iterator const_mention_iterator;
 typedef FuncInfo::call_site_iterator call_site_iterator;
 typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
 
-FuncInfo::FuncInfo(FuncInfo* parent, SEXP name_c, SEXP sexp) :
-  m_parent(parent),
-  m_first_name_c(name_c),
-  m_sexp(sexp),
-  m_c_name(""),
-  m_closure(""),
+  FuncInfo::FuncInfo(FuncInfo * parent, BasicFuncInfo * basic) :
+  m_basic(basic),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
-  m_requires_context = functionRequiresContext(sexp);
-  // make formal argument annotations
-  SEXP args = get_args();
-  for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
-    FormalArgInfo * formal_info = new FormalArgInfo(e);
-    putProperty(FormalArgInfo, e, formal_info);
-  }
-
-  // this is a new lexical scope
-  m_scope = new FundefLexicalScope(sexp);
 }
 
 FuncInfo::~FuncInfo()
@@ -89,128 +75,82 @@ FuncInfo::~FuncInfo()
 
 unsigned int FuncInfo::get_num_args() const 
 {
-  return m_num_args;
+  return m_basic->get_num_args();
 }
 
 void FuncInfo::set_num_args(unsigned int x) 
 {
-  m_num_args = x;
+  m_basic->set_num_args(x);
 }
 
 SEXP FuncInfo::get_sexp() const
 {
-  return m_sexp;
+  return m_basic->get_sexp();
 }
 
 SEXP FuncInfo::get_first_name_c() const
 {
-  return m_first_name_c;
+  return m_basic->get_first_name_c();
 }
 
 bool FuncInfo::get_has_var_args() const
 {
-  return m_has_var_args;
+  return m_basic->get_has_var_args();
 }
 
 void FuncInfo::set_has_var_args(bool x)
 {
-  m_has_var_args = x;
-}
-
-void FuncInfo::set_requires_context(bool requires_context) 
-{ 
-  m_requires_context = requires_context; 
+  m_basic->set_has_var_args(x);
 }
 
 bool FuncInfo::requires_context() const
 { 
-  return m_requires_context;
+  return m_basic->requires_context();
 }
 
 SEXP FuncInfo::get_args() const
 { 
-  return procedure_args(m_sexp);
+  return m_basic->get_args();
 }
 
 bool FuncInfo::is_arg(SEXP sym) const
 {
-  SEXP args = get_args();
-  SEXP e;
-  for (e = args; e != R_NilValue; e = CDR(e)) {
-    if (TAG(e) == sym) return true;
-  }
-  return false;
+  return m_basic->is_arg(sym);
 }
 
-int FuncInfo::find_arg_position(char* name) const
+int FuncInfo::find_arg_position(char * name) const
 {
-  SEXP args = get_args();
-  int pos = 1;
-  SEXP e;
-  for (e = args; e != R_NilValue; e = CDR(e), pos++) {
-    char* arg_name = CHAR(PRINTNAME(INTERNAL(e)));
-    if (!strcmp(arg_name, name)) break;
-  }
-  assert (e != R_NilValue);
-  return pos;
+  return m_basic->find_arg_position(name);
 }
 
 SEXP FuncInfo::get_arg(int position) const
 {
-  SEXP args = get_args();
-  int p = 1;
-  SEXP e;
-  for (e = args; e != R_NilValue && p != position; e = CDR(e), p++);
-  assert (e != R_NilValue);
-  return e;
+  return m_basic->get_arg(position);
 }
 
 bool FuncInfo::is_arg_value(SEXP arg) const
 {
-  FormalArgInfo* formal_info = getProperty(FormalArgInfo, arg);
-  bool isvalue = formal_info->is_value();
-  return isvalue;
+  return m_basic->is_arg_value(arg);
 }
 
 bool FuncInfo::are_all_value() const
 {
-  bool allvalue = true;
-  SEXP args = get_args();
-  for (SEXP e = args; e != R_NilValue && allvalue; e = CDR(e)) {
-    if (!is_arg_value(e)) allvalue = false;
-  }
-  return allvalue;
+  return m_basic->are_all_value();
 }
 
 const std::string& FuncInfo::get_c_name()
 {
-  if (m_c_name == "") {
-    SEXP name_sym = CAR(get_first_name_c());
-    if (name_sym == R_NilValue) {
-      m_c_name = make_c_id("anon" + ParseInfo::global_fundefs->new_var_unp());
-    } else {
-      m_c_name = make_c_id(ParseInfo::global_fundefs->new_var_unp_name(var_name(name_sym)));
-    }
-  }
-  return m_c_name;
+  return m_basic->get_c_name();
 }
 
 const std::string& FuncInfo::get_closure()
 {
-  if (m_closure == "") {
-    m_closure = ParseInfo::global_fundefs->new_sexp_unp();
-  }
-  return m_closure;
+  return m_basic->get_closure();
 }
 
 OA_ptr<CFG::CFG> FuncInfo::get_cfg() const
 {
-  return m_cfg;
-}
-
-void FuncInfo::set_cfg(OA_ptr<CFG::CFG> x)
-{
-  m_cfg = x;
+  return m_basic->get_cfg();
 }
 
 // mention iterators
@@ -269,78 +209,35 @@ void FuncInfo::insert_call_site(FuncInfo::CallSiteT cs)
 }
 
 FundefLexicalScope * FuncInfo::get_scope() const {
-  return m_scope;
+  return m_basic->get_scope();
 }
 
 /// perform local function analysis (grabbing mentions and call sites) and strictness analysis
 void FuncInfo::perform_analysis() {
-  // compute CFG
-  // pass 'true' as second arg to build statement-level CFG
-  CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
-  m_cfg = cfg_man.performAnalysis(make_proc_h(m_sexp));
-
-  // find all explicit and implicit returns
-  if (is_fundef(m_sexp)) {
-    accum_implicit_returns(fundef_body_c(m_sexp));
-  }
+  // TODO
 }
 
-#if 0
-  // moved to Analyst (collect_... needs VarAnnotationMap filled in,
-  // which needs FuncInfos to traverse the scope tree) (ugh)
-
-  collect_mentions_and_call_sites();
-  analyze_args();
-
-  // perform strictness analysis
-  StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
-  strict_solver.perform_analysis(make_proc_h(m_sexp), m_cfg);
-#endif
-
-const std::set<SEXP> * FuncInfo::get_implicit_returns() const {
-  return &m_returns;
+BasicFuncInfo * FuncInfo::get_basic() {
+  return m_basic;
 }
 
-bool FuncInfo::is_return(SEXP cell) const {
-  assert(is_cons(cell));
-  SEXP e = CAR(cell);
-  return (is_explicit_return(e) || (m_returns.find(cell) != m_returns.end()));
+const std::set<SEXP> * FuncInfo::get_implicit_returns() const
+{
+  return m_basic->get_implicit_returns();
 }
 
-SEXP FuncInfo::return_value_c(const SEXP cell) const {
-  assert(is_return(cell));
-  SEXP e = CAR(cell);
-  if (is_explicit_return(e)) {
-    if (CDR(e) == R_NilValue) {
-      return R_NilValue;
-    } else {
-      return call_nth_arg_c(e,1);
-    }
-  } else {
-    return cell;
-  }
+bool FuncInfo::is_return(SEXP cell) const
+{
+  return m_basic->is_return(cell);
 }
 
-void FuncInfo::accum_implicit_returns(SEXP cell) {
-  SEXP e = CAR(cell);
-  if (is_curly_list(e)) {
-    SEXP last_c = curly_body(e);
-    while (CDR(last_c) != R_NilValue) {
-      last_c = CDR(last_c);
-    }
-    accum_implicit_returns(last_c);
-  } else if (is_if(e)) {
-    accum_implicit_returns(if_truebody_c(e));
-    accum_implicit_returns(if_falsebody_c(e));
-  } else if (is_loop(e)) {
-    accum_implicit_returns(loop_body_c(e));
-  } else {
-    m_returns.insert(cell);
-  }
+SEXP FuncInfo::return_value_c(const SEXP cell) const
+{
+  return m_basic->return_value_c(cell);
 }
 
 bool FuncInfo::has_children() const {
-  return !(ChildCount() == 0);
+  return m_basic->has_children();
 }
 
 OA_ptr<Strictness::StrictnessResult> FuncInfo::get_strictness() const {
@@ -351,76 +248,10 @@ void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x) {
   m_strictness = x;
 }
 
-#if 0
-Moved to Analyst; circular dependence
-
-void FuncInfo::analyze_args() {
-  SEXP args = fundef_args(m_sexp);
-  const SEXP ddd = Rf_install("...");
-  bool has_var_args = false;
-  int n_args = 0;
-  for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
-    ++n_args;
-    DefVar * annot = new DefVar();
-    annot->setMention_c(e);
-    annot->setSourceType(DefVar::DefVar_FORMAL);
-    annot->setMayMustType(Var::Var_MUST);
-    annot->setScopeType(Locality_LOCAL);
-    annot->setRhs_c(0);
-    putProperty(Var, e, annot);
-    if (TAG(e) == ddd) {
-      has_var_args = true;
-    }
-  }
-  set_num_args(n_args);
-  set_has_var_args(has_var_args);
-}
-#endif
-
-#if 0
-Moved to Analyst; needs VarAnnotationMap filled in,
-which needs FuncInfos to traverse the scope tree (ugh)
-TODO: split up FuncInfos to avoid circular dependence
-
-void FuncInfo::collect_mentions_and_call_sites() {
-  Var * var;
-  SEXP cs;
-  assert(!m_cfg.ptrEqual(0));
-
-  PROC_FOR_EACH_NODE(fi, node) {
-    NODE_FOR_EACH_STATEMENT(node, stmt) {
-      // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
-      assert(stmt_annot != 0);
-      EXPRESSION_FOR_EACH_MENTION(stmt_annot, var) {
-	insert_mention(v);
-      }
-      EXPRESSION_FOR_EACH_CALL_SITE(stmt_annot, cs) {
-	insert_call_site(cs);
-      }
-    }
-  }
-}
-#endif
-
 std::ostream& FuncInfo::dump(std::ostream& os) const
 {
   beginObjDump(os, FuncInfo);
-  dumpPtr(os, this);
-  SEXP name = CAR(m_first_name_c);
-  dumpSEXP(os, name);
-  dumpVar(os, m_num_args);
-  dumpVar(os, m_has_var_args);
-  dumpVar(os, m_c_name);
-  dumpVar(os, m_requires_context);
-  R_Analyst::get_instance()->dump_cfg(os, m_sexp); // can't call CFG::dump; it requires the IRInterface
-  dumpSEXP(os, m_sexp);
-  dumpPtr(os, m_parent);
-  os << "Begin arguments:" << std::endl;
-  for (SEXP arg = get_args(); arg != R_NilValue; arg = CDR(arg)) {
-    FormalArgInfo * arg_annot = getProperty(FormalArgInfo, arg);
-    arg_annot->dump(os);
-  }
+  m_basic->dump(os);
   os << "Begin mentions:" << std::endl;
   for (const_mention_iterator i = begin_mentions(); i != end_mentions(); ++i) {
     Var * v = *i;
@@ -442,5 +273,4 @@ FuncInfoIterator::FuncInfoIterator(const FuncInfo * fi, TraversalOrder torder, N
 
 } // namespace RAnnot
 
-const OA_ptr<CFG::NodeInterface> RAnnot::FuncInfo::iterator_dummy_node = OA_ptr<CFG::Node>();
 

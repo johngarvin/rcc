@@ -465,7 +465,7 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
   }
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(h));
   SEXP name = fi->get_first_name_c();
-  if (fi == R_Analyst::get_instance()->get_scope_tree_root()) {
+  if (fi == FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()) {
     return special_map->get_global();
   }
   if (VarAnnotationMap::get_instance()->is_valid(name)) {
