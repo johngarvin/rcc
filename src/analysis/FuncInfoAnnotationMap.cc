@@ -104,5 +104,8 @@ void FuncInfoAnnotationMap::build_tree(FuncInfo * parent, BasicFuncInfo * basic)
   }
 }
 
+void FuncInfoAnnotationMap::collect_libraries() {
+  // TODO
+}
 
 }

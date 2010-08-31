@@ -57,6 +57,8 @@ private:
   /// private constructor for singleton pattern
   explicit FuncInfoAnnotationMap();
 
+  static void create();
+
   /// traverse the program, create a FuncInfo for each function
   /// definition with the whole program as the root
   void compute();
@@ -66,8 +68,6 @@ private:
 
   /// Get FuncInfos for libraries called in the program
   void collect_libraries();
-
-  static void create();
 
   static FuncInfoAnnotationMap * s_instance;
   static PropertyHndlT s_handle;

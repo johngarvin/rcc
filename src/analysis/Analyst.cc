@@ -37,7 +37,6 @@
 #include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/LocalFunctionAnalysis.h>
 #include <analysis/NameBoolDFSet.h>
 #include <analysis/OEscapeDFSolver.h>
 #include <analysis/ReturnedDFSolver.h>
@@ -100,11 +99,6 @@ void R_Analyst::perform_analysis() {
 /// Discovers local information on procedures: arguments, names
 /// mentioned, etc.
 void R_Analyst::build_local_function_info() {
-  FuncInfo * fi;
-  FOR_EACH_PROC_AND_LIB(fi) {
-    LocalFunctionAnalysis lfa(fi);
-    lfa.perform_analysis();
-  }
   collect_libraries();
 }
 
@@ -119,7 +113,6 @@ void R_Analyst::collect_libraries() {
 	new_bfi->perform_analysis();
 	putProperty(BasicFuncInfo, library_value(lhs), new_bfi);
 	FuncInfo * new_fi; new_fi = new FuncInfo(0, new_bfi);
-	new_fi->perform_analysis();
 	putProperty(FuncInfo, library_value(lhs), new_fi);
 	libs.insert(library_value(lhs));
       }

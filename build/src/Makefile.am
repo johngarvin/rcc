@@ -94,8 +94,6 @@ rcc_bin_SOURCES =				\
   LexicalContext.cc                             \
   LexicalScope.cc                               \
   LexicalScope.h                                \
-  LocalFunctionAnalysis.cc			\
-  LocalFunctionAnalysis.h			\
   LocalityDFSet.cc				\
   LocalityDFSetElement.cc			\
   LocalityDFSetElement.h			\

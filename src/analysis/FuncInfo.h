@@ -95,7 +95,7 @@ public:
 
   // ----- basic information (wrappers around BasicFuncInfo) -----
 
-    SEXP get_sexp() const;
+  SEXP get_sexp() const;
 
   /// cell containing first R name assigned
   SEXP get_first_name_c() const;
@@ -144,10 +144,6 @@ public:
   // ----- context (wrapper around BasicFuncInfo) -----
   bool requires_context() const;
 
-  // add information about mentions and call sites
-  void insert_mention(MentionT v);
-  void insert_call_site(CallSiteT e);
-
   // mention iterators
   mention_iterator begin_mentions();
   const_mention_iterator begin_mentions() const;
@@ -163,43 +159,38 @@ public:
   OA::OA_ptr<Strictness::StrictnessResult> get_strictness() const;
   void set_strictness(OA::OA_ptr<Strictness::StrictnessResult> x);
 
-  void perform_analysis();
-
-  // wrapper
+  // FuncInfo delegates several methods to BasicFuncInfo
   BasicFuncInfo * get_basic();
 
-  // -------------------------------------------------------
   // debugging
-  // -------------------------------------------------------
   virtual std::ostream& dump(std::ostream& os) const;
 
 private:
-  void accum_implicit_returns(SEXP cell);
-#if 0
-  moved to Analyst to avoid circular dependence
-  void collect_mentions_and_call_sites();
-  void analyze_args();
-#endif
 
 private:
-  // unsigned int m_num_args;         // number of known arguments
-  // bool m_has_var_args;             // variable number of arguments (uses "...")
-  // std::string m_c_name;            // C linkage name
-  // std::string m_closure;           // C closure (CLOSXP) name
-  // bool m_requires_context;         // is an R context object needed for the function?
-  // FundefLexicalScope * m_scope;    // lexical scope
-  // OA::OA_ptr<OA::CFG::CFG> m_cfg;  // control flow graph
+
+  // ----- add information about mentions and call sites -----
+
+  void insert_mention(MentionT v);
+  void insert_call_site(CallSiteT e);
+
+  // ----- analysis -----
+
+  void accum_implicit_returns(SEXP cell);
+  void analyze_args();
+
+  /// Find each mention (use or def) and call site in the function
+  void collect_mentions_and_call_sites();
+
+  void analyze_strictness();
+
+  void analyze_debuts();
 
   // results of strictness analysis: strictness of formals, debuts, post-debut statements
   OA::OA_ptr<Strictness::StrictnessResult> m_strictness;
 
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)
   CallSiteSetT m_call_sites; // call sites inside function (NOT including nested functions)
-
-  // SEXP m_sexp;         // function definition
-  // SEXP m_first_name_c; // cell containing name of function at original definition 
-  // FuncInfo * m_parent;  // scope tree parent
-  // std::set<SEXP> m_returns;  // implicit return statements
   BasicFuncInfo * m_basic; // basic annotation; this is a wrapper around it
 };
 
