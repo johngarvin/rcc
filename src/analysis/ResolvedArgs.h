@@ -43,8 +43,6 @@ public:
   typedef std::map<SEXP, SEXP> ActualToResolvedMap;
   typedef std::map<SEXP, std::pair<ResolvedSource, SEXP> > ResolvedToSourceMap;
 
-  void resolve();
-
   SEXP get_resolved() const;
   std::pair<ResolvedSource, SEXP> source_from_resolved(SEXP cell);
   SEXP resolved_from_actual(SEXP cell);
@@ -59,6 +57,8 @@ public:
   static PropertyHndlT handle();
 
 private:
+  void resolve();
+
   SEXP m_actuals;
   SEXP m_formals;
   SEXP m_resolved;

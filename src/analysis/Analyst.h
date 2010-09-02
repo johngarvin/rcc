@@ -34,12 +34,6 @@
 #include <analysis/IRInterface.h>
 #include <analysis/LexicalScope.h>
 
-// macro for convenient loops
-
-#define FOR_EACH_PROC(fi) for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()); \
-                              fii.IsValid() && ((fi) = fii.Current()) != 0;                                                      \
-                              ++fii, (fi) = fii.Current())
-
 class R_Analyst {
 
   // implement Singleton pattern
@@ -51,9 +45,9 @@ public:
   /// Perform analysis.
   void perform_analysis();
 
-  OA::OA_ptr<R_IRInterface> get_interface() { return m_interface; }
+  OA::OA_ptr<R_IRInterface> get_interface();
 
-  SEXP get_program() { return m_program; }
+  SEXP get_program();
 
   LexicalScope * get_library_scope();
   LexicalScope * get_global_scope();
@@ -78,9 +72,6 @@ private:
 
   LexicalScope * m_library_scope;
   LexicalScope * m_global_scope;
-  
-  void build_local_function_info();
-  void collect_libraries();
 };
 
 #endif

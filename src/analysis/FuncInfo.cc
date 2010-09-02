@@ -70,12 +70,17 @@ typedef FuncInfo::call_site_iterator call_site_iterator;
 typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
 
   FuncInfo::FuncInfo(FuncInfo * parent, BasicFuncInfo * basic) :
+  m_strictness(),
+  m_mentions(),
+  m_call_sites(),
   m_basic(basic),
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
   RCC_DEBUG("RCC_FuncInfo", debug);
   analyze_args();
   collect_mentions_and_call_sites();
+  analyze_strictness();
+  analyze_debuts();
 }
 
 FuncInfo::~FuncInfo()
@@ -346,7 +351,7 @@ void FuncInfo::analyze_debuts() {
   OA_ptr<CFG::CFGInterface> cfg; cfg = get_cfg();
   assert(!cfg.ptrEqual(0));
   DebutDFSolver debut_solver(R_Analyst::get_instance()->get_interface());
-  OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(make_proc_h(get_sexp()), cfg);
+  OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(this);
   typedef NameMentionMultiMap::const_iterator Iterator;
   for (Iterator name = debut_map->begin(); name != debut_map->end(); name++) {
     Iterator start = debut_map->lower_bound(name->first);

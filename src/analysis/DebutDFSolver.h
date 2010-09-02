@@ -49,7 +49,7 @@ class DebutDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit DebutDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~DebutDFSolver();
-  OA::OA_ptr<NameMentionMultiMap> perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  OA::OA_ptr<NameMentionMultiMap> perform_analysis(RAnnot::FuncInfo * fi);
   void dump_node_maps();
   void dump_node_maps(std::ostream &os);
 
@@ -74,7 +74,7 @@ private:
 private:
   OA::OA_ptr<R_IRInterface> m_ir;
   OA::OA_ptr<OA::CFG::CFGInterface> m_cfg;
-  OA::ProcHandle m_proc;
+  RAnnot::FuncInfo * m_fi;
   OA::OA_ptr<DefaultDFSet> m_top;
   OA::OA_ptr<OA::DataFlow::CFGDFSolver> m_solver;
   VarRefFactory * m_fact;

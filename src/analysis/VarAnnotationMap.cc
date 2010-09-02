@@ -31,6 +31,8 @@
 
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/BasicFuncInfo.h>
+#include <analysis/BasicFuncInfoAnnotationMap.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityDFSolver.h>
@@ -95,20 +97,20 @@ PropertyHndlT VarAnnotationMap::s_handle = "Var";
 
 // compute all Var annotation information
 void VarAnnotationMap::compute() {
-  FuncInfo * fi;
-  FOR_EACH_PROC(fi) {
+  BasicFuncInfo * fi;
+  FOR_EACH_BASIC_PROC(fi) {
     compute_proc(fi);
   }
 }
   
-void VarAnnotationMap::compute_proc(FuncInfo * fi) {
+void VarAnnotationMap::compute_proc(BasicFuncInfo * fi) {
   compute_proc_syntactic_info(fi);
   compute_proc_locality_info(fi);
 }
 
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
-void VarAnnotationMap::compute_proc_syntactic_info(FuncInfo * fi) {
+void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
   UseVar * use;
   DefVar * def;
   OA_ptr<OA::CFG::NodeInterface> node;
@@ -138,7 +140,7 @@ void VarAnnotationMap::compute_proc_syntactic_info(FuncInfo * fi) {
 }
 
 /// compute variable locality (bound/free) for each function
-void VarAnnotationMap::compute_proc_locality_info(FuncInfo * fi) {
+void VarAnnotationMap::compute_proc_locality_info(BasicFuncInfo * fi) {
   R_Analyst * an = R_Analyst::get_instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
   ProcHandle ph = make_proc_h(fi->get_sexp());

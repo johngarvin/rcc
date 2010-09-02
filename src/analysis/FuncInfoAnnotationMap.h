@@ -37,6 +37,18 @@
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
+// macro for convenient loops
+
+#define FOR_EACH_PROC(fi) \
+  for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()); \
+      fii.IsValid() && ((fi) = fii.Current()) != 0;			\
+      ++fii, (fi) = fii.Current())
+
+#define FOR_EACH_PROC_AND_LIB(fi) \
+  for(RAnnot::FuncInfoAnnotationMap::const_iterator fii = FuncInfoAnnotationMap::get_instance()->begin(); \
+      fii != FuncInfoAnnotationMap::get_instance()->end() && ((fi) = dynamic_cast<FuncInfo *>(fii->second)) != 0; \
+      ++fii)
+
 namespace RAnnot {
 
 class FuncInfo;

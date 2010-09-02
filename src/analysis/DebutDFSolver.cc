@@ -56,18 +56,18 @@ DebutDFSolver::~DebutDFSolver()
 /// this information to find the debuts. If a name is mentioned in the
 /// current statement and does not appear in the has-been-mentioned
 /// set, then it's a debut.
-OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
+OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(FuncInfo * fi) {
   OA_ptr<CFG::NodeInterface> node;
   UseVar * use;
   DefVar * def;
   StmtHandle stmt;
 
-  m_proc = proc;
-  m_cfg = cfg;
+  m_fi = fi;
+  m_cfg = fi->get_cfg();
 
   // solve as a forward data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
-  m_solver->solve(cfg, DataFlow::ITERATIVE);
+  m_solver->solve(m_cfg, DataFlow::ITERATIVE);
 
   // now find the debuts for each name
   OA_ptr<NameMentionMultiMap> debut_map; debut_map = new NameMentionMultiMap();
@@ -128,8 +128,7 @@ void DebutDFSolver::dump_node_maps(std::ostream &os) {
 OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeTop() {
   if (m_top.ptrEqual(NULL)) {
     m_top = new DFSet();
-    FuncInfo * func = getProperty(FuncInfo, make_sexp(m_proc));
-    PROC_FOR_EACH_MENTION(func, mi) {
+    PROC_FOR_EACH_MENTION(m_fi, mi) {
       OA_ptr<DFSetElement> mention; mention = m_fact->make_body_var_ref((*mi)->getMention_c());
       m_top->insert(mention);
     }

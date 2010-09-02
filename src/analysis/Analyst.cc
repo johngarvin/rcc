@@ -33,16 +33,8 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/BasicFuncInfo.h>
 #include <analysis/CallByValueAnalysis.h>
-#include <analysis/EscapedDFSolver.h>
-#include <analysis/ExpressionInfoAnnotationMap.h>
-#include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/NameBoolDFSet.h>
-#include <analysis/OEscapeDFSolver.h>
-#include <analysis/ReturnedDFSolver.h>
-#include <analysis/SimpleIterators.h>
 #include <analysis/Utils.h>
-#include <analysis/VarAnnotationMap.h>
 
 #include "Analyst.h"
 
@@ -92,43 +84,15 @@ void R_Analyst::perform_analysis() {
     {
       throw AnalysisException("Unable to perform analysis: no assertion to exclude OO or environment manipulation");
     }
-  build_local_function_info();
   (new CallByValueAnalysis())->perform_analysis();
 }
 
-/// Discovers local information on procedures: arguments, names
-/// mentioned, etc.
-void R_Analyst::build_local_function_info() {
-  collect_libraries();
+OA::OA_ptr<R_IRInterface> R_Analyst::get_interface() {
+  return m_interface;
 }
 
-void R_Analyst::collect_libraries() {
-  FuncInfo * fi;
-  std::set<SEXP> libs;
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_CALL_SITE(fi, csi) {
-      SEXP lhs = call_lhs(CAR(*csi));
-      if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
-	BasicFuncInfo * new_bfi; new_bfi = new BasicFuncInfo(0, library_value(lhs), library_value(lhs));
-	new_bfi->perform_analysis();
-	putProperty(BasicFuncInfo, library_value(lhs), new_bfi);
-	FuncInfo * new_fi; new_fi = new FuncInfo(0, new_bfi);
-	putProperty(FuncInfo, library_value(lhs), new_fi);
-	libs.insert(library_value(lhs));
-      }
-    }
-  }
-  for(std::set<SEXP>::const_iterator iter = libs.begin(); iter != libs.end(); ++iter) {
-    FuncInfo * fi = getProperty(FuncInfo, *iter);
-    OA::OA_ptr<OA::CFG::NodeInterface> node;
-    OA::StmtHandle stmt;
-    PROC_FOR_EACH_NODE(fi, node) {
-      NODE_FOR_EACH_STATEMENT(node, stmt) {
-	ExpressionInfoAnnotationMap::get_instance()->make_annot(make_sexp(stmt));
-      }
-    }
-    VarAnnotationMap::get_instance()->compute_proc(fi);
-  }
+SEXP R_Analyst::get_program() {
+  return m_program;
 }
 
 LexicalScope * R_Analyst::get_library_scope() {

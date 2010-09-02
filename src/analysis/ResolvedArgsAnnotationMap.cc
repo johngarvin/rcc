@@ -76,9 +76,9 @@ void ResolvedArgsAnnotationMap::compute() {
       if (callee->get_has_var_args()) continue;
       formals = fundef_args(callee->get_sexp());
       actuals = call_args(CAR(cell));
-      ResolvedArgs * value =  new ResolvedArgs(actuals, formals);
-      value->resolve();
+      ResolvedArgs * value = new ResolvedArgs(actuals, formals);
       get_map()[cell] = value;
+      SETCDR(CAR(cell), value->get_resolved());
     }
   }
 

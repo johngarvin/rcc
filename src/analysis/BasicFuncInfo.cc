@@ -298,6 +298,14 @@ std::ostream& BasicFuncInfo::dump(std::ostream& os) const
   endObjDump(os, BasicFuncInfo);
 }
 
+// ----- BasicFuncInfoIterator -----
+
+BasicFuncInfoIterator::BasicFuncInfoIterator(const BasicFuncInfo * bfi, TraversalOrder torder, NonUniformDegreeTreeEnumType how)
+  : NonUniformDegreeTreeIteratorTmpl<BasicFuncInfo>(bfi, torder, how)
+{}
+
+
 }  // end namespace RAnnot
 
 const OA_ptr<CFG::NodeInterface> RAnnot::BasicFuncInfo::iterator_dummy_node = OA_ptr<CFG::Node>();
+

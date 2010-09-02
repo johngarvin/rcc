@@ -41,11 +41,6 @@
 // the variables somewhere above the for loop. Note: don't put
 // initializations in macros except inside for-loop initializers
 
-#define FOR_EACH_PROC_AND_LIB(fi) \
-  for(RAnnot::FuncInfoAnnotationMap::const_iterator fii = FuncInfoAnnotationMap::get_instance()->begin(); \
-      fii != FuncInfoAnnotationMap::get_instance()->end() && ((fi) = dynamic_cast<FuncInfo *>(fii->second)) != 0; \
-      ++fii)
-
 #define PROC_FOR_EACH_NODE(fi, node) \
   for(OA::OA_ptr<OA::CFG::NodesIteratorInterface> ni = (fi)->get_cfg()->getCFGNodesIterator(); \
       ni->isValid() && ((node) = ni->current().convert<OA::CFG::Node>()) != BasicFuncInfo::iterator_dummy_node; \
@@ -157,6 +152,14 @@ private:
   SEXP m_first_name_c;             // cell containing name of function at original definition
   BasicFuncInfo * m_parent;        // scope tree parent
   std::set<SEXP> m_returns;        // implicit return statements
+};
+
+class BasicFuncInfoIterator : public NonUniformDegreeTreeIteratorTmpl<BasicFuncInfo> {
+public:
+  explicit BasicFuncInfoIterator(const BasicFuncInfo * bfi,
+				 TraversalOrder torder = PreOrder,
+				 NonUniformDegreeTreeEnumType how =
+				 NON_UNIFORM_DEGREE_TREE_ENUM_ALL_NODES);
 };
 
 } // namespace RAnnot

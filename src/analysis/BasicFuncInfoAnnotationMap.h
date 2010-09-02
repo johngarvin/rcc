@@ -35,6 +35,16 @@
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
+#define FOR_EACH_BASIC_PROC(bfi) \
+  for (RAnnot::BasicFuncInfoIterator bfii = BasicFuncInfoIterator(BasicFuncInfoAnnotationMap::get_instance()->get_scope_tree_root()); \
+       bfii.IsValid() && ((bfi) = bfii.Current()) != 0;			\
+       ++bfii, (bfi) = bfii.Current())
+
+#define FOR_EACH_BASIC_PROC_AND_LIB(bfi) \
+  for (RAnnot::BasicFuncInfoAnnotationMap::const_iterator bfii = BasicFuncInfoAnnotationMap::get_instance()->begin(); \
+       bfii != BasicFuncInfoAnnotationMap::get_instance()->end() && ((bfi) = dynamic_cast<BasicFuncInfo *>(bfii->second)) != 0; \
+       ++bfii)
+
 namespace RAnnot {
   
 class BasicFuncInfoAnnotationMap : public DefaultAnnotationMap {

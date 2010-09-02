@@ -32,8 +32,9 @@
 
 #include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
+#include <analysis/BasicFuncInfo.h>
+#include <analysis/BasicFuncInfoAnnotationMap.h>
 #include <analysis/ExpressionInfo.h>
-#include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalVariableAnalysis.h>
 #include <analysis/PropertySet.h>
@@ -69,13 +70,13 @@ ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
 // ----- computation -----
 
 void ExpressionInfoAnnotationMap::compute() {
-  FuncInfo * fi;
+  BasicFuncInfo * bfi;
   OA::OA_ptr<OA::CFG::NodeInterface> node;
   OA::StmtHandle stmt;
 
   // we need to make expressions out of statements, call sites, and actual arguments
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_NODE(fi, node) {
+  FOR_EACH_BASIC_PROC(bfi) {
+    PROC_FOR_EACH_NODE(bfi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	// statements
 	ExpressionInfo * annot = make_annot(make_sexp(stmt));
