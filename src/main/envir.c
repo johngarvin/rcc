@@ -1296,7 +1296,7 @@ SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
 */
 
 SEXP findFunUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundOK)
-{
+ {
     SEXP vl;
     while (rho != R_NilValue) {
 #ifdef USE_GLOBAL_CACHE
@@ -1331,11 +1331,48 @@ SEXP findFunUnboundOK(SEXP symbol, SEXP rho, Rboolean unboundOK)
     return SYMBOL_BINDING_VALUE(symbol);
 }
 
+
 SEXP findFun(SEXP symbol, SEXP rho)
 {
   return findFunUnboundOK(symbol, rho, FALSE);
 }
 
+#if 0
+SEXP findFun(SEXP symbol, SEXP rho)
+ {
+    SEXP vl;
+    while (rho != R_NilValue) {
+#ifdef USE_GLOBAL_CACHE
+	if (rho == R_GlobalEnv)
+	    vl = findGlobalVar(symbol);
+	else
+	    vl = findVarInFrame3(rho, symbol, TRUE);
+#else
+	vl = findVarInFrame3(rho, symbol, TRUE);
+#endif
+	if (vl != R_UnboundValue) {
+	    if (TYPEOF(vl) == PROMSXP) {
+		PROTECT(vl);
+		vl = eval(vl, rho);
+		UNPROTECT(1);
+	    }
+	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == RCC_CLOSXP || 
+		TYPEOF(vl) == BUILTINSXP || TYPEOF(vl) == SPECIALSXP)
+		return (vl);
+	    if (vl == R_MissingArg)
+		error(_("argument \"%s\" is missing, with no default"),
+		      CHAR(PRINTNAME(symbol)));
+	}
+	rho = ENCLOS(rho);
+    }
+    if (SYMVALUE(symbol) == R_UnboundValue) {
+      error(_("couldn't find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    }
+    if (TYPEOF(SYMBOL_BINDING_VALUE(symbol)) == PROMSXP)
+	return eval(SYMBOL_BINDING_VALUE(symbol), rho);
+    return SYMBOL_BINDING_VALUE(symbol);
+}
+#endif
 
 /*--------------------------------------------------------------------
 

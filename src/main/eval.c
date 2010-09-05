@@ -399,7 +399,7 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 	    int save = R_PPStackTop;
 	    PROTECT(CDR(e));
 	    R_Visible = 1 - PRIMPRINT(op);
-	    tmp = call_func_alloc(PRIMFUN(op), e, op, CDR(e), rho);
+	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
 	    UNPROTECT(1);
 	    if(save != R_PPStackTop) {
 		Rprintf("stack imbalance in %s, %d then %d\n",
@@ -415,14 +415,14 @@ _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
 		R_Visible = 1 - PRIMPRINT(op);
 		begincontext(&cntxt, CTXT_BUILTIN, e,
 			     R_NilValue, R_NilValue, R_NilValue, R_NilValue);
-		tmp = call_func_alloc(PRIMFUN(op), e, op, tmp, rho);
+		tmp = PRIMFUN(op) (e, op, tmp, rho);
 		endcontext(&cntxt);
 		UNPROTECT(1);
 	    } else {
 #endif /* R_PROFILING */
 		PROTECT(tmp = evalList(CDR(e), rho));
 		R_Visible = 1 - PRIMPRINT(op);
-		tmp = call_func_alloc(PRIMFUN(op), e, op, tmp, rho);
+		tmp = PRIMFUN(op) (e, op, tmp, rho);
 		UNPROTECT(1);
 #ifdef R_PROFILING
 	    }

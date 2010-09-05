@@ -73,6 +73,116 @@ extern int global_dump_stats;
   if (__tag__ != R_NilValue) SET_TAG(to, __tag__); \
 } while (0)
 
+SEXP duplicate_heap(SEXP s)
+{
+    SEXP h, t,  sp;
+    int i, n;
+
+    switch (TYPEOF(s)) {
+    case NILSXP:
+    case SYMSXP:
+    case ENVSXP:
+    case SPECIALSXP:
+    case BUILTINSXP:
+    case EXTPTRSXP:
+#ifdef BYTECODE
+    case BCODESXP:
+#endif
+    case WEAKREFSXP:
+	return s;
+    case CLOSXP:
+	PROTECT(s);
+	PROTECT(t = allocSExp(CLOSXP));
+	SET_FORMALS(t, FORMALS(s));
+	SET_BODY(t, BODY(s));
+	SET_CLOENV(t, CLOENV(s));
+	DUPLICATE_ATTRIB(t, s);
+	UNPROTECT(2);
+	break;
+    case LISTSXP:
+	PROTECT(sp = s);
+	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+	while(sp != R_NilValue) {
+	    SETCDR(t, CONS(duplicate_heap(CAR(sp)), R_NilValue));
+	    t = CDR(t);
+	    COPY_TAG(t, sp);
+	    DUPLICATE_ATTRIB(t, sp);
+	    sp = CDR(sp);
+	}
+	t = CDR(h);
+	UNPROTECT(2);
+	break;
+    case LANGSXP:
+	PROTECT(sp = s);
+	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+	while(sp != R_NilValue) {
+	    SETCDR(t, CONS(duplicate_heap(CAR(sp)), R_NilValue));
+	    t = CDR(t);
+	    COPY_TAG(t, sp);
+	    DUPLICATE_ATTRIB(t, sp);
+	    sp = CDR(sp);
+	}
+	t = CDR(h);
+	SET_TYPEOF(t, LANGSXP);
+	DUPLICATE_ATTRIB(t, s);
+	UNPROTECT(2);
+	break;
+    case DOTSXP:
+	PROTECT(sp = s);
+	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+	while(sp != R_NilValue) {
+	    SETCDR(t, CONS(duplicate_heap(CAR(sp)), R_NilValue));
+	    t = CDR(t);
+	    COPY_TAG(t, sp);
+	    DUPLICATE_ATTRIB(t, sp);
+	    sp = CDR(sp);
+	}
+	t = CDR(h);
+	SET_TYPEOF(t, DOTSXP);
+	DUPLICATE_ATTRIB(t, s);
+	UNPROTECT(2);
+	break;
+    case CHARSXP:
+	PROTECT(s);
+	PROTECT(t = allocString(strlen(CHAR(s))));
+	strcpy(CHAR(t), CHAR(s));
+	DUPLICATE_ATTRIB(t, s);
+	UNPROTECT(2);
+	break;
+    case EXPRSXP:
+    case VECSXP:
+	n = LENGTH(s);
+	PROTECT(s);
+	PROTECT(t = allocVector(TYPEOF(s), n));
+	for(i = 0 ; i < n ; i++)
+	    SET_VECTOR_ELT(t, i, duplicate_heap(VECTOR_ELT(s, i)));
+	DUPLICATE_ATTRIB(t, s);
+	SET_TRUELENGTH(t, TRUELENGTH(s));
+	UNPROTECT(2);
+	break;
+    case LGLSXP: DUPLICATE_ATOMIC_VECTOR(int, LOGICAL, t, s); break;
+    case INTSXP: DUPLICATE_ATOMIC_VECTOR(int, INTEGER, t, s); break;
+    case REALSXP: DUPLICATE_ATOMIC_VECTOR(double, REAL, t, s); break;
+    case CPLXSXP: DUPLICATE_ATOMIC_VECTOR(Rcomplex, COMPLEX, t, s); break;
+    case RAWSXP: DUPLICATE_ATOMIC_VECTOR(Rbyte, RAW, t, s); break;
+    case STRSXP:
+	/* direct copying and bypassing the write barrier is OK since
+	   t was just allocated and so it cannot be older than any of
+	   the elements in s.  LT */
+	DUPLICATE_ATOMIC_VECTOR(SEXP, STRING_PTR, t, s);
+	break;
+    case PROMSXP:
+	return s;
+	break;
+    default:
+	UNIMPLEMENTED_TYPE("duplicate", s);
+	t = s;/* for -Wall */
+    }
+    if(TYPEOF(t) == TYPEOF(s) ) /* surely it only makes sense in this case*/
+	SET_OBJECT(t, OBJECT(s));
+    return t;
+}
+
 SEXP duplicate(SEXP s)
 {
     SEXP h, t,  sp;
