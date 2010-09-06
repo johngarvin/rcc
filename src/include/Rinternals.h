@@ -527,7 +527,9 @@ SEXP allocNodeStack(AllocStack * allocator, SEXP * protect_on_gc);
 SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length);
 SEXP allocNodeHeap(AllocStack * allocator, SEXP * protect_on_gc);
 void printAllPointers(SEXP e);
+#ifdef R_POOL_ALLOC
 Rboolean is_stack(SEXP s);
+#endif
 
 /* Other Internally Used Functions */
 
@@ -1005,7 +1007,6 @@ int R_system(char *);
 #define conformable		Rf_conformable
 #define cons			Rf_cons
 #define consHeap                Rf_consHeap
-#define consInPlace             Rf_consInPlace
 #define copyListMatrix		Rf_copyListMatrix
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib

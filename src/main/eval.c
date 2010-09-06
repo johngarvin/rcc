@@ -622,9 +622,165 @@ typedef enum {
 } ApplyClosureOptions;
 */
 
+/*
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, TYPEOF(CAR(call)) == SYMSXP ? CAR(call) : Rf_install("*anonymous*"));
+}
+*/
+
+SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
+{
+    SEXP body, formals, actuals, savedrho;
+    volatile  SEXP newrho;
+    SEXP f, a, tmp;
+    RCNTXT cntxt;
+
+    /* formals = list of formal parameters */
+    /* actuals = values to be bound to formals */
+    /* arglist = the tagged list of arguments */
+
+    formals = FORMALS(op);
+    body = BODY(op);
+    savedrho = CLOENV(op);
+
+    /*  Set up a context with the call in it so error has access to it */
+
+    begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
+
+    /*  Build a list which matches the actual (unevaluated) arguments
+	to the formal paramters.  Build a new environment which
+	contains the matched pairs.  Ideally this environment sould be
+	hashed.  */
+
+    PROTECT(actuals = matchArgs(formals, arglist));
+    PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
+
+    /*  Use the default code for unbound formals.  FIXME: It looks like
+	this code should preceed the building of the environment so that
+        this will also go into the hash table.  */
+
+    /* This piece of code is destructively modifying the actuals list,
+       which is now also the list of bindings in the frame of newrho.
+       This is one place where internal structure of environment
+       bindings leaks out of envir.c.  It should be rewritten
+       eventually so as not to break encapsulation of the internal
+       environment layout.  We can live with it for now since it only
+       happens immediately after the environment creation.  LT */
+
+    f = formals;
+    a = actuals;
+    while (f != R_NilValue) {
+	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
+	    SETCAR(a, mkPROMISE(CAR(f), newrho));
+	    SET_MISSING(a, 2);
+	}
+	f = CDR(f);
+	a = CDR(a);
+    }
+
+    /*  Fix up any extras that were supplied by usemethod. */
+
+    if (suppliedenv != R_NilValue) {
+	for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
+	    for (a = actuals; a != R_NilValue; a = CDR(a))
+		if (TAG(a) == TAG(tmp))
+		    break;
+	    if (a == R_NilValue)
+		/* Use defineVar instead of earlier version that added
+                   bindings manually */
+		defineVar(TAG(tmp), CAR(tmp), newrho);
+	}
+    }
+
+    /*  Terminate the previous context and start a new one with the
+        correct environment. */
+
+    endcontext(&cntxt);
+
+    /*  If we have a generic function we need to use the sysparent of
+	the generic as the sysparent of the method because the method
+	is a straight substitution of the generic.  */
+
+    if( R_GlobalContext->callflag == CTXT_GENERIC )
+	begincontext(&cntxt, CTXT_RETURN, call,
+		     newrho, R_GlobalContext->sysparent, arglist, op);
+    else
+	begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+
+    /* The default return value is NULL.  FIXME: Is this really needed
+       or do we always get a sensible value returned?  */
+
+    tmp = R_NilValue;
+
+    /* Debugging */
+
+    SET_DEBUG(newrho, DEBUG(op));
+    if (DEBUG(op)) {
+	Rprintf("debugging in: ");
+	PrintValueRec(call,rho);
+	/* Is the body a bare symbol (PR#6804) */
+	if (!isSymbol(body) & !isVectorAtomic(body)){
+		/* Find out if the body is function with only one statement. */
+		if (isSymbol(CAR(body)))
+			tmp = findFun(CAR(body), rho);
+		else
+			tmp = eval(CAR(body), rho);
+		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+		   && !strcmp( PRIMNAME(tmp), "for")
+		   && !strcmp( PRIMNAME(tmp), "{")
+		   && !strcmp( PRIMNAME(tmp), "repeat")
+		   && !strcmp( PRIMNAME(tmp), "while")
+			)
+			goto regdb;
+	}
+	Rprintf("debug: ");
+	PrintValue(body);
+	do_browser(call,op,arglist,newrho);
+    }
+
+ regdb:
+
+    /*  It isn't completely clear that this is the right place to do
+	this, but maybe (if the matchArgs above reverses the
+	arguments) it might just be perfect.  */
+
+#ifdef  HASHING
+#define HASHTABLEGROWTHRATE  1.2
+    {
+	SEXP R_NewHashTable(int, double);
+	SEXP R_HashFrame(SEXP);
+	int nargs = length(arglist);
+	HASHTAB(newrho) = R_NewHashTable(nargs, HASHTABLEGROWTHRATE);
+	newrho = R_HashFrame(newrho);
+    }
+#endif
+#undef  HASHING
+
+    /*  Set a longjmp target which will catch any explicit returns
+	from the function body.  */
+
+    if ((SETJMP(cntxt.cjmpbuf))) {
+	if (R_ReturnedValue == R_RestartToken) {
+	    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+	    R_ReturnedValue = R_NilValue;  /* remove restart token */
+	    PROTECT(tmp = eval(body, newrho));
+	}
+	else
+	    PROTECT(tmp = R_ReturnedValue);
+    }
+    else {
+	PROTECT(tmp = eval(body, newrho));
+    }
+
+    endcontext(&cntxt);
+
+    if (DEBUG(op)) {
+	Rprintf("exiting from: ");
+	PrintValueRec(call, rho);
+    }
+    UNPROTECT(3);
+    return (tmp);
 }
 
 /* non-escaping symbols: these procedures are safe to call with pool

@@ -54,6 +54,8 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
 
+/* #define R_POOL_ALLOC */
+
 Rboolean global_dump_stats; /* = (getenv("R_DUMP_STATS") != NULL); */
                             /* initialized in InitMemory()         */
 static Rboolean global_stack_debug; /* = (getenv("R_STACK_DEBUG") != NULL) */
@@ -74,9 +76,10 @@ static AllocStack * allocStackCurrent = NULL;
 static int max_alloc_stack_id = 0;
 
 static void pushAllocStack(AllocVectorFunction alloc_vector_function,
-		    AllocNodeFunction alloc_node_function);
+			   AllocNodeFunction alloc_node_function);
 static void popAllocStack();
 static inline void consInPlace(SEXP car, SEXP cdr, SEXP s);
+static SEXP old_allocVector(SEXPTYPE type, R_len_t length);
 static void allocVectorInPlace(SEXPTYPE type, R_len_t length, SEXP s);
 static void allocListInPlace(SEXP s);
 
@@ -533,6 +536,8 @@ SEXP getUnusedPageSpace()
     return page->space;
 }
 
+
+#ifdef R_POOL_ALLOC
 Rboolean pointer_within_page(SEXP p, StackPage * page)
 {
     return (page->space <= p &&
@@ -583,6 +588,7 @@ inline Rboolean is_stack(SEXP s) {
     /*    return is_good_stack(s); */
     return (PREV_NODE(s) == NULL);
 }
+#endif
 
 #if 0
 is_heap is no longer needed
@@ -625,7 +631,8 @@ static inline void UNSNAP_NODE_heap(SEXP s) {
   SET_PREV_NODE(next, prev);
 }
 
-static inline void UNSNAP_NODE(SEXP s) {
+#ifdef R_POOL_ALLOC
+static inline void UNSNAP_NODE_check(SEXP s) {
   SEXP un__n__ = (s);
   SEXP next = NEXT_NODE(un__n__);
   SEXP prev = PREV_NODE(un__n__);
@@ -633,17 +640,13 @@ static inline void UNSNAP_NODE(SEXP s) {
   SET_NEXT_NODE(prev, next);
   SET_PREV_NODE(next, prev);
 }
+#endif
 
-/*
-#define UNSNAP_NODE(s) do { \
-  SEXP un__n__ = (s); \
-  SEXP next = NEXT_NODE(un__n__); \
-  SEXP prev = PREV_NODE(un__n__); \
-  if (!prev) error(_("UNSNAP_NODE: non-heap object in heap")); \
-  SET_NEXT_NODE(prev, next); \
-  SET_PREV_NODE(next, prev); \
-} while(0)
-*/
+#ifdef R_POOL_ALLOC
+#define UNSNAP_NODE UNSNAP_NODE_check
+#else
+#define UNSNAP_NODE UNSNAP_NODE_heap
+#endif
 
 /* alloc_stack_objects_in_heap:
  * 
@@ -652,32 +655,6 @@ static inline void UNSNAP_NODE(SEXP s) {
  * stack-allocated objects to a GC ring.
  */
 static Rboolean allow_stack_objects_in_heap = FALSE;
-
-/* snap in node s before node t */
-
-static inline void SNAP_NODE(SEXP s, SEXP t) {
-  SEXP sn__n__ = (s);
-  SEXP next = (t);
-  SEXP prev = PREV_NODE(next);
-  if (is_stack(s)) error(_("SNAP_NODE: tried to snap stack object"));
-  if (is_stack(next)) error(_("SNAP_NODE: stack object in heap"));
-  SET_NEXT_NODE(sn__n__, next);
-  SET_PREV_NODE(next, sn__n__);
-  SET_NEXT_NODE(prev, sn__n__);
-  SET_PREV_NODE(sn__n__, prev);
-}
-
-/*
-#define SNAP_NODE(s,t) do { \
-  SEXP sn__n__ = (s); \
-  SEXP next = (t); \
-  SEXP prev = PREV_NODE(next);	\
-  SET_NEXT_NODE(sn__n__, next); \
-  SET_PREV_NODE(next, sn__n__); \
-  SET_NEXT_NODE(prev, sn__n__); \
-  SET_PREV_NODE(sn__n__, prev); \
-} while (0)
-*/
 
 /* snap_node even if prev is null. Use when s is guaranteed to be heap storage. */
 
@@ -690,6 +667,40 @@ static void SNAP_NODE_heap(SEXP s, SEXP t) {
   SET_NEXT_NODE(prev, sn__n__);
   SET_PREV_NODE(sn__n__, prev);
 }
+
+/* snap in node s before node t */
+
+#ifdef R_POOL_ALLOC
+static inline void SNAP_NODE_f(SEXP s, SEXP t) {
+  SEXP sn__n__ = (s);
+  SEXP next = (t);
+  SEXP prev = PREV_NODE(next);
+  if (is_stack(s)) error(_("SNAP_NODE: tried to snap stack object"));
+  if (is_stack(next)) error(_("SNAP_NODE: stack object in heap"));
+  SET_NEXT_NODE(sn__n__, next);
+  SET_PREV_NODE(next, sn__n__);
+  SET_NEXT_NODE(prev, sn__n__);
+  SET_PREV_NODE(sn__n__, prev);
+}
+#endif
+
+#ifdef R_POOL_ALLOC
+#define SNAP_NODE SNAP_NODE_f
+#else
+#define SNAP_NODE SNAP_NODE_heap
+#endif
+
+/*
+#define SNAP_NODE(s,t) do { \
+  SEXP sn__n__ = (s); \
+  SEXP next = (t); \
+  SEXP prev = PREV_NODE(next);	\
+  SET_NEXT_NODE(sn__n__, next); \
+  SET_PREV_NODE(next, sn__n__); \
+  SET_NEXT_NODE(prev, sn__n__); \
+  SET_PREV_NODE(sn__n__, prev); \
+} while (0)
+*/
 
 /* move all nodes on from_peg to to_peg */
 #define BULK_MOVE(from_peg,to_peg) do { \
@@ -839,8 +850,13 @@ inline static void DO_CHILDREN_f(SEXP n, void (*action)(SEXP x, SEXP * y), SEXP 
     } while (0)
 */
 
+#ifdef R_POOL_ALLOC
 #define FORWARD_NODE(s) FORWARD_NODE_check(NULL, s, &forwarded_nodes)
+#else 
+#define FORWARD_NODE(s) FORWARD_NODE_heap(s, &forwarded_nodes)
+#endif
 
+#ifdef R_POOL_ALLOC
 static inline void FORWARD_NODE_f(SEXP s, SEXP * forwarded_nodes) {
     if (s && ((! is_stack(s) && ! NODE_IS_MARKED(s)) ||
 	      (is_stack(s) && NEXT_NODE(s) == NULL)))
@@ -861,6 +877,7 @@ static void FORWARD_NODE_stack(SEXP s, SEXP * forwarded_nodes) {
 	*forwarded_nodes = s;
     }
 }
+#endif
 
 static inline void FORWARD_NODE_heap(SEXP s, SEXP * forwarded_nodes) {
     if (s && !NODE_IS_MARKED(s)) {
@@ -871,6 +888,7 @@ static inline void FORWARD_NODE_heap(SEXP s, SEXP * forwarded_nodes) {
     }
 }
 
+#ifdef R_POOL_ALLOC
 static inline void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_nodes)
 {
     if (global_stack_debug &&
@@ -891,6 +909,7 @@ static inline void FORWARD_NODE_check(SEXP parent, SEXP s, SEXP * forwarded_node
 	FORWARD_NODE_f(s, forwarded_nodes);
     }
 }
+#endif
 
 #define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
 #define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
@@ -948,6 +967,7 @@ static inline void FORWARD_CHILDREN_heap(SEXP n, SEXP * forwarded_nodes) {
     } 
 }
 
+#ifdef R_POOL_ALLOC
 static inline void FORWARD_CHILDREN_f(SEXP n, SEXP * forwarded_nodes) {
     if (ATTRIB(n) != R_NilValue) {
 	FORWARD_NODE_check(n, ATTRIB(n), forwarded_nodes);
@@ -1000,6 +1020,7 @@ static inline void FORWARD_CHILDREN_f(SEXP n, SEXP * forwarded_nodes) {
 	abort(); 
     } 
 }
+#endif
 
 /* Node Allocation. */
 
@@ -1349,8 +1370,13 @@ static void AdjustHeapSize(R_size_t size_needed)
 /*     }								\ */
 /* } while (0) */
 
-#define AGE_NODE(s,g) AGE_NODE_f(s, g, &forwarded_nodes)
 #define AGE_NODE_HEAP(s,g) AGE_NODE_f_heap(s, g, &forwarded_nodes)
+
+#ifdef R_POOL_ALLOC
+#define AGE_NODE(s,g) AGE_NODE_f(s, g, &forwarded_nodes)
+#else
+#define AGE_NODE AGE_NODE_HEAP
+#endif
 
 static inline void AGE_NODE_f_heap(SEXP s, int g, SEXP * forwarded_nodes)
 {
@@ -1367,6 +1393,7 @@ static inline void AGE_NODE_f_heap(SEXP s, int g, SEXP * forwarded_nodes)
     }
 }
 
+#ifdef R_POOL_ALLOC
 static inline void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
 {
     if (s && NODE_GEN_IS_YOUNGER(s, g)) {
@@ -1386,6 +1413,7 @@ static inline void AGE_NODE_f(SEXP s, int g, SEXP * forwarded_nodes)
 	*forwarded_nodes = s;
     }
 }
+#endif
 
 static void AgeNodeAndChildren_heap(SEXP s, int gen)
 {
@@ -1403,7 +1431,8 @@ static void AgeNodeAndChildren_heap(SEXP s, int gen)
     }
 }
 
-static void AgeNodeAndChildren(SEXP s, int gen)
+#ifdef R_POOL_ALLOC
+static void AgeNodeAndChildren_f(SEXP s, int gen)
 {
     SEXP forwarded_nodes = NULL;
     AGE_NODE_f(s, gen, &forwarded_nodes);
@@ -1422,6 +1451,13 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	DO_CHILDREN(s, AGE_NODE, gen);
     }
 }
+#endif
+
+#ifdef R_POOL_ALLOC
+#define AgeNodeAndChildren AgeNodeAndChildren_f
+#else
+#define AgeNodeAndChildren AgeNodeAndChildren_heap
+#endif
 
 static void old_to_new_heap(SEXP x, SEXP y)
 {
@@ -1433,7 +1469,8 @@ static void old_to_new_heap(SEXP x, SEXP y)
 #endif
 }
 
-static void old_to_new(SEXP x, SEXP y)
+#ifdef R_POOL_ALLOC
+static void old_to_new_f(SEXP x, SEXP y)
 {
 #ifdef EXPEL_OLD_TO_NEW
     AgeNodeAndChildren(y, NODE_GENERATION(x));
@@ -1447,20 +1484,24 @@ static void old_to_new(SEXP x, SEXP y)
     }
 #endif
 }
-
-#if 0
-#define CHECK_OLD_TO_NEW(x,y) do {				\
-	if (NODE_IS_OLDER(x, y)) old_to_new(x,y);		\
-	if (is_stack(y) && !is_stack(x)) y = duplicate(y);	\
-    } while (0)
 #endif
 
+#ifdef R_POOL_ALLOC
+#else
+#define old_to_new old_to_new_heap
+#endif
+
+#ifdef R_POOL_ALLOC
 #define CHECK_OLD_TO_NEW CHECK_OLD_TO_NEW_f
+#else
+#define CHECK_OLD_TO_NEW CHECK_OLD_TO_NEW_heap
+#endif
 
 static inline void CHECK_OLD_TO_NEW_heap(SEXP x, SEXP y) {
     if (NODE_IS_OLDER(x, y)) old_to_new_heap(x,y);
 }
 
+#ifdef R_POOL_ALLOC
 static inline void CHECK_OLD_TO_NEW_f(SEXP x, SEXP y) {
     if (global_always_use_fallback_alloc) {
 	if (NODE_IS_OLDER(x, y)) old_to_new_heap(x,y);
@@ -1469,6 +1510,7 @@ static inline void CHECK_OLD_TO_NEW_f(SEXP x, SEXP y) {
 	if (is_stack(y) && !is_stack(x)) y = duplicate(y);
     }
 }
+#endif
   
 
 /* Node Sorting.  SortNodes attempts to improve locality of reference
@@ -1779,8 +1821,11 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
    process the node, but we do want to process its children because
    they may be heap allocated. --garvin */
 
-
+#ifdef R_POOL_ALLOC
 #define PROCESS_NODES() PROCESS_NODES_f(&forwarded_nodes)
+#else
+#define PROCESS_NODES() PROCESS_NODES_heap(&forwarded_nodes)
+#endif
 
 static inline void PROCESS_NODES_heap(SEXP * forwarded_nodes) {
     SEXP s;
@@ -1793,6 +1838,7 @@ static inline void PROCESS_NODES_heap(SEXP * forwarded_nodes) {
     }
 }
 
+#ifdef R_POOL_ALLOC
 static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
     SEXP s;
     if (global_always_use_fallback_alloc) {
@@ -1811,7 +1857,7 @@ static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	FORWARD_CHILDREN_f(s, forwarded_nodes);
     }
 }
-
+#endif
 
 /*
 #define PROCESS_NODES() do { \
@@ -1851,47 +1897,33 @@ static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 
  again:
     gens_collected = num_old_gens_to_collect;
-
+    
 #ifndef EXPEL_OLD_TO_NEW
     /* eliminate old-to-new references in generations to collect by
        transferring referenced nodes to referring generation */
-    if (global_always_use_fallback_alloc) {
-	for (gen = 0; gen < num_old_gens_to_collect; gen++) {
-	    for (i = 0; i < NUM_NODE_CLASSES; i++) {
-		s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
-		while (s != R_GenHeap[i].OldToNew[gen]) {
-		    SEXP next = NEXT_NODE(s);
-		    DO_CHILDREN(s, AgeNodeAndChildren_heap, gen);
-		    UNSNAP_NODE_heap(s);
-		    if (NODE_GENERATION(s) != gen)
-			REprintf("****snapping into wrong generation\n");
-		    SNAP_NODE_heap(s, R_GenHeap[i].Old[gen]);
-		    s = next;
+    for (gen = 0; gen < num_old_gens_to_collect; gen++) {
+	for (i = 0; i < NUM_NODE_CLASSES; i++) {
+	    s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
+	    while (s != R_GenHeap[i].OldToNew[gen]) {
+		SEXP next = NEXT_NODE(s);
+		DO_CHILDREN(s, AgeNodeAndChildren, gen);
+		
+#ifdef R_POOL_ALLOC
+		if (global_stack_debug && is_stack(s)) {
+		    error(_("Unexpected stack node in OldToNew\n"));
 		}
-	    }
-	}
-    } else {
-	for (gen = 0; gen < num_old_gens_to_collect; gen++) {
-	    for (i = 0; i < NUM_NODE_CLASSES; i++) {
-		s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
-		while (s != R_GenHeap[i].OldToNew[gen]) {
-		    SEXP next = NEXT_NODE(s);
-		    DO_CHILDREN(s, AgeNodeAndChildren, gen);
-		    if (global_stack_debug && is_stack(s)) {
-			error(_("Unexpected stack node in OldToNew\n"));
-		    }
-		    UNSNAP_NODE(s);
-		    if (NODE_GENERATION(s) != gen)
-			REprintf("****snapping into wrong generation\n");
-		    SNAP_NODE(s, R_GenHeap[i].Old[gen]);
-		    s = next;
-		}
+#endif
+		UNSNAP_NODE(s);
+		if (NODE_GENERATION(s) != gen)
+		    REprintf("****snapping into wrong generation\n");
+		SNAP_NODE(s, R_GenHeap[i].Old[gen]);
+		s = next;
 	    }
 	}
     }
 #endif
 
-    DEBUG_CHECK_NODE_COUNTS("at start");
+DEBUG_CHECK_NODE_COUNTS("at start");
 
     /* unmark all marked nodes in old generations to be collected and
        move to New space */
@@ -1999,7 +2031,7 @@ static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 #endif
 
     /* main processing loop */
-    PROCESS_NODES_f(&forwarded_nodes);
+    PROCESS_NODES();
 
     /* identify weakly reachable nodes */
     {
@@ -2018,7 +2050,7 @@ static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 		    }
 		}
 	    }
-	    PROCESS_NODES_f(&forwarded_nodes);
+	    PROCESS_NODES();
 	} while (recheck_weak_refs);
     }
 
@@ -2032,7 +2064,7 @@ static inline void PROCESS_NODES_f(SEXP * forwarded_nodes) {
 	FORWARD_NODE(WEAKREF_VALUE(s));
 	FORWARD_NODE(WEAKREF_FINALIZER(s));
     }
-    PROCESS_NODES_f(&forwarded_nodes);
+    PROCESS_NODES();
     
     /*     if (!global_stack_debug) { */
 	freeDeadStack();
@@ -2564,7 +2596,7 @@ SEXP old_cons(SEXP car, SEXP cdr)
     return s;
 }
 
-SEXP cons(SEXP car, SEXP cdr)
+static SEXP consPool(SEXP car, SEXP cdr)
 {
     SEXP s;
     SEXP protect_on_gc[3] = {car, cdr, NULL};
@@ -2590,10 +2622,20 @@ SEXP consHeap(SEXP car, SEXP cdr)
 	    mem_err_cons();
     }
     GET_FREE_NODE(s);
-    CDR(s) = cdr;     /* so that we can connect cells */
+    consInPlace(car, cdr, s);
     if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
     return s;
 }
+
+#ifdef R_POOL_ALLOC
+SEXP cons(SEXP car, SEXP cdr) {
+    return consPool(car, cdr);
+}
+#else
+SEXP cons(SEXP car, SEXP cdr) {
+    return old_cons(car, cdr);
+}
+#endif
 
 static inline void consInPlace(SEXP car, SEXP cdr, SEXP s)
 {
@@ -2688,6 +2730,12 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
 {
     SEXP s;
     /*
+    */
+    if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
+#ifdef R_POOL_ALLOC
+    SEXP protect_on_gc[3] = {expr, rho, NULL};
+    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
+#else
     if (FORCE_GC || NO_FREE_NODES()) {
       PROTECT(expr);
       PROTECT(rho);
@@ -2697,10 +2745,7 @@ SEXP mkPROMISE(SEXP expr, SEXP rho)
 	mem_err_cons();
     }
     GET_FREE_NODE(s);
-    */
-    SEXP protect_on_gc[3] = {expr, rho, NULL};
-    if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
-    s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
+#endif
     if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(s) = PROMSXP;
@@ -2724,6 +2769,7 @@ SEXP allocString(int length)
 
 /* Allocate a vector object on the heap */
 
+#ifdef R_POOL_ALLOC
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
     SEXP s;
@@ -2734,12 +2780,18 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     }
     if (global_dump_stats) fprintf(stderr, "Alloc: vector type %u length %u ", type, length);
     s = allocStackCurrent->allocateVector(allocStackCurrent, type, length);
-    if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
     allocVectorInPlace(type, length, s);
+    if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
     return s;
 }
+#else
+SEXP allocVector(SEXPTYPE type, R_len_t length)
+{
+    return old_allocVector(type, length);
+}
+#endif
 
-SEXP old_allocVector(SEXPTYPE type, R_len_t length)
+static SEXP old_allocVector(SEXPTYPE type, R_len_t length)
 {
     SEXP s;     /* For the generational collector it would be safer to
 		   work in terms of a VECSEXP here, but that would

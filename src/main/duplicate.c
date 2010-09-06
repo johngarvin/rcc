@@ -73,7 +73,7 @@ extern int global_dump_stats;
   if (__tag__ != R_NilValue) SET_TAG(to, __tag__); \
 } while (0)
 
-SEXP duplicate_heap(SEXP s)
+static SEXP duplicate_heap(SEXP s)
 {
     SEXP h, t,  sp;
     int i, n;
@@ -183,7 +183,7 @@ SEXP duplicate_heap(SEXP s)
     return t;
 }
 
-SEXP duplicate(SEXP s)
+static SEXP duplicate_check(SEXP s)
 {
     SEXP h, t,  sp;
     int i, n;
@@ -369,6 +369,16 @@ SEXP duplicate(SEXP s)
     }
     return t;
 }
+
+#ifdef R_POOL_ALLOC
+SEXP duplicate(SEXP s) {
+  return duplicate_check(s);
+}
+#else
+SEXP duplicate(SEXP s) {
+  return duplicate_heap(s);
+}
+#endif
 
 void copyVector(SEXP s, SEXP t)
 {
