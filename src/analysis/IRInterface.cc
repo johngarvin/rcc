@@ -433,7 +433,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
 ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
   VarInfo * vi = make_var_info(sym);
   if (vi->is_param()) {
-    rcc_error("getProcHandle: tried to get ProcHandle of procedure symbol parameter");
+    rcc_warn("getProcHandle: tried to get ProcHandle of procedure symbol parameter");
     return HellProcedure::get_instance();
   }
   VarInfo::ConstDefIterator iter = vi->begin_defs();
