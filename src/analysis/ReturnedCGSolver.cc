@@ -74,7 +74,7 @@ OA_ptr<DataFlowSet> ReturnedCGSolver::initializeTop()
 {
   RAnnot::FuncInfo * fi;
   RAnnot::Var * m;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
   m_top = new MyDFSet();
   return m_top;
 }
@@ -149,7 +149,7 @@ OA_ptr<DataFlowSet>  ReturnedCGSolver::atCallGraphNode(
 {
   OA_ptr<MyDFSet> inSet; inSet = inSetOrig.convert<MyDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
-  ReturnedDFSolver ret_solver(R_Analyst::get_instance()->get_interface());
+  ReturnedDFSolver ret_solver(R_Analyst::instance()->get_interface());
   OA_ptr<MyDFSet> returned; returned = ret_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   return returned.convert<DataFlowSet>();
 }

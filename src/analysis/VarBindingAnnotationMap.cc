@@ -67,7 +67,7 @@ VarBindingAnnotationMap::~VarBindingAnnotationMap() {
 
 // ----- singleton pattern -----
 
-VarBindingAnnotationMap * VarBindingAnnotationMap::get_instance() {
+VarBindingAnnotationMap * VarBindingAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -199,7 +199,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	}
 	// for R internal names, add the library scope
 	if (CAR(v->getMention_c()) == R_MissingArg || is_library(CAR(v->getMention_c()))) {
-	  scopes->insert(R_Analyst::get_instance()->get_library_scope());
+	  scopes->insert(R_Analyst::instance()->get_library_scope());
 	}
 	
 	get_map()[v->getMention_c()] = scopes;

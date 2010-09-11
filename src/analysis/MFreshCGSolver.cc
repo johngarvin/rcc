@@ -74,7 +74,7 @@ OA_ptr<DataFlowSet> MFreshCGSolver::initializeTop()
 {
   RAnnot::FuncInfo * fi;
   RAnnot::Var * m;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
   m_top = new MyDFSet();  // empty
   return m_top; 
 }
@@ -149,7 +149,7 @@ OA_ptr<DataFlowSet>  MFreshCGSolver::atCallGraphNode(
 {
   OA_ptr<ExpressionDFSet> inSet; inSet = inSetOrig.convert<ExpressionDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
-  VFreshDFSolver vfresh_solver(R_Analyst::get_instance()->get_interface());
+  VFreshDFSolver vfresh_solver(R_Analyst::instance()->get_interface());
   OA_ptr<ExpressionDFSet> vfresh; vfresh = vfresh_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   return vfresh.convert<DataFlowSet>();
 }

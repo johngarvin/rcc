@@ -83,7 +83,7 @@ SideEffectAnnotationMap::~SideEffectAnnotationMap()
 
 // ----- singleton pattern -----
 
-SideEffectAnnotationMap * SideEffectAnnotationMap::get_instance() {
+SideEffectAnnotationMap * SideEffectAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -144,7 +144,7 @@ void SideEffectAnnotationMap::compute() {
 
 #if 0
       // resolved args
-      if (ResolvedArgsAnnotationMap::get_instance()->is_valid(*csi)) {
+      if (ResolvedArgsAnnotationMap::instance()->is_valid(*csi)) {
 	SEXP resolved_args = getProperty(ResolvedArgs, *csi)->get_args();
 	for (R_ListIterator arg_it(resolved_args); arg_it.isValid(); ++arg_it) {
 	  if (debug) {
@@ -163,10 +163,10 @@ void SideEffectAnnotationMap::compute() {
 void SideEffectAnnotationMap::compute_oa_side_effect() {
   // populate m_side_effect with OA side effect info
 
-  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
   OA_ptr<CallGraph::CallGraphInterface> call_graph;
-  call_graph = OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
-  m_alias = OACallGraphAnnotationMap::get_instance()->get_OA_alias();
+  call_graph = OACallGraphAnnotationMap::instance()->get_OA_call_graph();
+  m_alias = OACallGraphAnnotationMap::instance()->get_OA_alias();
 
   OA::SideEffect::ManagerInterSideEffectStandard solver(interface);
   // param bindings
@@ -318,7 +318,7 @@ bool SideEffectAnnotationMap::call_may_have_action(const SEXP e) {
 }
 
 bool SideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
-  if (Settings::get_instance()->get_aggressive_cbv()) {
+  if (Settings::instance()->get_aggressive_cbv()) {
     return false;
   } else if (is_library_call(e)) {
     return m_non_action_libs.get(var_name(call_lhs(e)), 1);
@@ -328,7 +328,7 @@ bool SideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
 }
 
 bool SideEffectAnnotationMap::call_may_throw_error(const SEXP e) {
-  if (Settings::get_instance()->get_assume_correct_program()) {
+  if (Settings::instance()->get_assume_correct_program()) {
     return false;
   } else if (is_library_call(e)) {
     return m_non_action_libs.get(var_name(call_lhs(e)), 2);

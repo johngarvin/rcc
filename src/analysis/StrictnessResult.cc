@@ -31,7 +31,7 @@ void StrictnessResult::dump(std::ostream & os) {
   os << "{ Strictness result: ";
 
   os << "args on exit: ";
-  m_args_on_exit->dump(os, R_Analyst::get_instance()->get_interface());
+  m_args_on_exit->dump(os, R_Analyst::instance()->get_interface());
 
   os << "debuts: ";
   for(NameMentionMultiMap::const_iterator it = m_debuts->begin(); it != m_debuts->end(); ++it) {

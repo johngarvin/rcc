@@ -48,7 +48,7 @@ using namespace HandleInterface;
 R_Analyst * R_Analyst::s_instance = 0;
 
 /// static instantiation
-R_Analyst * R_Analyst::get_instance(SEXP _program) {
+R_Analyst * R_Analyst::instance(SEXP _program) {
   if (s_instance == 0) {
     s_instance = new R_Analyst(_program);
   }
@@ -56,7 +56,7 @@ R_Analyst * R_Analyst::get_instance(SEXP _program) {
 }
 
 /// just get the existing instance; error if not yet instantiated
-R_Analyst * R_Analyst::get_instance() {
+R_Analyst * R_Analyst::instance() {
   if (s_instance == 0) {
     rcc_error("R_Analyst is not yet instantiated");
   }
@@ -77,7 +77,7 @@ R_Analyst::R_Analyst(SEXP _program)
 void R_Analyst::perform_analysis() {
   // initialize what's not initialized by the constructor
   m_interface = new R_IRInterface();
-  m_global_scope = FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()->get_scope();
+  m_global_scope = FuncInfoAnnotationMap::instance()->get_scope_tree_root()->get_scope();
   
   if (ParseInfo::allow_oo()           ||
       ParseInfo::allow_envir_manip())
@@ -96,7 +96,7 @@ SEXP R_Analyst::get_program() {
 }
 
 LexicalScope * R_Analyst::get_library_scope() {
-  return InternalLexicalScope::get_instance();
+  return InternalLexicalScope::instance();
 }
 
 LexicalScope * R_Analyst::get_global_scope() {

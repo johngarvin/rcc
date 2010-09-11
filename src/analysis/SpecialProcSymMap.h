@@ -58,7 +58,7 @@ public:
 
   // ----- singleton pattern -----
 
-  static SpecialProcSymMap * get_instance();
+  static SpecialProcSymMap * instance();
 
 private:
   MyMapT m_anons;

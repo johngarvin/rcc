@@ -64,7 +64,7 @@ string make_symbol(SEXP e) {
   } else if (e == R_UnboundValue) {
     return "R_UnboundValue";
   } else {
-    string name = string(CHAR(PRINTNAME(e)));
+    string name = var_name(e);
     if (!ParseInfo::symbol_exists(name)) {
       string var = ParseInfo::global_constants->new_sexp_unp_name(name);
       string qname = quote(name);

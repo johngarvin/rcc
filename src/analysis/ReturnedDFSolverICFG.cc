@@ -98,7 +98,7 @@ void ReturnedDFSolver::dump_node_maps(std::ostream &os) {
 OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
   Var * m;
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
 
   PROC_FOR_EACH_MENTION(fi, m) {
     OA_ptr<MyDFSet::NameBoolPair> element;
@@ -153,7 +153,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(OA_ptr<DataFlow::DataFl
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(m_proc));
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
 
   if (fi->is_return(cell)) {
     // return rule
@@ -184,7 +184,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::transfer(ProcHandle proc,
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi = getProperty(FuncInfo, make_sexp(proc));
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
 
   if (fi->is_return(cell)) {
     // return rule
@@ -242,7 +242,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::calleeToCaller(ProcHandle callee
   // for each argument:
   // if callee's formal var is returned, then
   //   propagate returned(call) to corresponding actual arg
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
   OA_ptr<MyDFSet> in; in = dfset.convert<MyDFSet>();  
   SEXP e = make_sexp(call);
   assert(is_call(e));

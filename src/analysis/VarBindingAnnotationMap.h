@@ -42,7 +42,7 @@ public:
   virtual ~VarBindingAnnotationMap();
 
   // singleton pattern
-  static VarBindingAnnotationMap * get_instance();
+  static VarBindingAnnotationMap * instance();
   static PropertyHndlT handle();
 
 private:

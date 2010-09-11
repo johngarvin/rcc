@@ -47,7 +47,7 @@ PropertySetMgr::PropertySetMgr()
 }
 
 
-PropertySetMgr::PropertySetMgr(PropertySet* x)
+PropertySetMgr::PropertySetMgr(PropertySet * x)
   : mSet(x)
 {
 }
@@ -59,10 +59,10 @@ PropertySetMgr::~PropertySetMgr()
 }
 
 
-RAnnot::AnnotationMap* 
+RAnnot::AnnotationMap * 
 PropertySetMgr::getAnnot(PropertyHndlT prop) 
 {  
-  RAnnot::AnnotationMap* x = NULL;
+  RAnnot::AnnotationMap * x = NULL;
 
   PropertySet::iterator it = mSet->find(prop);
   if (it == mSet->end()) {

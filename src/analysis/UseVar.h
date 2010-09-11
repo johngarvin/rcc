@@ -59,7 +59,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual UseVar* clone() { return new UseVar(*this); }
+  virtual UseVar * clone() { return new UseVar(*this); }
 
   // -------------------------------------------------------
   // debugging

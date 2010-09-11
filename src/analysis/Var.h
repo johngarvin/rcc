@@ -111,7 +111,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  //virtual Var* clone() { return new Var(*this); }
+  //virtual Var * clone() { return new Var(*this); }
 
   // -------------------------------------------------------
   // code generation

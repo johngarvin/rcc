@@ -46,7 +46,7 @@ static bool debug;
 static bool assignment_escapes(SEXP e);
 
 EscapedDFSolver::EscapedDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir), m_fact(VarRefFactory::get_instance())
+  : m_ir(ir), m_fact(VarRefFactory::instance())
 {
   RCC_DEBUG("RCC_EscapedDFSolver", debug);
 }

@@ -74,7 +74,7 @@ namespace RAnnot {
   }
 
   void LibraryCallGraphNode::dump_string(std::ostream & os) const {
-    std::string first_name = CHAR(PRINTNAME(m_name));
+    std::string first_name = var_name(m_name);
     beginObjDump(os, LibraryCallGraphNode);
     dumpVar(os, get_id());
     dumpString(os, first_name);

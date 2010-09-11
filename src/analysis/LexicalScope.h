@@ -50,7 +50,7 @@ private:
 
 class InternalLexicalScope : public LexicalScope {
 public:
-  static InternalLexicalScope * get_instance();
+  static InternalLexicalScope * instance();
   const std::string get_name() const;
   bool has_children() const;
 private:
@@ -72,7 +72,7 @@ private:
 
 class UnboundLexicalScope : public LexicalScope {
 public:
-  static UnboundLexicalScope * get_instance();
+  static UnboundLexicalScope * instance();
   const std::string get_name() const;
   bool has_children() const;
 private:

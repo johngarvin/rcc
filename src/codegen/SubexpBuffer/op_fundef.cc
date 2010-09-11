@@ -60,7 +60,7 @@ string output_strictness(SEXP args);
 Expression SubexpBuffer::op_fundef(SEXP fndef, string rho,
 				   Protection resultProtection)
 {
-  Metrics::get_instance()->inc_procedures();
+  Metrics::instance()->inc_procedures();
 
   FuncInfo *fi = getProperty(FuncInfo, fndef);
   lexicalContext.Push(fi);
@@ -112,7 +112,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   string strictness = comment("strictness: " + output_strictness(args));  // string of S and N: whether each formal is strict
 
   // whether to use escape analysis to stack allocate objects
-  bool stack_alloc_obj = Settings::get_instance()->get_stack_alloc_obj();
+  bool stack_alloc_obj = Settings::instance()->get_stack_alloc_obj();
 
   header = "SEXP " + func_name + "(";
   header += "SEXP args, SEXP newenv)";
@@ -161,7 +161,7 @@ string make_fundef(SubexpBuffer * this_buf, string func_name, SEXP fndef) {
   }
 
   // emit stack allocation
-  //  string alloc_function = Settings::get_instance()->get_stack_debug() ? "malloc" : "alloca";
+  //  string alloc_function = Settings::instance()->get_stack_debug() ? "malloc" : "alloca";
   string size = "global_alloc_stack_space_size";
 
 #if 0
@@ -333,10 +333,10 @@ string output_strictness(SEXP args) {
   while(args != R_NilValue) {
     if (getProperty(FormalArgInfo, args)->is_strict()) {
       str += "S";
-      Metrics::get_instance()->inc_strict_formal_args();
+      Metrics::instance()->inc_strict_formal_args();
     } else {
       str += "N";
-      Metrics::get_instance()->inc_nonstrict_formal_args();
+      Metrics::instance()->inc_nonstrict_formal_args();
     }
     args = CDR(args);
   }

@@ -64,7 +64,7 @@ namespace RAnnot {
   compute(RccCallGraphAnnotationMap::NodeListT & worklist,
 	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
-    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::instance();
 
     if (const InternalLexicalScope * scope = dynamic_cast<const InternalLexicalScope *>(m_scope)) {
       cg->add_edge(this, cg->make_library_node(m_name, library_value(m_name)));
@@ -99,7 +99,7 @@ namespace RAnnot {
 		    RccCallGraphAnnotationMap::NodeSetT & visited,
 		    RccCallGraphAnnotation * ann) const
   {
-    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::instance();
     // TODO: remove cast when maps are parametrized
     CallGraphInfo * info = cg->get_edges(this);
     for (CallGraphInfo::const_iterator edge = info->begin_calls_out();

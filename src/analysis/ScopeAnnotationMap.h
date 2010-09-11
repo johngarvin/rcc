@@ -37,7 +37,7 @@ public:
   virtual ~ScopeAnnotationMap();
 
   // singleton
-  static ScopeAnnotationMap * get_instance();
+  static ScopeAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

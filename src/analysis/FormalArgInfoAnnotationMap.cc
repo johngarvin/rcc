@@ -46,7 +46,7 @@ FormalArgInfoAnnotationMap::~FormalArgInfoAnnotationMap() {
 
 // ----- singleton pattern -----
 
-FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::get_instance() {
+FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }

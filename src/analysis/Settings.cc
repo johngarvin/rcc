@@ -26,7 +26,7 @@
 
 Settings * Settings::s_instance = 0;
 
-Settings * Settings::get_instance() {
+Settings * Settings::instance() {
   if (s_instance == 0) {
     s_instance = new Settings();
   }

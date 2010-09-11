@@ -86,7 +86,7 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
     tree->copyAndConnectSubTree(expr, lhs);
   } else if (is_subscript(e)) {
     if (debug) std::cout << "ExprTreeBuilder: building subscript" << std::endl;
-    OA_ptr<IRHandlesIRInterface> iface; iface = R_Analyst::get_instance()->get_interface();
+    OA_ptr<IRHandlesIRInterface> iface; iface = R_Analyst::instance()->get_interface();
     // TODO: what about more than one subscript?
     if (debug) {
       std::cout << "ExprTreeBuilder: building subscript ";
@@ -140,7 +140,7 @@ OA_ptr<ExprTree> ExprTreeBuilder::build_c(SEXP cell) {
 
 // singleton pattern
 
-ExprTreeBuilder * ExprTreeBuilder::get_instance() {
+ExprTreeBuilder * ExprTreeBuilder::instance() {
   if (s_instance == 0) {
     s_instance = new ExprTreeBuilder();
   }

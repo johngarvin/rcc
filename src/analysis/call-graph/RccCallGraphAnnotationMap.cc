@@ -92,7 +92,7 @@ RccCallGraphAnnotationMap::~RccCallGraphAnnotationMap() {
   
 // ----- singleton pattern -----
 
-RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::get_instance() {
+RccCallGraphAnnotationMap * RccCallGraphAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -137,7 +137,7 @@ MyMappedT RccCallGraphAnnotationMap::get(const MyKeyT & k) {
   }
 }
 
-CallGraphInfo* RccCallGraphAnnotationMap::get_edges(const CallGraphNode* node) {
+CallGraphInfo * RccCallGraphAnnotationMap::get_edges(const CallGraphNode * node) {
   compute_if_necessary();
   return m_node_map[node];
 }
@@ -205,7 +205,7 @@ CallSiteCallGraphNode * RccCallGraphAnnotationMap::make_call_site_node(SEXP e) {
 }
 
 UnknownValueCallGraphNode * RccCallGraphAnnotationMap::make_unknown_value_node() {
-  UnknownValueCallGraphNode * node = UnknownValueCallGraphNode::get_instance();
+  UnknownValueCallGraphNode * node = UnknownValueCallGraphNode::instance();
   if (m_node_map.find(node) == m_node_map.end()) {
     m_node_map[node] = new CallGraphInfo();
   }
@@ -255,7 +255,7 @@ void RccCallGraphAnnotationMap::compute() {
   NodeSetT visited;
 
   // add all fundefs to the worklist
-  SEXP program = CAR(assign_rhs_c(R_Analyst::get_instance()->get_program()));
+  SEXP program = CAR(assign_rhs_c(R_Analyst::instance()->get_program()));
   FuncInfoIterator fii(getProperty(FuncInfo, program));
   for(FuncInfo *fi; fi = fii.Current(); ++fii) {
     worklist.push_back(make_fundef_node(fi->get_sexp()));

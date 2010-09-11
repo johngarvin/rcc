@@ -107,7 +107,7 @@ bool CommandLineArgs::get_in_file_exists() { return m_in_file_exists; }
 std::string CommandLineArgs::get_fullname() { return m_fullname; }
 
 void CommandLineArgs::add_f_option(std::string option) {
-  Settings * settings = Settings::get_instance();
+  Settings * settings = Settings::instance();
   bool flag;
   size_t prefix_size = 3; // size of "no-" modifier
 

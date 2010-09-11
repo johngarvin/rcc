@@ -39,7 +39,7 @@ public:
   OA::OA_ptr<R_BodyVarRef> make_body_var_ref(SEXP e);
   OA::OA_ptr<R_ArgVarRef> make_arg_var_ref(SEXP e);
 
-  static VarRefFactory * get_instance();
+  static VarRefFactory * instance();
 
 private:
   // singleton pattern

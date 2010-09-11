@@ -160,7 +160,7 @@ bool VarInfo::is_param() {
 }
 
 bool VarInfo::is_internal() {
-  return (m_scope == InternalLexicalScope::get_instance());
+  return (m_scope == InternalLexicalScope::instance());
 }
 
 VarInfo::DefT VarInfo::single_def_if_exists() {

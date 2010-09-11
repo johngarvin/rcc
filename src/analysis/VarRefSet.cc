@@ -101,7 +101,7 @@ OA_ptr<R_VarRefSetIterator> R_VarRefSet::get_iterator() const {
 /// Given a list of formal arguments, construct and return a VarRefSet
 /// of corresponding ArgRefs
 OA_ptr<R_VarRefSet> R_VarRefSet::refs_from_arglist(SEXP arglist) {
-  VarRefFactory * fact = VarRefFactory::get_instance();
+  VarRefFactory * fact = VarRefFactory::instance();
   OA_ptr<R_VarRefSet> refs; refs = new R_VarRefSet;
   R_ListIterator iter(arglist);
   for( ; iter.isValid(); ++iter) {

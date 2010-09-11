@@ -119,7 +119,7 @@ public:
   SEXP get_arg(int position) const;
 
   /// find the numerical position of the formal with the given name. Indexed from 1.
-  int find_arg_position(char* name) const;
+  int find_arg_position(char * name) const;
 
   // has variable arguments
   bool get_has_var_args() const;

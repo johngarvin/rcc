@@ -31,6 +31,6 @@
 // Type definitions
 //***************************************************************************
 
-typedef const char* PropertyHndlT; // used to index into PropertySets.
+typedef const char * PropertyHndlT; // used to index into PropertySets.
 
 #endif

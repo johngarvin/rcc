@@ -70,7 +70,7 @@ VarAnnotationMap::~VarAnnotationMap()
 
 // ----- singleton pattern -----
 
-VarAnnotationMap * VarAnnotationMap::get_instance() {
+VarAnnotationMap * VarAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -141,7 +141,7 @@ void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
 
 /// compute variable locality (bound/free) for each function
 void VarAnnotationMap::compute_proc_locality_info(BasicFuncInfo * fi) {
-  R_Analyst * an = R_Analyst::get_instance();
+  R_Analyst * an = R_Analyst::instance();
   OA_ptr<R_IRInterface> interface; interface = an->get_interface();
   ProcHandle ph = make_proc_h(fi->get_sexp());
   OA_ptr<MyCFG> cfg = fi->get_cfg();

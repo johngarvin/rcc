@@ -22,4 +22,4 @@
 
 #include "LexicalContext.h"
 
-StackTmpl<RAnnot::FuncInfo*> lexicalContext;
+StackTmpl<RAnnot::FuncInfo *> lexicalContext;

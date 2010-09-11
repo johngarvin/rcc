@@ -53,7 +53,7 @@ namespace RProp {
 // analysis pass over the R AST.
 // ---------------------------------------------------------------------------
 class PropertySet
-  : public std::map<PropertyHndlT, RAnnot::AnnotationMap*>
+  : public std::map<PropertyHndlT, RAnnot::AnnotationMap *>
 {
 public:
   // -------------------------------------------------------

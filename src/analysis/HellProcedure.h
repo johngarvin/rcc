@@ -29,7 +29,7 @@
 
 class HellProcedure {
 public:
-  static OA::ProcHandle get_instance();
+  static OA::ProcHandle instance();
 private:
   static OA::ProcHandle s_hell;
 };

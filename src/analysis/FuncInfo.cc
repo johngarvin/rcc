@@ -329,11 +329,11 @@ void FuncInfo::collect_mentions_and_call_sites() {
 // in the formal argument annotations
 void FuncInfo::analyze_strictness() {
   assert(!get_cfg().ptrEqual(0));
-  Strictness::StrictnessDFSolver strict_solver(R_Analyst::get_instance()->get_interface());
+  Strictness::StrictnessDFSolver strict_solver(R_Analyst::instance()->get_interface());
   OA_ptr<Strictness::StrictnessResult> strict; strict = strict_solver.perform_analysis(make_proc_h(get_sexp()), get_cfg());
   set_strictness(strict);
   OA_ptr<Strictness::DFSet> strict_set = strict->get_args_on_exit();
-  if (debug) strict_set->dump(std::cout, R_Analyst::get_instance()->get_interface());
+  if (debug) strict_set->dump(std::cout, R_Analyst::instance()->get_interface());
   OA_ptr<Strictness::DFSetIterator> it = strict_set->get_iterator();
   for (it->reset(); it->isValid(); ++*it) {
     FormalArgInfo * annot = getProperty(FormalArgInfo, it->current()->get_loc()->get_sexp());
@@ -350,7 +350,7 @@ void FuncInfo::analyze_strictness() {
 void FuncInfo::analyze_debuts() {
   OA_ptr<CFG::CFGInterface> cfg; cfg = get_cfg();
   assert(!cfg.ptrEqual(0));
-  DebutDFSolver debut_solver(R_Analyst::get_instance()->get_interface());
+  DebutDFSolver debut_solver(R_Analyst::instance()->get_interface());
   OA_ptr<NameMentionMultiMap> debut_map = debut_solver.perform_analysis(this);
   typedef NameMentionMultiMap::const_iterator Iterator;
   for (Iterator name = debut_map->begin(); name != debut_map->end(); name++) {

@@ -64,7 +64,7 @@ CallByValueAnalysis::CallByValueAnalysis() {
 
 void CallByValueAnalysis::perform_analysis() {
   FuncInfo * fi;
-  SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+  SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
 
   // compute pre-debut side effects for each formal arg
 
@@ -153,7 +153,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
 	}
 
-	if (Settings::get_instance()->get_resolve_arguments()) {
+	if (Settings::instance()->get_resolve_arguments()) {
 	  // set eager/lazy for each resolved arg
 	  ResolvedArgs * args_annot = getProperty(ResolvedArgs, *csi_c);
 	  SEXP resolved_args = args_annot->get_resolved();

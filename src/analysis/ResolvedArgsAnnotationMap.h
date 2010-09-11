@@ -37,7 +37,7 @@ class ResolvedArgsAnnotationMap : public DefaultAnnotationMap
 {
 public:
   // singleton pattern
-  static ResolvedArgsAnnotationMap * get_instance();
+  static ResolvedArgsAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

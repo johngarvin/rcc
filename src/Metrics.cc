@@ -26,7 +26,7 @@
 
 Metrics * Metrics::s_instance = 0;
 
-Metrics * Metrics::get_instance() {
+Metrics * Metrics::instance() {
   if (s_instance == 0) {
     s_instance = new Metrics();
   }

@@ -25,6 +25,7 @@
 #include <support/RccError.h>
 
 #include <analysis/ResolvedArgsAnnotationMap.h>
+#include <analysis/Utils.h>
 
 #define ARGUSED(x) LEVELS(x)
 #define SET_ARGUSED(x,v) SETLEVELS(x,v)
@@ -73,7 +74,7 @@ void ResolvedArgs::resolve() {
 	if (TAG(b) != R_NilValue && Rf_pmatch(TAG(f), TAG(b), TRUE)) {
 	  if (ARGUSED(f) == 2)
 	    Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
-		     CHAR(PRINTNAME(TAG(f))));
+		     var_name(TAG(f)).c_str());
 	  if (ARGUSED(b) == 2)
 	    Rf_error(_("argument %d matches multiple formal arguments"), i);
 	  SETCAR(a, CAR(b));
@@ -115,7 +116,7 @@ void ResolvedArgs::resolve() {
 	      Rf_error(_("argument %d matches multiple formal arguments"), i);
 	    if (ARGUSED(f) == 1)
 	      Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
-		       CHAR(PRINTNAME(TAG(f))));
+		       var_name(TAG(f)).c_str());
 	    SETCAR(a, CAR(b));
 	    if (CAR(b) != R_MissingArg)
 	      SET_MISSING(a, 0);       /* not missing this arg */
@@ -207,7 +208,7 @@ void ResolvedArgs::resolve() {
 	Rf_errorcall(R_GlobalContext->call,
 		     _("unused argument(s) (%s ...)"),
 		     /* anything better when b is "untagged" ? : */
-		     TAG(b) != R_NilValue ? CHAR(PRINTNAME(TAG(b))) : "");
+		     TAG(b) != R_NilValue ? var_name(TAG(b)).c_str() : "");
   }
   Rf_unprotect(1);
   m_resolved = resolved;

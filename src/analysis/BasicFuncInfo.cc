@@ -148,7 +148,7 @@ int BasicFuncInfo::find_arg_position(char * name) const
   int pos = 1;
   SEXP e;
   for (e = args; e != R_NilValue; e = CDR(e), pos++) {
-    char* arg_name = CHAR(PRINTNAME(INTERNAL(e)));
+    const char * arg_name = var_name(INTERNAL(e)).c_str();
     if (!strcmp(arg_name, name)) break;
   }
   assert (e != R_NilValue);
@@ -171,7 +171,7 @@ SEXP BasicFuncInfo::get_arg(int position) const
 
 bool BasicFuncInfo::is_arg_value(SEXP arg) const
 {
-  FormalArgInfo* formal_info = getProperty(FormalArgInfo, arg);
+  FormalArgInfo * formal_info = getProperty(FormalArgInfo, arg);
   bool isvalue = formal_info->is_value();
   return isvalue;
 }
@@ -226,7 +226,7 @@ BasicFuncInfo * BasicFuncInfo::get_parent() const
 void BasicFuncInfo::perform_analysis() {
   // compute CFG
   // pass 'true' as second arg to build statement-level CFG
-  CFG::ManagerCFGStandard cfg_man(R_Analyst::get_instance()->get_interface(), true);
+  CFG::ManagerCFGStandard cfg_man(R_Analyst::instance()->get_interface(), true);
   m_cfg = cfg_man.performAnalysis(make_proc_h(m_sexp));
 
   // find all explicit and implicit returns
@@ -291,7 +291,7 @@ std::ostream& BasicFuncInfo::dump(std::ostream& os) const
   dumpVar(os, m_has_var_args);
   dumpVar(os, m_c_name);
   dumpVar(os, m_requires_context);
-  R_Analyst::get_instance()->dump_cfg(os, m_sexp); // can't call CFG::dump; it requires the IRInterface
+  R_Analyst::instance()->dump_cfg(os, m_sexp); // can't call CFG::dump; it requires the IRInterface
   dumpSEXP(os, m_sexp);
   dumpPtr(os, m_parent);
   os << "Begin arguments:" << std::endl;

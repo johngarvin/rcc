@@ -46,7 +46,7 @@ private:								\
 
 class Metrics {
 public:
-  static Metrics * get_instance();
+  static Metrics * instance();
 
 public:
   INT_GETTER_INCREMENTER(procedures)

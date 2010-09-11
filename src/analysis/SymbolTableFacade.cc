@@ -37,7 +37,7 @@ VarInfo * SymbolTableFacade::find_entry(const Var * var) const {
   VarInfo * vi;
   VarBinding * binding = getProperty(VarBinding, var->getMention_c());
   if (binding->is_unbound()) {
-    SymbolTable * table = UnboundLexicalScope::get_instance()->get_symbol_table();
+    SymbolTable * table = UnboundLexicalScope::instance()->get_symbol_table();
     vi = (*table)[var->getName()];
   } else if (binding->is_single()) {
     SymbolTable * table = (*binding->begin())->get_symbol_table();
@@ -49,7 +49,7 @@ VarInfo * SymbolTableFacade::find_entry(const Var * var) const {
   return vi;
 }
 
-SymbolTableFacade * SymbolTableFacade::get_instance() {
+SymbolTableFacade * SymbolTableFacade::instance() {
   if (s_instance == 0) {
     s_instance = new SymbolTableFacade();
   }

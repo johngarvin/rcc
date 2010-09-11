@@ -36,7 +36,7 @@ public:
   virtual ~OEscapeInfoAnnotationMap();
 
   // singleton
-  static OEscapeInfoAnnotationMap * get_instance();
+  static OEscapeInfoAnnotationMap * instance();
 
   // getting the handle causes this map to be created and registered
   static PropertyHndlT handle();

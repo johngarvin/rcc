@@ -71,11 +71,11 @@ public:
   MyMappedT get(const MyKeyT & k);
 
   /// given a node, return a CallGraphInfo containing the in and out edges
-  CallGraphInfo* get_edges(const CallGraphNode* node);
+  CallGraphInfo * get_edges(const CallGraphNode * node);
 
   // ----- implement singleton pattern -----
 
-  static RccCallGraphAnnotationMap * get_instance();
+  static RccCallGraphAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

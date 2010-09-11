@@ -106,7 +106,7 @@ Expression SubexpBuffer::op_return(SEXP cell, string rho) {
 
 #if 0
 now performed in applyClosureOpt
-  if (Settings::get_instance()->get_stack_alloc_obj()) {
+  if (Settings::instance()->get_stack_alloc_obj()) {
     append_defs("endStackAlloc();\n");
   }
 #endif

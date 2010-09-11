@@ -136,7 +136,7 @@ int main(int argc, char * argv[]) {
 
   // perform analysis
   try {
-    R_Analyst * an = R_Analyst::get_instance(program);
+    R_Analyst * an = R_Analyst::instance(program);
     an->perform_analysis();
 
     if (analysis_debug) {
@@ -174,11 +174,11 @@ int main(int argc, char * argv[]) {
   if (analysis_debug && ParseInfo::analysis_ok()) {
     // output call graph in DOT form
     cout << "Dumping call graph in DOT form:" << endl;
-    OACallGraphAnnotationMap::get_instance()->dumpdot(cout);
+    OACallGraphAnnotationMap::instance()->dumpdot(cout);
     
     // output data flow results
     cout << "Dumping call graph DF analysis:" << endl;
-    OACallGraphAnnotationMap::get_instance()->dump(cout);
+    OACallGraphAnnotationMap::instance()->dump(cout);
   }
 
   if (ParseInfo::get_problem_flag()) {

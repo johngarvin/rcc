@@ -28,6 +28,8 @@
 
 #include <OpenAnalysis/IRInterface/IRHandles.hpp>
 
+#include <analysis/Utils.h>
+
 #include "VarRef.h"
 
 //--------------------------------------------------------------------
@@ -59,7 +61,7 @@ std::string R_BodyVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) cons
 }
 
 std::string R_BodyVarRef::toString() const {
-  return std::string(CHAR(PRINTNAME(CAR(m_loc))));
+  return var_name(CAR(m_loc));
 }
 
 SEXP R_BodyVarRef::get_sexp() const {
@@ -99,7 +101,7 @@ std::string R_ArgVarRef::toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir) const
 }
 
 std::string R_ArgVarRef::toString() const {
-  return std::string(CHAR(PRINTNAME(TAG(m_loc))));
+  return var_name(TAG(m_loc));
 }
 
 SEXP R_ArgVarRef::get_sexp() const {

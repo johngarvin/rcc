@@ -124,7 +124,7 @@ OA_ptr<DataFlow::DataFlowSet> OEscapeDFSolver::transfer(OA_ptr<DataFlow::DataFlo
   SEXP cell = make_sexp(stmt);
   SEXP e = CAR(cell);
   FuncInfo * fi; fi = getProperty(FuncInfo, make_sexp(m_proc));
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
 
   if (fi->is_return(cell)) {
     // TODO: When add inter: if e is escaped, make mnfresh true for this proc

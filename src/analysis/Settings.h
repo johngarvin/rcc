@@ -52,7 +52,7 @@ class Settings {
 
   // Singleton pattern
 public:
-  static Settings * get_instance();
+  static Settings * instance();
 
 private:
   Settings() : m_for_loop_range_deforestation(true),

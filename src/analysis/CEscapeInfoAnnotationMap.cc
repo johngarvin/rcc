@@ -84,10 +84,10 @@ void CEscapeInfoAnnotationMap::compute() {
       // for now, get the first name assigned to the function if it exists.
       SEXP name = fi->get_first_name_c();
       // if no name (anonymous or the whole-program procedure), conservatively say true
-      if (!VarAnnotationMap::get_instance()->is_valid(name)) {
+      if (!VarAnnotationMap::instance()->is_valid(name)) {
 	annot->set_may_escape(true);
       } else {
-	SymbolTableFacade * symbol_table = SymbolTableFacade::get_instance();
+	SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
 	
 	VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
 	VarInfo::ConstUseIterator use_iter;
@@ -157,7 +157,7 @@ void CEscapeInfoAnnotationMap::compute() {
 
 // ----- singleton pattern -----
 
-CEscapeInfoAnnotationMap * CEscapeInfoAnnotationMap::get_instance() {
+CEscapeInfoAnnotationMap * CEscapeInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }

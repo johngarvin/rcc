@@ -56,7 +56,7 @@ namespace RAnnot {
   compute(RccCallGraphAnnotationMap::NodeListT & worklist,
 	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
-    RccCallGraphAnnotationMap * const cg = RccCallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * const cg = RccCallGraphAnnotationMap::instance();
     FuncInfo * fi = getProperty(FuncInfo, m_fundef);
 
     // Keep track of call sites attached to this node to avoid
@@ -99,7 +99,7 @@ namespace RAnnot {
 
   void FundefCallGraphNode::dump_string(std::ostream & os) const {
     FuncInfo * fi = getProperty(FuncInfo, m_fundef);
-    std::string first_name = CHAR(PRINTNAME(CAR(fi->get_first_name_c())));
+    std::string first_name = var_name(CAR(fi->get_first_name_c()));
     beginObjDump(os, FundefCallGraphNode);
     dumpVar(os, get_id());
     dumpString(os, first_name);

@@ -42,7 +42,7 @@ CallType get_call_type(SEXP call) {
     return CALL_NON_SYMBOL;
   }
   OACallGraphAnnotation * cga = 0;
-  if (Settings::get_instance()->get_call_graph()) {
+  if (Settings::instance()->get_call_graph()) {
     cga = getProperty(OACallGraphAnnotation, call);
   }
   if (cga == 0) {

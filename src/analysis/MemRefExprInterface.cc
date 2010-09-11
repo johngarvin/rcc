@@ -46,8 +46,8 @@ OA_ptr<MemRefExpr> MemRefExprInterface::convert_sexp_c(SEXP cell) {
   assert(CAR(cell) != R_NilValue);
   if (is_var(CAR(cell))) {
     // TODO: make this easier
-    FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell));
-    VarInfo * vi = SymbolTableFacade::get_instance()->find_entry(getProperty(Var, cell));
+    FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::instance()->get(cell));
+    VarInfo * vi = SymbolTableFacade::instance()->find_entry(getProperty(Var, cell));
     mre = MemRefExprInterface::convert_sym_handle(make_sym_h(vi));
     //  } else if (is_const(CAR(cell))) {
     //    mre = new ConstVarRef(make_const_h(cell));

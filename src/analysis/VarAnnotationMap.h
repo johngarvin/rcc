@@ -52,7 +52,7 @@ public:
   virtual ~VarAnnotationMap();
 
   // singleton
-  static VarAnnotationMap * get_instance();
+  static VarAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

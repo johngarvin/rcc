@@ -146,7 +146,7 @@ OA_ptr<DataFlowSet>  EscapedCGSolver::atCallGraphNode(
 {
   OA_ptr<MyDFSet> inSet; inSet = inSetOrig.convert<MyDFSet>();
   FuncInfo * fi = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
-  EscapedDFSolver esc_solver(R_Analyst::get_instance()->get_interface());
+  EscapedDFSolver esc_solver(R_Analyst::instance()->get_interface());
   OA_ptr<MyDFSet> escaped; escaped = esc_solver.perform_analysis(proc, fi->get_cfg(), inSet);
   return escaped.convert<DataFlowSet>();
 }

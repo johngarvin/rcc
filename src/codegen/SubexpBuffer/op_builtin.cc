@@ -66,7 +66,7 @@ bool is_constant_expr(SEXP s) {
 Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho, 
 				    Protection resultProtection)
 {
-  Metrics::get_instance()->inc_builtin_calls(Rf_length(call_args(CAR(cell))));
+  Metrics::instance()->inc_builtin_calls(Rf_length(call_args(CAR(cell))));
 
   string fallback = "INVALID";
   string out;
@@ -80,14 +80,14 @@ Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho,
   SEXP args = CDR(e);
 
   bool may_escape;
-  if (OEscapeInfoAnnotationMap::get_instance()->is_valid(cell)) {
+  if (OEscapeInfoAnnotationMap::instance()->is_valid(cell)) {
     may_escape = getProperty(OEscapeInfo, cell)->may_escape();
   } else {
     may_escape = true;
   }
 
   // special case for arithmetic operations
-  if (PRIMFUN(op) == (CCODE)do_arith && Settings::get_instance()->get_special_case_arithmetic()) {
+  if (PRIMFUN(op) == (CCODE)do_arith && Settings::instance()->get_special_case_arithmetic()) {
 
     // R_unary if there's one argument and it's a non-object
     if (args != R_NilValue
@@ -155,7 +155,7 @@ Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho,
     }
 
     // special case for do_relop: call do_relop_dflt instead to avoid consing args
-  } else if (PRIMFUN(op) == (CCODE)do_relop && Settings::get_instance()->get_special_case_arithmetic()) {
+  } else if (PRIMFUN(op) == (CCODE)do_relop && Settings::instance()->get_special_case_arithmetic()) {
     if (!Rf_isObject(CAR(args)) && !Rf_isObject(CADR(args))) {
       Protection xprot = Protected;
       if (is_constant_expr(CAR(args))) {
@@ -190,7 +190,7 @@ Expression SubexpBuffer::op_builtin(SEXP cell, SEXP op, string rho,
     }
 
     // special case for OSR'd version of do_transpose
-  } else if (PRIMFUN(op) == (CCODE)do_transpose) { /* && Settings::get_instance()->get_transpose_osr()) { */
+  } else if (PRIMFUN(op) == (CCODE)do_transpose) { /* && Settings::instance()->get_transpose_osr()) { */
 #if USE_OUTPUT_CODEGEN
     Expression args1 = output_to_expression(CodeGen::op_list(args, rho, false, true));
 #else

@@ -112,13 +112,13 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
     } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
-      if (Settings::get_instance()->get_lookup_elimination() == false) {
+      if (Settings::instance()->get_lookup_elimination() == false) {
 	return op_lookup(sb, lookup_function, make_symbol(e), rho, resultProtection, fullyEvaluatedResult);
       }
 
-      FuncInfo* fi = getProperty(FuncInfo, scope->get_sexp());
+      FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());
       // if scope is local, use pointer to location
-      if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::get_instance()->get(cell))) {
+      if (fi == dynamic_cast<FuncInfo *>(ScopeAnnotationMap::instance()->get(cell))) {
 	Var * var = getProperty(Var, cell);
 	string location = binding->get_location(e, sb);
 	string fallback = sb->new_var_unp();

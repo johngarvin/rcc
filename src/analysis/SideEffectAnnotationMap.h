@@ -54,7 +54,7 @@ public:
   virtual ~SideEffectAnnotationMap();
 
   // singleton
-  static SideEffectAnnotationMap * get_instance();
+  static SideEffectAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

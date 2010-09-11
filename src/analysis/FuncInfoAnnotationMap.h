@@ -40,13 +40,13 @@
 // macro for convenient loops
 
 #define FOR_EACH_PROC(fi) \
-  for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()); \
+  for(RAnnot::FuncInfoIterator fii = FuncInfoIterator(FuncInfoAnnotationMap::instance()->get_scope_tree_root()); \
       fii.IsValid() && ((fi) = fii.Current()) != 0;			\
       ++fii, (fi) = fii.Current())
 
 #define FOR_EACH_PROC_AND_LIB(fi) \
-  for(RAnnot::FuncInfoAnnotationMap::const_iterator fii = FuncInfoAnnotationMap::get_instance()->begin(); \
-      fii != FuncInfoAnnotationMap::get_instance()->end() && ((fi) = dynamic_cast<FuncInfo *>(fii->second)) != 0; \
+  for(RAnnot::FuncInfoAnnotationMap::const_iterator fii = FuncInfoAnnotationMap::instance()->begin(); \
+      fii != FuncInfoAnnotationMap::instance()->end() && ((fi) = dynamic_cast<FuncInfo *>(fii->second)) != 0; \
       ++fii)
 
 namespace RAnnot {
@@ -59,7 +59,7 @@ public:
   virtual ~FuncInfoAnnotationMap();
   
   // singleton
-  static FuncInfoAnnotationMap * get_instance();
+  static FuncInfoAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

@@ -52,9 +52,9 @@ Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho,
 				Protection resultProtection)
 {
   if (is_local_assign_prim(op)) {
-    Metrics::get_instance()->inc_local_assignments();
+    Metrics::instance()->inc_local_assignments();
   } else if (is_free_assign_prim(op)) {
-    Metrics::get_instance()->inc_free_assignments();
+    Metrics::instance()->inc_free_assignments();
   }
   SEXP e = CAR(cell);
   string out;
@@ -95,7 +95,7 @@ Expression SubexpBuffer::op_set(SEXP cell, SEXP op, string rho,
     if (!body.del_text.empty()) {
       append_defs("UNPROTECT(1);\n");
     }
-  } else if (is_simple_subscript(lhs) && Settings::get_instance()->get_subscript_assignment()) {
+  } else if (is_simple_subscript(lhs) && Settings::instance()->get_subscript_assignment()) {
     retval = op_subscriptset(cell, rho, resultProtection);
   } else if (Rf_isLanguage(lhs)) {
 #ifdef USE_OUTPUT_CODEGEN

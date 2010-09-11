@@ -46,7 +46,7 @@ BasicFuncInfoAnnotationMap::~BasicFuncInfoAnnotationMap() {
 
 // ----- singleton pattern -----
 
-BasicFuncInfoAnnotationMap * BasicFuncInfoAnnotationMap::get_instance() {
+BasicFuncInfoAnnotationMap * BasicFuncInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -73,7 +73,7 @@ BasicFuncInfo * BasicFuncInfoAnnotationMap::get_scope_tree_root()
 // ----- computation -----
 
 void BasicFuncInfoAnnotationMap::compute() {
-  SEXP r_root = R_Analyst::get_instance()->get_program();
+  SEXP r_root = R_Analyst::instance()->get_program();
   assert(is_simple_assign(r_root));
 
   build_scope_tree(r_root);

@@ -26,4 +26,4 @@
 
 namespace RAnnot { class FuncInfo; }
 
-extern StackTmpl<RAnnot::FuncInfo*> lexicalContext;
+extern StackTmpl<RAnnot::FuncInfo *> lexicalContext;

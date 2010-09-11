@@ -143,7 +143,7 @@ public:
   /// The count does not include the default/catchall case.
   int numMultiCases(OA::StmtHandle h);
 
-  /// Given a structured multi-way branch, return an IRRegionStmtIterator* for
+  /// Given a structured multi-way branch, return an IRRegionStmtIterator for
   /// the body corresponding to target 'bodyIndex'. The n targets are 
   /// indexed [0..n-1].
   OA::OA_ptr<OA::IRRegionStmtIterator> multiBody(OA::StmtHandle h, int bodyIndex);
@@ -160,7 +160,7 @@ public:
   /// corresponding to target 'bodyIndex' is the default/catchall/ case.
   bool isCatchAll(OA::StmtHandle h, int bodyIndex);
 
-  /// Given a structured multi-way branch, return an IRRegionStmtIterator*
+  /// Given a structured multi-way branch, return an IRRegionStmtIterator
   /// for the body corresponding to default/catchall case.
   OA::OA_ptr<OA::IRRegionStmtIterator> getMultiCatchall (OA::StmtHandle h);
 

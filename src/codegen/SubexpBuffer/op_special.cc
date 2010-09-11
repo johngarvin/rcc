@@ -96,7 +96,7 @@ Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
     return op_if(e, rho, resultStatus);
 #endif
   } else if (PRIMFUN(op) == (CCODE)do_for) {
-    if (is_for_colon(e) && Settings::get_instance()->get_for_loop_range_deforestation()) {
+    if (is_for_colon(e) && Settings::instance()->get_for_loop_range_deforestation()) {
       return op_for_colon(e, rho, resultStatus);
     } else {
       return op_for(e, rho, resultStatus);
@@ -115,7 +115,7 @@ Expression SubexpBuffer::op_special(SEXP cell, SEXP op, string rho,
     return op_struct_field(e, op, rho, resultProtection);
   } else {
     // default case for specials: call the (call, op, args, rho) fn
-    Metrics::get_instance()->inc_special_calls(Rf_length(call_args(e)));
+    Metrics::instance()->inc_special_calls(Rf_length(call_args(e)));
 #ifdef USE_OUTPUT_CODEGEN
     Expression op1 = output_to_expression(CodeGen::op_primsxp(op, rho));
     Expression args1 = output_to_expression(CodeGen::op_list(CDR(e), rho, true, true));

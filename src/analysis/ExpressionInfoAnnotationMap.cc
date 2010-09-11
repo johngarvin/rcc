@@ -128,7 +128,7 @@ ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
 
 // ----- singleton pattern -----
 
-ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::get_instance() {
+ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }

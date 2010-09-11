@@ -58,7 +58,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
 			 emit_call3("defineVarReturnLoc", symbol, rhs, rho) :
 			 emit_call4("defineVarReturnLocUseHeap", symbol, rhs, rho, "TRUE"));
 
-  if (Settings::get_instance()->get_lookup_elimination() == false) {
+  if (Settings::instance()->get_lookup_elimination() == false) {
     append_defs(define);
     return Expression(rhs, DEPENDENT, INVISIBLE, "");
   }

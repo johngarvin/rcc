@@ -52,7 +52,7 @@ ScopeAnnotationMap::~ScopeAnnotationMap() {
 
 // ----- singleton pattern -----
 
-ScopeAnnotationMap * ScopeAnnotationMap::get_instance() {
+ScopeAnnotationMap * ScopeAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }

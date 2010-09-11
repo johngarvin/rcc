@@ -59,7 +59,7 @@ public:
   static PropertyHndlT Prop3;
 
   // function type for annotation-computation functions
-  typedef RAnnot::AnnotationMap* (*AnnotationComputationFn_t)(SEXP);
+  typedef RAnnot::AnnotationMap * (*AnnotationComputationFn_t)(SEXP);
 
   // TODO: need some way of registering property names and
   // computation routines.
@@ -73,7 +73,7 @@ public:
   explicit PropertySetMgr();
   
   // assume control and ownership of 'x'
-  explicit PropertySetMgr(PropertySet* x);
+  explicit PropertySetMgr(PropertySet * x);
   
   ~PropertySetMgr();
 
@@ -86,10 +86,10 @@ public:
   // -------------------------------------------------------
 
   // get annotations on demand
-  RAnnot::AnnotationMap* getAnnot(PropertyHndlT prop);
+  RAnnot::AnnotationMap * getAnnot(PropertyHndlT prop);
 
   // property-set (returns non-const set to allow manipulation)
-  PropertySet* getPropertySet() const
+  PropertySet * getPropertySet() const
     { return mSet; }
   
   // -------------------------------------------------------
@@ -103,7 +103,7 @@ private:
   PropertySetMgr& operator=(const PropertySetMgr& x) { return *this; }
 
 private:
-  PropertySet* mSet;
+  PropertySet * mSet;
 };
 
 

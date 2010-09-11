@@ -97,7 +97,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   std::vector<EagerLazyT> lazy_info;
   bool args_resolved;
 
-  if (Settings::get_instance()->get_resolve_arguments() && fi_if_known != 0) {
+  if (Settings::instance()->get_resolve_arguments() && fi_if_known != 0) {
     args_annot = getProperty(ResolvedArgs, cell);
     lazy_info = args_annot->get_lazy_info();
     args = args_annot->get_resolved();
@@ -140,7 +140,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   /*
   string name;
   if (TYPEOF(CAR(e)) == SYMSXP) {
-    name = quote(CHAR(PRINTNAME(CAR(e))));
+    name = quote(var_name(CAR(e)));
   } else {
     name = "NULL";
   }
@@ -246,16 +246,16 @@ static Expression op_arglist_rec(SubexpBuffer * const sb,
 
   Expression tail_exp = op_arglist_rec(sb, CDR(args), lazy_info, n+1, unprotcnt, laziness_string, rho);
   Expression head_exp;
-  if (lazy_info[n] == EAGER && Settings::get_instance()->get_strictness()) {
+  if (lazy_info[n] == EAGER && Settings::instance()->get_strictness()) {
     head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
     laziness_string = "E" + laziness_string;
-    Metrics::get_instance()->inc_eager_actual_args();
+    Metrics::instance()->inc_eager_actual_args();
   } else {
     head_exp = sb->op_literal(CAR(args), rho);
     string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
     head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
     laziness_string = "L" + laziness_string;
-    Metrics::get_instance()->inc_lazy_actual_args();
+    Metrics::instance()->inc_lazy_actual_args();
   }
   string out;
   if (TAG(args) == R_NilValue) {

@@ -38,8 +38,8 @@ class R_Analyst {
 
   // implement Singleton pattern
 public:
-  static R_Analyst * get_instance(SEXP _program); // regular Singleton: construct or return
-  static R_Analyst * get_instance();  // only get the existing instance; error if not instantiated
+  static R_Analyst * instance(SEXP _program); // regular Singleton: construct or return
+  static R_Analyst * instance();  // only get the existing instance; error if not instantiated
 
 public:
   /// Perform analysis.

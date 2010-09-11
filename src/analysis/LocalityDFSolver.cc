@@ -210,7 +210,7 @@ void LocalityDFSolver::initialize_sets() {
   m_all_bottom = new DFSet;
   m_entry_values = new DFSet;
 
-  VarRefFactory * fact = VarRefFactory::get_instance();
+  VarRefFactory * fact = VarRefFactory::instance();
 
   CFG_FOR_EACH_NODE(m_cfg, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
@@ -345,16 +345,16 @@ OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2) {
 // ----- conversion functions used throughout -----
 
 OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
-  return VarRefFactory::get_instance()->make_body_var_ref(use->getMention_c());
+  return VarRefFactory::instance()->make_body_var_ref(use->getMention_c());
 }
   
 OA_ptr<R_VarRef> var_ref_from_def(DefVar * def) {
   switch(def->getSourceType()) {
   case DefVar::DefVar_ASSIGN:
-    return VarRefFactory::get_instance()->make_body_var_ref(def->getMention_c());
+    return VarRefFactory::instance()->make_body_var_ref(def->getMention_c());
     break;
   case DefVar::DefVar_FORMAL:
-    return VarRefFactory::get_instance()->make_arg_var_ref(def->getMention_c());
+    return VarRefFactory::instance()->make_arg_var_ref(def->getMention_c());
     break;
   default:
     rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");

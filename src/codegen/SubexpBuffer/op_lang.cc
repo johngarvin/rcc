@@ -84,7 +84,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       return op_special(cell, library_value(call_lhs(e)), rho, resultProtection, resultStatus);
     }
 
-    if (Settings::get_instance()->get_call_graph()) {
+    if (Settings::instance()->get_call_graph()) {
       // see if symbol is in call graph
       OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, e);
       if (cga == 0) {
@@ -99,7 +99,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	if (ph != OA::ProcHandle(0)) {  // singleton exists
 	  FuncInfo * fi = getProperty(FuncInfo, make_sexp(ph));
 	  Expression closure_exp = Expression(fi->get_closure(), CONST, INVISIBLE, "");
-	  Metrics::get_instance()->inc_user_calls(n_args);
+	  Metrics::instance()->inc_user_calls(n_args);
 	  // check for eager assertion
 	  if (CDR(call_args(e)) != R_NilValue) {
 	    SEXP second_arg = CADR(call_args(e));
@@ -117,7 +117,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
 	  }
 	  return op_clos_app(fi, closure_exp, cell, rho, resultProtection);
 	} else {
-	  Metrics::get_instance()->inc_unknown_symbol_calls(n_args);
+	  Metrics::instance()->inc_unknown_symbol_calls(n_args);
 	  Expression func = op_fun_use(e, rho);
 	  return op_clos_app(0, func, cell, rho, resultProtection);
 	}
@@ -127,7 +127,7 @@ Expression SubexpBuffer::op_lang(SEXP cell, string rho,
       if (is_library(call_lhs(e))) {
 	return op_internal_call(this, library_value(call_lhs(e)), cell, rho, resultProtection, resultStatus, n_args);
       } else {
-	Metrics::get_instance()->inc_unknown_symbol_calls(n_args);
+	Metrics::instance()->inc_unknown_symbol_calls(n_args);
 	Expression func = op_fun_use(e, rho);
 	return op_clos_app(0, func, cell, rho, resultProtection);
       }
@@ -161,7 +161,7 @@ old code with home-grown call graph
 
 #endif
   } else {  // left side is not a symbol
-    Metrics::get_instance()->inc_non_symbol_calls(n_args);
+    Metrics::instance()->inc_non_symbol_calls(n_args);
     
     // generate closure and application
     Expression op1;
@@ -188,7 +188,7 @@ static Expression op_internal_call(SubexpBuffer * sb,
     // For internals, find call-by-value status like this:
     //     EagerLazyT func_eager_lazy = (R_FunTab[prim->u.primsxp.offset].eval) % 10 ? EAGER : LAZY;
 
-    Metrics::get_instance()->inc_library_calls(n_args);
+    Metrics::instance()->inc_library_calls(n_args);
     Expression func = sb->op_fun_use(e, rho, resultProtection, false);
     return sb->op_clos_app(0, func, cell, rho, resultProtection);
   } else if (TYPEOF(op) == BUILTINSXP) {

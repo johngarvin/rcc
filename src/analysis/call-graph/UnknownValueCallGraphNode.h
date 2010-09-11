@@ -53,7 +53,7 @@ public:
   void dump(std::ostream & os) const;
   void dump_string(std::ostream & os) const;
 
-  static UnknownValueCallGraphNode * get_instance();
+  static UnknownValueCallGraphNode * instance();
 
 private:
   explicit UnknownValueCallGraphNode();

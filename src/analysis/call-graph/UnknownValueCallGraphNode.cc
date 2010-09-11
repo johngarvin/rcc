@@ -43,7 +43,7 @@ namespace RAnnot {
 
   const OA::IRHandle UnknownValueCallGraphNode::get_handle() const
   {
-    return OA::IRHandle(reinterpret_cast<OA::irhandle_t>(get_instance()));
+    return OA::IRHandle(reinterpret_cast<OA::irhandle_t>(instance()));
   }
 
   void UnknownValueCallGraphNode::
@@ -74,7 +74,7 @@ namespace RAnnot {
   }
   
   UnknownValueCallGraphNode * UnknownValueCallGraphNode::
-  get_instance() {
+  instance() {
     if (s_instance == 0) {
       s_instance = new UnknownValueCallGraphNode();
     }

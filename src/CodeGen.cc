@@ -155,7 +155,7 @@ Output CodeGen::op_var_use(SEXP cell, string rho,
 			   bool fullyEvaluatedResult)
 {
   SEXP e = CAR(cell);
-  string name = CHAR(PRINTNAME(e));
+  string name = var_name(e);
   if (e == R_MissingArg) {
     return Output::invisible_const(Handle("R_MissingArg"));
   } else {

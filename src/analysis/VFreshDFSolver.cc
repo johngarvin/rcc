@@ -57,7 +57,7 @@ static MyPair make_pair(bool x, OA_ptr<MyDFSet> y) {
 }
 
 VFreshDFSolver::VFreshDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir), m_fact(VarRefFactory::get_instance())
+  : m_ir(ir), m_fact(VarRefFactory::instance())
 {
   RCC_DEBUG("RCC_VFreshDFSolver", debug);
 }

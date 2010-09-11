@@ -65,7 +65,7 @@ InternalLexicalScope::InternalLexicalScope() {
 
 InternalLexicalScope * InternalLexicalScope::s_instance = 0;
 
-InternalLexicalScope * InternalLexicalScope::get_instance() {
+InternalLexicalScope * InternalLexicalScope::instance() {
   if (s_instance == 0) {
     s_instance = new InternalLexicalScope();
   }
@@ -113,7 +113,7 @@ UnboundLexicalScope::UnboundLexicalScope() {
 
 UnboundLexicalScope * UnboundLexicalScope::s_instance = 0;
 
-UnboundLexicalScope * UnboundLexicalScope::get_instance() {
+UnboundLexicalScope * UnboundLexicalScope::instance() {
   if (s_instance == 0) {
     s_instance = new UnboundLexicalScope();
   }

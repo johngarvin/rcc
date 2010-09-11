@@ -65,7 +65,7 @@ static bool debug;
 namespace Strictness {
 
 StrictnessDFSolver::StrictnessDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir), m_var_ref_fact(VarRefFactory::get_instance())
+  : m_ir(ir), m_var_ref_fact(VarRefFactory::instance())
 {
   RCC_DEBUG("RCC_StrictnessDFSolver", debug);
 }
@@ -85,7 +85,7 @@ OA_ptr<StrictnessResult> StrictnessDFSolver::perform_analysis(ProcHandle proc, O
   OA_ptr<NameStmtMultiMap> post_debut_map;
   OA_ptr<StrictnessResult> result;
    
-  if (Settings::get_instance()->get_strictness()) {
+  if (Settings::instance()->get_strictness()) {
     // call the solver, which returns the set of args associated with StrictnessTypes on exit
     OA_ptr<DFSet> args_on_exit = m_solver->solve(cfg, DataFlow::ITERATIVE).convert<DFSet>();
     if (debug) dump_node_maps();  

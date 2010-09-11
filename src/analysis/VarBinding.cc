@@ -70,19 +70,19 @@ VarBinding::VarBinding()
   bool VarBinding::is_global() {
     // global if m_scopes has exactly one element and it's the global
     // scope.
-    static LexicalScope * global = R_Analyst::get_instance()->get_global_scope();
+    static LexicalScope * global = R_Analyst::instance()->get_global_scope();
     return (is_single() && *begin() == global);
   }
 
   bool VarBinding::is_internal() {
     // internal (library, builtin, or special) if m_scopes has exactly
     // one element and it's the library scope.
-    static LexicalScope * library_scope = R_Analyst::get_instance()->get_library_scope();
+    static LexicalScope * library_scope = R_Analyst::instance()->get_library_scope();
     return (is_single() && *begin() == library_scope);
   }
 
   bool VarBinding::is_unbound() {
-    return (is_single() && *begin() == UnboundLexicalScope::get_instance());
+    return (is_single() && *begin() == UnboundLexicalScope::instance());
   }
 
   std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {

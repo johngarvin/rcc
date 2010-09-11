@@ -67,7 +67,7 @@ OACallGraphAnnotationMap::~OACallGraphAnnotationMap() {
 
 // ----- singleton pattern -----
 
-OACallGraphAnnotationMap * OACallGraphAnnotationMap::get_instance() {
+OACallGraphAnnotationMap * OACallGraphAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -112,14 +112,14 @@ MyMappedT OACallGraphAnnotationMap::get(const MyKeyT & k) {
 }
 
 void OACallGraphAnnotationMap::compute() {
-  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
   // first build call graph. The call graph manager needs
   // (1) a procedure iterator and (2) alias information
   CallGraph::ManagerCallGraphStandard man(interface);
 
   // (1) procedure iterator
   OA_ptr<ProcHandleIterator> proc_iter;
-  proc_iter = new R_ProcHandleIterator(FuncInfoAnnotationMap::get_instance()->get_scope_tree_root());
+  proc_iter = new R_ProcHandleIterator(FuncInfoAnnotationMap::instance()->get_scope_tree_root());
   assert(!proc_iter.ptrEqual(0));
   if (debug) {
     std::cout << "procedures:\n";
@@ -163,7 +163,7 @@ void OACallGraphAnnotationMap::compute() {
 void OACallGraphAnnotationMap::dump(std::ostream & os) {
   compute_if_necessary();
 
-  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
   m_call_graph->output(*interface);
   m_side_effect->dump(cout, interface);
 }
@@ -174,7 +174,7 @@ void OACallGraphAnnotationMap::dumpdot(std::ostream & os) {
   //   output graph in DOT form
   OA_ptr<OutputBuilder> dot_builder; dot_builder = new OutputBuilderDOT;
   m_call_graph->configOutput(dot_builder);
-  m_call_graph->output(*R_Analyst::get_instance()->get_interface());
+  m_call_graph->output(*R_Analyst::instance()->get_interface());
 }
 
 // ----- access to OA call graph -----

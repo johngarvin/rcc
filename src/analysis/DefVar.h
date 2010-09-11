@@ -66,7 +66,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual DefVar* clone() { return new DefVar(*this); }
+  virtual DefVar * clone() { return new DefVar(*this); }
 
   // -------------------------------------------------------
   // debugging

@@ -53,7 +53,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual AnnotationBase* clone() = 0;
+  virtual AnnotationBase * clone() = 0;
   
   // -------------------------------------------------------
   // debugging

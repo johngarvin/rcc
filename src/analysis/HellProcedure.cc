@@ -22,7 +22,7 @@
 
 #include "HellProcedure.h"
 
-OA::ProcHandle HellProcedure::get_instance() {
+OA::ProcHandle HellProcedure::instance() {
   if (s_hell == OA::ProcHandle(0)) {
     s_hell = reinterpret_cast<OA::irhandle_t>(new HellProcedure());
   }

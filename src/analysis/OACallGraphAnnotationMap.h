@@ -54,7 +54,7 @@ public:
 
   // ----- implement singleton pattern -----
 
-  static OACallGraphAnnotationMap * get_instance();
+  static OACallGraphAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

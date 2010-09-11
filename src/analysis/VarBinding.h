@@ -78,7 +78,7 @@ public:
   bool is_unbound();
 
   /// get the location in the R environment (empty string if no unique location)
-  std::string get_location(SEXP name, SubexpBuffer* sb);
+  std::string get_location(SEXP name, SubexpBuffer * sb);
 
   // clone
   AnnotationBase * clone();

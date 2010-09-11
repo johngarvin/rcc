@@ -44,7 +44,7 @@ namespace RAnnot {
 ResolvedArgsAnnotationMap::ResolvedArgsAnnotationMap() {
 }
 
-ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::get_instance() {
+ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::instance() {
   if (s_instance == 0) {
     s_instance = new ResolvedArgsAnnotationMap();
     analysisResults.add(s_handle, s_instance);
@@ -88,7 +88,7 @@ void ResolvedArgsAnnotationMap::compute() {
   for (const_iterator it = begin(); it != end(); it++) {
     ResolvedArgs * value = dynamic_cast<ResolvedArgs *>(it->second);
     for (SEXP x = value->get_resolved(); x != R_NilValue; x = CDR(x)) {
-      ExpressionInfoAnnotationMap::get_instance()->make_annot(x);
+      ExpressionInfoAnnotationMap::instance()->make_annot(x);
       // give an answer for call sites that are already resolved.
       if (is_call(CAR(x))) {
 	std::pair<ResolvedArgs::ResolvedSource, SEXP> pair = value->source_from_resolved(x);
@@ -101,10 +101,10 @@ void ResolvedArgsAnnotationMap::compute() {
       }
     }
   }
-  FuncInfoAnnotationMap::get_instance()->reset();
-  VarAnnotationMap::get_instance()->reset();
-  SideEffectAnnotationMap::get_instance()->reset();
-  OEscapeInfoAnnotationMap::get_instance()->reset();
+  FuncInfoAnnotationMap::instance()->reset();
+  VarAnnotationMap::instance()->reset();
+  SideEffectAnnotationMap::instance()->reset();
+  OEscapeInfoAnnotationMap::instance()->reset();
 }
 
 ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::s_instance = 0;
@@ -145,7 +145,7 @@ SEXP matchArgs(SEXP formals, SEXP supplied)
 	if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), 1)) {
 	  if (ARGUSED(f) == 2)
 	    error(_("formal argument \"%s\" matched by multiple actual arguments"),
-		  CHAR(PRINTNAME(TAG(f))));
+		  var_name(TAG(f))));
 	  if (ARGUSED(b) == 2)
 	    error(_("argument %d matches multiple formal arguments"), i);
 	  SETCAR(a, CAR(b));
@@ -174,7 +174,7 @@ SEXP matchArgs(SEXP formals, SEXP supplied)
 		error(_("argument %d matches multiple formal arguments"), i);
 	      if (ARGUSED(f) == 1)
 		error(_("formal argument \"%s\" matched by multiple actual arguments"),
-		      CHAR(PRINTNAME(TAG(f))));
+		      var_name(TAG(f)).c_str());
 	      SETCAR(a, CAR(b));
 	      if (CAR(b) != R_MissingArg)
 		SET_MISSING(a, 0);       /* not missing this arg */
@@ -233,7 +233,7 @@ SEXP matchArgs(SEXP formals, SEXP supplied)
 	errorcall(R_GlobalContext->call,
 		  _("unused argument(s) (%s ...)"),
 		  /* anything better when b is "untagged" ? : */
-		  TAG(b) != R_NilValue ? CHAR(PRINTNAME(TAG(b))) : "");
+		  TAG(b) != R_NilValue ? var_name(TAG(b)).c_str() : "");
     UNPROTECT(1);
     return(actuals);
 }

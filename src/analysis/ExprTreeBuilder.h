@@ -33,7 +33,7 @@ public:
   OA::OA_ptr<OA::ExprTree> build_c(SEXP e);
 
 public:
-  static ExprTreeBuilder * get_instance();
+  static ExprTreeBuilder * instance();
 
 private:
   

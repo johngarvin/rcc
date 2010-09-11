@@ -28,9 +28,9 @@
 using namespace std;
 
 unsigned int LoopContext::mContextId = 0;
-LoopContext* LoopContext::top = NULL;
+LoopContext * LoopContext::top = NULL;
 
-LoopContext *LoopContext::Top()
+LoopContext * LoopContext::Top()
 {
   return top;
 }

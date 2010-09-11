@@ -48,7 +48,7 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual FormalArgInfo* clone() { return new FormalArgInfo(*this); }
+  virtual FormalArgInfo * clone() { return new FormalArgInfo(*this); }
 
   // -------------------------------------------------------
   // debugging

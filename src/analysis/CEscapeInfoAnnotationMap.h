@@ -36,7 +36,7 @@ public:
   virtual ~CEscapeInfoAnnotationMap();
 
   // singleton
-  static CEscapeInfoAnnotationMap * get_instance();
+  static CEscapeInfoAnnotationMap * instance();
 
   // getting the handle causes this map to be created and registered
   static PropertyHndlT handle();

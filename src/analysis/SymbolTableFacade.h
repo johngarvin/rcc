@@ -40,7 +40,7 @@ public:
   // given a mention, find the symbol table entry
   RAnnot::VarInfo * find_entry(const RAnnot::Var * var) const;
   
-  static SymbolTableFacade * get_instance();
+  static SymbolTableFacade * instance();
 
 private:
   static SymbolTableFacade * s_instance;

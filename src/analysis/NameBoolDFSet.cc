@@ -178,7 +178,7 @@ void NameBoolDFSet::replace(OA_ptr<R_VarRef> e, bool value) {
 // propagate: propagate lattice value from expression to subexpressions
 // TODO: better description
 void NameBoolDFSet::propagate_rhs(OA_ptr<NameBoolDFSet> in, PredicateType predicate, bool value, SEXP cell) {
-  VarRefFactory * const fact = VarRefFactory::get_instance();
+  VarRefFactory * const fact = VarRefFactory::instance();
   SEXP e = CAR(cell);
   if (is_assign(e)) {
     propagate_lhs(in, predicate, value, call_nth_arg_c(e, 1));

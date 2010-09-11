@@ -42,7 +42,7 @@ public:
   virtual ~FormalArgInfoAnnotationMap();
 
   // singleton
-  static FormalArgInfoAnnotationMap * get_instance();
+  static FormalArgInfoAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();

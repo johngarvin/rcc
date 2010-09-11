@@ -51,7 +51,7 @@ OA_ptr<R_ArgVarRef> VarRefFactory::make_arg_var_ref(SEXP e) {
   return ref;
 }
 
-VarRefFactory * VarRefFactory::get_instance() {
+VarRefFactory * VarRefFactory::instance() {
   if (s_instance == 0) {
     s_instance = new VarRefFactory();
   }

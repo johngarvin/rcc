@@ -92,7 +92,7 @@ void OEscapeInfoAnnotationMap::compute() {
   Var * var;
   StmtHandle stmt;
   ProcHandle proc;
-  OA_ptr<R_IRInterface> interface; interface = R_Analyst::get_instance()->get_interface();
+  OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
   SSA::ManagerStandard ssa_man(interface);
   OA_ptr<CFG::CFGInterface> cfg;
   //  OA_ptr<SSA::SSAStandard> ssa;
@@ -107,10 +107,10 @@ void OEscapeInfoAnnotationMap::compute() {
 
   // use call graph to get interprocedural data
   OA_ptr<OA::CallGraph::CallGraphInterface> call_graph;
-  call_graph = RAnnot::OACallGraphAnnotationMap::get_instance()->get_OA_call_graph();
+  call_graph = RAnnot::OACallGraphAnnotationMap::instance()->get_OA_call_graph();
   if (debug) {
     std::cout << "Call graph annotation map:\n";
-    RAnnot::OACallGraphAnnotationMap::get_instance()->dump(std::cout);
+    RAnnot::OACallGraphAnnotationMap::instance()->dump(std::cout);
   }
   ReturnedCGSolver * ret_problem = new ReturnedCGSolver();
   ret_problem->perform_analysis(call_graph, DataFlow::ITERATIVE);
@@ -132,7 +132,7 @@ void OEscapeInfoAnnotationMap::compute() {
     cfg = fi->get_cfg();
     //    ssa = ssa_man.performAnalysis(proc, cfg);
     
-    if (fi == FuncInfoAnnotationMap::get_instance()->get_scope_tree_root()) {
+    if (fi == FuncInfoAnnotationMap::instance()->get_scope_tree_root()) {
       // The scope of the whole program. Create empty sets because we
       // obviously don't care about escapes/returns from the global
       // scope.
@@ -220,7 +220,7 @@ void compute_returned() {
 
 // ----- singleton pattern -----
 
-OEscapeInfoAnnotationMap * OEscapeInfoAnnotationMap::get_instance() {
+OEscapeInfoAnnotationMap * OEscapeInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }

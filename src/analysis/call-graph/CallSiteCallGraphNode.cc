@@ -56,7 +56,7 @@ namespace RAnnot {
   compute(RccCallGraphAnnotationMap::NodeListT & worklist,
 	  RccCallGraphAnnotationMap::NodeSetT & visited) const
   {
-    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::instance();
     if (is_var(call_lhs(m_cs))) {
       // if left side of call is a symbol
       VarBinding * binding = getProperty(VarBinding, m_cs);  // cell containing symbol
@@ -80,13 +80,13 @@ namespace RAnnot {
 		    RccCallGraphAnnotationMap::NodeSetT & visited,
 		    RccCallGraphAnnotation * ann) const
   {
-    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::get_instance();
+    RccCallGraphAnnotationMap * cg = RccCallGraphAnnotationMap::instance();
     CallGraphInfo * info = cg->get_edges(this);
     // TODO: remove cast when maps are parametrized
     for (CallGraphInfo::const_iterator edge = info->begin_calls_out();
 	 edge != info->end_calls_out();
 	 ++edge) {
-      assert(dynamic_cast<const CoordinateCallGraphNode*>((*edge)->get_sink()) != 0);
+      assert(dynamic_cast<const CoordinateCallGraphNode *>((*edge)->get_sink()) != 0);
       worklist.push_back((*edge)->get_sink());
     }
   }

@@ -43,7 +43,7 @@ public:
   virtual ~ExpressionInfoAnnotationMap();
 
   // singleton
-  static ExpressionInfoAnnotationMap * get_instance();
+  static ExpressionInfoAnnotationMap * instance();
 
   // getting the handle causes this map to be created and registered
   static PropertyHndlT handle();

@@ -45,7 +45,7 @@ using namespace HandleInterface;
 typedef DefaultDFSet DFSet;
 
 DebutDFSolver::DebutDFSolver(OA_ptr<R_IRInterface> ir)
-  : m_ir(ir), m_fact(VarRefFactory::get_instance())
+  : m_ir(ir), m_fact(VarRefFactory::instance())
 {}
 
 DebutDFSolver::~DebutDFSolver()

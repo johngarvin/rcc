@@ -61,7 +61,7 @@ FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {
 
 // ----- singleton pattern -----
 
-FuncInfoAnnotationMap * FuncInfoAnnotationMap::get_instance() {
+FuncInfoAnnotationMap * FuncInfoAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
@@ -94,7 +94,7 @@ PropertyHndlT FuncInfoAnnotationMap::s_handle = "FuncInfo";
 // ----- computation -----
 
 void FuncInfoAnnotationMap::compute() {
-  BasicFuncInfo * basic = BasicFuncInfoAnnotationMap::get_instance()->get_scope_tree_root();
+  BasicFuncInfo * basic = BasicFuncInfoAnnotationMap::instance()->get_scope_tree_root();
   build_tree(0, basic);
   m_root = static_cast<FuncInfo *>(get_map()[basic->get_sexp()]);
 }
@@ -130,10 +130,10 @@ void FuncInfoAnnotationMap::collect_libraries() {
     OA::StmtHandle stmt;
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
-	ExpressionInfoAnnotationMap::get_instance()->make_annot(make_sexp(stmt));
+	ExpressionInfoAnnotationMap::instance()->make_annot(make_sexp(stmt));
       }
     }
-    VarAnnotationMap::get_instance()->compute_proc(fi->get_basic());
+    VarAnnotationMap::instance()->compute_proc(fi->get_basic());
   }
 }
 

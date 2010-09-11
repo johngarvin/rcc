@@ -72,7 +72,7 @@ OA::SymHandle SpecialProcSymMap::get_anon(OA::ProcHandle ph) {
   }
 }
 
-SpecialProcSymMap * SpecialProcSymMap::get_instance() {
+SpecialProcSymMap * SpecialProcSymMap::instance() {
   if (s_instance == 0) {
     s_instance = new SpecialProcSymMap();
   }
