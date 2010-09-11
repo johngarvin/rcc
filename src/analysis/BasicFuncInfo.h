@@ -79,10 +79,10 @@ public:
   SEXP get_first_name_c() const;
 
   /// name of C function
-  const std::string& get_c_name(); // not const: fills in m_c_name if empty
+  const std::string & get_c_name(); // not const: fills in m_c_name if empty
 
   /// name of C variable storing the closure (CLOSXP)
-  const std::string& get_closure();  // not const: fills in m_closure if empty
+  const std::string & get_closure();  // not const: fills in m_closure if empty
 
   // ----- arguments -----
 
@@ -97,7 +97,8 @@ public:
   SEXP get_arg(int position) const;
 
   /// find the numerical position of the formal with the given name. Indexed from 1.
-  int find_arg_position(char* name) const;
+  int find_arg_position(char * name) const;
+  int find_arg_position(std::string name) const;
 
   // has variable arguments
   bool get_has_var_args() const;

@@ -142,7 +142,7 @@ bool BasicFuncInfo::is_arg(SEXP sym) const
   return false;
 }
 
-int BasicFuncInfo::find_arg_position(char* name) const
+int BasicFuncInfo::find_arg_position(char * name) const
 {
   SEXP args = get_args();
   int pos = 1;
@@ -153,6 +153,10 @@ int BasicFuncInfo::find_arg_position(char* name) const
   }
   assert (e != R_NilValue);
   return pos;
+}
+
+int BasicFuncInfo::find_arg_position(std::string name) const {
+  return find_arg_position(name.c_str());
 }
 
 SEXP BasicFuncInfo::get_arg(int position) const

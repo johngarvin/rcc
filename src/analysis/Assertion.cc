@@ -27,6 +27,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
+#include <analysis/Utils.h>
 
 #include <ParseInfo.h>
 
@@ -61,10 +62,9 @@ void process_assert(SEXP assertion, BasicFuncInfo * fi) {
 	// assertion that a formal argument is call-by-value, of the form:
 	// .rcc.assert(value(foo))
 	SEXP v = CADR(e);
-	char* vname = CHAR(PRINTNAME(v));
-	int position = fi->find_arg_position(vname);
+	int position = fi->find_arg_position(var_name(v));
 	SEXP arg = fi->get_arg(position);
-	FormalArgInfo* fargInfo = getProperty(FormalArgInfo, arg);
+	FormalArgInfo * fargInfo = getProperty(FormalArgInfo, arg);
 	fargInfo->set_is_value(true);
       }
     }

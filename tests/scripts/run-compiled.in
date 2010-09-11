@@ -7,11 +7,17 @@ if [[ "$1" == "-q" ]] ; then
     shift
 fi
 for f in $* ; do 
+    base=`basename $f`
+    base=${base/%.[rR]/}     # remove .r or .R at end
+    if [[ $f =~ "\.[rR]$" ]]
+    then bin=$base
+    else bin=$base.bin
+    fi
     echo --- $f --- &&
-    if $LOUD ; then echo compiling with rcc... ; fi &&
-    rcc $f -o ./`basename $f .r`.c &&
-    if $LOUD ; then echo compiling with rcc-cc... ; fi &&
-    rcc-cc -O2 -o ./`basename $f .r` -g ./`basename $f .r`.c &&
-    if $LOUD ; then echo running with rcc-run... ; fi &&
-    rcc-run ./`basename $f .r`
+    if $LOUD ; then echo compiling $f with rcc... ; fi &&
+    rcc $f -o ./$base.c &&
+    if $LOUD ; then echo compiling $base.c with rcc-cc... ; fi &&
+    rcc-cc -O2 -o ./$bin -g ./$base.c &&
+    if $LOUD ; then echo running $bin with rcc-run... ; fi &&
+    rcc-run ./$bin
 done
