@@ -611,18 +611,6 @@ SEXP applyClosureOld(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 }
 
 /*
-typedef enum {
-    AC_RCC = 1,
-    AC_MATCH_ARGS = 2,
-    AC_CONTEXT = 4,
-    AC_ENVIRONMENT = 8,
-    AC_USEMETHOD = 16,
-    AC_STACK_CLOSURE = 32,
-    AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
-} ApplyClosureOptions;
-*/
-
-/*
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, TYPEOF(CAR(call)) == SYMSXP ? CAR(call) : Rf_install("*anonymous*"));
@@ -631,15 +619,28 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
-    SEXP body, formals, actuals, savedrho;
+    SEXP body, formals, actuals, savedrho, funsxp;
     volatile  SEXP newrho;
     SEXP f, a, tmp;
     RCNTXT cntxt;
+
+    if (global_dump_stats) {
+	return applyClosureOpt(call, op, arglist, rho, suppliedenv, AC_DEFAULT, TYPEOF(CAR(call)) == SYMSXP ? CAR(call) : Rf_install("*anonymous*"));
+    }
 
     /* formals = list of formal parameters */
     /* actuals = values to be bound to formals */
     /* arglist = the tagged list of arguments */
 
+    if (TYPEOF(op) == RCC_CLOSXP) {
+	formals = RCC_CLOSXP_FORMALS(op);
+	funsxp = RCC_CLOSXP_FUN(op);
+	savedrho = RCC_CLOSXP_CLOENV(op);
+    } else {
+	formals = FORMALS(op);
+	body = BODY(op);
+	savedrho = CLOENV(op);
+    }
     formals = FORMALS(op);
     body = BODY(op);
     savedrho = CLOENV(op);
@@ -715,28 +716,30 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /* Debugging */
 
-    SET_DEBUG(newrho, DEBUG(op));
-    if (DEBUG(op)) {
-	Rprintf("debugging in: ");
-	PrintValueRec(call,rho);
-	/* Is the body a bare symbol (PR#6804) */
-	if (!isSymbol(body) & !isVectorAtomic(body)){
+    if (TYPEOF(op) != RCC_CLOSXP) {
+	SET_DEBUG(newrho, DEBUG(op));
+	if (DEBUG(op)) {
+	    Rprintf("debugging in: ");
+	    PrintValueRec(call,rho);
+	    /* Is the body a bare symbol (PR#6804) */
+	    if (!isSymbol(body) & !isVectorAtomic(body)){
 		/* Find out if the body is function with only one statement. */
 		if (isSymbol(CAR(body)))
-			tmp = findFun(CAR(body), rho);
+		    tmp = findFun(CAR(body), rho);
 		else
-			tmp = eval(CAR(body), rho);
+		    tmp = eval(CAR(body), rho);
 		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
 		   && !strcmp( PRIMNAME(tmp), "for")
 		   && !strcmp( PRIMNAME(tmp), "{")
 		   && !strcmp( PRIMNAME(tmp), "repeat")
 		   && !strcmp( PRIMNAME(tmp), "while")
-			)
-			goto regdb;
+		   )
+		    goto regdb;
+	    }
+	    Rprintf("debug: ");
+	    PrintValue(body);
+	    do_browser(call,op,arglist,newrho);
 	}
-	Rprintf("debug: ");
-	PrintValue(body);
-	do_browser(call,op,arglist,newrho);
     }
 
  regdb:
@@ -764,13 +767,21 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	if (R_ReturnedValue == R_RestartToken) {
 	    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
 	    R_ReturnedValue = R_NilValue;  /* remove restart token */
-	    PROTECT(tmp = eval(body, newrho));
+	    if (TYPEOF(op) == RCC_CLOSXP) {
+		PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, newrho));
+	    } else  {
+		PROTECT(tmp = eval(body, newrho));
+	    }
 	}
 	else
 	    PROTECT(tmp = R_ReturnedValue);
     }
     else {
-	PROTECT(tmp = eval(body, newrho));
+	if (TYPEOF(op) == RCC_CLOSXP) {
+	    PROTECT(tmp = RCC_FUNSXP_CFUN(funsxp) (actuals, newrho));
+	} else {
+	    PROTECT(tmp = eval(body, newrho));
+	}
     }
 
     endcontext(&cntxt);
@@ -952,6 +963,18 @@ SEXP mem_duplicate(SEXP x)
 }
 #endif
 
+/*
+typedef enum {
+    AC_RCC = 1,
+    AC_MATCH_ARGS = 2,
+    AC_CONTEXT = 4,
+    AC_ENVIRONMENT = 8,
+    AC_USEMETHOD = 16,
+    AC_STACK_CLOSURE = 32,
+    AC_DEFAULT = AC_MATCH_ARGS | AC_CONTEXT | AC_ENVIRONMENT | AC_USEMETHOD
+} ApplyClosureOptions;
+*/
+
 /* Apply SEXP op of type CLOSXP to actuals */
 SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv, ApplyClosureOptions options, SEXP callee_sym)
 {
@@ -996,7 +1019,8 @@ SEXP applyClosureOpt(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP supplieden
 
     if (global_dump_stats) {
       SEXP arg;
-      fprintf(stderr, "Entering function %s [", CHAR(PRINTNAME(callee_sym)));
+      char * source = (options & AC_RCC ? "C" : "I");
+      fprintf(stderr, "Entering function %s %s [", CHAR(PRINTNAME(callee_sym)), source);
       for(arg = arglist; arg != R_NilValue; arg = CDR(arg)) {
 	if (TYPEOF(CAR(arg)) == PROMSXP) {
 	  fprintf(stderr, "P");

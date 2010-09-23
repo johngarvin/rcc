@@ -1960,7 +1960,7 @@ DEBUG_CHECK_NODE_COUNTS("at start");
 		for (s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
 		     s != R_GenHeap[i].OldToNew[gen];
 		     s = NEXT_NODE(s))
-		    FORWARD_CHILDREN_f(s, &forwarded_nodes);
+		    FORWARD_CHILDREN(s);
     }
 #endif
 
@@ -2627,15 +2627,13 @@ SEXP consHeap(SEXP car, SEXP cdr)
     return s;
 }
 
-#ifdef R_POOL_ALLOC
 SEXP cons(SEXP car, SEXP cdr) {
-    return consPool(car, cdr);
+    if (global_always_use_fallback_alloc) {
+	return consHeap(car, cdr);
+    } else {
+	return consPool(car, cdr);
+    }
 }
-#else
-SEXP cons(SEXP car, SEXP cdr) {
-    return old_cons(car, cdr);
-}
-#endif
 
 static inline void consInPlace(SEXP car, SEXP cdr, SEXP s)
 {
@@ -2729,13 +2727,12 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 SEXP mkPROMISE(SEXP expr, SEXP rho)
 {
     SEXP s;
-    /*
-    */
     if (global_dump_stats) fprintf(stderr, "Alloc: promise ");
 #ifdef R_POOL_ALLOC
     SEXP protect_on_gc[3] = {expr, rho, NULL};
     s = allocStackCurrent->allocateNode(allocStackCurrent, protect_on_gc);
 #else
+    if (global_dump_stats) fprintf(stderr, "node heap %u bytes ", sizeof(SEXPREC));
     if (FORCE_GC || NO_FREE_NODES()) {
       PROTECT(expr);
       PROTECT(rho);
@@ -2787,7 +2784,12 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #else
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
-    return old_allocVector(type, length);
+    SEXP s;
+    if (global_dump_stats) fprintf(stderr, "Alloc: vector type %u length %u ", type, length);
+    s = allocVectorHeap(NULL, type, length);
+    allocVectorInPlace(type, length, s);
+    if (global_dump_stats) fprintf(stderr, "0x%lx\n", s);
+    return s;
 }
 #endif
 
@@ -2973,6 +2975,7 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
     /* number of vector cells to allocate */
     switch (type) {
     case NILSXP:
+	if (global_dump_stats) fprintf(stderr, "empty vector heap %u bytes ", sizeof(SEXPREC));
 	return R_NilValue;
     case RAWSXP:
 	size = BYTE2VEC(length);
@@ -3024,7 +3027,10 @@ SEXP allocVectorHeap(AllocStack * allocator, SEXPTYPE type, R_len_t length)
 	}
 	break;
     case LANGSXP:
-	if(length == 0) return R_NilValue;
+	if (length == 0) {
+	    if (global_dump_stats) fprintf(stderr, "empty vector heap %u bytes ", sizeof(SEXPREC));
+	    return R_NilValue;
+	}
 	s = allocListHeap(length);       /* alloc */
 	TYPEOF(s) = LANGSXP;
 	return s;
