@@ -104,16 +104,43 @@ foreach my $ptr (keys(%objects)) {
     analyze_alloc_line($v0, $v1, $v2, $v3);
 }
 
+sub by_decreasing_edge_count {
+    $callgraph->get_edge_count($b->[0], $b->[1]) <=> $callgraph->get_edge_count($a->[0], $a->[1]);
+}
+my $hist_size = 20;  # highlight top $hist_size edges
+my @edges = sort by_decreasing_edge_count $callgraph->unique_edges;
+my $threshold; # size of least of top $hist_size edges
+if (@edges >= $hist_size) {
+    $threshold = $callgraph->get_edge_count($edges[$hist_size-1]->[0], $edges[$hist_size-1]->[1]);
+} else {
+    $threshold = 0;
+}
 if ($print_callgraph) {
     print("digraph dynamic_call_graph {\n");
     foreach my $edge ($callgraph->unique_edges) {
 	my $a = $edge->[0];
 	my $b = $edge->[1];
-	print("  \"", $a, "\" -> \"", $b, "\" [label=", $callgraph->get_edge_count($a,$b), "];\n");
+	my $color;
+	if ($a =~ /^I/) {
+	    $color = "blue";
+	} else {
+	    $color = "red";
+	}
+	print("  \"", $a, "\" -> \"", $b, "\" ");
+	print("[label=", $callgraph->get_edge_count($a,$b), "] ");
+	print("[weight=", $callgraph->get_edge_count($a,$b), "] ");
+	print("[color=", $color, "] ");
+	print("[penwidth=3] ") if ($callgraph->get_edge_count($a,$b) >= $threshold);
+	print(";\n");
     }
     print("}\n");
 }
 print("/*\n") if $print_callgraph;
+print("Top twenty procedure calls:\n");
+foreach my $i (0..$hist_size-1) {
+    print("  ", $callgraph->get_edge_count($edges[$i]->[0], $edges[$i]->[1]), " ", $edges[$i]->[0], " -> ", $edges[$i]->[1], "\n") if (@edges > $i);
+}
+print("\n");
 print($setup_calls{calls} + $post_calls{calls}, " procedure calls\n");
 print("  in setup:\n");
 print("    ", $setup_calls{calls}, " calls\n");
@@ -155,6 +182,7 @@ print("In heap (post-setup):\n");
 breakdown(\%heap);
 print("Procedure-local (post-setup):\n");
 breakdown(\%locally);
+print("\n");
 print("*/\n") if $print_callgraph;
 
 sub breakdown {
@@ -196,10 +224,11 @@ sub analyze_line {
 	}
 	$objects{$ptr} = [$_, scalar(@callstack), scalar(@callstack), $in_init];
     } elsif (/^Entering/) {
-	my $func = $words[2];
+	my ($func, $source, $arguments) = @words[2..4];
+	$func = $source . ":" . $func;
 	$callgraph->add_edge($callstack[$#callstack], $func) unless $in_init;
 	push(@callstack, $func);
-	my $arguments = $words[3];
+	
 	$arguments =~ /^\[.*\]$/ or die "bad args info in \"Entering\" line";
 	my $h;
 	if ($in_init) {
@@ -222,7 +251,7 @@ sub analyze_line {
 	    my $ptr;
 	    foreach $ptr (@words[6,]) {
 		# returned pointers may be used in caller
-		if (!defined($objects{$ptr})) { die("pointer $ptr not found: $!\n"); }
+		if (!defined($objects{$ptr})) { die("pointer $ptr returned but not allocated?\n"); }
 		$stats{p_returned}++;
 		$objects{$ptr}[2] = min($objects{$ptr}[2], scalar(@callstack));
 	    }
@@ -237,7 +266,7 @@ sub analyze_line {
 	if (scalar(@words) > 4) {
 	    my $ptr;
 	    foreach $ptr (@words[4, ]) {
-		if (!defined($objects{$ptr})) { die("pointer $ptr not found: $!\n"); }
+		if (!defined($objects{$ptr})) { die("pointer $ptr assigned but not allocated?\n"); }
 		$stats{p_assigned}++;
 		$objects{$ptr}[2] = 0;
 	    }
@@ -271,7 +300,7 @@ sub analyze_alloc_line {
     my $h;
     if ($in_init) {
 	$h = \%setup;
-    } elsif ($str =~ 'heap') {
+    } elsif ($str =~ '[hH]eap') {
 	$h = \%heap;
     } elsif ($str =~ 'stack') {
 	$h = \%locally;
@@ -302,7 +331,11 @@ sub analyze_alloc_line {
 
 sub percent {
     my $n = shift;
-    return $n / $stats{alloc}*100;
+    if ($stats{alloc} == 0) {
+	return 0;
+    } else {
+	return $n / $stats{alloc}*100;
+    }
 }
 
 # sub min {

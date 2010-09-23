@@ -24,6 +24,7 @@
 
 #include <string>
 #include <iostream>
+#include <getopt.h>
 
 #include <analysis/Settings.h>
 
@@ -48,7 +49,13 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
 
     // get options
   while(1) {
-    c = getopt(argc, argv, "df:mo:");
+    static const struct option long_options[] = {
+      {"debug",                           no_argument, 0, 'd'},
+      {"no-output-main-program",          no_argument, 0, 'm'},
+      {"isolemnlyswearthatiamuptonogood", no_argument, 0, 'i'},
+      {0,0,0,0}
+    };
+    c = getopt_long(argc, argv, "df:mo:", long_options, &optind);
     if (c == -1) {
       break;
     }
@@ -60,6 +67,10 @@ CommandLineArgs::CommandLineArgs(int argc, char * argv[])
     case 'f':
       // option flag specified
       add_f_option(std::string(optarg));
+      break;
+    case 'i':
+      add_f_option("assume-correct-program");
+      add_f_option("aggressive-CBV");
       break;
     case 'm':
       // don't output a main program
