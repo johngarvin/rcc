@@ -70,7 +70,7 @@ void OEscapeDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void OEscapeDFSolver::dump_node_maps(std::ostream &os) {
+void OEscapeDFSolver::dump_node_maps(std::ostream & os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<MyDFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();

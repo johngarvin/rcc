@@ -182,7 +182,7 @@ AnnotationBase * SideEffect::clone() {
 
 // ----- debugging -----
 
-std::ostream& SideEffect::dump(std::ostream& os) const {
+std::ostream & SideEffect::dump(std::ostream & os) const {
   beginObjDump(os, SideEffect);
   os << "Begin uses:" << std::endl;
   for(MyIteratorT it = begin_uses(); it != end_uses(); ++it) {

@@ -57,8 +57,7 @@ AnnotationBase::~AnnotationBase()
 }
 
 
-std::ostream&
-AnnotationBase::dumpCout() const
+std::ostream & AnnotationBase::dump_cout() const
 {
   dump(std::cout);
 }

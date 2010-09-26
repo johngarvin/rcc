@@ -24,7 +24,7 @@
 
 namespace Strictness {
 
-const std::string typeName(StrictnessType x) {
+const std::string type_name(StrictnessType x) {
   switch(x) {
   case Strictness_TOP: return "TOP";
   case Strictness_USED: return "USED";

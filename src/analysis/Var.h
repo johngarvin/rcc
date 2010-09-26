@@ -55,7 +55,7 @@ public:
   };
 
 public:
-  explicit Var();
+  explicit Var(SEXP m_sexp, UseDefT udt, MayMustT mmt, Locality::LocalityType lt);
   virtual ~Var();
   
   // -------------------------------------------------------
@@ -63,33 +63,22 @@ public:
   // -------------------------------------------------------
   
   // use/def type
-  UseDefT getUseDefType() const
-    { return mUseDefType; }
+  UseDefT get_use_def_type() const;
 
   // may/must type
-  MayMustT getMayMustType() const 
-    { return mMayMustType; }
-  void setMayMustType(MayMustT x)
-    { mMayMustType = x; }
+  MayMustT get_may_must_type() const;
 
   // scope type
-  Locality::LocalityType getScopeType() const
-    { return mScopeType; }
-  void setScopeType(Locality::LocalityType x)
-    { mScopeType = x; }
+  Locality::LocalityType get_scope_type() const;
+  void set_scope_type(Locality::LocalityType x);
 
   // Mention (cons cell that contains the name)
-  SEXP getMention_c() const
-  { return mSEXP; }
-  void setMention_c(SEXP x)
-  { mSEXP = x; }
+  SEXP get_mention_c() const;
 
-  bool is_first_on_some_path() const
-    { return m_first_on_some_path; }
-  void set_first_on_some_path(bool x)
-    { m_first_on_some_path = x; }
+  bool is_first_on_some_path() const;
+  void set_first_on_some_path(bool x);
 
-  virtual SEXP getName() const = 0;
+  virtual SEXP get_name() const = 0;
 
   static PropertyHndlT handle();
 
@@ -134,18 +123,18 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
-protected:
-  SEXP mSEXP;
-  UseDefT mUseDefType;
-  MayMustT mMayMustType;
-  Locality::LocalityType mScopeType;
+private:
+  const SEXP m_sexp;
+  const UseDefT m_use_def_type;
+  const MayMustT m_may_must_type;
+  Locality::LocalityType m_scope_type;
   bool m_first_on_some_path;
 };
 
-const std::string typeName(const Var::UseDefT x);
-const std::string typeName(const Var::MayMustT x);
+const std::string type_name(const Var::UseDefT x);
+const std::string type_name(const Var::MayMustT x);
 
 }
 

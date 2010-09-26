@@ -186,7 +186,7 @@ bool BasicFuncInfo::are_all_value() const
   return allvalue;
 }
 
-const std::string& BasicFuncInfo::get_c_name()
+const std::string & BasicFuncInfo::get_c_name()
 {
   if (m_c_name == "") {
     SEXP name_sym = CAR(get_first_name_c());
@@ -199,7 +199,7 @@ const std::string& BasicFuncInfo::get_c_name()
   return m_c_name;
 }
 
-const std::string& BasicFuncInfo::get_closure()
+const std::string & BasicFuncInfo::get_closure()
 {
   if (m_closure == "") {
     m_closure = ParseInfo::global_fundefs->new_sexp_unp();
@@ -281,7 +281,7 @@ bool BasicFuncInfo::has_children() const {
   return !(ChildCount() == 0);
 }
 
-std::ostream& BasicFuncInfo::dump(std::ostream& os) const
+std::ostream & BasicFuncInfo::dump(std::ostream & os) const
 {
   beginObjDump(os, BasicFuncInfo);
   dumpPtr(os, this);

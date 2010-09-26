@@ -31,7 +31,7 @@
 
 namespace Locality {
 
-const std::string typeName(LocalityType x) {
+const std::string type_name(LocalityType x) {
   switch(x) {
   case Locality_TOP: return "TOP";
   case Locality_LOCAL: return "LOCAL";

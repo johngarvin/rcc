@@ -122,15 +122,15 @@ OA_ptr<NameMentionMultiMap> StrictnessDFSolver::compute_debut_map() {
 	Rf_PrintValue(CAR(make_sexp(stmt)));
       }
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
-	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref(use->getMention_c());
+	OA_ptr<R_BodyVarRef> ref; ref = m_var_ref_fact->make_body_var_ref(use->get_mention_c());
 	// insert in debut-set if the name is in the in-set and TOP.
 	if (in_set->includes_name(ref) &&
 	    in_set->find(ref)->get_strictness_type() == Strictness_TOP)
 	{
-	  debut_map->insert(std::make_pair(ref->get_sexp(), use->getMention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), use->get_mention_c()));
 	  if (debug) {
 	    std::cout << "Found debut:" << std::endl;
-	    Rf_PrintValue(CAR(use->getMention_c()));
+	    Rf_PrintValue(CAR(use->get_mention_c()));
 	  }
 	}
       }  // next use
@@ -246,17 +246,17 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   EXPRESSION_FOR_EACH_USE(annot, use) {
-    OA_ptr<R_VarRef> ref; ref = m_var_ref_fact->make_body_var_ref(use->getMention_c());
+    OA_ptr<R_VarRef> ref; ref = m_var_ref_fact->make_body_var_ref(use->get_mention_c());
     
     if (m_formal_args->includes_name(ref) &&
 	in->find(ref)->get_strictness_type() != Strictness_KILLED &&
-	use->getMayMustType() == Var::Var_MUST)
+	use->get_may_must_type() == Var::Var_MUST)
     {
       in->replace(ref, Strictness_USED);
     }
   }
   EXPRESSION_FOR_EACH_DEF(annot, def) {
-    OA_ptr<R_VarRef> ref; ref = m_var_ref_fact->make_body_var_ref(def->getMention_c());
+    OA_ptr<R_VarRef> ref; ref = m_var_ref_fact->make_body_var_ref(def->get_mention_c());
     
     if (m_formal_args->includes_name(ref)) {
       in->replace(ref, Strictness_KILLED);

@@ -95,12 +95,12 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  std::ostream& dumpCout() const;
-  std::ostream& dump(std::ostream& os) const;
+  std::ostream & dump_cout() const;
+  std::ostream & dump(std::ostream& os) const;
 
 private:
-  PropertySetMgr(const PropertySetMgr& x);
-  PropertySetMgr& operator=(const PropertySetMgr& x) { return *this; }
+  PropertySetMgr(const PropertySetMgr & x);
+  PropertySetMgr & operator=(const PropertySetMgr & x) { return *this; }
 
 private:
   PropertySet * mSet;

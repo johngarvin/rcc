@@ -45,8 +45,8 @@ class Type_R_IRInterface : public R_IRInterface {
   // current function (curr_func) and adds the current information to
   // the statement constraint list (cnstr_list).
   void make_constraints(OA::StmtHandle stmt,
-			Annotation::StmtConstraintList& cnstr_list, Annotation::OperationInfo& info,
-			const Annotation::FuncSig& curr_func);
+			Annotation::StmtConstraintList & cnstr_list, Annotation::OperationInfo & info,
+			const Annotation::FuncSig & curr_func);
 
   // Model make_constraints from MATLAB:
 

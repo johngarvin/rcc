@@ -126,7 +126,7 @@ public:
   AnnotationBase * clone();
 
   // debugging
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
 private:
   SEXP m_cell;                  // CAR(m_cell) is the expression

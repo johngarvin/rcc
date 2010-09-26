@@ -51,15 +51,13 @@ AnnotationMap::~AnnotationMap()
 {
 }
 
-std::ostream&
-AnnotationMap::dumpCout() const
+std::ostream & AnnotationMap::dump_cout() const
 {
   dump(std::cout);
 }
 
 
-std::ostream&
-AnnotationMap::dump(std::ostream& os) const
+std::ostream & AnnotationMap::dump(std::ostream& os) const
 {
   os << "{ AnnotationMap:\n";
   for (const_iterator it = this->begin(); it != this->end(); ++it) {

@@ -59,8 +59,7 @@ PropertySetMgr::~PropertySetMgr()
 }
 
 
-RAnnot::AnnotationMap * 
-PropertySetMgr::getAnnot(PropertyHndlT prop) 
+RAnnot::AnnotationMap * PropertySetMgr::getAnnot(PropertyHndlT prop) 
 {  
   RAnnot::AnnotationMap * x = NULL;
 
@@ -79,15 +78,13 @@ PropertySetMgr::getAnnot(PropertyHndlT prop)
 }
 
 
-std::ostream&
-PropertySetMgr::dumpCout() const
+std::ostream & PropertySetMgr::dump_cout() const
 {
   dump(std::cout);
 }
 
 
-std::ostream&
-PropertySetMgr::dump(std::ostream& os) const
+std::ostream & PropertySetMgr::dump(std::ostream & os) const
 {
   os << "{ PropertySetMgr:\n";
   mSet->dump(os);

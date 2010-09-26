@@ -48,10 +48,10 @@ public:
   /*! Return true if all elements in the LHS are equal to a unique element
     in the RHS and the LHS and RHS have exactly the same number of
     elements. */
-  bool operator==(OA::DataFlow::DataFlowSet &other) const;
+  bool operator==(OA::DataFlow::DataFlowSet & other) const;
 
   //! Return true if the LHS and RHS do not equal each other
-  bool operator!=(OA::DataFlow::DataFlowSet &other) const;
+  bool operator!=(OA::DataFlow::DataFlowSet & other) const;
 
 
   //************************************************************
@@ -82,10 +82,10 @@ public:
   //************************************************************
   // Output and Debugging Methods
   //************************************************************
-  void output(OA::IRHandlesIRInterface& ir) const;
+  void output(OA::IRHandlesIRInterface & ir) const;
     
   //! Output succinct description of set's contents
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface>);
+  void dump(std::ostream & os, OA::OA_ptr<OA::IRHandlesIRInterface>);
 
   // ----- insert methods not inherited -----
   

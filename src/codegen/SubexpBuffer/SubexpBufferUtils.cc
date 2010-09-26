@@ -31,11 +31,11 @@
 
 void SubexpBuffer::finalize() {}
 
-const std::string &SubexpBuffer::output_decls() {
+const std::string & SubexpBuffer::output_decls() {
   return decls;
 }
 
-const std::string &SubexpBuffer::output_defs() {
+const std::string & SubexpBuffer::output_defs() {
   return edefs;
 }
 

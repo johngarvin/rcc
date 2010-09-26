@@ -95,7 +95,7 @@ void CEscapeInfoAnnotationMap::compute() {
 	  // if in arg position, then escape is true (conservative unless
 	  // we have escape information on whether procedures escape their
 	  // arguments)
-	  if ((*use_iter)->getPositionType() == UseVar::UseVar_ARGUMENT) {
+	  if ((*use_iter)->get_position_type() == UseVar::UseVar_ARGUMENT) {
 	    annot->set_may_escape(true);
 	  }
 	}
@@ -114,7 +114,7 @@ void CEscapeInfoAnnotationMap::compute() {
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_MENTION(fi, var) {
       VarBinding * binding;
-      SEXP mention_c = (*var)->getMention_c();
+      SEXP mention_c = (*var)->get_mention_c();
       binding = getProperty(VarBinding, mention_c);
       if (binding->is_single() && *(binding->begin()) == fi->get_scope()) {
 	// cannot escape
@@ -137,8 +137,8 @@ void CEscapeInfoAnnotationMap::compute() {
       for(SymbolTable::const_iterator sym = st->begin(); sym != st->end(); sym++) {
 	for(VarInfo::const_iterator def = sym->second->begin_defs(); def != sym->second->end_defs(); def++) {
 	  if ((*def)->getSourceType() == DefVar::DefVar_ASSIGN &&
-	      get_map()[(*def)->getMention_c()] != 0 &&
-	      dynamic_cast<CEscapeInfo *>(get_map()[(*def)->getMention_c()])->may_escape())
+	      get_map()[(*def)->get_mention_c()] != 0 &&
+	      dynamic_cast<CEscapeInfo *>(get_map()[(*def)->get_mention_c()])->may_escape())
 	  {
 	    annot->set_may_escape(true);
 	  }

@@ -83,7 +83,7 @@ public:
   //************************************************************
   // Output and Debugging Methods
   //************************************************************
-  void output(OA::IRHandlesIRInterface& ir) const;
+  void output(OA::IRHandlesIRInterface & ir) const;
     
   //! Output succinct description of set's contents
   void dump(std::ostream & os, OA::OA_ptr<OA::IRHandlesIRInterface>);

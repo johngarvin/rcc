@@ -55,7 +55,7 @@ public:
   // ----- methods inherited from DataFlowSet -----
   // construction
   explicit DFSet();
-  explicit DFSet(const DFSet& other);
+  explicit DFSet(const DFSet & other);
   ~DFSet();
   
   OA::OA_ptr<OA::DataFlow::DataFlowSet> clone() const;

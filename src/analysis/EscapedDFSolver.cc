@@ -87,7 +87,7 @@ void EscapedDFSolver::dump_node_maps() {
   dump_node_maps(std::cout);
 }
 
-void EscapedDFSolver::dump_node_maps(std::ostream &os) {
+void EscapedDFSolver::dump_node_maps(std::ostream & os) {
   OA_ptr<DataFlow::DataFlowSet> df_in_set, df_out_set;
   OA_ptr<MyDFSet> in_set, out_set;
   OA_ptr<CFG::NodesIteratorInterface> ni = m_cfg->getCFGNodesIterator();
@@ -315,6 +315,6 @@ bool assignment_escapes(SEXP e) {
 	assert(0);
       }
     } while (!is_symbol(CAR(sym_c)));
-    return getProperty(Var, sym_c)->getScopeType() == Locality::Locality_FREE;
+    return getProperty(Var, sym_c)->get_scope_type() == Locality::Locality_FREE;
   }
 }

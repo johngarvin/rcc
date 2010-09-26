@@ -441,11 +441,11 @@ ProcHandle R_IRInterface::getProcHandle(SymHandle sym) {
     rcc_warn("getProcHandle: procedure symbol has no definitions");
     return HellProcedure::instance();
   }
-  if (!is_procedure(CAR((*iter)->getRhs_c()))) {
+  if (!is_procedure(CAR((*iter)->get_rhs_c()))) {
     rcc_warn("getProcHandle: symbol bound to expression that is not a fundef or a closure");
     return HellProcedure::instance();
   }
-  ProcHandle retval = make_proc_h(CAR((*iter)->getRhs_c()));
+  ProcHandle retval = make_proc_h(CAR((*iter)->get_rhs_c()));
   if (++iter != vi->end_defs()) {  // if more than one def
     rcc_warn("getProcHandle: procedure symbol has more than one definition");
     return HellProcedure::instance();
@@ -630,7 +630,7 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
 
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->getMention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->get_mention_c());
     defs->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
@@ -649,7 +649,7 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   EXPRESSION_FOR_EACH_USE(stmt_info, use) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->getMention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->get_mention_c());
     uses->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
@@ -669,7 +669,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::instance();
   EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->getMention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->get_mention_c());
     defs->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
@@ -685,7 +685,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::instance();
   EXPRESSION_FOR_EACH_USE(stmt_info, use) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->getMention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->get_mention_c());
     uses->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
@@ -1130,9 +1130,9 @@ R_ExpMemRefHandleIterator::R_ExpMemRefHandleIterator(ExpressionInfo * stmt)
 MemRefHandle R_ExpMemRefHandleIterator::current() const {
   MemRefHandle handle;
   if (m_use_iter != m_stmt->end_uses()) {
-    handle = make_mem_ref_h((*m_use_iter)->getMention_c());
+    handle = make_mem_ref_h((*m_use_iter)->get_mention_c());
   } else {
-    handle = make_mem_ref_h((*m_def_iter)->getMention_c());
+    handle = make_mem_ref_h((*m_def_iter)->get_mention_c());
   }
   assert(handle != MemRefHandle(0));
   return handle;

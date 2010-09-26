@@ -125,7 +125,7 @@ void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
 	  std::cout << "VarAnnotationMap adding use: ";
 	  use->dump(std::cout);
 	}
-	get_map()[use->getMention_c()] = use;
+	get_map()[use->get_mention_c()] = use;
       }
       EXPRESSION_FOR_EACH_DEF(expr, def) {
 	assert(def != 0);
@@ -133,7 +133,7 @@ void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
 	  std::cout << "VarAnnotationmap adding def: ";
 	  def->dump(std::cout);
 	}
-	get_map()[def->getMention_c()] = def;
+	get_map()[def->get_mention_c()] = def;
       }      
     }
   }

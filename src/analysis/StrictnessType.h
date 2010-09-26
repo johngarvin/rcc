@@ -45,7 +45,7 @@ enum StrictnessType {
 };
 
 /// Return the name of the type as a string: "TOP", "USED", etc.
-const std::string typeName(StrictnessType x);
+const std::string type_name(StrictnessType x);
 
 }  // end namespace Strictness
 

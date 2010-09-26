@@ -185,7 +185,7 @@ void NameBoolDFSet::propagate_rhs(OA_ptr<NameBoolDFSet> in, PredicateType predic
     propagate_rhs(in, predicate, value, call_nth_arg_c(e, 2));
   } else if (is_struct_field(e)) {
     propagate_rhs(in, predicate, value, call_nth_arg_c(e, 1));
-  } else if (is_symbol(e) && getProperty(Var, cell)->getScopeType() == Locality::Locality_LOCAL) {
+  } else if (is_symbol(e) && getProperty(Var, cell)->get_scope_type() == Locality::Locality_LOCAL) {
     in->replace(fact->make_body_var_ref(cell), value);
   } else if (is_call(e)) {
     int nargs = Rf_length(call_args(e));

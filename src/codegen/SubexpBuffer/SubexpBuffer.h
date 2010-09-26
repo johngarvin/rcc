@@ -45,7 +45,7 @@ class SubexpBuffer {
 public:
   explicit SubexpBuffer(std::string pref = "v", bool is_c = false);
   virtual ~SubexpBuffer();
-  SubexpBuffer &operator=(SubexpBuffer &sb);
+  SubexpBuffer & operator=(SubexpBuffer & sb);
 
   std::string decls;
   SubexpBuffer * encl_fn;
@@ -54,8 +54,8 @@ public:
   const bool is_const;
 
   virtual void finalize();
-  const std::string &output_decls();
-  const std::string &output_defs();
+  const std::string & output_decls();
+  const std::string & output_defs();
   virtual void append_decls(std::string s);
   virtual void append_defs(std::string s);
   virtual std::string new_var();

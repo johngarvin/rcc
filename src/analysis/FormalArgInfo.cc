@@ -105,7 +105,7 @@ SEXP FormalArgInfo::get_sexp() {
   return m_sexp;
 }
 
-std::ostream& FormalArgInfo::dump(std::ostream& os) const
+std::ostream & FormalArgInfo::dump(std::ostream & os) const
 {
   beginObjDump(os, FormalArgInfo);
   SEXP name = TAG(m_sexp);

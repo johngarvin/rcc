@@ -42,26 +42,26 @@ class DFSetElement {
 public:
   // constructors
   explicit DFSetElement(OA::OA_ptr<R_VarRef> _loc, LocalityType _type);
-  explicit DFSetElement(const DFSetElement& other);
+  explicit DFSetElement(const DFSetElement & other);
 
   // access
   OA::OA_ptr<R_VarRef> get_loc() const;
   LocalityType get_locality_type() const;
 
   // relationships
-  DFSetElement& operator= (const DFSetElement& other);
+  DFSetElement & operator= (const DFSetElement & other);
 
   /// not doing a deep copy
   OA::OA_ptr<DFSetElement> clone();
     
   /// operator== just compares content of loc
-  bool operator== (const DFSetElement &other) const;
+  bool operator== (const DFSetElement & other) const;
   /// method equiv compares all parts of DFSetElement as appropriate
-  bool equiv(const DFSetElement& other);
+  bool equiv(const DFSetElement & other);
   
-  bool operator!= (const DFSetElement &other) const;
-  bool operator< (const DFSetElement &other) const;
-  bool sameLoc (const DFSetElement &other) const;
+  bool operator!= (const DFSetElement & other) const;
+  bool operator< (const DFSetElement & other) const;
+  bool sameLoc (const DFSetElement & other) const;
 
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> ir);
   std::string toString();

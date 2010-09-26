@@ -76,8 +76,13 @@ const_def_iterator LocalVariableAnalysis::end_defs() const {
   return m_defs.end();
 }
 
-const_call_site_iterator LocalVariableAnalysis::begin_call_sites() const { return m_call_sites.begin(); }
-const_call_site_iterator LocalVariableAnalysis::end_call_sites() const { return m_call_sites.end(); }
+const_call_site_iterator LocalVariableAnalysis::begin_call_sites() const {
+  return m_call_sites.begin();
+
+}
+const_call_site_iterator LocalVariableAnalysis::end_call_sites() const {
+  return m_call_sites.end();
+}
 
 /// Traverse the given SEXP (not an lvalue) and set variable
 /// annotations with local syntactic information.
@@ -94,12 +99,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   } else if (e == R_MissingArg) {
     // ignore
   } else if (is_var(e)) {
-    UseVar * var_annot = new UseVar();
-    var_annot->setMention_c(cell);
-    var_annot->setPositionType(UseVar::UseVar_ARGUMENT);
-    var_annot->setMayMustType(Var::Var_MUST);
-    var_annot->setScopeType(Locality::Locality_TOP);
-    m_uses.push_back(var_annot);
+    m_uses.push_back(new UseVar(cell, UseVar::UseVar_ARGUMENT, Var::Var_MUST, Locality::Locality_TOP));
   } else if (is_local_assign(e)) {
     build_ud_lhs(assign_lhs_c(e), assign_rhs_c(e), Var::Var_MUST, IN_LOCAL_ASSIGN);
     build_ud_rhs(assign_rhs_c(e), Var::Var_MUST, false);
@@ -113,12 +113,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   } else if (is_subscript(e)) {
     m_call_sites.push_back(cell);
     // use of '[' symbol
-    UseVar * var_annot = new UseVar();
-    var_annot->setMention_c(e);
-    var_annot->setPositionType(UseVar::UseVar_FUNCTION);
-    var_annot->setMayMustType(Var::Var_MUST);
-    var_annot->setScopeType(Locality::Locality_TOP);
-    m_uses.push_back(var_annot);
+    m_uses.push_back(new UseVar(e, UseVar::UseVar_FUNCTION, Var::Var_MUST, Locality::Locality_TOP));
     // left side of subscript
     build_ud_rhs(subscript_lhs_c(e), Var::Var_MUST, false);
     // subscript args
@@ -154,12 +149,7 @@ void LocalVariableAnalysis::build_ud_rhs(const SEXP cell, Var::MayMustT may_must
   } else if (TYPEOF(e) == LANGSXP) {   // regular function call
     m_call_sites.push_back(cell);
     if (is_var(CAR(e))) {
-      UseVar * var_annot = new UseVar();
-      var_annot->setMention_c(e);
-      var_annot->setPositionType(UseVar::UseVar_FUNCTION);
-      var_annot->setMayMustType(Var::Var_MUST);
-      var_annot->setScopeType(Locality::Locality_TOP);
-      m_uses.push_back(var_annot);
+      m_uses.push_back(new UseVar(e, UseVar::UseVar_FUNCTION, Var::Var_MUST, Locality::Locality_TOP));
     } else {
       build_ud_rhs(e, Var::Var_MUST, false);
     }
@@ -197,38 +187,13 @@ void LocalVariableAnalysis::build_ud_lhs(const SEXP cell, const SEXP rhs_c,
       SETCAR(cell, Rf_install(CHAR(STRING_ELT(e, 0))));
       e = CAR(cell);
     }
-    DefVar * var_annot = new DefVar();
-    var_annot->setMention_c(cell);
-    var_annot->setMayMustType(may_must_type);
-    var_annot->setSourceType(DefVar::DefVar_ASSIGN);
-    var_annot->setRhs_c(rhs_c);
-    // Note this subtlety in the R language. For a must-def, syntactic
-    // information (i.e., whether the arrow is single or double) tells
-    // us whether we are dealing with a local or free
-    // variable. Example: x is local in 'x <- 10' and free in 'x <<-
-    // 10'. For a may-def, however, the kind of arrow doesn't matter;
-    // locality has to be resolved with data flow analysis. Example:
-    // in both 'x[3] <- 10' and 'x[3] <<- 10', we have to look at data
-    // flow to figure out the scope of x.
-    // NOTE: I don't think this is true anymore.
-
-    // if (may_must_type == Var::Var_MUST) {
-    //   if (lhs_type == IN_LOCAL_ASSIGN) {
-    // 	var_annot->setScopeType(Locality::Locality_LOCAL);
-    //   } else {
-    // 	var_annot->setScopeType(Locality::Locality_FREE);
-    //   }
-    // } else {                                             // may-def
-    //   var_annot->setScopeType(Locality::Locality_TOP);
-    // }
-
+    Locality::LocalityType locality;
     if (lhs_type == IN_LOCAL_ASSIGN) {
-      var_annot->setScopeType(Locality::Locality_LOCAL);
+      locality = Locality::Locality_LOCAL;
     } else {
-      var_annot->setScopeType(Locality::Locality_FREE);
+      locality = Locality::Locality_FREE;
     }
-    
-    m_defs.push_back(var_annot);
+    m_defs.push_back(new DefVar(cell, DefVar::DefVar_ASSIGN, may_must_type, locality, rhs_c));
   } else if (is_struct_field(e)) {
     build_ud_lhs(struct_field_lhs_c(e), rhs_c, Var::Var_MAY, lhs_type);
   } else if (is_subscript(e)) {

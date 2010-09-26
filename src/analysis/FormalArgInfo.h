@@ -53,7 +53,7 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
   
   bool is_value();
   void set_is_value(bool x);

@@ -130,7 +130,7 @@ public:
 
   // ----- debugging -----
 
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
   // ----- dummy node for iterator -----
 

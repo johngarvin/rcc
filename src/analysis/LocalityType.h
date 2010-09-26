@@ -42,7 +42,7 @@ enum LocalityType {
 };
 
 /// Return the name of the type as a string: "TOP", "LOCAL", etc.
-const std::string typeName(LocalityType x);
+const std::string type_name(LocalityType x);
 
 }  // end namespace Locality
 

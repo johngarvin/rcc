@@ -87,8 +87,8 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dumpCout() const;
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump_cout() const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
   // prevent cloning
 private:

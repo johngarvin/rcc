@@ -80,7 +80,7 @@ public:
   AnnotationBase * clone();
   static PropertyHndlT handle();
 
-  std::ostream& dump(std::ostream& os) const;
+  std::ostream & dump(std::ostream & os) const;
 
 private:
   // whether there is an "action" side effect, such as writing to the screen

@@ -45,43 +45,37 @@ public:
     DefVar_PHI      // defined by a phi function
   };
 public:
-  explicit DefVar();
+  explicit DefVar(SEXP mention_c, SourceT source, MayMustT mmt, Locality::LocalityType lt, SEXP rhs_c);
   virtual ~DefVar();
 
   // source of definition: assignment statement, formal argument, or phi function
-  SourceT getSourceType() const
-    { return mSourceType; }
-  void setSourceType(SourceT x)
-    { mSourceType = x; }
+  SourceT get_source_type() const;
 
-  virtual SEXP getName() const;
+  virtual SEXP get_name() const;
 
-  SEXP getRhs_c() const
-    { return mRhs_c; }
-  void setRhs_c(SEXP x)
-    { mRhs_c = x; }
+  SEXP get_rhs_c() const;
 
   void accept(VarVisitor * v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual DefVar * clone() { return new DefVar(*this); }
+  virtual DefVar * clone();
 
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
 private:
-  SourceT mSourceType;
-  SEXP mRhs_c;               // cell containing right side, if assignment
+  const SourceT m_source_type;
+  const SEXP m_rhs_c;               // cell containing right side, if assignment
   // bool mIsBindingKnown;
   // set of uses reached?
 };
 
-const std::string typeName(const DefVar::SourceT x);
+const std::string type_name(const DefVar::SourceT x);
 
-}
+}  // end namespace RAnnot
 
 #endif

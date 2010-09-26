@@ -33,6 +33,11 @@
 
 namespace RAnnot {
 
+typedef SymbolTable::iterator iterator;
+typedef SymbolTable::const_iterator const_iterator;
+typedef SymbolTable::mapped_type mapped_type;
+typedef SymbolTable::size_type size_type;
+
 SymbolTable::SymbolTable()
 {
 }
@@ -42,7 +47,89 @@ SymbolTable::~SymbolTable()
 {
 }
 
-SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k, const LexicalScope * const scope) {
+SymbolTable * SymbolTable::clone()
+{
+  return new SymbolTable(*this);
+}
+
+iterator SymbolTable::begin()
+{
+  return m_vars.begin();
+}
+
+iterator SymbolTable::end()
+{
+  return m_vars.end();
+}
+
+const_iterator SymbolTable::begin() const
+{
+  return m_vars.begin();
+}
+
+const_iterator SymbolTable::end() const 
+{
+  return m_vars.end();
+}
+
+size_type SymbolTable::size() const
+{
+  return m_vars.size();
+}
+
+mapped_type & SymbolTable::operator[](const key_type & x)
+{
+  return m_vars[x];
+}
+
+std::pair<iterator, bool> SymbolTable::insert(const value_type & x)
+{
+  return m_vars.insert(x);
+}
+
+iterator SymbolTable::insert(iterator position, const value_type & x)
+{
+  return m_vars.insert(position, x);
+}
+
+void SymbolTable::erase(iterator position) 
+{
+  m_vars.erase(position);
+}
+
+size_type SymbolTable::erase(const key_type & x) 
+{
+  return m_vars.erase(x);
+}
+
+void SymbolTable::erase(iterator first, iterator last) 
+{
+  return m_vars.erase(first, last);
+}
+
+void SymbolTable::clear()
+{
+  m_vars.clear();
+}
+
+iterator SymbolTable::find(const key_type & x)
+{
+  return m_vars.find(x);
+}
+
+const_iterator SymbolTable::find(const key_type & x) const
+{
+  return m_vars.find(x);
+}
+
+size_type SymbolTable::count(const key_type & x) const
+{
+  return m_vars.count(x);
+}
+
+
+SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k, const LexicalScope * const scope)
+{
   mapped_type value;
   iterator entry = find(k);
   if (entry == end()) {
@@ -54,7 +141,7 @@ SymbolTable::mapped_type SymbolTable::find_or_create(const key_type & k, const L
   return value;
 }
 
-std::ostream& SymbolTable::dump(std::ostream& os) const
+std::ostream & SymbolTable::dump(std::ostream & os) const
 {
   beginObjDump(os, SymbolTable);
   for (const_iterator it = this->begin(); it != this->end(); ++it) {

@@ -102,7 +102,7 @@ OA_ptr<DataFlow::DataFlowSet> ReturnedDFSolver::initializeTop() {
 
   PROC_FOR_EACH_MENTION(fi, m) {
     OA_ptr<MyDFSet::NameBoolPair> element;
-    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->getMention_c()), false);
+    element = new MyDFSet::NameBoolPair(fact->make_body_var_ref((*m)->get_mention_c()), false);
     m_top->insert(element);
   }
   return m_top;

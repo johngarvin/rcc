@@ -53,7 +53,7 @@ public:
 
   // construction
   explicit DFSet();
-  explicit DFSet(const DFSet& other);
+  explicit DFSet(const DFSet & other);
   ~DFSet();
   
   // ----- methods inherited from DataFlowSet -----
@@ -63,8 +63,8 @@ public:
   // relationship
   // param for these can't be const because will have to 
   // dynamic cast to specific subclass
-  bool operator ==(OA::DataFlow::DataFlowSet &other) const;
-  bool operator !=(OA::DataFlow::DataFlowSet &other) const
+  bool operator ==(OA::DataFlow::DataFlowSet & other) const;
+  bool operator !=(OA::DataFlow::DataFlowSet & other) const
   { return (!(*this==other)); }
 
   /// Set this set to the universal set
@@ -85,9 +85,9 @@ public:
   // debugging
   std::string toString(OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
   std::string toString();
-  void output(OA::IRHandlesIRInterface& ir) const;
-  void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
-  void dump(std::ostream &os);
+  void output(OA::IRHandlesIRInterface & ir) const;
+  void dump(std::ostream & os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);
+  void dump(std::ostream & os);
 
   // ----- our own methods -----
 

@@ -51,12 +51,14 @@ typedef FuncInfoAnnotationMap::const_iterator const_iterator;
 
 //  ----- constructor/destructor ----- 
 
-FuncInfoAnnotationMap::FuncInfoAnnotationMap() {}
+FuncInfoAnnotationMap::FuncInfoAnnotationMap()
+  : m_root(0)
+{}
 
 FuncInfoAnnotationMap::~FuncInfoAnnotationMap() {
   // This AnnotationMap owns all FuncInfos, so we want to delete them now.
   // FuncInfos are in JMC's tree structure; deleting the root will delete all the FuncInfos.
-  delete m_root;
+  if (m_root) delete m_root;
 }
 
 // ----- singleton pattern -----

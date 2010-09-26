@@ -30,52 +30,57 @@
 
 namespace RAnnot {
 
+typedef UseVar::PositionT PositionT;
+
 //****************************************************************************
 // UseVar
 //****************************************************************************
 
-UseVar::UseVar()
+UseVar::UseVar(SEXP mention_c, PositionT position, MayMustT mmt, Locality::LocalityType lt)
+  : Var(mention_c, Var::Var_USE, mmt, lt),
+    m_position_type(position)
 {
-  mUseDefType = Var_USE;
 }
 
 UseVar::~UseVar()
 {
 }
 
-SEXP UseVar::getName() const
+SEXP UseVar::get_name() const
 {
-  return CAR(mSEXP);
+  return CAR(get_mention_c());
 }
 
-void UseVar::accept(VarVisitor * v) {
+void UseVar::accept(VarVisitor * v)
+{
   v->visitUseVar(this);
 }
 
-std::ostream&
-UseVar::dump(std::ostream& os) const
+PositionT UseVar::get_position_type() const
 {
-  beginObjDump(os,UseVar);
+  return m_position_type;
+}
+  
+UseVar * UseVar::clone()
+{
+  return new UseVar(*this);
+}
+
+std::ostream & UseVar::dump(std::ostream & os) const
+{
+  beginObjDump(os, UseVar);
   //dumpSEXP(os,mSEXP);
-  SEXP name = getName();
+  SEXP name = get_name();
   dumpSEXP(os, name);
-  dumpName(os, mUseDefType);
-  dumpName(os, mMayMustType);
-  dumpName(os, mScopeType);
-  dumpName(os, mPositionType);
-  dumpVar(os, m_first_on_some_path);
-  endObjDump(os,UseVar);
+  dumpName(os, get_use_def_type());
+  dumpName(os, get_may_must_type());
+  dumpName(os, get_scope_type());
+  dumpName(os, get_position_type());
+  dumpVar(os, is_first_on_some_path());
+  endObjDump(os, UseVar);
 }
 
-const std::string typeName(const Var::UseDefT x)
-{
-  switch(x) {
-  case Var::Var_USE: return "USE";
-  case Var::Var_DEF: return "DEF";
-  }
-}
-
-const std::string typeName(const UseVar::PositionT x)
+const std::string type_name(const UseVar::PositionT x)
 {
   switch(x) {
   case UseVar::UseVar_FUNCTION: return "FUNCTION";

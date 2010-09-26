@@ -145,7 +145,7 @@ void VarInfo::clear_uses() {
 void VarInfo::insert_var(const Var * x) {
   if (DefT def = dynamic_cast<DefT>(x)) {
     m_defs.push_back(def);
-    if (def->getSourceType() == DefVar::DefVar_FORMAL) {
+    if (def->get_source_type() == DefVar::DefVar_FORMAL) {
       m_param = true;
     }
   } else if (UseT use = dynamic_cast<UseT>(x)) {
@@ -194,8 +194,7 @@ bool VarInfo::has_scope() const {
   return (m_scope != 0);
 }
 
-std::ostream&
-VarInfo::dump(std::ostream& os) const
+std::ostream & VarInfo::dump(std::ostream & os) const
 {
   beginObjDump(os, VarInfo);
   dumpSEXP(os, m_name);

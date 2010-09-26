@@ -51,10 +51,10 @@ OA_ptr<DataFlow::DataFlowSet> DefaultDFSet::clone() const {
 
 /// equality: sets are equal if they are the same size and all
 /// elements are equal.
-bool DefaultDFSet::operator==(DataFlow::DataFlowSet &other) const {
+bool DefaultDFSet::operator==(DataFlow::DataFlowSet & other) const {
   // first dynamic cast to an DefaultDFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
-  DefaultDFSet& recastOther = dynamic_cast<DefaultDFSet&>(other);
+  DefaultDFSet & recastOther = dynamic_cast<DefaultDFSet &>(other);
 
   if (m_set->size() != recastOther.m_set->size()) {
     return false;
@@ -189,11 +189,11 @@ void DefaultDFSet::output(IRHandlesIRInterface & pIR) const {
   // TODO
 }
 
-void DefaultDFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
+void DefaultDFSet::dump(std::ostream & os, OA_ptr<IRHandlesIRInterface> pIR) {
   dump(os);
 }
 
-void DefaultDFSet::dump(std::ostream &os) {
+void DefaultDFSet::dump(std::ostream & os) {
   os << toString() << std::endl;
 }
 

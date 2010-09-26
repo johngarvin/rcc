@@ -47,7 +47,7 @@
 
 #define dumpName(os, var)     \
   dumpVarStart(os, var);      \
-  os << typeName(var) << " "; \
+  os << type_name(var) << " "; \
   dumpVarEnd(os, var)
 
 #define dumpPtr(os, ptr) \

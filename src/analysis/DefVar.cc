@@ -30,47 +30,65 @@
 
 namespace RAnnot {
 
-DefVar::DefVar()
+typedef DefVar::SourceT SourceT;
+
+DefVar::DefVar(SEXP mention_c, SourceT source, MayMustT mmt, Locality::LocalityType lt, SEXP rhs_c)
+  : Var(mention_c, Var_DEF, mmt, lt),
+    m_source_type(source),
+    m_rhs_c(rhs_c)
 {
-  mUseDefType = Var_DEF;
 }
 
 DefVar::~DefVar()
 {
 }
 
-SEXP DefVar::getName() const
+SourceT DefVar::get_source_type() const
 {
-  if (mSourceType == DefVar_ASSIGN) {
-    return CAR(mSEXP);
-  } else if (mSourceType == DefVar_FORMAL) {
-    return TAG(mSEXP);
+  return m_source_type;
+}
+
+SEXP DefVar::get_name() const
+{
+  if (m_source_type == DefVar_ASSIGN) {
+    return CAR(get_mention_c());
+  } else if (m_source_type == DefVar_FORMAL) {
+    return TAG(get_mention_c());
   } else {
     assert(0);
     return R_NilValue;
   }
 }
 
-void DefVar::accept(VarVisitor * v) {
+SEXP DefVar::get_rhs_c() const
+{
+  return m_rhs_c;
+}
+
+void DefVar::accept(VarVisitor * v)
+{
   v->visitDefVar(this);
 }
 
-std::ostream&
-DefVar::dump(std::ostream& os) const
+DefVar * DefVar::clone() {
+  return new DefVar(*this);
+}
+
+std::ostream & DefVar::dump(std::ostream & os) const
 {
   beginObjDump(os,DefVar);
   //dumpSEXP(os,mSEXP);
-  SEXP name = getName();
+  SEXP name = get_name();
   dumpSEXP(os, name);
-  dumpName(os, mUseDefType);
-  dumpName(os, mMayMustType);
-  dumpName(os, mScopeType);
-  dumpName(os, mSourceType);
-  dumpVar(os, m_first_on_some_path);
-  endObjDump(os,DefVar);
+  dumpName(os, get_use_def_type());
+  dumpName(os, get_may_must_type());
+  dumpName(os, get_scope_type());
+  dumpName(os, get_source_type());
+  dumpVar(os, is_first_on_some_path());
+  endObjDump(os, DefVar);
 }
 
-const std::string typeName(const DefVar::SourceT x)
+const std::string type_name(const DefVar::SourceT x)
 {
   switch(x) {
   case DefVar::DefVar_ASSIGN: return "ASSIGN";

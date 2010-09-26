@@ -83,15 +83,13 @@ void PropertySet::add(PropertyHndlT propertyName, RAnnot::AnnotationMap * amap)
 }
 
 
-std::ostream&
-PropertySet::dumpCout() const
+std::ostream & PropertySet::dump_cout() const
 {
   dump(std::cout);
 }
 
 
-std::ostream&
-PropertySet::dump(std::ostream& os) const
+std::ostream & PropertySet::dump(std::ostream & os) const
 {
   os << "{ PropertySet:\n";
   for (const_iterator it = this->begin(); it != this->end(); ++it) {

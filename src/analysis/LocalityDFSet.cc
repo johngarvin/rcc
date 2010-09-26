@@ -39,7 +39,7 @@ DFSet::DFSet() {
   mSet = new MySetT;
 }
 
-DFSet::DFSet(const DFSet& other) : mSet(other.mSet) { }
+DFSet::DFSet(const DFSet & other) : mSet(other.mSet) { }
 
 DFSet::~DFSet() { }
 
@@ -62,7 +62,7 @@ OA_ptr<DataFlow::DataFlowSet> DFSet::clone() const {
 bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
   // first dynamic cast to an DFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
-  DFSet& recastOther = dynamic_cast<DFSet&>(other);
+  DFSet & recastOther = dynamic_cast<DFSet &>(other);
 
   if (mSet->size() != recastOther.mSet->size()) {
     return false;

@@ -39,7 +39,7 @@ DFSet::DFSet() {
   mSet = new MySetT;
 }
 
-DFSet::DFSet(const DFSet& other) : mSet(other.mSet) { }
+DFSet::DFSet(const DFSet & other) : mSet(other.mSet) { }
 
 DFSet::~DFSet() { }
 
@@ -59,10 +59,10 @@ OA_ptr<DataFlow::DataFlowSet> DFSet::clone() const {
 /// DFSet, namely an DFSetElement, only considers the contents of the
 /// location pointer and not any of the other fields.  So, need to use
 /// DFSetElement's equal() method here instead.
-bool DFSet::operator==(DataFlow::DataFlowSet &other) const {
+bool DFSet::operator==(DataFlow::DataFlowSet & other) const {
   // first dynamic cast to an DFSet, if that doesn't work then 
   // other is a different kind of DataFlowSet and *this is not equal
-  DFSet& recastOther = dynamic_cast<DFSet&>(other);
+  DFSet & recastOther = dynamic_cast<DFSet &>(other);
 
   if (mSet->size() != recastOther.mSet->size()) {
     return false;
@@ -200,11 +200,11 @@ std::string DFSet::toString(OA_ptr<IRHandlesIRInterface> pIR) {
   return oss.str();
 }
 
-void DFSet::dump(std::ostream &os, OA_ptr<IRHandlesIRInterface> pIR) {
+void DFSet::dump(std::ostream & os, OA_ptr<IRHandlesIRInterface> pIR) {
   os << toString(pIR) << std::endl;
 }
 
-void DFSet::dump(std::ostream &os) {
+void DFSet::dump(std::ostream & os) {
   std::cout << "StrictnessDFSet::dump: call dump(os,interface) instead";
 }
 

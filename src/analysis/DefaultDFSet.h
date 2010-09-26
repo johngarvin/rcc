@@ -57,8 +57,8 @@ public:
   { return (!(*this==other)); }
 
   /// need this one for stl containers
-  //  bool operator==(const DefaultDFSet& other) const 
-  //  { return DefaultDFSet::operator==(const_cast<DefaultDFSet&>(other)); }
+  //  bool operator==(const DefaultDFSet & other) const 
+  //  { return DefaultDFSet::operator==(const_cast<DefaultDFSet &>(other)); }
 
   //************************************************************
   // Modifier Methods
@@ -87,7 +87,7 @@ public:
   //************************************************************
   // Output and Debugging Methods
   //************************************************************
-  void output(OA::IRHandlesIRInterface& ir) const;
+  void output(OA::IRHandlesIRInterface & ir) const;
   
   /// Output succinct description of set's contents
   void dump(std::ostream &os, OA::OA_ptr<OA::IRHandlesIRInterface> pIR);

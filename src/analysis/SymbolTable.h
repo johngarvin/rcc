@@ -85,57 +85,42 @@ public:
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual SymbolTable * clone() { return new SymbolTable(*this); }
+  virtual SymbolTable * clone();
 
   // -------------------------------------------------------
   // iterator, find/insert, etc 
   // -------------------------------------------------------
 
   // iterators:
-  iterator begin() 
-    { return mVars.begin(); }
-  const_iterator begin() const 
-    { return mVars.begin(); }
-  iterator end() 
-    { return mVars.end(); }
-  const_iterator end() const 
-    { return mVars.end(); }
+  iterator begin();
+  iterator end();
+  const_iterator begin() const;
+  const_iterator end() const;
   
   // capacity:
-  size_type size() const
-    { return mVars.size(); }
+  size_type size() const;
 
   // element access:
-  mapped_type & operator[](const key_type& x)
-    { return mVars[x]; }
+  mapped_type & operator[](const key_type & x);
 
   // modifiers:
-  std::pair<iterator, bool> insert(const value_type& x)
-    { return mVars.insert(x); }
-  iterator insert(iterator position, const value_type& x)
-    { return mVars.insert(position, x); }
+  std::pair<iterator, bool> insert(const value_type & x);
+  iterator insert(iterator position, const value_type & x);
 
-  void erase(iterator position) 
-    { mVars.erase(position); }
-  size_type erase(const key_type& x) 
-    { return mVars.erase(x); }
-  void erase(iterator first, iterator last) 
-    { return mVars.erase(first, last); }
+  void erase(iterator position);
+  size_type erase(const key_type & x);
+  void erase(iterator first, iterator last);
 
-  void clear() 
-    { mVars.clear(); }
+  void clear();
 
   // map operations:
-  iterator find(const key_type& x)
-    { return mVars.find(x); }
-  const_iterator find(const key_type& x) const
-    { return mVars.find(x); }
-  size_type count(const key_type& x) const
-    { return mVars.count(x); }
+  iterator find(const key_type & x);
+  const_iterator find(const key_type & x) const;
+  size_type count(const key_type & x) const;
 
   // if value exists for the given key, return it. Otherwise, create a
   // new value, map key to value, and return the value.
-  mapped_type find_or_create(const key_type& k, const LexicalScope * const scope);
+  mapped_type find_or_create(const key_type & k, const LexicalScope * const scope);
   
   // -------------------------------------------------------
   // code generation
@@ -146,13 +131,13 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
   // single symbol table for mentions in ambiguous scope
   static SymbolTable * get_ambiguous_st();
 
 private:
-  MyMap_t mVars; // (contents of map not owned)
+  MyMap_t m_vars; // (contents of map not owned)
   static SymbolTable * s_ambiguous_st;
 };
 

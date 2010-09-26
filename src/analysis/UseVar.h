@@ -43,34 +43,31 @@ public:
   };
 
 public:
-  UseVar();
+  explicit UseVar(SEXP mention_c, PositionT position, MayMustT mmt, Locality::LocalityType lt);
   virtual ~UseVar();
 
   // function or argument position
-  PositionT getPositionType() const
-    { return mPositionType; }
-  void setPositionType(PositionT x)
-    { mPositionType = x; }
+  PositionT get_position_type() const;
 
-  virtual SEXP getName() const;
+  virtual SEXP get_name() const;
 
   void accept(VarVisitor * v);
 
   // -------------------------------------------------------
   // cloning: return a shallow copy... 
   // -------------------------------------------------------
-  virtual UseVar * clone() { return new UseVar(*this); }
+  virtual UseVar * clone();
 
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream & dump(std::ostream & os) const;
 
 private:
-  PositionT mPositionType;
+  const PositionT m_position_type;
 };
 
-const std::string typeName(const UseVar::PositionT x);
+const std::string type_name(const UseVar::PositionT x);
 
 }
 

@@ -50,7 +50,7 @@ public:
   
   // ----- debugging -----
   void dump_node_maps();
-  void dump_node_maps(std::ostream &os);
+  void dump_node_maps(std::ostream & os);
 
 private:
   // ----- callbacks for CFGDFSolver -----

@@ -58,8 +58,8 @@ public:
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
-  std::ostream& dumpCout() const; // overloading can confuse debuggers
-  virtual std::ostream& dump(std::ostream& os) const = 0;
+  std::ostream & dump_cout() const; // overloading can confuse debuggers
+  virtual std::ostream& dump(std::ostream & os) const = 0;
   
 protected:
 private:

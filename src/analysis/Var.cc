@@ -33,11 +33,19 @@
 
 namespace RAnnot {
 
+typedef Var::UseDefT UseDefT;
+typedef Var::MayMustT MayMustT;
+
 //****************************************************************************
 // Var
 //****************************************************************************
 
-  Var::Var() : m_first_on_some_path(false)
+Var::Var(SEXP sexp, UseDefT udt, MayMustT mmt, Locality::LocalityType lt)
+  : m_sexp(sexp),
+    m_use_def_type(udt),
+    m_may_must_type(mmt),
+    m_scope_type(lt),
+    m_first_on_some_path(false)
 {
 }
 
@@ -46,16 +54,52 @@ Var::~Var()
 {
 }
 
+UseDefT Var::get_use_def_type() const
+{
+  return m_use_def_type;
+}
 
-std::ostream&
-Var::dump(std::ostream& os) const
+// may/must type
+MayMustT Var::get_may_must_type() const 
+{
+  return m_may_must_type;
+}
+
+// scope type
+Locality::LocalityType Var::get_scope_type() const
+{
+  return m_scope_type;
+}
+
+void Var::set_scope_type(Locality::LocalityType x)
+{
+  m_scope_type = x;
+}
+
+// Mention (cons cell that contains the name)
+SEXP Var::get_mention_c() const
+{
+  return m_sexp;
+}
+
+bool Var::is_first_on_some_path() const
+{
+  return m_first_on_some_path;
+}
+
+void Var::set_first_on_some_path(bool x)
+{
+  m_first_on_some_path = x;
+}
+
+
+std::ostream & Var::dump(std::ostream & os) const
 {
   beginObjDump(os, Var);
   endObjDump(os, Var);
 }
 
-PropertyHndlT
-Var::handle() {
+PropertyHndlT Var::handle() {
   return VarAnnotationMap::handle();
 }
 
@@ -74,7 +118,15 @@ template<class R> R Var::accept(VarVisitor<R> * v)
 }
 #endif
 
-const std::string typeName(const Var::MayMustT x)
+const std::string type_name(const Var::UseDefT x)
+{
+  switch(x) {
+  case Var::Var_USE: return "USE";
+  case Var::Var_DEF: return "DEF";
+  }
+}
+
+const std::string type_name(const Var::MayMustT x)
 {
   switch(x) {
   case Var::Var_MAY:  return "MAY";
@@ -82,4 +134,4 @@ const std::string typeName(const Var::MayMustT x)
   }
 }
 
-}
+}  // end namespace RAnnot

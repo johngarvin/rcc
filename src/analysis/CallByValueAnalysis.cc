@@ -132,8 +132,8 @@ void CallByValueAnalysis::perform_analysis() {
 	    rcc_warn("No CBV information for procedure with zero or more than one definition");
 	    continue;
 	  }
-	  if (def->getSourceType() == DefVar::DefVar_ASSIGN && is_fundef(CAR(def->getRhs_c()))) {
-	    callee = getProperty(FuncInfo, CAR(def->getRhs_c()));
+	  if (def->get_source_type() == DefVar::DefVar_ASSIGN && is_fundef(CAR(def->get_rhs_c()))) {
+	    callee = getProperty(FuncInfo, CAR(def->get_rhs_c()));
 	  } else {
 	    rcc_warn("No CBV information for callee name defined as a non-fundef");
 	    continue;

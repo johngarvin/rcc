@@ -152,12 +152,12 @@ bool FuncInfo::are_all_value() const
   return m_basic->are_all_value();
 }
 
-const std::string& FuncInfo::get_c_name()
+const std::string & FuncInfo::get_c_name()
 {
   return m_basic->get_c_name();
 }
 
-const std::string& FuncInfo::get_closure()
+const std::string & FuncInfo::get_closure()
 {
   return m_basic->get_closure();
 }
@@ -257,7 +257,7 @@ void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x) {
   m_strictness = x;
 }
 
-std::ostream& FuncInfo::dump(std::ostream& os) const
+std::ostream & FuncInfo::dump(std::ostream & os) const
 {
   beginObjDump(os, FuncInfo);
   m_basic->dump(os);
@@ -265,7 +265,7 @@ std::ostream& FuncInfo::dump(std::ostream& os) const
   for (const_mention_iterator i = begin_mentions(); i != end_mentions(); ++i) {
     Var * v = *i;
     v->dump(os);
-    VarBinding * vb = getProperty(VarBinding, (*i)->getMention_c());
+    VarBinding * vb = getProperty(VarBinding, (*i)->get_mention_c());
     vb->dump(os);
   }
   os << "End mentions" << std::endl;
@@ -283,12 +283,7 @@ void FuncInfo::analyze_args() {
   int n_args = 0;
   for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
     ++n_args;
-    DefVar * annot = new DefVar();
-    annot->setMention_c(e);
-    annot->setSourceType(DefVar::DefVar_FORMAL);
-    annot->setMayMustType(Var::Var_MUST);
-    annot->setScopeType(Locality::Locality_LOCAL);
-    annot->setRhs_c(0);
+    DefVar * annot = new DefVar(e, DefVar::DefVar_FORMAL, Var::Var_MUST, Locality::Locality_LOCAL, 0);
     putProperty(Var, e, annot);
     if (TAG(e) == ddd) {
       has_var_args = true;

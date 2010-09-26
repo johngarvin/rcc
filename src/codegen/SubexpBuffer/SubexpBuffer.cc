@@ -38,7 +38,7 @@ SubexpBuffer::SubexpBuffer(std::string pref /* = "v" */, bool is_c /* = false */
 
 SubexpBuffer::~SubexpBuffer() {}
 
-SubexpBuffer &SubexpBuffer::operator=(SubexpBuffer &sb) {
+SubexpBuffer & SubexpBuffer::operator=(SubexpBuffer & sb) {
   return sb;
 }
 

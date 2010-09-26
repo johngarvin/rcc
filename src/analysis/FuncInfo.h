@@ -101,10 +101,10 @@ public:
   SEXP get_first_name_c() const;
 
   /// name of C function
-  const std::string& get_c_name(); // not const: fills in m_c_name if empty
+  const std::string & get_c_name(); // not const: fills in m_c_name if empty
 
   /// name of C variable storing the closure (CLOSXP)
-  const std::string& get_closure();  // not const: fills in m_closure if empty
+  const std::string & get_closure();  // not const: fills in m_closure if empty
 
   // ----- arguments (wrappers around BasicFuncInfo) -----
 
@@ -163,9 +163,7 @@ public:
   BasicFuncInfo * get_basic();
 
   // debugging
-  virtual std::ostream& dump(std::ostream& os) const;
-
-private:
+  virtual std::ostream & dump(std::ostream & os) const;
 
 private:
 
