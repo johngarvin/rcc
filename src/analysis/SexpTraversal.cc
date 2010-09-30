@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,30 +16,25 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: ExpressionInfoAnnotationMap.cc
+// File: SexpTraversal.cc
 //
-// Maps expression SEXPs to ExpressionInfo annotations.
+// Traverses an SEXP; fills in both ExpressionInfoAnnotationMap and
+// BasicVarAnnotationMap.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include <map>
-
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 
 #include <support/Debug.h>
-#include <support/RccError.h>
 
-#include <analysis/Analyst.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/BasicFuncInfo.h>
 #include <analysis/BasicFuncInfoAnnotationMap.h>
-#include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/PropertySet.h>
-#include <analysis/SexpTraversal.h>
+#include <analysis/SimpleIterators.h>
+#include <analysis/Utils.h>
 
-#include "ExpressionInfoAnnotationMap.h"
+#include "SexpTraversal.h"
 
 static bool debug;
 
@@ -47,95 +42,54 @@ using namespace HandleInterface;
 
 namespace RAnnot {
 
-// type definitions for readability
-typedef ExpressionInfoAnnotationMap::MyKeyT MyKeyT;
-typedef ExpressionInfoAnnotationMap::MyMappedT MyMappedT;
-typedef ExpressionInfoAnnotationMap::iterator iterator;
-typedef ExpressionInfoAnnotationMap::const_iterator const_iterator;
-
-// ----- constructor/destructor ----- 
-
-ExpressionInfoAnnotationMap::ExpressionInfoAnnotationMap()
-{
-  RCC_DEBUG("RCC_ExpressionInfoAnnotationMap", debug);
-}
-
-ExpressionInfoAnnotationMap::~ExpressionInfoAnnotationMap() {
-  std::map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = get_map().begin(); iter != get_map().end(); ++iter) {
-    delete(iter->second);
+SexpTraversal * SexpTraversal::instance() {
+  if (s_instance == 0) {
+    s_instance = new SexpTraversal();
   }
+  return s_instance;
 }
 
-// ----- computation -----
-
-void ExpressionInfoAnnotationMap::compute() {
-  SexpTraversal::instance();
-#if 0
+SexpTraversal::SexpTraversal() {
   BasicFuncInfo * bfi;
   OA::OA_ptr<OA::CFG::NodeInterface> node;
   OA::StmtHandle stmt;
+
+  RCC_DEBUG("RCC_SexpTraversalAnnotationMap", debug);
 
   // we need to make expressions out of statements, call sites, and actual arguments
   FOR_EACH_BASIC_PROC(bfi) {
     PROC_FOR_EACH_NODE(bfi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	// statements
-	ExpressionInfo * annot = make_annot(make_sexp(stmt));
+	ExpressionInfo * annot = make_expression_info(make_sexp(stmt));
 	if (is_for(CAR(make_sexp(stmt)))) {
-	  make_annot(for_range_c(CAR(make_sexp(stmt))));
+	  make_expression_info(for_range_c(CAR(make_sexp(stmt))));
 	}
 	for(ExpressionInfo::const_call_site_iterator csi = annot->begin_call_sites(); csi != annot->end_call_sites(); ++csi) {
 	  // call sites
-	  make_annot(*csi);
+	  make_expression_info(*csi);
 	  // LHS
-	  make_annot(CAR(*csi));
+	  make_expression_info(CAR(*csi));
 	  for(R_CallArgsIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
 	    // actual arguments
-	    make_annot(arg_it.current());
+	    make_expression_info(arg_it.current());
 	  }
 	}
       }
     }
   }
-#endif
 }
 
-#if 0
-ExpressionInfo * ExpressionInfoAnnotationMap::make_annot(const MyKeyT & k) {
+ExpressionInfo * SexpTraversal::make_expression_info(const SEXP & k) {
   if (debug) {
-    std::cout << "ExpressionInfoAnnotationMap analyzing the following expression:" << std::endl;
+    std::cout << "SexpTraversal analyzing the following expression:" << std::endl;
     Rf_PrintValue(CAR(k));
   }
 
   ExpressionInfo * annot = new ExpressionInfo(k);
   build_ud_rhs(annot, k, BasicVar::Var_MUST, true);
-  get_map()[k] = annot;
+  putProperty(ExpressionInfo, k, annot);
   return annot;
-}
-#endif
-
-// ----- singleton pattern -----
-
-ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::instance() {
-  if (s_instance == 0) {
-    create();
-  }
-  return s_instance;
-}
-
-PropertyHndlT ExpressionInfoAnnotationMap::handle() {
-  if (s_instance == 0) {
-    create();
-  }
-  return s_handle;
-}
-
-// Create the singleton instance and register the map in PropertySet
-// for getProperty
-void ExpressionInfoAnnotationMap::create() {
-  s_instance = new ExpressionInfoAnnotationMap();
-  analysisResults.add(s_handle, s_instance);
 }
 
 /// Traverse the given SEXP (not an lvalue) and set variable
@@ -145,10 +99,10 @@ void ExpressionInfoAnnotationMap::create() {
 ///                 (usually must-use; may-use if we're looking at an actual argument
 ///                 to a call-by-need function)
 /// is_stmt       = true if we're calling build_ud_rhs from outside, false if sub-SEXP
-void ExpressionInfoAnnotationMap::build_ud_rhs(ExpressionInfo * ei,
-					       const SEXP cell,
-					       Var::MayMustT may_must_type,
-					       bool is_stmt)
+void SexpTraversal::build_ud_rhs(ExpressionInfo * ei,
+				 const SEXP cell,
+				 BasicVar::MayMustT may_must_type,
+				 bool is_stmt)
 {
   assert(is_cons(cell));
   SEXP e = CAR(cell);
@@ -234,11 +188,11 @@ void ExpressionInfoAnnotationMap::build_ud_rhs(ExpressionInfo * ei,
 /// rhs           = a cons cell whose CAR is the right side of the assignment statement
 /// may_must_type = whether we are in a may-def or a must-def
 /// lhs_type      = whether we are in a local or free assignment
-void ExpressionInfoAnnotationMap::build_ud_lhs(ExpressionInfo * ei,
-					       const SEXP cell,
-					       const SEXP rhs_c,
-					       Var::MayMustT may_must_type,
-					       LhsType lhs_type)
+void SexpTraversal::build_ud_lhs(ExpressionInfo * ei,
+				 const SEXP cell,
+				 const SEXP rhs_c,
+				 BasicVar::MayMustT may_must_type,
+				 LhsType lhs_type)
 {
   assert(is_cons(cell));
   assert(is_cons(rhs_c));
@@ -279,30 +233,29 @@ void ExpressionInfoAnnotationMap::build_ud_lhs(ExpressionInfo * ei,
   }
 }
 
-void ExpressionInfoAnnotationMap::make_use_var(ExpressionInfo * ei,
-					       SEXP cell,
-					       UseVar::PositionT pos,
-					       BasicVar::MayMustT mmt,
-					       Locality::LocalityType lt)
+void SexpTraversal::make_use_var(ExpressionInfo * ei,
+				 SEXP cell,
+				 UseVar::PositionT pos,
+				 BasicVar::MayMustT mmt,
+				 Locality::LocalityType lt)
 {
   UseVar * use = new UseVar(cell, pos, mmt, lt);
   putProperty(BasicVar, cell, use);
   ei->insert_use(cell);
 }
 
-void ExpressionInfoAnnotationMap::make_def_var(ExpressionInfo * ei,
-					       SEXP cell,
-					       DefVar::SourceT source,
-					       BasicVar::MayMustT mmt,
-					       Locality::LocalityType lt,
-					       SEXP rhs_c)
+void SexpTraversal::make_def_var(ExpressionInfo * ei,
+				 SEXP cell,
+				 DefVar::SourceT source,
+				 BasicVar::MayMustT mmt,
+				 Locality::LocalityType lt,
+				 SEXP rhs_c)
 {
   DefVar * def = new DefVar(cell, source, mmt, lt, rhs_c);
   putProperty(BasicVar, cell, def);
   ei->insert_def(cell);
 }
 
-ExpressionInfoAnnotationMap * ExpressionInfoAnnotationMap::s_instance = 0;
-PropertyHndlT ExpressionInfoAnnotationMap::s_handle = "ExpressionInfo";
+SexpTraversal * SexpTraversal::s_instance = 0;
 
-}
+}  // End namespace RAnnot

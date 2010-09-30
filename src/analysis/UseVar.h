@@ -27,14 +27,14 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/Var.h>
+#include <analysis/BasicVar.h>
 #include <analysis/VarVisitor.h>
 
 namespace RAnnot {
 
 /// UseVar: A variable reference that is a use
 class UseVar
-  : public Var
+  : public BasicVar
 {
 public:
   enum PositionT {

@@ -61,6 +61,9 @@ public:
   MyVarSetT get_uses() const;
   MyVarSetT get_defs() const;
 
+  void insert_use_sexp(const FuncInfo * fi, const SEXP sexp);
+  void insert_def_sexp(const FuncInfo * fi, const SEXP sexp);
+
   void insert_use_var(const FuncInfo * fi, const UseVar * use);
   void insert_def_var(const FuncInfo * fi, const DefVar * def);
 

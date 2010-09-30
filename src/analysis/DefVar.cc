@@ -33,7 +33,7 @@ namespace RAnnot {
 typedef DefVar::SourceT SourceT;
 
 DefVar::DefVar(SEXP mention_c, SourceT source, MayMustT mmt, Locality::LocalityType lt, SEXP rhs_c)
-  : Var(mention_c, Var_DEF, mmt, lt),
+  : BasicVar(mention_c, Var_DEF, mmt, lt),
     m_source_type(source),
     m_rhs_c(rhs_c)
 {
@@ -82,9 +82,8 @@ std::ostream & DefVar::dump(std::ostream & os) const
   dumpSEXP(os, name);
   dumpName(os, get_use_def_type());
   dumpName(os, get_may_must_type());
-  dumpName(os, get_scope_type());
+  dumpName(os, get_basic_scope_type());
   dumpName(os, get_source_type());
-  dumpVar(os, is_first_on_some_path());
   endObjDump(os, DefVar);
 }
 

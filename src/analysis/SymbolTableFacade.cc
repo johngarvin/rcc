@@ -33,6 +33,23 @@ SymbolTableFacade::SymbolTableFacade() {
 SymbolTableFacade::~SymbolTableFacade() {
 }
 
+VarInfo * SymbolTableFacade::find_entry(const SEXP sexp) const {
+  VarInfo * vi;
+  Var * var = getProperty(Var, sexp);
+  VarBinding * binding = getProperty(VarBinding, sexp);
+  if (binding->is_unbound()) {
+    SymbolTable * table = UnboundLexicalScope::instance()->get_symbol_table();
+    vi = (*table)[var->get_name()];
+  } else if (binding->is_single()) {
+    SymbolTable * table = (*binding->begin())->get_symbol_table();
+    vi = (*table)[var->get_name()];
+  } else {
+    vi = (*SymbolTable::get_ambiguous_st())[var->get_name()];
+  }
+  assert(vi != 0);
+  return vi;
+}
+
 VarInfo * SymbolTableFacade::find_entry(const Var * var) const {
   VarInfo * vi;
   VarBinding * binding = getProperty(VarBinding, var->get_mention_c());

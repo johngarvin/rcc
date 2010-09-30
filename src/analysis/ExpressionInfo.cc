@@ -24,15 +24,19 @@
 
 #include <support/DumpMacros.h>
 
+#include <analysis/AnalysisResults.h>
 #include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/Utils.h>
-#include <analysis/Var.h>
+#include <analysis/BasicVar.h>
+#include <analysis/BasicVarAnnotationMap.h>
 
 #include "ExpressionInfo.h"
 
 namespace RAnnot {
 
 // typedefs for readability
+typedef ExpressionInfo::MyUseT MyUseT;
+typedef ExpressionInfo::MyDefT MyDefT;
 typedef ExpressionInfo::MyCallSiteT MyCallSiteT;
 typedef ExpressionInfo::const_use_iterator const_use_iterator;
 typedef ExpressionInfo::const_def_iterator const_def_iterator;
@@ -57,12 +61,12 @@ ExpressionInfo::~ExpressionInfo()
 }
 
 // set operations
-void ExpressionInfo::insert_use(UseVar * const x) {
+void ExpressionInfo::insert_use(MyUseT x) {
   assert(x != 0);
   m_uses.push_back(x);
 }
 
-void ExpressionInfo::insert_def(DefVar * const x) {
+void ExpressionInfo::insert_def(MyDefT x) {
   assert(x != 0);
   m_defs.push_back(x);
 }
@@ -148,8 +152,7 @@ AnnotationBase * ExpressionInfo::clone() {
 }
 
 std::ostream & ExpressionInfo::dump(std::ostream & os) const {
-  UseVar * use;
-  DefVar * def;
+  SEXP use, def;
   SEXP cs;
   beginObjDump(os, ExpressionInfo);
   SEXP definition = CAR(m_cell);
@@ -157,13 +160,13 @@ std::ostream & ExpressionInfo::dump(std::ostream & os) const {
 
   os << "Begin uses:" << std::endl;
   EXPRESSION_FOR_EACH_USE(this, use) {
-    use->dump(os);
+    getProperty(BasicVar, use)->dump(os);
   }
   os << "End uses" << std::endl;
 
   os << "Begin defs:" << std::endl;
   EXPRESSION_FOR_EACH_DEF(this, def) {
-    def->dump(os);
+    getProperty(BasicVar, def)->dump(os);
   }
   os << "End defs" << std::endl;
 

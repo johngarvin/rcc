@@ -68,7 +68,7 @@ class FuncInfo : public NonUniformDegreeTreeNodeTmpl<FuncInfo>,
 		 public AnnotationBase
 {
 public:
-  typedef Var *                                            MentionT;
+  typedef SEXP                                             MentionT;
 
   typedef std::list<MentionT>                              MentionSetT;
   typedef MentionSetT::iterator                            mention_iterator;

@@ -216,9 +216,7 @@ void SideEffectAnnotationMap::add_all_names_defined(SideEffect * annot,
 }
 
 void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
-  SEXP cs_c;
-  UseVar * use;
-  DefVar * def;
+  SEXP cs_c, use, def;
   OA_ptr<Alias::AliasTagIterator> tag_iter;
 
   OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(make_proc_h(fi->get_sexp()));
@@ -231,10 +229,10 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 
   // first grab local uses and defs
   EXPRESSION_FOR_EACH_USE(expr, use) {
-    annot->insert_use_var(fi, use);
+    annot->insert_use_sexp(fi, use);
   }
   EXPRESSION_FOR_EACH_DEF(expr, def) {
-    annot->insert_def_var(fi, def);
+    annot->insert_def_sexp(fi, def);
   }
 
   // now grab side effects due to procedure calls: get interprocedural

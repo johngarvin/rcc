@@ -34,6 +34,7 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OEscapeInfoAnnotationMap.h>
+#include <analysis/SexpTraversal.h>
 #include <analysis/SideEffectAnnotationMap.h>
 #include <analysis/VarAnnotationMap.h>
 
@@ -88,7 +89,7 @@ void ResolvedArgsAnnotationMap::compute() {
   for (const_iterator it = begin(); it != end(); it++) {
     ResolvedArgs * value = dynamic_cast<ResolvedArgs *>(it->second);
     for (SEXP x = value->get_resolved(); x != R_NilValue; x = CDR(x)) {
-      ExpressionInfoAnnotationMap::instance()->make_annot(x);
+      SexpTraversal::instance()->make_expression_info(x);
       // give an answer for call sites that are already resolved.
       if (is_call(CAR(x))) {
 	std::pair<ResolvedArgs::ResolvedSource, SEXP> pair = value->source_from_resolved(x);

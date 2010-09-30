@@ -68,7 +68,7 @@ Expression SubexpBuffer::op_var_def(SEXP cell, string rhs, string rho) {
     string location = binding->get_location(CAR(cell), this);
     assert(!location.empty());
     Var * var = getProperty(Var, cell);
-    assert(var->get_use_def_type() == Var::Var_DEF);
+    assert(var->get_use_def_type() == BasicVar::Var_DEF);
     FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()));
     assert(scope != 0);
     FuncInfo * fi = getProperty(FuncInfo, scope->get_sexp());

@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,45 +16,30 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: ExpressionInfoAnnotationMap.h
+// File: SexpTraversal.h
 //
-// Maps expression SEXPs to ExpressionInfo annotations.
+// Traverses an SEXP; fills in both ExpressionInfoAnnotationMap and
+// BasicVarAnnotationMap.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef EXPRESSION_INFO_ANNOTATION_MAP_H
-#define EXPRESSION_INFO_ANNOTATION_MAP_H
+#ifndef SEXP_TRAVERSAL_H
+#define SEXP_TRAVERSAL_H
 
-// Set of ExpressionInfo annotations. Note: owns values in map, so
-// they must be deleted in the destructor
-
-#include <map>
-
-#include <analysis/DefaultAnnotationMap.h>
-#include <analysis/PropertyHndl.h>
-#include <analysis/DefVar.h>
-#include <analysis/UseVar.h>
+#include <analysis/ExpressionInfo.h>
 
 namespace RAnnot {
 
-class ExpressionInfo;
-
-class ExpressionInfoAnnotationMap : public DefaultAnnotationMap {
+enum BasicVar::MayMustT;
+  
+class SexpTraversal {
 public:
-  // deconstructor
-  virtual ~ExpressionInfoAnnotationMap();
+  static SexpTraversal * instance();
 
-  // singleton
-  static ExpressionInfoAnnotationMap * instance();
-
-  // getting the handle causes this map to be created and registered
-  static PropertyHndlT handle();
+  static ExpressionInfo * make_expression_info(const SEXP & k);
 
 private:
-  // singleton: only this class is allowed to instantiate
-  explicit ExpressionInfoAnnotationMap();
-
-  void compute();
+  explicit SexpTraversal();
 
 private:
   enum LhsType {
@@ -83,14 +68,10 @@ private:
 			   BasicVar::MayMustT mmt,
 			   Locality::LocalityType lt,
 			   SEXP rhs_c);
-
 private:
-  // static members and methods for singleton
-  static ExpressionInfoAnnotationMap * s_instance;
-  static PropertyHndlT s_handle;
-  static void create();
+  static SexpTraversal * s_instance;
 };
 
-}
+}  // end namespace RAnnot
 
 #endif

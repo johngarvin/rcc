@@ -37,7 +37,7 @@ typedef UseVar::PositionT PositionT;
 //****************************************************************************
 
 UseVar::UseVar(SEXP mention_c, PositionT position, MayMustT mmt, Locality::LocalityType lt)
-  : Var(mention_c, Var::Var_USE, mmt, lt),
+  : BasicVar(mention_c, BasicVar::Var_USE, mmt, lt),
     m_position_type(position)
 {
 }
@@ -74,9 +74,8 @@ std::ostream & UseVar::dump(std::ostream & os) const
   dumpSEXP(os, name);
   dumpName(os, get_use_def_type());
   dumpName(os, get_may_must_type());
-  dumpName(os, get_scope_type());
+  dumpName(os, get_basic_scope_type());
   dumpName(os, get_position_type());
-  dumpVar(os, is_first_on_some_path());
   endObjDump(os, UseVar);
 }
 

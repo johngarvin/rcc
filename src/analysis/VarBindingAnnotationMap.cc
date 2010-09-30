@@ -129,6 +129,7 @@ void VarBindingAnnotationMap::compute() {
 
 void VarBindingAnnotationMap::create_var_bindings() {
   FuncInfo * fi;
+  FuncInfo::const_mention_iterator mi;
   std::set<std::pair<SEXP, LexicalScope *> > free_defs;
 
   // first pass: formals and local and free defs. Free defs depend on
@@ -146,8 +147,8 @@ void VarBindingAnnotationMap::create_var_bindings() {
     }
 
     PROC_FOR_EACH_MENTION(fi, mi) {
-      Var * v = *mi;
-      if (v->get_use_def_type() == Var::Var_DEF) {
+      Var * v = getProperty(Var, *mi);
+      if (v->get_use_def_type() == BasicVar::Var_DEF) {
 	VarBinding * scopes = new VarBinding();
 	switch(v->get_scope_type()) {
 	case Locality::Locality_LOCAL:
@@ -167,6 +168,8 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	case Locality::Locality_BOTTOM:
 	  rcc_error("VarBindingAnnotationMap: found def of BOTTOM type");
 	  break;
+	default:
+	  rcc_error("VarBindingAnnotationMap: bad Locality type in first pass");
 	}
 	get_map()[v->get_mention_c()] = scopes;
       }
@@ -178,8 +181,8 @@ void VarBindingAnnotationMap::create_var_bindings() {
   // pass.
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_MENTION(fi, mi) {
-      Var * v = *mi;
-      if (v->get_use_def_type() == Var::Var_USE) {
+      Var * v = getProperty(Var, *mi);
+      if (v->get_use_def_type() == BasicVar::Var_USE) {
 	VarBinding * scopes = new VarBinding();
 	switch(v->get_scope_type()) {
 	case Locality::Locality_LOCAL:
@@ -196,12 +199,15 @@ void VarBindingAnnotationMap::create_var_bindings() {
 		scopes->insert(a->get_scope());
 	      }
 	  }
+	  break;
+	default:
+	  rcc_error("VarBindingAnnotationMap: bad Locality type in second pass");
+	  break;
 	}
 	// for R internal names, add the library scope
 	if (CAR(v->get_mention_c()) == R_MissingArg || is_library(CAR(v->get_mention_c()))) {
 	  scopes->insert(R_Analyst::instance()->get_library_scope());
 	}
-	
 	get_map()[v->get_mention_c()] = scopes;
       }
     }
@@ -214,7 +220,7 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
   for(iter = begin(); iter != end(); ++iter) {
     // TODO: refactor AnnotationMaps to avoid downcasting
     VarBinding * vb = dynamic_cast<VarBinding *>(iter->second);
-    Var * var = getProperty(Var, iter->first);
+    BasicVar * var = getProperty(BasicVar, iter->first);
     SEXP name = var->get_name();
     // for each scope in the VarBinding
     VarBinding::const_iterator scope_iter;
@@ -250,8 +256,8 @@ static bool defined_local_in_scope(Var * v, FuncInfo * s) {
   // look at mentions
   FuncInfo::mention_iterator mi;
   for(mi = s->begin_mentions(); mi != s->end_mentions(); ++mi) {
-    Var * m = *mi;
-    if (m->get_use_def_type() == Var::Var_DEF  &&
+    Var * m = getProperty(Var, *mi);
+    if (m->get_use_def_type() == BasicVar::Var_DEF  &&
 	m->get_scope_type() == Locality::Locality_LOCAL &&
 	m->get_name() == v->get_name())
     {

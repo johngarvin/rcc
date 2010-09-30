@@ -46,7 +46,8 @@ class LocalityDFSolver : private OA::DataFlow::CFGDFProblem {
 public:
   explicit LocalityDFSolver(OA::OA_ptr<R_IRInterface> _rir);
   ~LocalityDFSolver() {}
-  void perform_analysis(OA::ProcHandle proc, OA::OA_ptr<OA::CFG::CFGInterface> cfg);
+  std::map<SEXP, Locality::LocalityType> perform_analysis(OA::ProcHandle proc,
+							  OA::OA_ptr<OA::CFG::CFGInterface> cfg);
   void dump_node_maps();
   void dump_node_maps(std::ostream &os);
   //------------------------------------------------------------------

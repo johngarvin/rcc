@@ -27,7 +27,7 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/Var.h>
+#include <analysis/BasicVar.h>
 #include <analysis/VarVisitor.h>
 
 namespace RAnnot {
@@ -36,7 +36,7 @@ namespace RAnnot {
 // DefVar: A variable reference that is a def
 // ---------------------------------------------------------------------------
 class DefVar
-  : public Var
+  : public BasicVar
 {
 public:
   enum SourceT {

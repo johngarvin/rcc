@@ -31,6 +31,7 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnnotationBase.h>
+#include <analysis/BasicVar.h>
 #include <analysis/LocalityType.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/VarVisitor.h>
@@ -44,18 +45,11 @@ class Var
   : public AnnotationBase
 {
 public:
-  enum UseDefT {
-    Var_USE,
-    Var_DEF
-  };
-  
-  enum MayMustT {
-    Var_MAY,
-    Var_MUST
-  };
+  typedef BasicVar::UseDefT UseDefT;
+  typedef BasicVar::MayMustT MayMustT;
 
 public:
-  explicit Var(SEXP m_sexp, UseDefT udt, MayMustT mmt, Locality::LocalityType lt);
+  explicit Var(BasicVar * basic);
   virtual ~Var();
   
   // -------------------------------------------------------
@@ -78,11 +72,11 @@ public:
   bool is_first_on_some_path() const;
   void set_first_on_some_path(bool x);
 
-  virtual SEXP get_name() const = 0;
+  SEXP get_name() const;
 
   static PropertyHndlT handle();
 
-  virtual void accept(VarVisitor * v) = 0;
+  void accept(VarVisitor * v);
 
 #if 0
   // This was an attempt to implement a generic visitor pattern
@@ -98,9 +92,9 @@ public:
 #endif
 
   // -------------------------------------------------------
-  // cloning: return a shallow copy... 
+  // cloning: do not support
   // -------------------------------------------------------
-  //virtual Var * clone() { return new Var(*this); }
+  virtual Var * clone();
 
   // -------------------------------------------------------
   // code generation
@@ -116,9 +110,9 @@ public:
   //     if all reaching defs do not have the same loc binding
   //       generate new handle bound to proper location
   //     if all reaching defs have same loc binding, do nothing
-  void genCodeInit();
-  void genCodeRHS();
-  void genCodeLHS();
+  //  void genCodeInit();
+  //  void genCodeRHS();
+  //  void genCodeLHS();
 
   // -------------------------------------------------------
   // debugging
@@ -126,15 +120,10 @@ public:
   virtual std::ostream & dump(std::ostream & os) const;
 
 private:
-  const SEXP m_sexp;
-  const UseDefT m_use_def_type;
-  const MayMustT m_may_must_type;
   Locality::LocalityType m_scope_type;
   bool m_first_on_some_path;
+  BasicVar * m_basic;
 };
-
-const std::string type_name(const Var::UseDefT x);
-const std::string type_name(const Var::MayMustT x);
 
 }
 

@@ -79,7 +79,8 @@ public:
   // -------------------------------------------------------
   // get the annotation given a key (performs analysis if necessary)
   // -------------------------------------------------------
-  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // TODO: remove when refactoring is done
+  //  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // TODO: remove when refactoring is done
+  virtual void put(const MyKeyT & k, MyMappedT value) = 0;
   virtual MyMappedT get(const MyKeyT & k) = 0;
   virtual bool is_computed() const = 0;
   virtual bool computation_in_progress() const = 0;

@@ -32,6 +32,7 @@
 #include <ostream>
 #include <list>
 
+#include <analysis/BasicVar.h>
 #include <analysis/DefVar.h>
 #include <analysis/UseVar.h>
 
@@ -103,7 +104,7 @@ public:
   void clear_uses();
 
   // insert def or use
-  void insert_var(const Var * var);
+  void insert_var(const BasicVar * var);
 
   // true if the name is a formal argument
   bool is_param();

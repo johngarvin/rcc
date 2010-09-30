@@ -142,13 +142,13 @@ void VarInfo::clear_uses() {
 }
 
 // modifiers:
-void VarInfo::insert_var(const Var * x) {
-  if (DefT def = dynamic_cast<DefT>(x)) {
+void VarInfo::insert_var(const BasicVar * x) {
+  if (const DefVar * def = dynamic_cast<const DefVar *>(x)) {
     m_defs.push_back(def);
     if (def->get_source_type() == DefVar::DefVar_FORMAL) {
       m_param = true;
     }
-  } else if (UseT use = dynamic_cast<UseT>(x)) {
+  } else if (const UseVar * use = dynamic_cast<const UseVar *>(x)) {
     m_uses.push_back(use);
   } else {
     assert(0);

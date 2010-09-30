@@ -36,7 +36,8 @@ public:
   explicit DefaultAnnotationMap();
   virtual ~DefaultAnnotationMap();
 
-  virtual MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
+  //  virtual MyMappedT & operator[](const MyKeyT & k); // TODO: remove this when refactoring is done
+  virtual void put(const MyKeyT & k, MyMappedT value);
   virtual MyMappedT get(const MyKeyT & k);
 
   virtual bool is_valid(const MyKeyT & k);

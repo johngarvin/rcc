@@ -65,7 +65,8 @@ void PropertySet::insert(PropertyHndlT propertyName, SEXP s,
   if (annotations == 0) {
     rcc_error("Annotation map not found in PropertySet");
   }
-  (*annotations)[s] = annot;
+  //  (*annotations)[s] = annot;
+  annotations->put(s, annot);
 }
 
 AnnotationBase *PropertySet::lookup(PropertyHndlT propertyName, SEXP s)

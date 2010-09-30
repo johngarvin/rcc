@@ -222,11 +222,13 @@ void FuncInfo::insert_call_site(FuncInfo::CallSiteT cs)
   m_call_sites.push_back(cs);
 }
 
-FundefLexicalScope * FuncInfo::get_scope() const {
+FundefLexicalScope * FuncInfo::get_scope() const
+{
   return m_basic->get_scope();
 }
 
-BasicFuncInfo * FuncInfo::get_basic() {
+BasicFuncInfo * FuncInfo::get_basic()
+{
   return m_basic;
 }
 
@@ -245,15 +247,18 @@ SEXP FuncInfo::return_value_c(const SEXP cell) const
   return m_basic->return_value_c(cell);
 }
 
-bool FuncInfo::has_children() const {
+bool FuncInfo::has_children() const
+{
   return m_basic->has_children();
 }
 
-OA_ptr<Strictness::StrictnessResult> FuncInfo::get_strictness() const {
+OA_ptr<Strictness::StrictnessResult> FuncInfo::get_strictness() const
+{
   return m_strictness;
 }
 
-void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x) {
+void FuncInfo::set_strictness(OA_ptr<Strictness::StrictnessResult> x)
+{
   m_strictness = x;
 }
 
@@ -263,9 +268,9 @@ std::ostream & FuncInfo::dump(std::ostream & os) const
   m_basic->dump(os);
   os << "Begin mentions:" << std::endl;
   for (const_mention_iterator i = begin_mentions(); i != end_mentions(); ++i) {
-    Var * v = *i;
+    Var * v = getProperty(Var, *i);
     v->dump(os);
-    VarBinding * vb = getProperty(VarBinding, (*i)->get_mention_c());
+    VarBinding * vb = getProperty(VarBinding, *i);
     vb->dump(os);
   }
   os << "End mentions" << std::endl;
@@ -283,8 +288,10 @@ void FuncInfo::analyze_args() {
   int n_args = 0;
   for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
     ++n_args;
-    DefVar * annot = new DefVar(e, DefVar::DefVar_FORMAL, Var::Var_MUST, Locality::Locality_LOCAL, 0);
-    putProperty(Var, e, annot);
+    DefVar * dvar = new DefVar(e, DefVar::DefVar_FORMAL, BasicVar::Var_MUST, Locality::Locality_LOCAL, 0);
+    putProperty(BasicVar, e, dvar);
+    Var * var = new Var(dvar);
+    putProperty(Var, e, var);
     if (TAG(e) == ddd) {
       has_var_args = true;
     }
@@ -298,14 +305,16 @@ void FuncInfo::analyze_args() {
 void FuncInfo::collect_mentions_and_call_sites() {
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
-  SEXP cs;
-  UseVar * use;
-  DefVar * def;
+  SEXP use, def, cs;
 
   PROC_FOR_EACH_NODE(this, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       // for each mention
-      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
+      ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
+      if (debug) {
+	std::cerr << "FuncInfo collecting mentions/callsites for statement: ";
+	stmt_annot->dump(std::cerr);
+      }
       assert(stmt_annot != 0);
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
 	insert_mention(use);

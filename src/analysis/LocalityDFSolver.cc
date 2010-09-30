@@ -28,14 +28,15 @@
 #include <OpenAnalysis/CFG/CFGInterface.hpp>
 #include <OpenAnalysis/DataFlow/CFGDFProblem.hpp>
 
+#include <analysis/AnalysisResults.h>
+#include <analysis/BasicVar.h>
+#include <analysis/DefVar.h>
+#include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
-#include <analysis/AnalysisResults.h>
-#include <analysis/ExpressionInfo.h>
-#include <analysis/Var.h>
 #include <analysis/UseVar.h>
-#include <analysis/DefVar.h>
 #include <analysis/VarRefFactory.h>
+#include <analysis/VarVisitor.h>
 
 #include <analysis/LocalityDFSet.h>
 #include <analysis/LocalityDFSetElement.h>
@@ -56,6 +57,7 @@ namespace Locality {
 
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
+static OA_ptr<R_VarRef> var_ref_from_basic_var(BasicVar * var);
 static OA_ptr<R_VarRef> var_ref_from_use(UseVar * use);
 static OA_ptr<R_VarRef> var_ref_from_def(DefVar * def);
 static void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType locality, OA_ptr<R_VarRef> ref);
@@ -64,6 +66,7 @@ static void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType loc
 
 static bool debug;
 
+#if 0
 /// visitor that returns an R_VarRef of the appropriate type when
 /// applied to Var annotation
 class MakeVarRefVisitor : private VarVisitor {
@@ -88,6 +91,7 @@ public:
 private:
   OA_ptr<R_VarRef> m_output;
 };
+#endif
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
   : m_ir(_rir)
@@ -97,17 +101,17 @@ LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
 
 /// Perform the data flow analysis. Sets each variable reference's Var
 /// annotation with its locality information.
-void LocalityDFSolver::
+map<SEXP, Locality::LocalityType> LocalityDFSolver::
 perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
-  UseVar * use;
-  DefVar * def;
+  SEXP use_sexp, def_sexp;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
+  map<SEXP, Locality::LocalityType> output;
 
   m_cfg = cfg;
   m_proc = proc;
 
-  MakeVarRefVisitor visitor;
+  //  MakeVarRefVisitor visitor;
 
   // solve as a forward data flow problem
   m_solver = new DataFlow::CFGDFSolver(DataFlow::CFGDFSolver::Forward, *this);
@@ -129,14 +133,16 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(si->current()));
       // set locality flag for all uses
-      EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
-	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_use(use));
-	use->set_scope_type(elem->get_locality_type());
+      EXPRESSION_FOR_EACH_USE(stmt_annot, use_sexp) {
+	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, VarRefFactory::instance()->make_body_var_ref(use_sexp));
+	output[use_sexp] = elem->get_locality_type();
+	//	Var * use = getProperty(Var, use_sexp);
+	//	use->set_scope_type(elem->get_locality_type());
       }
       // set locality flag for may-defs
       //EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
       //OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, var_ref_from_def(def));
-	//	if (def->get_may_must_type() == Var::Var_MAY) {
+	//	if (def->get_may_must_type() == BasicVar::Var_MAY) {
 	// def->setScopeType(elem->get_locality_type());
 	//	}
       //}
@@ -144,6 +150,7 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       // TODO: add back assertion. Why does this sometimes fail?
     }
   }  // next CFG node
+  return output;
 }
 
 OA_ptr<DFSetElement> LocalityDFSolver::look_up_var_ref(OA_ptr<DFSet> set, OA_ptr<R_VarRef> ref) {
@@ -201,8 +208,7 @@ OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::initializeBottom() {
 }
 
 void LocalityDFSolver::initialize_sets() {
-  UseVar * use;
-  DefVar * def;
+  SEXP use, def;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
 
@@ -222,14 +228,14 @@ void LocalityDFSolver::initialize_sets() {
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
 
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
-	OA_ptr<R_VarRef> ref; ref = var_ref_from_use(use);
+	OA_ptr<R_VarRef> ref; ref = var_ref_from_basic_var(getProperty(BasicVar, use));
 
 	initialize_set_element(m_all_top, Locality_TOP, ref);
 	initialize_set_element(m_all_bottom, Locality_BOTTOM, ref);
 	initialize_set_element(m_entry_values, Locality_FREE, ref);
       }
       EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
-	OA_ptr<R_VarRef> ref; ref = var_ref_from_def(def);
+	OA_ptr<R_VarRef> ref; ref = var_ref_from_basic_var(getProperty(BasicVar, def));
 
 	initialize_set_element(m_all_top, Locality_TOP, ref);
 	initialize_set_element(m_all_bottom, Locality_BOTTOM, ref);
@@ -282,23 +288,24 @@ meet(OA_ptr<DataFlow::DataFlowSet> set1, OA_ptr<DataFlow::DataFlowSet> set2) {
 /// clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> LocalityDFSolver::
 transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
-  UseVar * use;
-  DefVar * def;
+  SEXP use_sexp, def_sexp;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   // if variable was found to be local during statement-level
   // analysis, add it in
-  EXPRESSION_FOR_EACH_USE(annot, use) {
-    if (use->get_scope_type() == Locality_LOCAL) {
-      OA_ptr<R_VarRef> ref; ref = var_ref_from_use(use);
-      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, use->get_scope_type());
+  EXPRESSION_FOR_EACH_USE(annot, use_sexp) {
+    BasicVar * use = getProperty(BasicVar, use_sexp);    
+    if (use->get_basic_scope_type() == Locality_LOCAL) {
+      OA_ptr<R_VarRef> ref; ref = var_ref_from_basic_var(use);
+      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, use->get_basic_scope_type());
       in->replace(elem);
     }
   }
-  EXPRESSION_FOR_EACH_DEF(annot, def) { 
-    if (def->get_scope_type() == Locality_LOCAL) {
-      OA_ptr<R_VarRef> ref; ref = var_ref_from_def(def);
-      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, def->get_scope_type());
+  EXPRESSION_FOR_EACH_DEF(annot, def_sexp) { 
+    BasicVar * def = getProperty(BasicVar, def_sexp);
+    if (def->get_basic_scope_type() == Locality_LOCAL) {
+      OA_ptr<R_VarRef> ref; ref = var_ref_from_basic_var(def);
+      OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, def->get_basic_scope_type());
       in->replace(elem);
     }
   }
@@ -343,6 +350,31 @@ OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2) {
 }
 
 // ----- conversion functions used throughout -----
+
+OA_ptr<R_VarRef> var_ref_from_basic_var(BasicVar * var) {
+  class MyVisitor : public VarVisitor {
+  public:
+    void visitUseVar(UseVar * use) {
+      m_ref = VarRefFactory::instance()->make_body_var_ref(use->get_mention_c());
+    }
+    void visitDefVar(DefVar * def) {
+      switch(def->get_source_type()) {
+      case DefVar::DefVar_ASSIGN:
+	m_ref = VarRefFactory::instance()->make_body_var_ref(def->get_mention_c());
+	break;
+      case DefVar::DefVar_FORMAL:
+	m_ref = VarRefFactory::instance()->make_arg_var_ref(def->get_mention_c());
+	break;
+      default:
+	rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
+      }
+    }
+    OA_ptr<R_VarRef> m_ref;
+  };
+  MyVisitor * visitor = new MyVisitor();
+  var->accept(visitor);
+  return visitor->m_ref;
+}
 
 OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
   return VarRefFactory::instance()->make_body_var_ref(use->get_mention_c());

@@ -623,14 +623,14 @@ OA_ptr<SideEffect::SideEffectStandard> R_IRInterface::getSideEffect(ProcHandle c
 /// Return a list of all the target memory reference handles that appear
 /// in the given statement.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
-  DefVar * def;
+  SEXP def;
   VarRefFactory * fact = VarRefFactory::instance();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->get_mention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def);
     defs->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
@@ -642,14 +642,14 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getDefMemRefs(StmtHandle h) {
 /// Return a list of all the source memory reference handles that appear
 /// in the given statement.
 OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
-  UseVar * use;
+  SEXP use;
   VarRefFactory * fact = VarRefFactory::instance();
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   EXPRESSION_FOR_EACH_USE(stmt_info, use) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->get_mention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use);
     uses->insert_ref(bvr);
   }
   OA_ptr<MemRefHandleIterator> retval;
@@ -662,14 +662,14 @@ OA_ptr<MemRefHandleIterator> R_IRInterface::getUseMemRefs(StmtHandle h) {
 //--------------------------------------------------------
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
-  DefVar * def;
+  SEXP def;
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   OA_ptr<R_VarRefSet> defs; defs = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::instance();
   EXPRESSION_FOR_EACH_DEF(stmt_info, def) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def->get_mention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(def);
     defs->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
@@ -678,14 +678,14 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getDefs(StmtHandle h) {
 }
 
 OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
-  UseVar * use;
+  SEXP use;
   ExpressionInfo * stmt_info = getProperty(ExpressionInfo, make_sexp(h));
   assert(stmt_info != 0);
 
   OA_ptr<R_VarRefSet> uses; uses = new R_VarRefSet;
   VarRefFactory * fact = VarRefFactory::instance();
   EXPRESSION_FOR_EACH_USE(stmt_info, use) {
-    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use->get_mention_c());
+    OA_ptr<R_BodyVarRef> bvr; bvr = fact->make_body_var_ref(use);
     uses->insert_ref(bvr);
   }
   OA_ptr<SSA::IRUseDefIterator> retval;
@@ -1130,9 +1130,9 @@ R_ExpMemRefHandleIterator::R_ExpMemRefHandleIterator(ExpressionInfo * stmt)
 MemRefHandle R_ExpMemRefHandleIterator::current() const {
   MemRefHandle handle;
   if (m_use_iter != m_stmt->end_uses()) {
-    handle = make_mem_ref_h((*m_use_iter)->get_mention_c());
+    handle = make_mem_ref_h(*m_use_iter);
   } else {
-    handle = make_mem_ref_h((*m_def_iter)->get_mention_c());
+    handle = make_mem_ref_h(*m_def_iter);
   }
   assert(handle != MemRefHandle(0));
   return handle;

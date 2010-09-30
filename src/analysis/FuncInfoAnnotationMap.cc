@@ -34,6 +34,7 @@
 #include <analysis/BasicFuncInfoAnnotationMap.h>
 #include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/SexpTraversal.h>
 #include <analysis/Utils.h>
 #include <analysis/VarAnnotationMap.h>
 
@@ -132,7 +133,7 @@ void FuncInfoAnnotationMap::collect_libraries() {
     OA::StmtHandle stmt;
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
-	ExpressionInfoAnnotationMap::instance()->make_annot(make_sexp(stmt));
+	SexpTraversal::instance()->make_expression_info(make_sexp(stmt));
       }
     }
     VarAnnotationMap::instance()->compute_proc(fi->get_basic());

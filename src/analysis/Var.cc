@@ -25,6 +25,7 @@
 #include <ostream>
 
 #include <support/DumpMacros.h>
+#include <support/RccError.h>
 
 #include <analysis/PropertyHndl.h>
 #include <analysis/VarAnnotationMap.h>
@@ -40,11 +41,9 @@ typedef Var::MayMustT MayMustT;
 // Var
 //****************************************************************************
 
-Var::Var(SEXP sexp, UseDefT udt, MayMustT mmt, Locality::LocalityType lt)
-  : m_sexp(sexp),
-    m_use_def_type(udt),
-    m_may_must_type(mmt),
-    m_scope_type(lt),
+Var::Var(BasicVar * basic)
+  : m_basic(basic),
+    m_scope_type(basic->get_basic_scope_type()),
     m_first_on_some_path(false)
 {
 }
@@ -56,13 +55,13 @@ Var::~Var()
 
 UseDefT Var::get_use_def_type() const
 {
-  return m_use_def_type;
+  return m_basic->get_use_def_type();
 }
 
 // may/must type
 MayMustT Var::get_may_must_type() const 
 {
-  return m_may_must_type;
+  return m_basic->get_may_must_type();
 }
 
 // scope type
@@ -79,7 +78,7 @@ void Var::set_scope_type(Locality::LocalityType x)
 // Mention (cons cell that contains the name)
 SEXP Var::get_mention_c() const
 {
-  return m_sexp;
+  return m_basic->get_mention_c();
 }
 
 bool Var::is_first_on_some_path() const
@@ -92,6 +91,20 @@ void Var::set_first_on_some_path(bool x)
   m_first_on_some_path = x;
 }
 
+SEXP Var::get_name() const
+{
+  return m_basic->get_name();
+}
+
+void Var::accept(VarVisitor * v)
+{
+  m_basic->accept(v);
+}
+
+Var * Var::clone()
+{
+  rcc_error("Cannot clone Var objects");
+}
 
 std::ostream & Var::dump(std::ostream & os) const
 {
@@ -117,21 +130,5 @@ template<class R> R Var::accept(VarVisitor<R> * v)
   return dynamic_cast<R>(v_accept(adapter));
 }
 #endif
-
-const std::string type_name(const Var::UseDefT x)
-{
-  switch(x) {
-  case Var::Var_USE: return "USE";
-  case Var::Var_DEF: return "DEF";
-  }
-}
-
-const std::string type_name(const Var::MayMustT x)
-{
-  switch(x) {
-  case Var::Var_MAY:  return "MAY";
-  case Var::Var_MUST: return "MUST";
-  }
-}
 
 }  // end namespace RAnnot

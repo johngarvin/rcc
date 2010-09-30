@@ -58,8 +58,7 @@ DebutDFSolver::~DebutDFSolver()
 /// set, then it's a debut.
 OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(FuncInfo * fi) {
   OA_ptr<CFG::NodeInterface> node;
-  UseVar * use;
-  DefVar * def;
+  SEXP use, def;
   StmtHandle stmt;
 
   m_fi = fi;
@@ -79,15 +78,15 @@ OA_ptr<NameMentionMultiMap> DebutDFSolver::perform_analysis(FuncInfo * fi) {
       ExpressionInfo * stmt_annot = getProperty(ExpressionInfo, make_sexp(stmt));
       assert(stmt_annot != 0);
       EXPRESSION_FOR_EACH_USE(stmt_annot, use) {
-	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(use->get_mention_c());
+	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(use);
 	if (! in_set->member(ref)) {
-	  debut_map->insert(std::make_pair(ref->get_sexp(), use->get_mention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), use));
 	}
       }
       EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
-	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(def->get_mention_c());
+	OA_ptr<R_BodyVarRef> ref; ref = m_fact->make_body_var_ref(def);
 	if (! in_set->member(ref)) {
-	  debut_map->insert(std::make_pair(ref->get_sexp(), def->get_mention_c()));
+	  debut_map->insert(std::make_pair(ref->get_sexp(), def));
 	}
       }
       in_set = transfer(in_set, stmt).convert<DFSet>();
@@ -129,7 +128,7 @@ OA_ptr<DataFlow::DataFlowSet> DebutDFSolver::initializeTop() {
   if (m_top.ptrEqual(NULL)) {
     m_top = new DFSet();
     PROC_FOR_EACH_MENTION(m_fi, mi) {
-      OA_ptr<DFSetElement> mention; mention = m_fact->make_body_var_ref((*mi)->get_mention_c());
+      OA_ptr<DFSetElement> mention; mention = m_fact->make_body_var_ref(*mi);
       m_top->insert(mention);
     }
   }
@@ -181,8 +180,7 @@ DebutDFSolver::meet(OA_ptr<DataFlow::DataFlowSet> set1_orig, OA_ptr<DataFlow::Da
 /// it again as result because solver clones the BB in sets
 OA_ptr<DataFlow::DataFlowSet> 
 DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
-  UseVar * use;
-  DefVar * def;
+  SEXP use, def;
   OA_ptr<DFSet> in; in = in_dfs.convert<DFSet>();
   ExpressionInfo * annot = getProperty(ExpressionInfo, make_sexp(stmt_handle));
   // only local name can be debuts
@@ -191,14 +189,16 @@ DebutDFSolver::transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_ha
   // must-have-been-mentioned problem, if it might be local or free
   // we conservatively say it hasn't been mentioned.
   EXPRESSION_FOR_EACH_USE(annot, use) {
-    if (use->get_scope_type() == Locality::Locality_LOCAL) {
-      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(use->get_mention_c());
+    Var * use_annot = getProperty(Var, use);
+    if (use_annot->get_scope_type() == Locality::Locality_LOCAL) {
+      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(use);
       in->insert(mention);
     }
   }
   EXPRESSION_FOR_EACH_DEF(annot, def) {
-    if (def->get_scope_type() == Locality::Locality_LOCAL) {
-      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(def->get_mention_c());
+    Var * def_annot = getProperty(Var, def);
+    if (def_annot->get_scope_type() == Locality::Locality_LOCAL) {
+      OA_ptr<R_VarRef> mention; mention = m_fact->make_body_var_ref(def);
       in->insert(mention);
     }
   }

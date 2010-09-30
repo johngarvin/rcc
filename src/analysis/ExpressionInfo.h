@@ -70,8 +70,8 @@ public:
   explicit ExpressionInfo(SEXP cell);
   virtual ~ExpressionInfo();
 
-  typedef UseVar *                  MyUseT;
-  typedef DefVar *                  MyDefT;
+  typedef SEXP                      MyUseT;
+  typedef SEXP                      MyDefT;
   typedef std::list<MyUseT>         MyUseSetT;
   typedef std::list<MyDefT>         MyDefSetT;
   typedef MyUseSetT::const_iterator const_use_iterator;

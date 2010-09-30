@@ -111,29 +111,32 @@ void VarAnnotationMap::compute_proc(BasicFuncInfo * fi) {
 // Compute syntactic variable info for the whole program. Refers to
 // the ExpressionInfo annotation for each statement.
 void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
-  UseVar * use;
-  DefVar * def;
+  SEXP use_sexp, def_sexp;
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
 
   PROC_FOR_EACH_NODE(fi, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-      EXPRESSION_FOR_EACH_USE(expr, use) {
-	assert(use != 0);
+      EXPRESSION_FOR_EACH_USE(expr, use_sexp) {
+	BasicVar * basic_var = getProperty(BasicVar, use_sexp);
+	assert(basic_var != 0);
+	Var * var = new Var(basic_var);
 	if (debug) {
 	  std::cout << "VarAnnotationMap adding use: ";
-	  use->dump(std::cout);
+	  var->dump(std::cout);
 	}
-	get_map()[use->get_mention_c()] = use;
+	get_map()[use_sexp] = var;
       }
-      EXPRESSION_FOR_EACH_DEF(expr, def) {
-	assert(def != 0);
+      EXPRESSION_FOR_EACH_DEF(expr, def_sexp) {
+	BasicVar * basic_var = getProperty(BasicVar, def_sexp);
+	assert(basic_var != 0);
+	Var * var = new Var(basic_var);
 	if (debug) {
 	  std::cout << "VarAnnotationmap adding def: ";
-	  def->dump(std::cout);
+	  var->dump(std::cout);
 	}
-	get_map()[def->get_mention_c()] = def;
+	get_map()[def_sexp] = var;
       }      
     }
   }
@@ -154,8 +157,14 @@ void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
 					     ProcHandle proc,
 					     OA_ptr<MyCFG> cfg)
 {
+  typedef map<SEXP, Locality::LocalityType> MyMap;
+
   Locality::LocalityDFSolver solver(interface);
-  solver.perform_analysis(proc, cfg);
+  MyMap map = solver.perform_analysis(proc, cfg);
+  for(MyMap::const_iterator it = map.begin(); it != map.end(); it++) {
+    Var * var = dynamic_cast<Var *>(get_map().at(it->first));
+    var->set_scope_type(it->second);
+  }
 }
 
 
