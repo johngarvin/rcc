@@ -62,28 +62,6 @@ private:
     IN_FREE_ASSIGN
   };
 
-  static void build_ud_rhs(ExpressionInfo * ei,
-			   const SEXP cell,
-			   BasicVar::MayMustT may_must_type,
-			   bool is_stmt);  
-  static void build_ud_lhs(ExpressionInfo * ei,
-			   const SEXP cell,
-			   const SEXP rhs_c,
-			   BasicVar::MayMustT may_must_type,
-			   LhsType lhs_type);
-
-  static void make_use_var(ExpressionInfo * ei,
-			   SEXP cell,
-			   UseVar::PositionT pos,
-			   BasicVar::MayMustT mmt,
-			   Locality::LocalityType lt);
-  static void make_def_var(ExpressionInfo * ei,
-			   SEXP cell,
-			   DefVar::SourceT source,
-			   BasicVar::MayMustT mmt,
-			   Locality::LocalityType lt,
-			   SEXP rhs_c);
-
 private:
   // static members and methods for singleton
   static ExpressionInfoAnnotationMap * s_instance;

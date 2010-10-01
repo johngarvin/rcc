@@ -58,40 +58,11 @@ namespace Locality {
 static LocalityType var_meet(LocalityType x, LocalityType y);
 static OA_ptr<DFSet> meet_use_set(OA_ptr<DFSet> set1, OA_ptr<DFSet> set2);
 static OA_ptr<R_VarRef> var_ref_from_basic_var(BasicVar * var);
-static OA_ptr<R_VarRef> var_ref_from_use(UseVar * use);
-static OA_ptr<R_VarRef> var_ref_from_def(DefVar * def);
 static void initialize_set_element(OA_ptr<DFSet> set, Locality::LocalityType locality, OA_ptr<R_VarRef> ref);
 
 // ----- static variable for debugging -----
 
 static bool debug;
-
-#if 0
-/// visitor that returns an R_VarRef of the appropriate type when
-/// applied to Var annotation
-class MakeVarRefVisitor : private VarVisitor {
-public:
-  explicit MakeVarRefVisitor() : m_output() {}
-      
-private:
-  void visitUseVar(UseVar * use) {
-    m_output = var_ref_from_use(use);
-  }
-  
-  void visitDefVar(DefVar * def) {
-    m_output = var_ref_from_def(def);
-  }
-
-public:
-  OA_ptr<R_VarRef> visit(Var * host) {
-    host->accept(this);
-    return m_output;
-  }
-
-private:
-  OA_ptr<R_VarRef> m_output;
-};
-#endif
 
 LocalityDFSolver::LocalityDFSolver(OA_ptr<R_IRInterface> _rir)
   : m_ir(_rir)
@@ -136,8 +107,6 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       EXPRESSION_FOR_EACH_USE(stmt_annot, use_sexp) {
 	OA_ptr<DFSetElement> elem; elem = look_up_var_ref(in_set, VarRefFactory::instance()->make_body_var_ref(use_sexp));
 	output[use_sexp] = elem->get_locality_type();
-	//	Var * use = getProperty(Var, use_sexp);
-	//	use->set_scope_type(elem->get_locality_type());
       }
       // set locality flag for may-defs
       //EXPRESSION_FOR_EACH_DEF(stmt_annot, def) {
@@ -374,23 +343,6 @@ OA_ptr<R_VarRef> var_ref_from_basic_var(BasicVar * var) {
   MyVisitor * visitor = new MyVisitor();
   var->accept(visitor);
   return visitor->m_ref;
-}
-
-OA_ptr<R_VarRef> var_ref_from_use(UseVar * use) {
-  return VarRefFactory::instance()->make_body_var_ref(use->get_mention_c());
-}
-  
-OA_ptr<R_VarRef> var_ref_from_def(DefVar * def) {
-  switch(def->get_source_type()) {
-  case DefVar::DefVar_ASSIGN:
-    return VarRefFactory::instance()->make_body_var_ref(def->get_mention_c());
-    break;
-  case DefVar::DefVar_FORMAL:
-    return VarRefFactory::instance()->make_arg_var_ref(def->get_mention_c());
-    break;
-  default:
-    rcc_error("MakeVarRefVisitor: unrecognized DefVar::SourceT");
-  }
 }
 
 }  // end namespace Locality

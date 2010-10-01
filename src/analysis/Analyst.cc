@@ -31,7 +31,6 @@
 
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/BasicFuncInfo.h>
 #include <analysis/CallByValueAnalysis.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/Utils.h>

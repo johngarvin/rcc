@@ -89,7 +89,7 @@ void CEscapeInfoAnnotationMap::compute() {
       } else {
 	SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
 	
-	VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
+	VarInfo * sym = symbol_table->find_entry(name);
 	VarInfo::ConstUseIterator use_iter;
 	for (use_iter = sym->begin_uses(); use_iter != sym->end_uses(); use_iter++) {
 	  // if in arg position, then escape is true (conservative unless

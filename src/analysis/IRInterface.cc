@@ -396,7 +396,7 @@ SymHandle R_IRInterface::getFormalSym(ProcHandle proc, int n) {
     return SymHandle(0);
   } else {
     SEXP cell = fi->get_arg(n + 1);  // FuncInfo gives 1-based params
-    VarInfo * vi = SymbolTableFacade::instance()->find_entry(getProperty(Var, cell));
+    VarInfo * vi = SymbolTableFacade::instance()->find_entry(cell);
     return make_sym_h(vi);
   }
 }
@@ -418,7 +418,7 @@ OA_ptr<MemRefExpr> R_IRInterface::getCallMemRefExpr(CallHandle h) {
   if (is_var(call_lhs(e))) {
     // TODO: redo Annotations so we can use getProperty without requiring the annotations to have a certain name
     FuncInfo * fi = dynamic_cast<FuncInfo *>(ScopeAnnotationMap::instance()->get(e));
-    VarInfo * vi = symbol_table->find_entry(getProperty(Var, e));  // e is the cell that contains the mention
+    VarInfo * vi = symbol_table->find_entry(e);  // e is the cell that contains the mention
     SymHandle sym = make_sym_h(vi);
     return MemRefExprInterface::convert_sym_handle(sym);
     // TODO: do something different if this is a parameter.
@@ -469,7 +469,7 @@ SymHandle R_IRInterface::getSymHandle(ProcHandle h) const {
     return special_map->get_global();
   }
   if (VarAnnotationMap::instance()->is_valid(name)) {
-    VarInfo * sym = symbol_table->find_entry(getProperty(Var, name));
+    VarInfo * sym = symbol_table->find_entry(name);
     if (sym->size_defs() == 1) {
       return make_sym_h(sym);
     } else {
@@ -567,7 +567,7 @@ SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
     return make_sym_h(new VarInfo(formal_c));
   }
 
-  VarInfo * vi = symbol_table->find_entry(getProperty(Var, formal_c));
+  VarInfo * vi = symbol_table->find_entry(formal_c);
   return make_sym_h(vi);
 }
 
@@ -697,8 +697,7 @@ OA_ptr<SSA::IRUseDefIterator> R_IRInterface::getUses(StmtHandle h) {
 SymHandle R_IRInterface::getSymHandle(LeafHandle h) {
   SEXP sexp = make_sexp(h);
   assert(is_symbol(CAR(sexp)) || is_symbol(TAG(sexp)));
-  const Var * var = getProperty(Var, sexp);
-  const VarInfo * vi = SymbolTableFacade::instance()->find_entry(var);
+  const VarInfo * vi = SymbolTableFacade::instance()->find_entry(sexp);
   return make_sym_h(vi);
 }
 

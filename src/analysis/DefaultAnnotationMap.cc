@@ -47,13 +47,6 @@ void DefaultAnnotationMap::put(const MyKeyT & k, MyMappedT value) {
   m_map[k] = value;
 }
 
-#if 0
-MyMappedT & DefaultAnnotationMap::operator[](const MyKeyT & k) {
-  compute_if_necessary();
-  return m_map[k];
-}
-#endif
-
 MyMappedT DefaultAnnotationMap::get(const MyKeyT & k) {
   compute_if_necessary();
   

@@ -125,7 +125,7 @@ void CallByValueAnalysis::perform_analysis() {
 	if (is_fundef(call_lhs(cs))) {
 	  callee = getProperty(FuncInfo, CAR(call_lhs(cs)));
 	} else if (is_var(call_lhs(cs))) {
-	  VarInfo * vi = symbol_table->find_entry(getProperty(Var, cs)); // not call_lhs; Var wants the cons cell
+	  VarInfo * vi = symbol_table->find_entry(cs); // not call_lhs; we want the cons cell
 	  const DefVar * def = vi->single_def_if_exists();
 	  if (def == 0) {
 	    // procedures with no more than one user definition or undefined: no analysis, be conservative

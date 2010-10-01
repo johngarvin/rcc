@@ -96,18 +96,6 @@ void SideEffect::insert_def_sexp(const FuncInfo * fi, const SEXP sexp) {
 }
 
 
-void SideEffect::insert_use_var(const FuncInfo * fi, const UseVar * use) {
-  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::instance()->find_entry(use->get_mention_c()));
-  insert_use(make_var_info(symbol));
-}
-
-void SideEffect::insert_def_var(const FuncInfo * fi, const DefVar * def) {
-  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
-  OA::SymHandle symbol = make_sym_h(SymbolTableFacade::instance()->find_entry(def->get_mention_c()));
-  insert_def(make_var_info(symbol));
-}
-
 void SideEffect::insert_use(const MyVarT & v) {
   m_uses.insert(v);
 }

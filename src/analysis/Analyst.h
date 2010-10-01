@@ -30,7 +30,6 @@
 
 #include <include/R/R_RInternals.h>
 
-#include <analysis/FuncInfo.h>
 #include <analysis/IRInterface.h>
 #include <analysis/LexicalScope.h>
 

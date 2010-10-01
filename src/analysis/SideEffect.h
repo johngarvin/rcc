@@ -64,9 +64,6 @@ public:
   void insert_use_sexp(const FuncInfo * fi, const SEXP sexp);
   void insert_def_sexp(const FuncInfo * fi, const SEXP sexp);
 
-  void insert_use_var(const FuncInfo * fi, const UseVar * use);
-  void insert_def_var(const FuncInfo * fi, const DefVar * def);
-
   void insert_use(const MyVarT & v);
   void insert_def(const MyVarT & v);
 

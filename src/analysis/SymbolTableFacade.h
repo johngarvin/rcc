@@ -39,7 +39,6 @@ public:
 public:
   // given a mention, find the symbol table entry
   RAnnot::VarInfo * find_entry(const SEXP sexp) const;
-  RAnnot::VarInfo * find_entry(const RAnnot::Var * var) const;
   
   static SymbolTableFacade * instance();
 

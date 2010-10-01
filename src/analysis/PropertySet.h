@@ -67,9 +67,7 @@ public:
   // -------------------------------------------------------
 
   /// associate the SEXP s with annotation annot for the propertyName
-  /// property. TODO: adding annotations from the outside like this
-  /// is bad data hiding. It would be better to create Annotation
-  /// objects only inside AnnotationMaps.
+  /// property.
   void insert(PropertyHndlT propertyName, SEXP s,
 	      RAnnot::AnnotationBase * annot);
 
