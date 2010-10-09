@@ -86,6 +86,11 @@ FuncInfo::~FuncInfo()
 {
 }
 
+AnnotationBase * FuncInfo::clone()
+{
+  return 0;
+}
+
 unsigned int FuncInfo::get_num_args() const 
 {
   return m_basic->get_num_args();
@@ -129,16 +134,6 @@ int FuncInfo::find_arg_position(char * name) const
 SEXP FuncInfo::get_arg(int position) const
 {
   return m_basic->get_arg(position);
-}
-
-bool FuncInfo::is_arg_value(SEXP arg) const
-{
-  return m_basic->is_arg_value(arg);
-}
-
-bool FuncInfo::are_all_value() const
-{
-  return m_basic->are_all_value();
 }
 
 const std::string & FuncInfo::get_c_name()

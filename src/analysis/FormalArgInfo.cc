@@ -22,6 +22,7 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
+#include <assert.h>
 #include <ostream>
 
 #include <support/DumpMacros.h>
@@ -39,26 +40,21 @@ namespace RAnnot {
 
 FormalArgInfo::FormalArgInfo(SEXP sexp)
   : m_sexp(sexp),
-    m_is_value(false),
-    m_is_strict(false),
     m_default(CAR(sexp) == R_MissingArg ? 0 : CAR(sexp)),
-    m_name(TAG(sexp) == R_NilValue ? 0 : TAG(sexp))
+    m_name(TAG(sexp) == R_NilValue ? 0 : TAG(sexp)),
+    m_is_value(false),
+    m_is_strict(false)
 {
 }
 
-FormalArgInfo::~FormalArgInfo()
-{
+FormalArgInfo::~FormalArgInfo() {
 }
 
-bool FormalArgInfo::is_value() {
-  return m_is_value;
+FormalArgInfo * FormalArgInfo::clone() {
+  return 0;
 }
 
-void FormalArgInfo::set_is_value(bool x) {
-  m_is_value = x;
-}
-
-bool FormalArgInfo::is_strict() {
+bool FormalArgInfo::is_strict() const {
   return m_is_strict;
 }
 
@@ -66,15 +62,11 @@ void FormalArgInfo::set_is_strict(bool x) {
   m_is_strict = x;
 }
 
-bool FormalArgInfo::has_default() {
+bool FormalArgInfo::has_default() const {
   return (m_default != 0);
 }
 
-void FormalArgInfo::set_default(SEXP def) {
-  m_default = def;
-}
-
-SEXP FormalArgInfo::get_default() {
+SEXP FormalArgInfo::get_default() const {
   assert(m_default != 0);
   return m_default;
 }
@@ -83,25 +75,12 @@ bool FormalArgInfo::is_named() const {
   return (m_name != 0);
 }
 
-void FormalArgInfo::set_name(const SEXP n) {
-  assert(n != 0);
-  m_name = n;
-}
-
 SEXP FormalArgInfo::get_name() const {
   assert(m_name != 0);
   return m_name;
 }
 
-SideEffect * FormalArgInfo::get_pre_debut_side_effect() {
-  return m_pre_debut_side_effect;
-}
-
-void FormalArgInfo::set_pre_debut_side_effect(SideEffect * x) {
-  m_pre_debut_side_effect = x;
-}
-
-SEXP FormalArgInfo::get_sexp() {
+SEXP FormalArgInfo::get_sexp() const {
   return m_sexp;
 }
 

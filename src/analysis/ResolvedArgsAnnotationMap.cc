@@ -35,7 +35,7 @@
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/SexpTraversal.h>
-#include <analysis/SideEffectAnnotationMap.h>
+#include <analysis/ExpressionSideEffectAnnotationMap.h>
 #include <analysis/VarAnnotationMap.h>
 
 #include <analysis/ResolvedArgs.h>
@@ -104,7 +104,7 @@ void ResolvedArgsAnnotationMap::compute() {
   }
   FuncInfoAnnotationMap::instance()->reset();
   VarAnnotationMap::instance()->reset();
-  SideEffectAnnotationMap::instance()->reset();
+  ExpressionSideEffectAnnotationMap::instance()->reset();
   OEscapeInfoAnnotationMap::instance()->reset();
 }
 

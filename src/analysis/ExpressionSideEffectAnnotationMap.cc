@@ -16,11 +16,11 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: SideEffectAnnotationMap.cc
+// File: ExpressionSideEffectAnnotationMap.cc
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "SideEffectAnnotationMap.h"
+#include "ExpressionSideEffectAnnotationMap.h"
 
 #include <OpenAnalysis/SideEffect/ManagerInterSideEffectStandard.hpp>
 #include <OpenAnalysis/DataFlow/ManagerParamBindings.hpp>
@@ -73,42 +73,42 @@ bool SideEffectLibMap::get(std::string key, int which) {
 
 //  ----- constructor/destructor ----- 
   
-SideEffectAnnotationMap::SideEffectAnnotationMap()
+ExpressionSideEffectAnnotationMap::ExpressionSideEffectAnnotationMap()
 {
-  RCC_DEBUG("RCC_SideEffect", debug);
+  RCC_DEBUG("RCC_ExpressionSideEffect", debug);
 }
   
-SideEffectAnnotationMap::~SideEffectAnnotationMap()
+ExpressionSideEffectAnnotationMap::~ExpressionSideEffectAnnotationMap()
 {}
 
 // ----- singleton pattern -----
 
-SideEffectAnnotationMap * SideEffectAnnotationMap::instance() {
+ExpressionSideEffectAnnotationMap * ExpressionSideEffectAnnotationMap::instance() {
   if (s_instance == 0) {
     create();
   }
   return s_instance;
 }
 
-PropertyHndlT SideEffectAnnotationMap::handle() {
+PropertyHndlT ExpressionSideEffectAnnotationMap::handle() {
   if (s_instance == 0) {
     create();
   }
   return s_handle;
 }
 
-void SideEffectAnnotationMap::create() {
-  s_instance = new SideEffectAnnotationMap();
+void ExpressionSideEffectAnnotationMap::create() {
+  s_instance = new ExpressionSideEffectAnnotationMap();
   analysisResults.add(s_handle, s_instance);
 }
 
-SideEffectAnnotationMap * SideEffectAnnotationMap::s_instance = 0;
-PropertyHndlT SideEffectAnnotationMap::s_handle = "SideEffect";
+ExpressionSideEffectAnnotationMap * ExpressionSideEffectAnnotationMap::s_instance = 0;
+PropertyHndlT ExpressionSideEffectAnnotationMap::s_handle = "ExpressionSideEffect";
 
 // ----- computation -----
 
 // compute all Var annotation information
-void SideEffectAnnotationMap::compute() {
+void ExpressionSideEffectAnnotationMap::compute() {
   init_lib_data();
 
   FuncInfo * fi;
@@ -160,7 +160,7 @@ void SideEffectAnnotationMap::compute() {
   }  // next function
 }
 
-void SideEffectAnnotationMap::compute_oa_side_effect() {
+void ExpressionSideEffectAnnotationMap::compute_oa_side_effect() {
   // populate m_side_effect with OA side effect info
 
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
@@ -181,7 +181,7 @@ void SideEffectAnnotationMap::compute_oa_side_effect() {
   m_side_effect = solver.performAnalysis(call_graph, param_bindings, m_alias, intra_man, DataFlow::ITERATIVE);
 }
 
-void SideEffectAnnotationMap::add_all_names_used(SideEffect * annot,
+void ExpressionSideEffectAnnotationMap::add_all_names_used(SideEffect * annot,
 						 OA_ptr<Alias::Interface> alias,
 						 OA_ptr<Alias::AliasTagIterator> tag_iter)
 {
@@ -198,7 +198,7 @@ void SideEffectAnnotationMap::add_all_names_used(SideEffect * annot,
   }
 }
 
-void SideEffectAnnotationMap::add_all_names_defined(SideEffect * annot,
+void ExpressionSideEffectAnnotationMap::add_all_names_defined(SideEffect * annot,
 						    OA_ptr<Alias::Interface> alias,
 						    OA_ptr<Alias::AliasTagIterator> tag_iter)
 {
@@ -215,14 +215,14 @@ void SideEffectAnnotationMap::add_all_names_defined(SideEffect * annot,
   }
 }
 
-void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
+void ExpressionSideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
   SEXP cs_c, use, def;
   OA_ptr<Alias::AliasTagIterator> tag_iter;
 
   OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(make_proc_h(fi->get_sexp()));
   SEXP e = CAR(cell);
   ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
-  SideEffect * annot = new SideEffect(expression_is_trivial(e), expression_is_cheap(e));
+  ExpressionSideEffect * annot = new ExpressionSideEffect(expression_is_trivial(e), expression_is_cheap(e));
 
   // first grab local uses and defs
   EXPRESSION_FOR_EACH_USE(expr, use) {
@@ -240,8 +240,8 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
     }
     
     CallHandle call_handle = make_call_h(CAR(cs_c));
-    add_all_names_used(annot, alias, m_side_effect->getREFIterator(call_handle));
-    add_all_names_defined(annot, alias, m_side_effect->getMODIterator(call_handle));
+    add_all_names_used(annot->get_side_effect(), alias, m_side_effect->getREFIterator(call_handle));
+    add_all_names_defined(annot->get_side_effect(), alias, m_side_effect->getMODIterator(call_handle));
   }
   
   if (debug) {
@@ -257,7 +257,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
 // argument, then the call-by-value transformation is valid if there
 // is no dependence between pre-debut code and the corresponding
 // actual argument and the actual argument is trivially evaluable.
-bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
+bool ExpressionSideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
   if (is_const(e) || is_var(e) || is_subscript(e)) {
     return true;
 
@@ -284,7 +284,7 @@ bool SideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
 // transformation: the transformation may be unprofitable if the
 // callee is nonstrict in the formal argument and the corresponding
 // actual argument is expensive to evaluate.
-bool SideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
+bool ExpressionSideEffectAnnotationMap::expression_is_cheap(const SEXP e) {
   if (is_const(e) || is_var(e)) {
     return true;
   } else if (is_call(e) && ! call_may_be_expensive(e)) {
@@ -304,7 +304,7 @@ bool is_library_call(const SEXP e) {
 }
 // true if the library call may perform a visible action, such as
 // 'print' printing something to the screen.
-bool SideEffectAnnotationMap::call_may_have_action(const SEXP e) {
+bool ExpressionSideEffectAnnotationMap::call_may_have_action(const SEXP e) {
   if (is_library_call(e)) {
     return (m_non_action_libs.get(var_name(call_lhs(e)), 0));
   } else {
@@ -312,7 +312,7 @@ bool SideEffectAnnotationMap::call_may_have_action(const SEXP e) {
   }
 }
 
-bool SideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
+bool ExpressionSideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
   if (Settings::instance()->get_aggressive_cbv()) {
     return false;
   } else if (is_library_call(e)) {
@@ -322,7 +322,7 @@ bool SideEffectAnnotationMap::call_may_be_expensive(const SEXP e) {
   }
 }
 
-bool SideEffectAnnotationMap::call_may_throw_error(const SEXP e) {
+bool ExpressionSideEffectAnnotationMap::call_may_throw_error(const SEXP e) {
   if (Settings::instance()->get_assume_correct_program()) {
     return false;
   } else if (is_library_call(e)) {
@@ -343,7 +343,7 @@ bool SideEffectAnnotationMap::call_may_throw_error(const SEXP e) {
 //   example: arithmetic if arguments are large arrays
 // error: this procedure may throw an error or exception
 //   example: relational operators given non-conformable arrays
-void SideEffectAnnotationMap::init_lib_data() {
+void ExpressionSideEffectAnnotationMap::init_lib_data() {
   //                       lib          side_effects expensive error
   m_non_action_libs.insert("+",         false,       true,     false);
   m_non_action_libs.insert("-",         false,       true,     false);

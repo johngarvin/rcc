@@ -35,14 +35,16 @@
 #include <analysis/Analyst.h>
 #include <analysis/DefVar.h>
 #include <analysis/EagerLazy.h>
+#include <analysis/ExpressionSideEffect.h>
+#include <analysis/ExpressionSideEffectAnnotationMap.h>
 #include <analysis/FormalArgInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/PreDebutSideEffect.h>
+#include <analysis/PreDebutSideEffectAnnotationMap.h>
 #include <analysis/ResolvedArgs.h>
 #include <analysis/Settings.h>
-#include <analysis/SideEffect.h>
-#include <analysis/SideEffectAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/StrictnessResult.h>
 #include <analysis/SymbolTableFacade.h>
@@ -65,16 +67,6 @@ CallByValueAnalysis::CallByValueAnalysis() {
 void CallByValueAnalysis::perform_analysis() {
   FuncInfo * fi;
   SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
-
-  // compute pre-debut side effects for each formal arg
-
-  FOR_EACH_PROC(fi) {
-    // formals are indexed by 1
-    for(int i=1; i<=fi->get_num_args(); i++) {
-      FormalArgInfo * formal = getProperty(FormalArgInfo, fi->get_arg(i));
-      formal->set_pre_debut_side_effect(compute_pre_debut_side_effect(fi, formal));
-    }
-  }
 
   // set of library procedures that cannot be called by value for any
   // reason. For example, 'library' calls deparsing functions on its
@@ -107,7 +99,7 @@ void CallByValueAnalysis::perform_analysis() {
 	  if (unsafe_libs.find(call_lhs(cs)) != unsafe_libs.end()) {
 	    call_expr->set_eager_lazy(i, LAZY);
 	  } else {
-	    if (getProperty(SideEffect, argi.current())->is_trivial()) {
+	    if (getProperty(ExpressionSideEffect, argi.current())->is_trivial()) {
 	      call_expr->set_eager_lazy(i, EAGER);
 	    } else {
 	      call_expr->set_eager_lazy(i, LAZY);
@@ -169,7 +161,8 @@ void CallByValueAnalysis::perform_analysis() {
 
 bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   // get side effect of the pre-debut part of the callee
-  SideEffect * pre_debut = formal->get_pre_debut_side_effect();
+  PreDebutSideEffect * pre_debut = getProperty(PreDebutSideEffect, formal->get_sexp());
+  // formal->get_pre_debut_side_effect();
 
   if (TYPEOF(CAR(actual_c)) == DOTSXP) {
     return false;
@@ -180,7 +173,7 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   }
 
   // get the actual argument's side effect
-  SideEffect * arg_side_effect = getProperty(SideEffect, actual_c);
+  ExpressionSideEffect * arg_side_effect = getProperty(ExpressionSideEffect, actual_c);
 
   if (debug) {
     std::cout << "Pre-debut side effect: ";
@@ -214,7 +207,7 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
       }
       
       // test for intersection
-      if (arg_side_effect->intersects(pre_debut)) {
+      if (arg_side_effect->intersects(pre_debut->get_side_effect())) {
 	if (debug) {
 	  std::cout << "DEPENDENCE" << std::endl;
 	}
@@ -236,55 +229,3 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   }
 }
   
-SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, FormalArgInfo * fai) {
-  assert(fi != 0);
-  assert(fai != 0);
-  
-  SideEffect * pre_debut = new SideEffect(false, false);
-  OA_ptr<OA::CFG::NodeInterface> node;
-  StmtHandle stmt;
-
-  if (TAG(fai->get_sexp()) == R_DotsSymbol) {
-    return pre_debut;                          // if we have a "..." argument, give it an empty side effect
-  }
-
-  // For any formal arg, statements in the function can be
-  // divided into pre-debut, post-debut, and non-strict. We're
-  // only interested in pre-debut statements. Since we're already
-  // excluding non-strict functions (functions with non-strict
-  // statements), we can get this set by excluding post-debut
-  // statements.
-  OA_ptr<StrictnessResult> strictness = fi->get_strictness();
-  OA_ptr<NameStmtMultiMap> post_debuts = strictness->get_post_debut_stmts();
-  
-  PROC_FOR_EACH_NODE(fi, node) {
-    NODE_FOR_EACH_STATEMENT(node, stmt) {
-      ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-      // TODO: refactor this. Maybe post_debuts should be a vector of sets, not a multimap
-      std::pair<NameStmtMultiMap::const_iterator, NameStmtMultiMap::const_iterator> range;
-      range = post_debuts->equal_range(TAG(fai->get_sexp()));
-      bool stmt_is_post_debut = false;
-      // TODO: we need to differentiate between missing formal
-      // (compiler error) and formal with no post-debut side effect.
-      // Then check for missing formal here with something like
-      // if (range.first == range.second) {
-      //   rcc_error(...);
-      // }
-      for(NameStmtMultiMap::const_iterator it = range.first; it != range.second; ++it) {
-	if (it->second == stmt) {
-	  stmt_is_post_debut = true;
-	  continue;
-	}
-      }
-      if (stmt_is_post_debut) {
-	continue;
-      }
-      pre_debut->add(getProperty(SideEffect, make_sexp(stmt)));
-      if (debug) {
-	std::cout << "Found pre-debut statement:" << std::endl;
-	Rf_PrintValue(CAR(make_sexp(stmt)));
-      }
-    }
-  }
-  return pre_debut;
-}

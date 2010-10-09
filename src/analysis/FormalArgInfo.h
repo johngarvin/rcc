@@ -29,15 +29,13 @@
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/PropertyHndl.h>
-#include <analysis/SideEffect.h>
 
 namespace RAnnot {
 
 // ---------------------------------------------------------------------------
 // FormalArgInfo
 // ---------------------------------------------------------------------------
-class FormalArgInfo
-  : public AnnotationBase
+class FormalArgInfo : public AnnotationBase
 {
 public:
   explicit FormalArgInfo(SEXP cell);
@@ -46,41 +44,32 @@ public:
   static PropertyHndlT handle();
 
   // -------------------------------------------------------
-  // cloning: return a shallow copy... 
+  // cloning: not supported
   // -------------------------------------------------------
-  virtual FormalArgInfo * clone() { return new FormalArgInfo(*this); }
+  virtual FormalArgInfo * clone();
 
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream & dump(std::ostream & os) const;
   
-  bool is_value();
-  void set_is_value(bool x);
-
-  bool is_strict();
+  bool is_strict() const;
   void set_is_strict(bool x);
 
-  bool has_default();
-  void set_default(SEXP def);
-  SEXP get_default();
+  bool has_default() const;
+  SEXP get_default() const;
 
   bool is_named() const;
-  void set_name(const SEXP sym);
   SEXP get_name() const;
 
-  SideEffect * get_pre_debut_side_effect();
-  void set_pre_debut_side_effect(SideEffect * x);
-
-  SEXP get_sexp();
+  SEXP get_sexp() const;
 
 private:
-  SEXP m_sexp;     // TAG(m_sexp) is the name of the argument
+  const SEXP m_sexp;     // TAG(m_sexp) is the name of the argument
+  const SEXP m_default;  // default arg if it exists; otherwise 0
+  const SEXP m_name;     // SYMSXP: the name of the argument if it exists
   bool m_is_value; // value/promise
   bool m_is_strict; // function always evaluates this argument
-  SEXP m_default;  // default arg if it exists; otherwise 0
-  SEXP m_name;     // SYMSXP: the name of the argument if it exists
-  SideEffect * m_pre_debut_side_effect;  // names used/defined by pre-debut statements for this formal
 };
 
 

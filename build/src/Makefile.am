@@ -45,6 +45,10 @@ rcc_bin_SOURCES =				\
   BasicFuncInfo.h                               \
   BasicFuncInfoAnnotationMap.cc                 \
   BasicFuncInfoAnnotationMap.h                  \
+  BasicVar.cc                                   \
+  BasicVar.h                                    \
+  BasicVarAnnotationMap.cc                      \
+  BasicVarAnnotationMap.h                       \
   CallByValueAnalysis.cc                        \
   CallByValueAnalysis.h                         \
   CallType.cc                                   \
@@ -74,6 +78,10 @@ rcc_bin_SOURCES =				\
   ExpressionInfo.h                              \
   ExpressionInfoAnnotationMap.cc                \
   ExpressionInfoAnnotationMap.h                 \
+  ExpressionSideEffect.cc                       \
+  ExpressionSideEffect.h                        \
+  ExpressionSideEffectAnnotationMap.cc          \
+  ExpressionSideEffectAnnotationMap.h           \
   ExprTreeBuilder.cc                            \
   ExprTreeBuilder.h                             \
   FormalArgInfo.cc                              \
@@ -104,8 +112,6 @@ rcc_bin_SOURCES =				\
   LocalityDFSolver.h				\
   LocalityType.cc                               \
   LocalityType.h				\
-  LocalVariableAnalysis.cc			\
-  LocalVariableAnalysis.h			\
   MemRefExprInterface.cc                        \
   MemRefExprInterface.h                         \
   Metrics.cc                                    \
@@ -128,11 +134,13 @@ rcc_bin_SOURCES =				\
   OEscapeInfo.cc                                \
   OEscapeInfoAnnotationMap.cc                   \
   OEscapeInfoAnnotationMap.h                    \
+  PreDebutSideEffect.cc                         \
+  PreDebutSideEffect.h                          \
+  PreDebutSideEffectAnnotationMap.cc            \
+  PreDebutSideEffectAnnotationMap.h             \
   PropertyHndl.h				\
   PropertySet.cc				\
   PropertySet.h					\
-  PropertySetMgr.cc				\
-  PropertySetMgr.h				\
   RccBasicInterface.cc                          \
   RccBasicInterface.h                           \
   RequiresContext.cc				\
@@ -149,10 +157,10 @@ rcc_bin_SOURCES =				\
   ScopeAnnotationMap.h                          \
   Settings.cc                                   \
   Settings.h                                    \
+  SexpTraversal.cc                              \
+  SexpTraversal.h                               \
   SideEffect.cc                                 \
   SideEffect.h                                  \
-  SideEffectAnnotationMap.cc                    \
-  SideEffectAnnotationMap.h                     \
   SimpleIterators.cc				\
   SimpleIterators.h				\
   SpecialProcSymMap.cc                          \

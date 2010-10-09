@@ -87,8 +87,6 @@ public:
   unsigned int get_num_args() const;
   SEXP get_args() const; 
   bool is_arg(SEXP sym) const;
-  bool are_all_value() const;
-  bool is_arg_value(SEXP arg) const;
   
   /// get the cell containing the formal arg at the given position. Indexed from 1.
   SEXP get_arg(int position) const;

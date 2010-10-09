@@ -16,14 +16,14 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: SideEffectAnnotationMap.h
+// File: ExpressionSideEffectAnnotationMap.h
 //
 // Maps expression SEXPs to side effect information.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef SIDE_EFFECT_ANNOTATION_MAP_H
-#define SIDE_EFFECT_ANNOTATION_MAP_H
+#ifndef EXPRESSION_SIDE_EFFECT_ANNOTATION_MAP_H
+#define EXPRESSION_SIDE_EFFECT_ANNOTATION_MAP_H
 
 #include <map>
 #include <vector>
@@ -33,7 +33,7 @@
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
-#include <analysis/SideEffect.h>
+#include <analysis/ExpressionSideEffect.h>
 
 namespace RAnnot {
 
@@ -48,20 +48,20 @@ private:
   std::map<std::string, std::vector<bool> > m_map;
 };
 
-class SideEffectAnnotationMap : public DefaultAnnotationMap {
+class ExpressionSideEffectAnnotationMap : public DefaultAnnotationMap {
 public:
   // destructor
-  virtual ~SideEffectAnnotationMap();
+  virtual ~ExpressionSideEffectAnnotationMap();
 
   // singleton
-  static SideEffectAnnotationMap * instance();
+  static ExpressionSideEffectAnnotationMap * instance();
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
 private:
   // private constructor for singleton pattern
-  explicit SideEffectAnnotationMap();
+  explicit ExpressionSideEffectAnnotationMap();
 
   void compute();
   void compute_oa_side_effect();
@@ -82,7 +82,7 @@ private:
 			     OA::OA_ptr<OA::Alias::Interface> alias,
 			     OA::OA_ptr<OA::Alias::AliasTagIterator> tag_iter);
 
-  static SideEffectAnnotationMap * s_instance;
+  static ExpressionSideEffectAnnotationMap * s_instance;
   static PropertyHndlT s_handle;
   static void create();
 

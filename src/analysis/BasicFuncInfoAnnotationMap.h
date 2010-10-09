@@ -43,7 +43,7 @@
 #define FOR_EACH_BASIC_PROC_AND_LIB(bfi) \
   for (RAnnot::BasicFuncInfoAnnotationMap::const_iterator bfii = BasicFuncInfoAnnotationMap::instance()->begin(); \
        bfii != BasicFuncInfoAnnotationMap::instance()->end() && ((bfi) = dynamic_cast<BasicFuncInfo *>(bfii->second)) != 0; \
-       ++bfii)
+       ++bfii, (bfi) = *bfii)
 
 namespace RAnnot {
   

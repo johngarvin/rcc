@@ -28,7 +28,6 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/HandleInterface.h>
-#include <analysis/SideEffectAnnotationMap.h>
 #include <analysis/SymbolTableFacade.h>
 #include <analysis/Var.h>
 #include <analysis/VarInfo.h>
@@ -162,16 +161,6 @@ bool SideEffect::intersects(SideEffect * other) const {
   bool anti_dep = sets_intersect(get_uses(), other->get_defs());
   bool output_dep = sets_intersect(get_defs(), other->get_defs());
   return (true_dep || anti_dep || output_dep);
-}
-
-// ----- handle, cloning for Annotation -----
-
-PropertyHndlT SideEffect::handle() {
-  return SideEffectAnnotationMap::handle();
-}
-
-AnnotationBase * SideEffect::clone() {
-  rcc_error("Cloning not implemented in SideEffect");
 }
 
 // ----- debugging -----

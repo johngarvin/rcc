@@ -26,7 +26,7 @@
 #include <include/R/R_RInternals.h>
 
 namespace RAnnot {
-  class SideEffect;
+  class PreDebutSideEffect;
   class FuncInfo;
   class FormalArgInfo;
 }
@@ -38,7 +38,6 @@ public:
 
 private:
   bool is_cbv_safe(RAnnot::FormalArgInfo * formal, SEXP actual_c);
-  RAnnot::SideEffect * compute_pre_debut_side_effect(RAnnot::FuncInfo * fi, RAnnot::FormalArgInfo * formal);
 };
 
 #endif

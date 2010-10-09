@@ -25,6 +25,9 @@
 #include <support/RccError.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/BasicFuncInfo.h>
+#include <analysis/BasicFuncInfoAnnotationMap.h>
+#include <analysis/FormalArgInfo.h>
 
 #include "FormalArgInfoAnnotationMap.h"
 
@@ -65,8 +68,13 @@ void FormalArgInfoAnnotationMap::create() {
   analysisResults.add(s_handle, s_instance);
 }
 
-// TODO: implement this (move functionality that lives in FuncInfo here)
 void FormalArgInfoAnnotationMap::compute() {
+  BasicFuncInfo * bfi;
+  FOR_EACH_BASIC_PROC(bfi) {
+    for (SEXP e = bfi->get_args(); e != R_NilValue; e = CDR(e)) {
+      get_map()[e] = new FormalArgInfo(e);
+    }
+  }
 }
 
 FormalArgInfoAnnotationMap * FormalArgInfoAnnotationMap::s_instance = 0;

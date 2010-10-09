@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2008 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,39 +16,30 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: SideEffect.h
+// File: PreDebutSideEffect.h
 //
-// Side effects, including uses and defs. Used as an annotation type
-// by SideEffectAnnotationMap. Does not own the Var annotations it
-// contains.
+// Side effects, including uses and defs. Does not include defs that
+// represent formal arguments. Used as an annotation type by
+// PreDebutSideEffectAnnotationMap. Does not own the Var annotations
+// it contains.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef SIDE_EFFECT_H
-#define SIDE_EFFECT_H
+#ifndef PRE_DEBUT_SIDE_EFFECT_H
+#define PRE_DEBUT_SIDE_EFFECT_H
 
-#include <list>
-
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
-#include <OpenAnalysis/MemRefExpr/MemRefExpr.hpp>
-
-#include <analysis/AnnotationBase.h>
-#include <analysis/DefVar.h>
-#include <analysis/FuncInfo.h>
-#include <analysis/UseVar.h>
-#include <analysis/VarInfo.h>
+#include <analysis/SideEffect.h>
 
 namespace RAnnot {
 
-class SideEffect {
+class PreDebutSideEffect : public AnnotationBase {
 public:
-  typedef VarInfo *                             MyVarT;
-  typedef std::set<MyVarT>                      MyRawVarSetT;
-  typedef const MyRawVarSetT &                  MyVarSetT;
-  typedef MyRawVarSetT::const_iterator          MyIteratorT;
+  typedef SideEffect::MyVarT MyVarT;
+  typedef SideEffect::MyVarSetT MyVarSetT;
+  typedef SideEffect::MyIteratorT MyIteratorT;
 
-  explicit SideEffect(bool trivial, bool cheap);
-  virtual ~SideEffect();
+  explicit PreDebutSideEffect(bool trivial, bool cheap);
+  virtual ~PreDebutSideEffect();
 
   bool is_trivial() const;
   bool is_cheap() const;
@@ -76,19 +67,17 @@ public:
   // returns true if there is any true, anti, or output dependence between the two
   bool intersects(SideEffect * other) const;
 
+  AnnotationBase * clone();
+  static PropertyHndlT handle();
+
   std::ostream & dump(std::ostream & os) const;
 
+  SideEffect * get_side_effect() const;
+
 private:
-  // whether there is an "action" side effect, such as writing to the screen
-  bool m_action;
-
-  MyRawVarSetT m_uses;
-  MyRawVarSetT m_defs;
-
-  const bool m_trivial;
-  const bool m_cheap;
+  SideEffect * m_side_effect;
 };
 
-}  // end namespace RAnnot
+}
 
 #endif

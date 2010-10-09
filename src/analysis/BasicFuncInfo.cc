@@ -69,11 +69,6 @@ BasicFuncInfo::BasicFuncInfo(BasicFuncInfo * parent, SEXP name_c, SEXP sexp) :
   m_parent(parent),
   m_returns()
 {
-  // make formal argument annotations
-  for (SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
-    FormalArgInfo * formal_info = new FormalArgInfo(e);
-    putProperty(FormalArgInfo, e, formal_info);
-  }
   perform_analysis();
 }
 
@@ -158,21 +153,6 @@ SEXP BasicFuncInfo::get_arg(int position) const
   return e;
 }
 
-bool BasicFuncInfo::is_arg_value(SEXP arg) const
-{
-  FormalArgInfo * formal_info = getProperty(FormalArgInfo, arg);
-  bool isvalue = formal_info->is_value();
-  return isvalue;
-}
-
-bool BasicFuncInfo::are_all_value() const
-{
-  for (SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
-    if (!is_arg_value(e)) return false;
-  }
-  return true;
-}
-
 const std::string & BasicFuncInfo::get_c_name()
 {
   if (m_c_name == "") {
@@ -209,7 +189,7 @@ const BasicFuncInfo * BasicFuncInfo::get_parent() const
 /// perform local function analysis
 void BasicFuncInfo::perform_analysis() {
   // get number of args and whether "..." is present
-  const SEXP ddd = Rf_install("...");
+  static const SEXP ddd = Rf_install("...");
   m_has_var_args = false;
   m_num_args = 0;
   for(SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
