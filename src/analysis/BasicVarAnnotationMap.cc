@@ -30,6 +30,8 @@
 #include <support/RccError.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/BasicFuncInfo.h>
+#include <analysis/BasicFuncInfoAnnotationMap.h>
 #include <analysis/BasicVar.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/PropertySet.h>
@@ -92,7 +94,17 @@ PropertyHndlT BasicVarAnnotationMap::s_handle = "BasicVar";
 
 // compute all BasicVar annotation information
 void BasicVarAnnotationMap::compute() {
+  // create program BasicVars and ExpressionInfos
   SexpTraversal::instance();
+
+  // add DefVars for formal arguments
+  BasicFuncInfo * bfi;
+  FOR_EACH_BASIC_PROC(bfi) {
+    for(SEXP e = bfi->get_args(); e != R_NilValue; e = CDR(e)) {
+      DefVar * dvar = new DefVar(e, DefVar::DefVar_FORMAL, BasicVar::Var_MUST, Locality::Locality_LOCAL, 0);
+      putProperty(BasicVar, e, dvar);
+    }
+  }
 }
 
 } // end namespace RAnnot

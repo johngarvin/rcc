@@ -130,7 +130,8 @@ void VarBindingAnnotationMap::compute() {
 void VarBindingAnnotationMap::create_var_bindings() {
   FuncInfo * fi;
   FuncInfo::const_mention_iterator mi;
-  std::set<std::pair<SEXP, LexicalScope *> > free_defs;
+  typedef std::pair<SEXP, const LexicalScope *> MyPair;
+  std::set<MyPair> free_defs;
 
   // first pass: formals and local and free defs. Free defs depend on
   // local defs in lexical ancestors, so the procedure traversal
@@ -160,7 +161,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	  // start at this scope's parent; iterate upward through ancestors
 	  for (FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
 	    if (defined_local_in_scope(v,a)) {
-	      free_defs.insert(std::pair<SEXP, LexicalScope *>(v->get_name(), a->get_scope()));
+	      free_defs.insert(std::pair<SEXP, const LexicalScope *>(v->get_name(), a->get_scope()));
 	      scopes->insert(a->get_scope());
 	    }
 	  }
@@ -194,7 +195,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	case Locality::Locality_FREE:
 	  for (FuncInfo * a = fi->Parent(); a != 0; a = a->Parent()) {
 	    if (defined_local_in_scope(v,a) ||
-		free_defs.find(std::pair<SEXP, LexicalScope *>(v->get_name(), a->get_scope())) != free_defs.end())
+		free_defs.find(std::pair<SEXP, const LexicalScope *>(v->get_name(), a->get_scope())) != free_defs.end())
 	      {
 		scopes->insert(a->get_scope());
 	      }
@@ -217,7 +218,7 @@ void VarBindingAnnotationMap::create_var_bindings() {
 void VarBindingAnnotationMap::populate_symbol_tables() {
   // for each (mention, VarBinding) pair in our map
   std::map<MyKeyT, MyMappedT>::const_iterator iter;
-  for(iter = begin(); iter != end(); ++iter) {
+  for(iter = get_map().begin(); iter != get_map().end(); ++iter) {
     // TODO: refactor AnnotationMaps to avoid downcasting
     VarBinding * vb = dynamic_cast<VarBinding *>(iter->second);
     BasicVar * var = getProperty(BasicVar, iter->first);
@@ -225,7 +226,7 @@ void VarBindingAnnotationMap::populate_symbol_tables() {
     // for each scope in the VarBinding
     VarBinding::const_iterator scope_iter;
     for(scope_iter = vb->begin(); scope_iter != vb->end(); ++scope_iter) {
-      LexicalScope * scope = *scope_iter;
+      const LexicalScope * scope = *scope_iter;
       // in the scope's symbol table, associate the name with a VarInfo
       SymbolTable * st = scope->get_symbol_table();
       VarInfo * vi = st->find_or_create(name, scope);

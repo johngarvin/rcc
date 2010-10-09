@@ -95,7 +95,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
   VarBinding * binding = getProperty(VarBinding, cell);
 
   if (binding->is_single()) {
-    if (InternalLexicalScope * scope = dynamic_cast<InternalLexicalScope *>(*(binding->begin()))) {
+    if (const InternalLexicalScope * scope = dynamic_cast<const InternalLexicalScope *>(*(binding->begin()))) {
       // check for global constants
       // binding map in ParseInfo is used for global variables with
       // constant values; it records the constant value of each name.
@@ -111,7 +111,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 	assert(env_val != R_UnboundValue);
 	return op_internal(sb, e, env_val, name, lookup_function, rho);
       }
-    } else if (FundefLexicalScope * scope = dynamic_cast<FundefLexicalScope *>(*(binding->begin()))) {
+    } else if (const FundefLexicalScope * scope = dynamic_cast<const FundefLexicalScope *>(*(binding->begin()))) {
       if (Settings::instance()->get_lookup_elimination() == false) {
 	return op_lookup(sb, lookup_function, make_symbol(e), rho, resultProtection, fullyEvaluatedResult);
       }
@@ -133,7 +133,7 @@ static Expression op_use(SubexpBuffer *sb, SEXP cell, string rho,
 							    emit_call2("R_SetVarLocValue", location, h) + ";\n")));
 	return Expression(h, DEPENDENT, VISIBLE, "");
       }
-    } else if (UnboundLexicalScope * scope = dynamic_cast<UnboundLexicalScope *>(*(binding->begin()))) {
+    } else if (const UnboundLexicalScope * scope = dynamic_cast<const UnboundLexicalScope *>(*(binding->begin()))) {
       rcc_error("Attempted to use an unbound variable");
     } else {
       rcc_error("Unknown derived type of LexicalScope found");

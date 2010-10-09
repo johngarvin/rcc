@@ -59,23 +59,22 @@ typedef FuncInfo::call_site_iterator call_site_iterator;
 typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
 
 BasicFuncInfo::BasicFuncInfo(BasicFuncInfo * parent, SEXP name_c, SEXP sexp) :
-  m_parent(parent),
-  m_first_name_c(name_c),
-  m_sexp(sexp),
+  NonUniformDegreeTreeNodeTmpl<BasicFuncInfo>(parent),
   m_c_name(""),
-  m_closure(""),
-  NonUniformDegreeTreeNodeTmpl<BasicFuncInfo>(parent)
+  m_closure(ParseInfo::global_fundefs->new_sexp_unp()),
+  m_requires_context(functionRequiresContext(sexp)),
+  m_scope(new FundefLexicalScope(sexp)),
+  m_sexp(sexp),
+  m_first_name_c(name_c),
+  m_parent(parent),
+  m_returns()
 {
-  m_requires_context = functionRequiresContext(sexp);
   // make formal argument annotations
-  SEXP args = get_args();
-  for (SEXP e = args; e != R_NilValue; e = CDR(e)) {
+  for (SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
     FormalArgInfo * formal_info = new FormalArgInfo(e);
     putProperty(FormalArgInfo, e, formal_info);
   }
-
-  // this is a new lexical scope
-  m_scope = new FundefLexicalScope(sexp);
+  perform_analysis();
 }
 
 BasicFuncInfo::~BasicFuncInfo()
@@ -97,11 +96,6 @@ unsigned int BasicFuncInfo::get_num_args() const
   return m_num_args;
 }
 
-void BasicFuncInfo::set_num_args(unsigned int x) 
-{
-  m_num_args = x;
-}
-
 SEXP BasicFuncInfo::get_sexp() const
 {
   return m_sexp;
@@ -115,11 +109,6 @@ SEXP BasicFuncInfo::get_first_name_c() const
 bool BasicFuncInfo::get_has_var_args() const
 {
   return m_has_var_args;
-}
-
-void BasicFuncInfo::set_has_var_args(bool x)
-{
-  m_has_var_args = x;
 }
 
 bool BasicFuncInfo::requires_context() const
@@ -178,12 +167,10 @@ bool BasicFuncInfo::is_arg_value(SEXP arg) const
 
 bool BasicFuncInfo::are_all_value() const
 {
-  bool allvalue = true;
-  SEXP args = get_args();
-  for (SEXP e = args; e != R_NilValue && allvalue; e = CDR(e)) {
-    if (!is_arg_value(e)) allvalue = false;
+  for (SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
+    if (!is_arg_value(e)) return false;
   }
-  return allvalue;
+  return true;
 }
 
 const std::string & BasicFuncInfo::get_c_name()
@@ -199,11 +186,8 @@ const std::string & BasicFuncInfo::get_c_name()
   return m_c_name;
 }
 
-const std::string & BasicFuncInfo::get_closure()
+const std::string & BasicFuncInfo::get_closure() const
 {
-  if (m_closure == "") {
-    m_closure = ParseInfo::global_fundefs->new_sexp_unp();
-  }
   return m_closure;
 }
 
@@ -212,18 +196,29 @@ OA_ptr<CFG::CFG> BasicFuncInfo::get_cfg() const
   return m_cfg;
 }
 
-FundefLexicalScope * BasicFuncInfo::get_scope() const
+const FundefLexicalScope * BasicFuncInfo::get_scope() const
 {
   return m_scope;
 }
 
-BasicFuncInfo * BasicFuncInfo::get_parent() const
+const BasicFuncInfo * BasicFuncInfo::get_parent() const
 {
   return m_parent;
 }
 
 /// perform local function analysis
 void BasicFuncInfo::perform_analysis() {
+  // get number of args and whether "..." is present
+  const SEXP ddd = Rf_install("...");
+  m_has_var_args = false;
+  m_num_args = 0;
+  for(SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
+    ++m_num_args;
+    if (TAG(e) == ddd) {
+      m_has_var_args = true;
+    }
+  }
+
   // compute CFG
   // pass 'true' as second arg to build statement-level CFG
   CFG::ManagerCFGStandard cfg_man(R_Analyst::instance()->get_interface(), true);

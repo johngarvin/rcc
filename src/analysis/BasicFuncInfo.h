@@ -69,8 +69,6 @@ public:
   
   static PropertyHndlT handle();
   
-  void perform_analysis();
-
   // ----- basic information -----
 
   SEXP get_sexp() const;
@@ -82,12 +80,11 @@ public:
   const std::string & get_c_name(); // not const: fills in m_c_name if empty
 
   /// name of C variable storing the closure (CLOSXP)
-  const std::string & get_closure();  // not const: fills in m_closure if empty
+  const std::string & get_closure() const;
 
   // ----- arguments -----
 
   unsigned int get_num_args() const;
-  void set_num_args(unsigned int x);
   SEXP get_args() const; 
   bool is_arg(SEXP sym) const;
   bool are_all_value() const;
@@ -102,7 +99,6 @@ public:
 
   // has variable arguments
   bool get_has_var_args() const;
-  void set_has_var_args(bool x);
 
   // ----- CFG -----
 
@@ -111,11 +107,11 @@ public:
   
   // ----- lexical scope and tree structure -----
 
-  FundefLexicalScope * get_scope() const;
+  const FundefLexicalScope * get_scope() const;
 
   /// Get lexical parent. Returns 0 if no parent (top-level procedure
   /// or library procedure)
-  BasicFuncInfo * get_parent() const;
+  const BasicFuncInfo * get_parent() const;
 
   bool has_children() const;
 
@@ -139,19 +135,20 @@ public:
   static const OA::OA_ptr<OA::CFG::NodeInterface> iterator_dummy_node;
 
 private:
+  void perform_analysis();
   void accum_implicit_returns(SEXP cell);
 
 private:
   unsigned int m_num_args;         // number of known arguments
   bool m_has_var_args;             // variable number of arguments (uses "...")
   std::string m_c_name;            // C linkage name
-  std::string m_closure;           // C closure (CLOSXP) name
-  bool m_requires_context;         // is an R context object needed for the function?
-  FundefLexicalScope * m_scope;    // lexical scope
+  const std::string m_closure;     // C closure (CLOSXP) name
+  const bool m_requires_context;   // is an R context object needed for the function?
+  const FundefLexicalScope * m_scope;    // lexical scope
   OA::OA_ptr<OA::CFG::CFG> m_cfg;  // control flow graph
-  SEXP m_sexp;                     // function definition
-  SEXP m_first_name_c;             // cell containing name of function at original definition
-  BasicFuncInfo * m_parent;        // scope tree parent
+  const SEXP m_sexp;               // function definition
+  const SEXP m_first_name_c;       // cell containing name of function at original definition
+  const BasicFuncInfo * m_parent;  // scope tree parent
   std::set<SEXP> m_returns;        // implicit return statements
 };
 

@@ -94,11 +94,11 @@ SEXP R_Analyst::get_program() {
   return m_program;
 }
 
-LexicalScope * R_Analyst::get_library_scope() {
+const LexicalScope * R_Analyst::get_library_scope() {
   return InternalLexicalScope::instance();
 }
 
-LexicalScope * R_Analyst::get_global_scope() {
+const LexicalScope * R_Analyst::get_global_scope() {
   return m_global_scope;
 }
 

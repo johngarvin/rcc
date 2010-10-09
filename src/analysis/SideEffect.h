@@ -24,8 +24,8 @@
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef VAR_SET_H
-#define VAR_SET_H
+#ifndef SIDE_EFFECT_H
+#define SIDE_EFFECT_H
 
 #include <list>
 
@@ -47,12 +47,10 @@ public:
   typedef const MyRawVarSetT &                  MyVarSetT;
   typedef MyRawVarSetT::const_iterator          MyIteratorT;
 
-  explicit SideEffect();
+  explicit SideEffect(bool trivial, bool cheap);
   virtual ~SideEffect();
 
-  void set_trivial(bool x);
   bool is_trivial() const;
-  void set_cheap(bool x);
   bool is_cheap() const;
 
   void set_action(bool x);
@@ -71,11 +69,12 @@ public:
 
   MyIteratorT begin_uses() const;
   MyIteratorT end_uses() const;
+
   MyIteratorT begin_defs() const;
   MyIteratorT end_defs() const;
 
   // returns true if there is any true, anti, or output dependence between the two
-  bool intersects(SideEffect * other);
+  bool intersects(SideEffect * other) const;
 
   AnnotationBase * clone();
   static PropertyHndlT handle();
@@ -89,8 +88,8 @@ private:
   MyRawVarSetT m_uses;
   MyRawVarSetT m_defs;
 
-  bool m_trivial;
-  bool m_cheap;
+  const bool m_trivial;
+  const bool m_cheap;
 };
 
 }  // end namespace RAnnot

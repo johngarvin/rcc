@@ -43,15 +43,18 @@ public:
   virtual bool is_computed() const;
   virtual bool computation_in_progress() const;
   virtual void reset();
+  virtual void start_update();
+  virtual void stop_update();
 
   // iterators
-  virtual iterator begin();
-  virtual const_iterator begin() const;
-  virtual iterator end();
-  virtual const_iterator end() const;
-  
+  virtual const_iterator begin();
+  virtual const_iterator end();
+
+  virtual std::ostream & dump(std::ostream & os) const;
+
 protected:
   std::map<MyKeyT, MyMappedT> & get_map();
+  const std::map<MyKeyT, MyMappedT> & get_map() const;
   void delete_map_values();
   void compute_if_necessary();
   virtual void compute() = 0;              // Template Method pattern

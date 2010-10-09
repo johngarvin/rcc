@@ -115,6 +115,7 @@ void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
 
+  // uses and defs in function body
   PROC_FOR_EACH_NODE(fi, node) {
     NODE_FOR_EACH_STATEMENT(node, stmt) {
       ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
@@ -140,6 +141,14 @@ void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
       }      
     }
   }
+
+  // defs for formal args
+  for(SEXP e = fi->get_args(); e != R_NilValue; e = CDR(e)) {
+    BasicVar * bvar = getProperty(BasicVar, e);
+    Var * var = new Var(bvar);
+    putProperty(Var, e, var);
+  }
+
 }
 
 /// compute variable locality (bound/free) for each function

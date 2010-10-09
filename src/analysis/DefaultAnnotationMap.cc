@@ -97,15 +97,28 @@ void DefaultAnnotationMap::reset() {
   m_computed = false;
 }
 
-iterator DefaultAnnotationMap::begin() { return m_map.begin(); }
+void DefaultAnnotationMap::start_update() {
+}
 
-const_iterator DefaultAnnotationMap::begin() const { return m_map.begin(); }
+void DefaultAnnotationMap::stop_update() {
+}
 
-iterator DefaultAnnotationMap::end() { return m_map.end(); }
+const_iterator DefaultAnnotationMap::begin() {
+  compute_if_necessary();
+  return m_map.begin();
+}
 
-const_iterator DefaultAnnotationMap::end() const { return m_map.end(); }
+
+const_iterator DefaultAnnotationMap::end() {
+  compute_if_necessary();
+  return m_map.end();
+}
 
 std::map<MyKeyT, MyMappedT> & DefaultAnnotationMap::get_map() {
+  return m_map;
+}
+
+const std::map<MyKeyT, MyMappedT> & DefaultAnnotationMap::get_map() const {
   return m_map;
 }
 
@@ -114,6 +127,16 @@ void DefaultAnnotationMap::delete_map_values() {
   for (iter = m_map.begin(); iter != m_map.end(); ++iter) {
     delete(iter->second);
   }
+}
+
+std::ostream & DefaultAnnotationMap::dump(std::ostream & os) const {
+  os << "{ AnnotationMap:\n";
+  for (const_iterator it = get_map().begin(); it != get_map().end(); ++it) {
+    os << "(" << it->first << " --> " << it->second << ")\n";
+    it->second->dump(os);
+  }
+  os << "}\n";
+  os.flush();
 }
 
 } // end namespace RAnnot

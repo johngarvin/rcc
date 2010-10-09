@@ -71,25 +71,24 @@ public:
   // -------------------------------------------------------
   // iterators
   // -------------------------------------------------------
-  virtual iterator begin() = 0;
-  virtual const_iterator begin() const = 0;
-  virtual iterator end() = 0;
-  virtual const_iterator end() const = 0;
+  virtual const_iterator begin() = 0;
+  virtual const_iterator end() = 0;
 
   // -------------------------------------------------------
   // get the annotation given a key (performs analysis if necessary)
   // -------------------------------------------------------
-  //  virtual MyMappedT & operator[](const MyKeyT & k) = 0; // TODO: remove when refactoring is done
   virtual void put(const MyKeyT & k, MyMappedT value) = 0;
   virtual MyMappedT get(const MyKeyT & k) = 0;
   virtual bool is_computed() const = 0;
   virtual bool computation_in_progress() const = 0;
+  virtual void start_update() = 0;
+  virtual void stop_update() = 0;
   
   // -------------------------------------------------------
   // debugging
   // -------------------------------------------------------
   virtual std::ostream & dump_cout() const;
-  virtual std::ostream & dump(std::ostream & os) const;
+  virtual std::ostream & dump(std::ostream & os) const = 0;
 
   // prevent cloning
 private:

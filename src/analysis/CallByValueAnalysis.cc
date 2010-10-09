@@ -69,9 +69,6 @@ void CallByValueAnalysis::perform_analysis() {
   // compute pre-debut side effects for each formal arg
 
   FOR_EACH_PROC(fi) {
-    OA_ptr<StrictnessResult> strictness; strictness = fi->get_strictness();
-    if (debug) strictness->dump(std::cout);
-    
     // formals are indexed by 1
     for(int i=1; i<=fi->get_num_args(); i++) {
       FormalArgInfo * formal = getProperty(FormalArgInfo, fi->get_arg(i));
@@ -243,7 +240,7 @@ SideEffect * CallByValueAnalysis::compute_pre_debut_side_effect(FuncInfo * fi, F
   assert(fi != 0);
   assert(fai != 0);
   
-  SideEffect * pre_debut = new SideEffect();
+  SideEffect * pre_debut = new SideEffect(false, false);
   OA_ptr<OA::CFG::NodeInterface> node;
   StmtHandle stmt;
 

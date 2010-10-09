@@ -59,6 +59,9 @@ void process_assert(SEXP assertion, BasicFuncInfo * fi) {
 	// builtin, and library functions, so these assertions have no
 	// effect.
       } else if (is_value_assert(e)) {
+#if 0
+Temporarily removing call-by-value assertions.
+  If used again, reinsert.
 	// assertion that a formal argument is call-by-value, of the form:
 	// .rcc.assert(value(foo))
 	SEXP v = CADR(e);
@@ -66,6 +69,7 @@ void process_assert(SEXP assertion, BasicFuncInfo * fi) {
 	SEXP arg = fi->get_arg(position);
 	FormalArgInfo * fargInfo = getProperty(FormalArgInfo, arg);
 	fargInfo->set_is_value(true);
+#endif
       }
     }
   } else if (is_rcc_assert_exp(assertion)) {

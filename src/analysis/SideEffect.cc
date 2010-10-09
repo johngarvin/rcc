@@ -50,9 +50,10 @@ static bool sets_intersect(MyVarSetT s, MyVarSetT t);
 
 // ----- constructor/destructor -----
 
-SideEffect::SideEffect() : m_trivial(false),
-			   m_cheap(false),
-			   m_action(false)
+SideEffect::SideEffect(bool trivial, bool cheap)
+  : m_trivial(trivial),
+    m_cheap(cheap),
+    m_action(false)
 {
 }
 
@@ -61,16 +62,8 @@ SideEffect::~SideEffect() {
 
 // ----- trivial/cheap -----
 
-void SideEffect::set_trivial(bool x) {
-  m_trivial = x;
-}
-  
 bool SideEffect::is_trivial() const {
   return m_trivial;
-}
-
-void SideEffect::set_cheap(bool x) {
-  m_cheap = x;
 }
 
 bool SideEffect::is_cheap() const {
@@ -160,7 +153,7 @@ bool sets_intersect(MyVarSetT s, MyVarSetT t) {
   return false;
 }
 
-bool SideEffect::intersects(SideEffect * other) {
+bool SideEffect::intersects(SideEffect * other) const {
   if (get_action() && other->get_action()) {
     return true;
   }

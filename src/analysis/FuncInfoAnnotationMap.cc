@@ -119,7 +119,6 @@ void FuncInfoAnnotationMap::collect_libraries() {
       SEXP lhs = call_lhs(CAR(*csi));
       if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
 	BasicFuncInfo * new_bfi; new_bfi = new BasicFuncInfo(0, library_value(lhs), library_value(lhs));
-	new_bfi->perform_analysis();
 	putProperty(BasicFuncInfo, library_value(lhs), new_bfi);
 	FuncInfo * new_fi; new_fi = new FuncInfo(0, new_bfi);
 	get_map()[library_value(lhs)] = new_fi;

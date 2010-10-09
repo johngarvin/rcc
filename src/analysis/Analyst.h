@@ -48,8 +48,8 @@ public:
 
   SEXP get_program();
 
-  LexicalScope * get_library_scope();
-  LexicalScope * get_global_scope();
+  const LexicalScope * get_library_scope();
+  const LexicalScope * get_global_scope();
 
   //  ----- debugging -----
 
@@ -69,8 +69,8 @@ private:
   SEXP m_program;
   OA::OA_ptr<R_IRInterface> m_interface;
 
-  LexicalScope * m_library_scope;
-  LexicalScope * m_global_scope;
+  const LexicalScope * m_library_scope;
+  const LexicalScope * m_global_scope;
 };
 
 #endif

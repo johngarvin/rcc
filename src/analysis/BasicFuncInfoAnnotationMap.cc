@@ -77,10 +77,6 @@ void BasicFuncInfoAnnotationMap::compute() {
   assert(is_simple_assign(r_root));
 
   build_scope_tree(r_root);
-  for (const_iterator it = begin(); it != end(); ++it) {
-    BasicFuncInfo * fn = dynamic_cast<BasicFuncInfo *>(it->second);  // TODO: redo annotation maps to avoid casts
-    fn->perform_analysis();
-  }
 }
 
 void BasicFuncInfoAnnotationMap::build_scope_tree(SEXP r_root) {

@@ -77,7 +77,6 @@ typedef FuncInfo::const_call_site_iterator const_call_site_iterator;
   NonUniformDegreeTreeNodeTmpl<FuncInfo>(parent)
 {
   RCC_DEBUG("RCC_FuncInfo", debug);
-  analyze_args();
   collect_mentions_and_call_sites();
   analyze_strictness();
   analyze_debuts();
@@ -90,11 +89,6 @@ FuncInfo::~FuncInfo()
 unsigned int FuncInfo::get_num_args() const 
 {
   return m_basic->get_num_args();
-}
-
-void FuncInfo::set_num_args(unsigned int x) 
-{
-  m_basic->set_num_args(x);
 }
 
 SEXP FuncInfo::get_sexp() const
@@ -110,11 +104,6 @@ SEXP FuncInfo::get_first_name_c() const
 bool FuncInfo::get_has_var_args() const
 {
   return m_basic->get_has_var_args();
-}
-
-void FuncInfo::set_has_var_args(bool x)
-{
-  m_basic->set_has_var_args(x);
 }
 
 bool FuncInfo::requires_context() const
@@ -157,7 +146,7 @@ const std::string & FuncInfo::get_c_name()
   return m_basic->get_c_name();
 }
 
-const std::string & FuncInfo::get_closure()
+const std::string & FuncInfo::get_closure() const
 {
   return m_basic->get_closure();
 }
@@ -222,7 +211,7 @@ void FuncInfo::insert_call_site(FuncInfo::CallSiteT cs)
   m_call_sites.push_back(cs);
 }
 
-FundefLexicalScope * FuncInfo::get_scope() const
+const FundefLexicalScope * FuncInfo::get_scope() const
 {
   return m_basic->get_scope();
 }
@@ -280,26 +269,6 @@ std::ostream & FuncInfo::dump(std::ostream & os) const
 PropertyHndlT FuncInfo::handle() {
   return FuncInfoAnnotationMap::handle();
 }
-
-void FuncInfo::analyze_args() {
-  SEXP args = get_args();
-  const SEXP ddd = Rf_install("...");
-  bool has_var_args = false;
-  int n_args = 0;
-  for(SEXP e = args; e != R_NilValue; e = CDR(e)) {
-    ++n_args;
-    DefVar * dvar = new DefVar(e, DefVar::DefVar_FORMAL, BasicVar::Var_MUST, Locality::Locality_LOCAL, 0);
-    putProperty(BasicVar, e, dvar);
-    Var * var = new Var(dvar);
-    putProperty(Var, e, var);
-    if (TAG(e) == ddd) {
-      has_var_args = true;
-    }
-  }
-  set_num_args(n_args);
-  set_has_var_args(has_var_args);
-}
-
 
 /// Find each mention (use or def) and call site in the function
 void FuncInfo::collect_mentions_and_call_sites() {

@@ -222,10 +222,7 @@ void SideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const 
   OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(make_proc_h(fi->get_sexp()));
   SEXP e = CAR(cell);
   ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
-  SideEffect * annot = new SideEffect();
-
-  annot->set_trivial(expression_is_trivial(e));
-  annot->set_cheap(expression_is_cheap(e));
+  SideEffect * annot = new SideEffect(expression_is_trivial(e), expression_is_cheap(e));
 
   // first grab local uses and defs
   EXPRESSION_FOR_EACH_USE(expr, use) {

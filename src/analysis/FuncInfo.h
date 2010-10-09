@@ -104,12 +104,11 @@ public:
   const std::string & get_c_name(); // not const: fills in m_c_name if empty
 
   /// name of C variable storing the closure (CLOSXP)
-  const std::string & get_closure();  // not const: fills in m_closure if empty
+  const std::string & get_closure() const;
 
   // ----- arguments (wrappers around BasicFuncInfo) -----
 
   unsigned int get_num_args() const;
-  void set_num_args(unsigned int x);
   SEXP get_args() const; 
   bool is_arg(SEXP sym) const;
   bool are_all_value() const;
@@ -123,7 +122,6 @@ public:
 
   // has variable arguments
   bool get_has_var_args() const;
-  void set_has_var_args(bool x);
 
   // ----- CFG  (wrapper around BasicFuncInfo) -----
 
@@ -131,7 +129,7 @@ public:
   
   // ----- lexical scope and tree structure (wrappers around BasicFuncInfo) -----
 
-  FundefLexicalScope * get_scope() const;
+  const FundefLexicalScope * get_scope() const;
 
   bool has_children() const;
 
@@ -175,7 +173,6 @@ private:
   // ----- analysis -----
 
   void accum_implicit_returns(SEXP cell);
-  void analyze_args();
 
   /// Find each mention (use or def) and call site in the function
   void collect_mentions_and_call_sites();
@@ -184,7 +181,7 @@ private:
 
   void analyze_debuts();
 
-  // results of strictness analysis: strictness of formals, debuts, post-debut statements
+  /// results of strictness analysis: strictness of formals, debuts, post-debut statements
   OA::OA_ptr<Strictness::StrictnessResult> m_strictness;
 
   MentionSetT m_mentions; // uses and defs inside function (NOT including nested functions)

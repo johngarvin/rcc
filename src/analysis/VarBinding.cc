@@ -70,14 +70,14 @@ VarBinding::VarBinding()
   bool VarBinding::is_global() {
     // global if m_scopes has exactly one element and it's the global
     // scope.
-    static LexicalScope * global = R_Analyst::instance()->get_global_scope();
+    static const LexicalScope * global = R_Analyst::instance()->get_global_scope();
     return (is_single() && *begin() == global);
   }
 
   bool VarBinding::is_internal() {
     // internal (library, builtin, or special) if m_scopes has exactly
     // one element and it's the library scope.
-    static LexicalScope * library_scope = R_Analyst::instance()->get_library_scope();
+    static const LexicalScope * library_scope = R_Analyst::instance()->get_library_scope();
     return (is_single() && *begin() == library_scope);
   }
 
@@ -86,10 +86,10 @@ VarBinding::VarBinding()
   }
 
   std::string VarBinding::get_location(SEXP name, SubexpBuffer * sb) {
-    FundefLexicalScope * scope;
+    const FundefLexicalScope * scope;
     // If there's only one binding and it's in a fundef, then look up
     // the var in the symbol table and get a location for it.
-    if (is_single() && (scope = dynamic_cast<FundefLexicalScope *>(*begin())) != 0) {
+    if (is_single() && (scope = dynamic_cast<const FundefLexicalScope *>(*begin())) != 0) {
       SymbolTable * st = scope->get_symbol_table();
       VarInfo * vi = (*st)[name];
       assert(vi != 0);

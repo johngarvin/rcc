@@ -50,7 +50,7 @@ class VarBinding : public AnnotationBase
 public:
 
   // typedefs to let us function as wrapper around container
-  typedef LexicalScope *                        KeyT;
+  typedef const LexicalScope *                  KeyT;
   typedef std::list<KeyT>                       MyContainerT;
   typedef MyContainerT::const_iterator          const_iterator;
 
