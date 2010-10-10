@@ -49,8 +49,10 @@ rcc_bin_SOURCES =				\
   BasicVar.h                                    \
   BasicVarAnnotationMap.cc                      \
   BasicVarAnnotationMap.h                       \
-  CallByValueAnalysis.cc                        \
-  CallByValueAnalysis.h                         \
+  CallByValueInfo.cc                            \
+  CallByValueInfo.h                             \
+  CallByValueInfoAnnotationMap.cc               \
+  CallByValueInfoAnnotationMap.h                \
   CallType.cc                                   \
   CallType.h                                    \
   CEscapeInfo.h                                 \

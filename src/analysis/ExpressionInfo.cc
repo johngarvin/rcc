@@ -42,16 +42,13 @@ typedef ExpressionInfo::const_use_iterator const_use_iterator;
 typedef ExpressionInfo::const_def_iterator const_def_iterator;
 typedef ExpressionInfo::call_site_iterator call_site_iterator;
 typedef ExpressionInfo::const_call_site_iterator const_call_site_iterator;
-typedef ExpressionInfo::MyLazyInfoSetT MyLazyInfoSetT;
 
 ExpressionInfo::ExpressionInfo(SEXP cell)
   : m_cell(cell),
     m_uses(), m_defs(),
     m_call_sites(),
     m_strict(false),
-    m_trivially_evaluable(false),
-    m_lazy_info(is_call(CAR(cell)) ? Rf_length(call_args(CAR(cell))) : 0)
-    // TODO: with resolved args, use # of formal args, not actuals
+    m_trivially_evaluable(false)
 {
 }
 
@@ -133,19 +130,6 @@ SEXP ExpressionInfo::get_cell() const {
 void ExpressionInfo::set_cell(SEXP x) {
   m_cell = x;
 }
-
-EagerLazyT ExpressionInfo::get_eager_lazy(int arg) const {
-  return m_lazy_info.at(arg);
-}
-
-void ExpressionInfo::set_eager_lazy(int arg, EagerLazyT x) {
-  m_lazy_info.at(arg) = x;
-}
-
-std::vector<EagerLazyT> ExpressionInfo::get_lazy_info() const {
-  return m_lazy_info;
-}
-
 
 AnnotationBase * ExpressionInfo::clone() {
   return new ExpressionInfo(*this);

@@ -50,17 +50,17 @@ private:
 
 class ExpressionSideEffectAnnotationMap : public DefaultAnnotationMap {
 public:
-  // destructor
+  /// destructor
   virtual ~ExpressionSideEffectAnnotationMap();
 
-  // singleton
+  /// singleton pattern instance
   static ExpressionSideEffectAnnotationMap * instance();
 
-  // getting the name causes this map to be created and registered
+  /// getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
 private:
-  // private constructor for singleton pattern
+  /// private constructor for singleton pattern
   explicit ExpressionSideEffectAnnotationMap();
 
   void compute();

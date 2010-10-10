@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2008 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,55 +16,75 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallByValueAnalysis.cc
+// File: CallByValueInfoAnnotationMap.cc
+//
+// Maps each call site to CallByValueInfo with eager/lazy info for actual arguments.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
 #include <set>
 
-#include <OpenAnalysis/CFG/CFGInterface.hpp>
-#include <OpenAnalysis/IRInterface/IRHandles.hpp>
-
-#include <ParseInfo.h>
-
 #include <support/Debug.h>
 #include <support/RccError.h>
 
-#include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
-#include <analysis/Analyst.h>
-#include <analysis/DefVar.h>
-#include <analysis/EagerLazy.h>
+#include <analysis/CallByValueInfo.h>
 #include <analysis/ExpressionSideEffect.h>
 #include <analysis/ExpressionSideEffectAnnotationMap.h>
 #include <analysis/FormalArgInfo.h>
+#include <analysis/FormalArgInfoAnnotationMap.h>
 #include <analysis/FuncInfo.h>
-#include <analysis/HandleInterface.h>
+#include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/PreDebutSideEffect.h>
-#include <analysis/PreDebutSideEffectAnnotationMap.h>
 #include <analysis/ResolvedArgs.h>
 #include <analysis/Settings.h>
 #include <analysis/SimpleIterators.h>
-#include <analysis/StrictnessResult.h>
 #include <analysis/SymbolTableFacade.h>
-#include <analysis/VarInfo.h>
+#include <analysis/Utils.h>
 
-#include "CallByValueAnalysis.h"
+#include "CallByValueInfoAnnotationMap.h"
 
-using namespace HandleInterface;
-using namespace RAnnot;
-using namespace Strictness;
-using OA::OA_ptr;
-using OA::StmtHandle;
+namespace RAnnot {
+
+// ----- static function -----
+
+bool is_cbv_safe(FormalArgInfo * formal, SEXP actual_c);
 
 static bool debug;
 
-CallByValueAnalysis::CallByValueAnalysis() {
+CallByValueInfoAnnotationMap::CallByValueInfoAnnotationMap() {
   RCC_DEBUG("RCC_CallByValue", debug);
 }
 
-void CallByValueAnalysis::perform_analysis() {
+CallByValueInfoAnnotationMap::~CallByValueInfoAnnotationMap() {
+  delete_map_values();
+}
+
+CallByValueInfoAnnotationMap * CallByValueInfoAnnotationMap::instance() {
+  if (s_instance == 0) {
+    create();
+  }
+  return s_instance;
+}
+
+PropertyHndlT CallByValueInfoAnnotationMap::handle() {
+  if (s_instance == 0) {
+    create();
+  }
+  return s_handle;
+}
+
+CallByValueInfoAnnotationMap * CallByValueInfoAnnotationMap::s_instance = 0;
+PropertyHndlT CallByValueInfoAnnotationMap::s_handle = "CallByValueInfo";
+
+void CallByValueInfoAnnotationMap::create() {
+  s_instance = new CallByValueInfoAnnotationMap();
+  analysisResults.add(s_handle, s_instance);
+}
+
+void CallByValueInfoAnnotationMap::compute() {
   FuncInfo * fi;
   SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
 
@@ -86,7 +106,8 @@ void CallByValueAnalysis::perform_analysis() {
 	std::cout << std::endl;
       }
       
-      ExpressionInfo * call_expr = getProperty(ExpressionInfo, *csi_c); 
+      CallByValueInfo * annot = new CallByValueInfo(Rf_length(call_args(cs)));
+      get_map()[*csi_c] = annot;
      
       // if the callee is a library that's not user-redefined...
       if (is_var(call_lhs(cs)) && 
@@ -97,12 +118,12 @@ void CallByValueAnalysis::perform_analysis() {
 	int i = 0;
 	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
 	  if (unsafe_libs.find(call_lhs(cs)) != unsafe_libs.end()) {
-	    call_expr->set_eager_lazy(i, LAZY);
+	    annot->set_eager_lazy(i, LAZY);
 	  } else {
 	    if (getProperty(ExpressionSideEffect, argi.current())->is_trivial()) {
-	      call_expr->set_eager_lazy(i, EAGER);
+	      annot->set_eager_lazy(i, EAGER);
 	    } else {
-	      call_expr->set_eager_lazy(i, LAZY);
+	      annot->set_eager_lazy(i, LAZY);
 	    }
 	  }
 	}
@@ -139,7 +160,7 @@ void CallByValueAnalysis::perform_analysis() {
 	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
 	  FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
 	  SEXP actual_c = argi.current();
-	  call_expr->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
+	  annot->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
 	}
 
 	if (Settings::instance()->get_resolve_arguments()) {
@@ -159,7 +180,7 @@ void CallByValueAnalysis::perform_analysis() {
   }
 }
 
-bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
+bool is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
   // get side effect of the pre-debut part of the callee
   PreDebutSideEffect * pre_debut = getProperty(PreDebutSideEffect, formal->get_sexp());
   // formal->get_pre_debut_side_effect();
@@ -228,4 +249,5 @@ bool CallByValueAnalysis::is_cbv_safe(FormalArgInfo * formal, SEXP actual_c) {
     }
   }
 }
-  
+
+} // end namespace RAnnot

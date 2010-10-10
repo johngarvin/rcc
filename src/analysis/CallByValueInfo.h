@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2008 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,28 +16,46 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: CallByValueAnalysis.h
+// File: CallByValueInfo.h
+//
+// Eager/lazy information for each actual argument of a call site.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef CALL_BY_VALUE_ANALYSIS_H
-#define CALL_BY_VALUE_ANALYSIS_H
+#ifndef CALL_BY_VALUE_INFO_H
+#define CALL_BY_VALUE_INFO_H
 
-#include <include/R/R_RInternals.h>
+#include <vector>
+
+#include <analysis/AnnotationBase.h>
+#include <analysis/EagerLazy.h>
+#include <analysis/PropertyHndl.h>
 
 namespace RAnnot {
-  class PreDebutSideEffect;
-  class FuncInfo;
-  class FormalArgInfo;
-}
 
-class CallByValueAnalysis {
+class CallByValueInfo : public AnnotationBase {
 public:
-  explicit CallByValueAnalysis();
-  void perform_analysis();
+  typedef std::vector<EagerLazyT> MyLazyInfoSetT;
+
+  explicit CallByValueInfo(int argc);
+  virtual ~CallByValueInfo();
+
+  /// Not supported.
+  virtual AnnotationBase * clone();
+
+  static PropertyHndlT handle();
+
+  MyLazyInfoSetT get_eager_lazy_info() const;
+
+  EagerLazyT get_eager_lazy(int arg) const;
+  void set_eager_lazy(int arg, EagerLazyT x);
+
+  virtual std::ostream & dump(std::ostream &) const;
 
 private:
-  bool is_cbv_safe(RAnnot::FormalArgInfo * formal, SEXP actual_c);
+  MyLazyInfoSetT m_eager_lazy;
 };
+
+} // end namespace RAnnot
 
 #endif

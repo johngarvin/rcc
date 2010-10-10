@@ -34,7 +34,6 @@
 
 #include <analysis/AnnotationBase.h>
 #include <analysis/DefVar.h>
-#include <analysis/EagerLazy.h>
 #include <analysis/PropertyHndl.h>
 #include <analysis/UseVar.h>
 
@@ -82,13 +81,10 @@ public:
   typedef MyCallSiteSetT::iterator       call_site_iterator;
   typedef MyCallSiteSetT::const_iterator const_call_site_iterator;
 
-  typedef std::vector<EagerLazyT> MyLazyInfoSetT;
-
   // set operations
   void insert_use(MyUseT const x);
   void insert_def(MyDefT const x);
   void insert_call_site(const MyCallSiteT & x);
-  void insert_eager_lazy(const EagerLazyT x);
 
   // iterators:
 
@@ -114,11 +110,6 @@ public:
   SEXP get_cell() const;
   void set_cell(SEXP x);
 
-  // indexed from 0
-  EagerLazyT get_eager_lazy(int arg) const;
-  void set_eager_lazy(int arg, EagerLazyT x);
-  MyLazyInfoSetT get_lazy_info() const;
-
   static PropertyHndlT handle();
 
   // clone (not implemented because I don't think anyone uses it;
@@ -143,11 +134,6 @@ private:
   bool m_trivially_evaluable;   // whether expression is both strict
                                 //   and guaranteed to be cheap to
                                 //   evaluate
-  MyLazyInfoSetT m_lazy_info;   // if this expression is a call site,
-				//   for each actual arg whether it can
-				//   be evaulated eagerly for
-				//   performance or must conservatively
-				//   be called lazy. Indexed from 0.
 };
 
 }

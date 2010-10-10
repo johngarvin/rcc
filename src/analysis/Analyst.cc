@@ -83,7 +83,6 @@ void R_Analyst::perform_analysis() {
     {
       throw AnalysisException("Unable to perform analysis: no assertion to exclude OO or environment manipulation");
     }
-  (new CallByValueAnalysis())->perform_analysis();
 }
 
 OA::OA_ptr<R_IRInterface> R_Analyst::get_interface() {

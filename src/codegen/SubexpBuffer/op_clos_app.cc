@@ -30,8 +30,9 @@
 #include <include/R/R_RInternals.h>
 
 #include <analysis/AnalysisResults.h>
+#include <analysis/CallByValueInfo.h>
+#include <analysis/CallByValueInfoAnnotationMap.h>
 #include <analysis/CEscapeInfo.h>
-#include <analysis/ExpressionInfo.h>
 #include <analysis/FuncInfo.h>
 #include <analysis/OEscapeInfo.h>
 #include <analysis/OEscapeInfoAnnotationMap.h>
@@ -103,8 +104,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     args = args_annot->get_resolved();
     args_resolved = true;
   } else {
-    ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
-    lazy_info = ei->get_lazy_info();
+    lazy_info = getProperty(CallByValueInfo, cell)->get_eager_lazy_info();
     args = original_args;
     args_resolved = false;
   }
@@ -113,7 +113,6 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     args1 = op_list(args, rho, false, Protected);   // pass false to output compiled list
     laziness_string = "eager";
   } else {
-    ExpressionInfo * ei = getProperty(ExpressionInfo, cell);
     args1 = op_arglist_rec(this, args, lazy_info, 0, &unprotcnt, laziness_string, rho);
   }
 

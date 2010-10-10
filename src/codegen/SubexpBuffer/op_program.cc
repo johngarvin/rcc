@@ -42,6 +42,12 @@
 
 using namespace std;
 
+static void op_top_level_exp_cleanup(SubexpBuffer & subexps,
+				     const Expression & exp,
+				     int i,
+				     string & exec_decls,
+				     string & exec_defs);
+
 string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
 				bool output_main_program, bool output_default_args)
 {
@@ -59,7 +65,7 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   
   // for debugging dump, say we've reached exec
   exec_decls += "extern Rboolean global_dump_stats;\n";
-  exec_defs += "if (global_dump_stats) fprintf(stderr, \"exec\\n\");";
+  exec_defs += "if (global_dump_stats) fprintf(stderr, \"exec\\n\");\n";
 
   // if stack debug is on, turn it on in the interpreter memory system
   if (Settings::instance()->get_stack_debug()) {
@@ -69,55 +75,41 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   ParseInfo::global_constants->append_decls("extern int global_alloc_stack_space_size;\n");
 
   // output top-level expressions (Expression version)
-  for(i=0; i<n_exprs; i++, e = CDR(e)) {
-    SubexpBuffer subexps;
-    Expression exp;
-    if (is_rcc_assert_def(CAR(e)) || is_rcc_assertion(CAR(e))) {
-      // assertions are for the analysis phase;
-      // don't add them to generated code
-      continue;
-    }
-    
-    if (ParseInfo::analysis_ok()) {
-      try {
-	exp = subexps.op_exp(e, "R_GlobalEnv");  // op_exp takes a cell
-      } catch (AnalysisException ae) {
-	rcc_warn(ae.what());
-	rcc_warn("analysis encountered difficulties; compiling trivially");
-	clearProperties();
-	ParseInfo::set_analysis_ok(false);
+  SEXP original_e = e;
+  try {
+    for (i=0; i<n_exprs; i++, e = CDR(e)) {
+      SubexpBuffer subexps;
+      Expression exp;
+      if (is_rcc_assert_def(CAR(e)) || is_rcc_assertion(CAR(e))) {
+	// assertions are for the analysis phase;
+	// don't add them to generated code
+	continue;
       }
+      exp = subexps.op_exp(e, "R_GlobalEnv");  // op_exp takes a cell
+      op_top_level_exp_cleanup(subexps, exp, i, exec_decls, exec_defs);
     }
-    
-    if (!ParseInfo::analysis_ok()) {
-      // compile trivially
-      SubexpBuffer sb1;
-      Expression exp1 = sb1.op_literal(CAR(e), "R_GlobalEnv");
+  } catch (AnalysisException ae) {
+    // compile trivially
+    rcc_warn(ae.what());
+    rcc_warn("analysis encountered difficulties; compiling trivially");
+    clearProperties();
+    ParseInfo::set_analysis_ok(false);
+    e = original_e;
+    exec_decls = "";
+    exec_defs = "";
+    for (i=0; i<n_exprs; i++, e = CDR(e)) {
+      SubexpBuffer subexps;
+      Expression exp;
+      if (is_rcc_assert_def(CAR(e)) || is_rcc_assertion(CAR(e))) {
+	// assertions are for the analysis phase;
+	// don't add them to generated code
+	continue;
+      }
+      Expression exp1 = subexps.op_literal(CAR(e), "R_GlobalEnv");
       exp = Expression(emit_call2("Rf_eval", exp1.var, "R_GlobalEnv"),
 		       DEPENDENT, CHECK_VISIBLE, exp1.del_text);
-      subexps = sb1;
+      op_top_level_exp_cleanup(subexps, exp, i, exec_decls, exec_defs);
     }
-    
-    string this_exp;
-    this_exp += subexps.output_decls();
-    this_exp += Visibility::emit_set_if_visible(exp.visibility);
-    this_exp += subexps.output_defs();
-    if (exp.visibility != INVISIBLE) {
-      string evar = "e" + i_to_s(i);
-      exec_decls += "SEXP " + evar + ";\n";
-      string pval = emit_call2("PrintValueEnv", evar, "R_GlobalEnv") + ";\n";
-      string printexpn = emit_assign(evar, exp.var);
-      if (exp.visibility == VISIBLE) {
-	printexpn += pval;
-      } else if (exp.visibility == CHECK_VISIBLE) {
-	string check = Visibility::emit_check_expn();
-	printexpn += emit_logical_if_stmt(check, pval);
-      }
-      this_exp += printexpn;
-    }
-    if (!exp.del_text.empty())
-      this_exp += "UNPROTECT(1);\n";
-    exec_defs += indent(emit_in_braces(this_exp));
   }
 
   // Expression code generated. Now the rest
@@ -238,4 +230,33 @@ string SubexpBuffer::op_program(SEXP e, string rho, string func_name,
   program = stats + program;
   
   return program;
+}
+
+static void op_top_level_exp_cleanup(SubexpBuffer & subexps,
+				     const Expression & exp,
+				     int i,
+				     string & exec_decls,
+				     string & exec_defs)
+{
+  string this_exp;
+  this_exp += subexps.output_decls();
+  this_exp += Visibility::emit_set_if_visible(exp.visibility);
+  this_exp += subexps.output_defs();
+  if (exp.visibility != INVISIBLE) {
+    string evar = "e" + i_to_s(i);
+    exec_decls += "SEXP " + evar + ";\n";
+    string pval = emit_call2("PrintValueEnv", evar, "R_GlobalEnv") + ";\n";
+    string printexpn = emit_assign(evar, exp.var);
+    if (exp.visibility == VISIBLE) {
+      printexpn += pval;
+    } else if (exp.visibility == CHECK_VISIBLE) {
+      string check = Visibility::emit_check_expn();
+      printexpn += emit_logical_if_stmt(check, pval);
+    }
+    this_exp += printexpn;
+  }
+  if (!exp.del_text.empty())
+    this_exp += "UNPROTECT(1);\n";
+  exec_defs += indent(emit_in_braces(this_exp));
+  // want to return exec_decls and exec_defs
 }
