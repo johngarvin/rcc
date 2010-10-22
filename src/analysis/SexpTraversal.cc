@@ -56,8 +56,14 @@ SexpTraversal::SexpTraversal() {
 
   RCC_DEBUG("RCC_SexpTraversalAnnotationMap", debug);
 
-  // we need to make expressions out of statements, call sites, and actual arguments
   FOR_EACH_BASIC_PROC(bfi) {
+    // default arguments
+    for (SEXP arg = bfi->get_args(); arg != R_NilValue; arg = CDR(arg)) {
+      if (CAR(arg) != R_MissingArg) {
+	make_expression_info(arg);
+      }
+    }
+
     PROC_FOR_EACH_NODE(bfi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	// statements

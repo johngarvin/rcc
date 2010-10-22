@@ -62,7 +62,7 @@ PropertyHndlT ResolvedArgsAnnotationMap::handle() {
 }
 
 void ResolvedArgsAnnotationMap::compute() {
-  SEXP formals, actuals;
+  SEXP formals, supplied;
   FuncInfo * fi;
   FuncInfo::const_call_site_iterator csi;
   FOR_EACH_PROC(fi) {
@@ -74,15 +74,15 @@ void ResolvedArgsAnnotationMap::compute() {
       if (ph == OA::ProcHandle(0)) continue;
       FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(ph));
       if (callee == 0) continue;
-      if (callee->get_has_var_args()) continue;
+      //       if (callee->get_has_var_args()) continue;
       formals = fundef_args(callee->get_sexp());
-      actuals = call_args(CAR(cell));
-      ResolvedArgs * value = new ResolvedArgs(actuals, formals);
+      supplied = call_args(CAR(cell));
+      ResolvedArgs * value = new ResolvedArgs(supplied, formals);
       get_map()[cell] = value;
-      SETCDR(CAR(cell), value->get_resolved());
     }
   }
 
+#if 0
   // sneak each resolved actual into ExpressionInfo map. This is
   // so that we can do CBV analysis, which wants SideEffect info,
   // which wants ExpressionInfo.
@@ -106,6 +106,8 @@ void ResolvedArgsAnnotationMap::compute() {
   VarAnnotationMap::instance()->reset();
   ExpressionSideEffectAnnotationMap::instance()->reset();
   OEscapeInfoAnnotationMap::instance()->reset();
+#endif
+
 }
 
 ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::s_instance = 0;

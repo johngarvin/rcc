@@ -38,6 +38,7 @@
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/PreDebutSideEffect.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
 #include <analysis/ResolvedArgs.h>
 #include <analysis/Settings.h>
 #include <analysis/SimpleIterators.h>
@@ -166,13 +167,11 @@ void CallByValueInfoAnnotationMap::compute() {
 	if (Settings::instance()->get_resolve_arguments()) {
 	  // set eager/lazy for each resolved arg
 	  ResolvedArgs * args_annot = getProperty(ResolvedArgs, *csi_c);
-	  SEXP resolved_args = args_annot->get_resolved();
 	  i = 0;
-	  for(R_ListIterator argi(resolved_args); argi.isValid(); argi++, i++) {
+	  for(ResolvedArgs::const_iterator it = args_annot->begin(); it != args_annot->end(); it++) {
 	    FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
-	    SEXP actual_c = argi.current();
-	    args_annot->set_eager_lazy(i, EAGER);
-	    // TODO: for now, assuming all eager. Figure out side effects instead.
+	    args_annot->set_eager_lazy(i, is_cbv_safe(formal, it->cell) ? EAGER : LAZY);
+	    i++;
 	  }
 	}  
       }

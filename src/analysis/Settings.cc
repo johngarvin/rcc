@@ -24,6 +24,8 @@
 
 #include "Settings.h"
 
+// ----- Singleton pattern -----
+
 Settings * Settings::s_instance = 0;
 
 Settings * Settings::instance() {

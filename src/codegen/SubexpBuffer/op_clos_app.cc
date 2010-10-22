@@ -52,19 +52,20 @@
 using namespace std;
 using namespace RAnnot;
 
-// op_arglist:
-//   for each arg a
-//     if a has a value assertion
-//       then op_exp to produce v
-//       else create promise to produce v
-//     add v to cons list
-// Ack! No promiseArgs!
-
+#if 0
+not used
 static Expression op_arglist(SubexpBuffer * sb,
 			     const SEXP cell,
 			     int * const unprotcnt,
 			     string & laziness_string,
 			     const string rho);
+#endif
+
+static Expression op_arg(SubexpBuffer * const sb,
+			 const SEXP cell,
+			 const EagerLazyT eager_lazy,
+			 const string rho);
+			 
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
 				 const std::vector<EagerLazyT> & lazy_info,
@@ -72,6 +73,11 @@ static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 int * const unprotcnt,
 				 string & laziness_string,
 				 const string rho);
+static Expression op_resolved_args(SubexpBuffer * sb,
+				   ResolvedArgs * resolved_args,
+				   string rho,
+				   int * unprotect,
+				   string & laziness_string);
 static Expression op_promise_args(SubexpBuffer * sb,
 				  string args1var,
 				  SEXP args,
@@ -99,21 +105,20 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   bool args_resolved;
 
   if (Settings::instance()->get_resolve_arguments() && fi_if_known != 0) {
+    args_resolved = true;
     args_annot = getProperty(ResolvedArgs, cell);
     lazy_info = args_annot->get_lazy_info();
-    args = args_annot->get_resolved();
-    args_resolved = true;
+    args1 = op_resolved_args(this, args_annot, rho, &unprotcnt, laziness_string);
   } else {
+    args_resolved = false;
     lazy_info = getProperty(CallByValueInfo, cell)->get_eager_lazy_info();
     args = original_args;
-    args_resolved = false;
-  }
-
-  if (laziness == EAGER) {
-    args1 = op_list(args, rho, false, Protected);   // pass false to output compiled list
-    laziness_string = "eager";
-  } else {
-    args1 = op_arglist_rec(this, args, lazy_info, 0, &unprotcnt, laziness_string, rho);
+    if (laziness == EAGER) {
+      args1 = op_list(args, rho, false, Protected);   // pass false to output compiled list
+      laziness_string = "eager";
+    } else {
+      args1 = op_arglist_rec(this, args, lazy_info, 0, &unprotcnt, laziness_string, rho);
+    }
   }
 
   string call_str = appl2("lcons", "", op1.var, args1.var);
@@ -133,7 +138,7 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
     }
   }
   if (!args_resolved) {
-    options += "| AC_MATCH_ARGS";
+    options += " | AC_MATCH_ARGS";
   }
 
   /*
@@ -231,6 +236,24 @@ static Expression op_arglist(SubexpBuffer * const sb, const SEXP cell, int * con
 }
 #endif
 
+static Expression op_arg(SubexpBuffer * const sb,
+			 const SEXP cell,
+			 const EagerLazyT eager_lazy,
+			 const string rho)
+{
+  Expression out;
+  if (eager_lazy == EAGER && Settings::instance()->get_strictness()) {
+    out = sb->op_exp(cell, rho, Protected, false);  // false: output code
+    Metrics::instance()->inc_eager_actual_args();
+  } else {
+    out = sb->op_literal(CAR(cell), rho);
+    string prom = sb->appl2("mkPROMISE", to_string(CAR(cell)), out.var, rho);
+    out = Expression(prom, out.dependence, out.visibility, unp(prom));
+    Metrics::instance()->inc_lazy_actual_args();
+  }
+  return out;
+}
+
 static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const SEXP args,
 				 const std::vector<EagerLazyT> & lazy_info,
@@ -244,18 +267,9 @@ static Expression op_arglist_rec(SubexpBuffer * const sb,
   }
 
   Expression tail_exp = op_arglist_rec(sb, CDR(args), lazy_info, n+1, unprotcnt, laziness_string, rho);
-  Expression head_exp;
-  if (lazy_info[n] == EAGER && Settings::instance()->get_strictness()) {
-    head_exp = sb->op_exp(args, rho, Protected, false);  // false: output code
-    laziness_string = "E" + laziness_string;
-    Metrics::instance()->inc_eager_actual_args();
-  } else {
-    head_exp = sb->op_literal(CAR(args), rho);
-    string prom = sb->appl2("mkPROMISE", to_string(CAR(args)), head_exp.var, rho);
-    head_exp = Expression(prom, head_exp.dependence, head_exp.visibility, unp(prom));
-    laziness_string = "L" + laziness_string;
-    Metrics::instance()->inc_lazy_actual_args();
-  }
+  EagerLazyT eager_lazy = (lazy_info[n] == EAGER && Settings::instance()->get_strictness()) ? EAGER : LAZY;
+  Expression head_exp = op_arg(sb, args, eager_lazy, rho);
+  laziness_string = (eager_lazy == EAGER ? "E" : "L") + laziness_string;
   string out;
   if (TAG(args) == R_NilValue) {
     out = sb->appl2("cons", "", head_exp.var, tail_exp.var);
@@ -286,4 +300,29 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
 #endif
   }
   return Expression(arglist, DEPENDENT, INVISIBLE, "");
+}
+
+static Expression op_resolved_args(SubexpBuffer * sb,
+				   ResolvedArgs * resolved_args,
+				   string rho,
+				   int * unprotcnt,
+				   string & laziness_string)
+{
+  int i = 0;
+  string out;
+  Expression tail = Expression::nil_exp;
+  for (ResolvedArgs::const_reverse_iterator it = resolved_args->rbegin(); it != resolved_args->rend(); it++) {
+    laziness_string = (resolved_args->get_eager_lazy(i) == EAGER ? "E" : "L") + laziness_string;    
+    Expression arg = op_arg(sb, it->cell, resolved_args->get_eager_lazy(i), rho);
+    if (TAG(it->cell) == R_NilValue) {
+      out = sb->appl2("cons", "", arg.var, tail.var);
+    } else {
+      out = sb->appl3("tagged_cons", "", arg.var, make_symbol(TAG(it->cell)), tail.var);
+    }
+    if (!arg.del_text.empty()) (*unprotcnt)++;
+    if (!tail.del_text.empty()) (*unprotcnt)++;
+    tail = Expression(out, DEPENDENT, INVISIBLE, unp(out));
+    i++;
+  }
+  return tail;
 }

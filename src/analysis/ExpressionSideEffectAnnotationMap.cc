@@ -118,6 +118,15 @@ void ExpressionSideEffectAnnotationMap::compute() {
   compute_oa_side_effect();
   // now use m_side_effect to get info on expressions
 
+  // get side effects for default arguments
+  FOR_EACH_PROC(fi) {
+    for (SEXP arg = fi->get_args(); arg != R_NilValue; arg = CDR(arg)) {
+      if (CAR(arg) != R_MissingArg) {
+	make_side_effect(fi, arg);
+      }
+    }
+  }
+
   FOR_EACH_PROC(fi) {
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
@@ -141,28 +150,12 @@ void ExpressionSideEffectAnnotationMap::compute() {
 	}
 	make_side_effect(fi, arg_it.current());
       }
-
-#if 0
-      // resolved args
-      if (ResolvedArgsAnnotationMap::instance()->is_valid(*csi)) {
-	SEXP resolved_args = getProperty(ResolvedArgs, *csi)->get_args();
-	for (R_ListIterator arg_it(resolved_args); arg_it.isValid(); ++arg_it) {
-	  if (debug) {
-	    std::cout << "making side effect for resolved actual arg: ";
-	    Rf_PrintValue(CAR(arg_it.current()));
-	  }
-	  make_side_effect(fi, arg_it.current());
-	}
-      }
-#endif
-
     }
   }  // next function
 }
 
+/// populate m_side_effect with OA side effect info
 void ExpressionSideEffectAnnotationMap::compute_oa_side_effect() {
-  // populate m_side_effect with OA side effect info
-
   OA_ptr<R_IRInterface> interface; interface = R_Analyst::instance()->get_interface();
   OA_ptr<CallGraph::CallGraphInterface> call_graph;
   call_graph = OACallGraphAnnotationMap::instance()->get_OA_call_graph();

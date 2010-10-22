@@ -44,6 +44,9 @@ DefaultAnnotationMap::DefaultAnnotationMap()
 DefaultAnnotationMap::~DefaultAnnotationMap() {}
 
 void DefaultAnnotationMap::put(const MyKeyT & k, MyMappedT value) {
+  if (m_computed) {
+    rcc_error("Cannot add annotations outside AnnotationMap's compute() method");
+  }
   m_map[k] = value;
 }
 
