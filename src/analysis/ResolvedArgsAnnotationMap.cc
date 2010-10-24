@@ -81,33 +81,6 @@ void ResolvedArgsAnnotationMap::compute() {
       get_map()[cell] = value;
     }
   }
-
-#if 0
-  // sneak each resolved actual into ExpressionInfo map. This is
-  // so that we can do CBV analysis, which wants SideEffect info,
-  // which wants ExpressionInfo.
-  for (const_iterator it = begin(); it != end(); it++) {
-    ResolvedArgs * value = dynamic_cast<ResolvedArgs *>(it->second);
-    for (SEXP x = value->get_resolved(); x != R_NilValue; x = CDR(x)) {
-      SexpTraversal::instance()->make_expression_info(x);
-      // give an answer for call sites that are already resolved.
-      if (is_call(CAR(x))) {
-	std::pair<ResolvedArgs::ResolvedSource, SEXP> pair = value->source_from_resolved(x);
-	if (pair.first == ResolvedArgs::RESOLVED_ACTUAL) {
-	  assert(is_call(CAR(pair.second)));
-	  const_iterator res = get_map().find(pair.second);
-	  if (res == get_map().end()) continue;
-	  get_map()[x] = dynamic_cast<ResolvedArgs *>(res->second);
-	}
-      }
-    }
-  }
-  FuncInfoAnnotationMap::instance()->reset();
-  VarAnnotationMap::instance()->reset();
-  ExpressionSideEffectAnnotationMap::instance()->reset();
-  OEscapeInfoAnnotationMap::instance()->reset();
-#endif
-
 }
 
 ResolvedArgsAnnotationMap * ResolvedArgsAnnotationMap::s_instance = 0;

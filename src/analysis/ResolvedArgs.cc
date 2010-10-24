@@ -54,7 +54,7 @@ void ResolvedArgs::resolve() {
   i = 0;
   for (f = m_formals ; f != R_NilValue ; f = CDR(f)) {
     SET_ARGUSED(f, 0);
-    m_resolved_args.at(i).cell = f;
+    m_resolved_args.at(i).cell = Rf_cons(R_MissingArg, R_NilValue);
     m_resolved_args.at(i).source = RESOLVED_DEFAULT;
     m_resolved_args.at(i).is_missing = true;
     i++;
@@ -67,9 +67,8 @@ void ResolvedArgs::resolve() {
   /* Grab matched arguments and check */
   /* for multiple exact matches. */
 
-  f = m_formals;
   i = 0;
-  while (f != R_NilValue) {
+  for (f = m_formals; f != R_NilValue; f = CDR(f)) {
     if (TAG(f) != R_DotsSymbol) {
       j = 1;
       for (b = m_supplied; b != R_NilValue; b = CDR(b)) {
@@ -89,7 +88,6 @@ void ResolvedArgs::resolve() {
 	j++;
       }
     }
-    f = CDR(f);
     i++;
   }
 
@@ -99,9 +97,8 @@ void ResolvedArgs::resolve() {
 
   dots = -1;
   seendots = FALSE;
-  f = m_formals;
   i = 0;
-  while (f != R_NilValue) {
+  for (f = m_formals; f != R_NilValue; f = CDR(f)) {
     if (ARGUSED(f) == 0) {
       if (TAG(f) == R_DotsSymbol && !seendots) {
 	/* Record where ... value goes */
@@ -132,7 +129,6 @@ void ResolvedArgs::resolve() {
 	}
       }
     }
-    f = CDR(f);
     i++;
   }
 

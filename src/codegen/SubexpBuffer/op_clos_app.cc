@@ -312,8 +312,13 @@ static Expression op_resolved_args(SubexpBuffer * sb,
   string out;
   Expression tail = Expression::nil_exp;
   for (ResolvedArgs::const_reverse_iterator it = resolved_args->rbegin(); it != resolved_args->rend(); it++) {
-    laziness_string = (resolved_args->get_eager_lazy(i) == EAGER ? "E" : "L") + laziness_string;    
-    Expression arg = op_arg(sb, it->cell, resolved_args->get_eager_lazy(i), rho);
+    laziness_string = (resolved_args->get_eager_lazy(i) == EAGER ? "E" : "L") + laziness_string;
+    Expression arg;
+    if (it->source == ResolvedArgs::RESOLVED_DEFAULT) {
+      arg = sb->op_literal(CAR(it->cell), rho);
+    } else {
+      arg = op_arg(sb, it->cell, resolved_args->get_eager_lazy(i), rho);
+    }
     if (TAG(it->cell) == R_NilValue) {
       out = sb->appl2("cons", "", arg.var, tail.var);
     } else {
