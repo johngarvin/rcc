@@ -30,6 +30,7 @@
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
+#include <analysis/ResolvedArgs.h>
 
 namespace RAnnot {
 
@@ -41,6 +42,8 @@ public:
 
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
+
+  ResolvedArgs * make_annot(SEXP cell, SEXP formals);
 
 private:
   // singleton pattern

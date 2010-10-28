@@ -33,6 +33,8 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
 #include <analysis/Utils.h>
 #include <analysis/VarRefFactory.h>
 
@@ -236,11 +238,10 @@ OA_ptr<MyDFSet> ReturnedDFSolver::ret(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) 
 	return conservative_call(e, new_c);
       }
       FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+      ResolvedArgs * resolved = getProperty(ResolvedArgs, cell);
       s = new_c->clone().convert<MyDFSet>();
-      int i = 1;
-      for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
-	s = s->meet(ret(arg_c, (b && new_c->lookup(callee->get_arg(i))), new_c));
-	i++;
+      for (ResolvedArgs::const_iterator it = resolved->begin(); it != resolved->end(); it++) {
+	s = s->meet(ret(it->cell, (b && new_c->lookup(it->formal)), new_c));
       }
       return s;
     }

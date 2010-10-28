@@ -193,7 +193,7 @@ void BasicFuncInfo::perform_analysis() {
   m_has_var_args = false;
   m_num_args = 0;
   for(SEXP e = get_args(); e != R_NilValue; e = CDR(e)) {
-    ++m_num_args;
+    m_num_args++;
     if (TAG(e) == ddd) {
       m_has_var_args = true;
     }

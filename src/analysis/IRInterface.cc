@@ -42,6 +42,8 @@
 #include <analysis/LexicalScope.h>
 #include <analysis/MemRefExprInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
 #include <analysis/SimpleIterators.h>
 #include <analysis/ScopeAnnotationMap.h>
 #include <analysis/SpecialProcSymMap.h>
@@ -535,40 +537,31 @@ OA_ptr<IRCallsiteParamIterator> R_IRInterface::getCallsiteParams(CallHandle h) {
 SymHandle R_IRInterface::getFormalForActual(ProcHandle caller, CallHandle call,
 					    ProcHandle callee, ExprHandle param)
 {
-  // TODO: handle named arguments
-  // TODO: handle Hell procedure
-
+  bool dots = false;
   SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
+  SEXP formals = procedure_args(make_sexp(callee));
+  ResolvedArgs * resolved = new ResolvedArgs(call_args(make_sexp(call)), formals);
 
-  // param is the nth actual arg of call: find n
-  SEXP actual_c = make_sexp(param);
-  SEXP args = call_args(make_sexp(call));
-  int n = 1;
-  R_ListIterator li(args);
-  for( ; li.isValid(); ++li) {
-    if (li.current() == actual_c) break;
+  // get formal corresponding to actual, or dots
+  int n = 0;
+  SEXP formal_c = formals;
+  for (ResolvedArgs::const_iterator it = resolved->begin(); it != resolved->end(); it++) {
+    if (TAG(formal_c) == R_DotsSymbol) {
+      dots = true;
+    }
+    if (it->cell == make_sexp(param)) {
+      break;
+    }
     n++;
+    if (!dots) formal_c = CDR(formal_c);
   }
-  if (!li.isValid()) {
-    rcc_error("getFormalForActual: actual param not found");
-  }
-    
-  // get nth formal of callee
-  FuncInfo * fi = getProperty(FuncInfo, make_sexp(callee));
-  // hack to deal with varargs (used in .rcc.assert.exp, etc.)
-  // TODO: figure out what to do
-  if (n > fi->get_num_args()) {
-    return SymHandle(0);
-  }
+  delete resolved;
 
-  SEXP formal_c = fi->get_arg(n);
-
-  if (TAG(formal_c) == R_DotsSymbol) {
+  if (dots) {
     return make_sym_h(new VarInfo(formal_c));
+  } else {
+    return make_sym_h(symbol_table->find_entry(formal_c));
   }
-
-  VarInfo * vi = symbol_table->find_entry(formal_c);
-  return make_sym_h(vi);
 }
 
 OA_ptr<ExprTree> R_IRInterface::getExprTree(ExprHandle h) {

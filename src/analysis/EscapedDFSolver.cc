@@ -31,6 +31,8 @@
 #include <analysis/HandleInterface.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotation.h>
+#include <analysis/ResolvedArgs.h>
+#include <analysis/ResolvedArgsAnnotationMap.h>
 #include <analysis/ReturnedDFSolver.h>
 
 #include "EscapedDFSolver.h"
@@ -252,13 +254,11 @@ OA_ptr<MyDFSet> EscapedDFSolver::esc(SEXP cell, bool b, OA_ptr<MyDFSet> old_c) {
 	return conservative_call(e, new_c);
       }
       FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(proc));
+      ResolvedArgs * resolved = getProperty(ResolvedArgs, cell);
       s = new_c->clone().convert<MyDFSet>();
-      int i = 1;
-      for(SEXP arg_c = call_args(e); arg_c != R_NilValue; arg_c = CDR(arg_c)) {
-	bool arg_esc = (new_c->lookup(callee->get_arg(i)) ||
-			(b && m_returned->lookup(callee->get_arg(i))));
-	s = s->meet(esc(arg_c, arg_esc, new_c));
-	i++;
+      for (ResolvedArgs::const_iterator it = resolved->begin(); it != resolved->end(); it++) {
+	bool arg_esc = (new_c->lookup(it->formal) || (b && m_returned->lookup(it->formal)));
+	s = s->meet(esc(it->cell, arg_esc, new_c));
       }
       return s;
     }

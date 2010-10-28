@@ -55,6 +55,7 @@ void ResolvedArgs::resolve() {
   for (f = m_formals ; f != R_NilValue ; f = CDR(f)) {
     SET_ARGUSED(f, 0);
     m_resolved_args.at(i).cell = Rf_cons(R_MissingArg, R_NilValue);
+    m_resolved_args.at(i).formal = 0;
     m_resolved_args.at(i).source = RESOLVED_DEFAULT;
     m_resolved_args.at(i).is_missing = true;
     i++;
@@ -79,6 +80,7 @@ void ResolvedArgs::resolve() {
 	  if (ARGUSED(b) == 2)
 	    Rf_error(_("argument %d matches multiple formal arguments"), j);
 	  m_resolved_args.at(i).cell = b;
+	  m_resolved_args.at(i).formal = f;
 	  m_resolved_args.at(i).source = RESOLVED_TAG_EXACT;
 	  if(CAR(b) != R_MissingArg)
 	    m_resolved_args.at(i).is_missing = false;
@@ -104,11 +106,11 @@ void ResolvedArgs::resolve() {
 	/* Record where ... value goes */
 	dots = i;
 	m_resolved_args.at(dots).cell = R_NilValue;
+	m_resolved_args.at(dots).formal = f;
 	m_resolved_args.at(dots).source = RESOLVED_DOT;
 	m_resolved_args.at(dots).is_missing = false;
 	seendots = TRUE;
-      }
-      else {
+      } else {
 	j = 1;
 	for (b = m_supplied; b != R_NilValue; b = CDR(b)) {
 	  if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
@@ -119,6 +121,7 @@ void ResolvedArgs::resolve() {
 	      Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 		       var_name(TAG(f)).c_str());
 	    m_resolved_args.at(i).cell = b;
+	    m_resolved_args.at(i).formal = f;
 	    m_resolved_args.at(i).source = RESOLVED_TAG_PARTIAL;
 	    if (CAR(b) != R_MissingArg)
 	      m_resolved_args.at(i).is_missing = false;
@@ -167,6 +170,7 @@ void ResolvedArgs::resolve() {
     else {
       /* We have a positional match */
       m_resolved_args.at(i).cell = b;
+      m_resolved_args.at(i).formal = f;
       m_resolved_args.at(i).source = RESOLVED_POSITION;
       if(CAR(b) != R_MissingArg)
 	m_resolved_args.at(i).is_missing = false;
@@ -190,6 +194,7 @@ void ResolvedArgs::resolve() {
       for (b = m_supplied; b != R_NilValue; b = CDR(b))
 	if (!ARGUSED(b)) {
 	  m_dot_args.at(i).cell = b;
+	  m_dot_args.at(i).formal = m_resolved_args.at(dots).formal;
 	  m_dot_args.at(i).source = RESOLVED_POSITION;
 	  m_dot_args.at(i).is_missing = false;
 	  f = CDR(f);

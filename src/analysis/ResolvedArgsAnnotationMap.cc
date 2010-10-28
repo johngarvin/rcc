@@ -74,10 +74,8 @@ void ResolvedArgsAnnotationMap::compute() {
       if (ph == OA::ProcHandle(0)) continue;
       FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(ph));
       if (callee == 0) continue;
-      //       if (callee->get_has_var_args()) continue;
       formals = fundef_args(callee->get_sexp());
-      supplied = call_args(CAR(cell));
-      ResolvedArgs * value = new ResolvedArgs(supplied, formals);
+      ResolvedArgs * value = new ResolvedArgs(call_args(CAR(cell)), formals);
       get_map()[cell] = value;
     }
   }

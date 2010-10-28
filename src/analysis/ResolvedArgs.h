@@ -55,11 +55,14 @@ public:
 			  // m_resolved_args is this, then m_dot_args is
 			  // the list of args that match the "...".
   };
+
   typedef struct {
-    SEXP cell;
+    SEXP cell;              // cons cell containing actual arg
+    SEXP formal;            // cons cell containing corresponding formal (may be "...")
     ResolvedSource source;
-    bool is_missing;
+    bool is_missing;        // true if supplied is R_MissingArg
   } MyArgT;
+
   typedef std::vector<EagerLazyT> MyLazyInfoSetT;
   typedef std::vector<MyArgT> MyArgSetT;
   typedef MyArgSetT::const_iterator const_iterator;
