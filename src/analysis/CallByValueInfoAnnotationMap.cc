@@ -86,6 +86,7 @@ void CallByValueInfoAnnotationMap::create() {
 }
 
 void CallByValueInfoAnnotationMap::compute() {
+  int i;
   FuncInfo * fi;
   SymbolTableFacade * symbol_table = SymbolTableFacade::instance();
 
@@ -156,24 +157,35 @@ void CallByValueInfoAnnotationMap::compute() {
 	
 	if (callee->get_has_var_args()) continue; // next call site
 	
-	// set eager/lazy for each actual arg
-	int i = 0;
-	for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
-	  FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
-	  SEXP actual_c = argi.current();
-	  annot->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
-	}
-
 	if (Settings::instance()->get_resolve_arguments()) {
-	  // set eager/lazy for each resolved arg
 	  ResolvedArgs * args_annot = getProperty(ResolvedArgs, *csi_c);
+
+	  // set eager/lazy for each resolved arg
 	  i = 0;
 	  for(ResolvedArgs::const_iterator it = args_annot->begin(); it != args_annot->end(); it++) {
-	    FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
+	    FormalArgInfo * formal = getProperty(FormalArgInfo, it->formal);
 	    args_annot->set_eager_lazy(i, is_cbv_safe(formal, it->cell) ? EAGER : LAZY);
 	    i++;
 	  }
-	}  
+
+	  // set eager/lazy for each actual arg
+	  i = 0;
+	  for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
+	    SEXP actual_c = argi.current();
+	    FormalArgInfo * formal = getProperty(FormalArgInfo, args_annot->get_formal_for_actual(actual_c));
+	    annot->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
+	  }
+	} else {
+	  // no argument resolution
+	  // TODO: this assumes all args are in order with no defaults.
+	  // set eager/lazy for each actual arg
+	  i = 0;
+	  for(R_CallArgsIterator argi(cs); argi.isValid(); argi++, i++) {
+	    FormalArgInfo * formal = getProperty(FormalArgInfo, callee->get_arg(i+1));
+	    SEXP actual_c = argi.current();
+	    annot->set_eager_lazy(i, is_cbv_safe(formal, actual_c) ? EAGER : LAZY);
+	  }
+	}
       }
     }
   }

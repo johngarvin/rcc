@@ -82,6 +82,8 @@ public:
   const_reverse_iterator rbegin_dot_args() const;
   const_reverse_iterator rend_dot_args() const;
 
+  SEXP get_formal_for_actual(const SEXP actual) const;
+
   AnnotationBase * clone();
   std::ostream & dump(std::ostream & stream) const;
   static PropertyHndlT handle();
@@ -94,6 +96,7 @@ private:
   MyLazyInfoSetT m_lazy_info;
   MyArgSetT m_resolved_args;
   MyArgSetT m_dot_args;      // arguments that match "..." in the function def
+  std::map<SEXP, SEXP> m_supplied_to_formal_map;
 };
 
 } // namespace RAnnot

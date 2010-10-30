@@ -55,7 +55,7 @@ void ResolvedArgs::resolve() {
   for (f = m_formals ; f != R_NilValue ; f = CDR(f)) {
     SET_ARGUSED(f, 0);
     m_resolved_args.at(i).cell = Rf_cons(R_MissingArg, R_NilValue);
-    m_resolved_args.at(i).formal = 0;
+    m_resolved_args.at(i).formal = f;
     m_resolved_args.at(i).source = RESOLVED_DEFAULT;
     m_resolved_args.at(i).is_missing = true;
     i++;
@@ -80,10 +80,10 @@ void ResolvedArgs::resolve() {
 	  if (ARGUSED(b) == 2)
 	    Rf_error(_("argument %d matches multiple formal arguments"), j);
 	  m_resolved_args.at(i).cell = b;
-	  m_resolved_args.at(i).formal = f;
 	  m_resolved_args.at(i).source = RESOLVED_TAG_EXACT;
 	  if(CAR(b) != R_MissingArg)
 	    m_resolved_args.at(i).is_missing = false;
+	  m_supplied_to_formal_map[b] = f;
 	  SET_ARGUSED(b, 2);
 	  SET_ARGUSED(f, 2);
 	}
@@ -106,7 +106,6 @@ void ResolvedArgs::resolve() {
 	/* Record where ... value goes */
 	dots = i;
 	m_resolved_args.at(dots).cell = R_NilValue;
-	m_resolved_args.at(dots).formal = f;
 	m_resolved_args.at(dots).source = RESOLVED_DOT;
 	m_resolved_args.at(dots).is_missing = false;
 	seendots = TRUE;
@@ -121,10 +120,10 @@ void ResolvedArgs::resolve() {
 	      Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 		       var_name(TAG(f)).c_str());
 	    m_resolved_args.at(i).cell = b;
-	    m_resolved_args.at(i).formal = f;
 	    m_resolved_args.at(i).source = RESOLVED_TAG_PARTIAL;
 	    if (CAR(b) != R_MissingArg)
 	      m_resolved_args.at(i).is_missing = false;
+	    m_supplied_to_formal_map[b] = f;
 	    SET_ARGUSED(b, 1);
 	    SET_ARGUSED(f, 1);
 	  }
@@ -170,10 +169,10 @@ void ResolvedArgs::resolve() {
     else {
       /* We have a positional match */
       m_resolved_args.at(i).cell = b;
-      m_resolved_args.at(i).formal = f;
       m_resolved_args.at(i).source = RESOLVED_POSITION;
       if(CAR(b) != R_MissingArg)
 	m_resolved_args.at(i).is_missing = false;
+      m_supplied_to_formal_map[b] = f;
       SET_ARGUSED(b, 1);
       b = CDR(b);
       f = CDR(f);
@@ -197,6 +196,7 @@ void ResolvedArgs::resolve() {
 	  m_dot_args.at(i).formal = m_resolved_args.at(dots).formal;
 	  m_dot_args.at(i).source = RESOLVED_POSITION;
 	  m_dot_args.at(i).is_missing = false;
+	  m_supplied_to_formal_map[b] = m_resolved_args.at(dots).formal;
 	  f = CDR(f);
 	  i++;
 	}
@@ -259,6 +259,17 @@ ResolvedArgs::const_reverse_iterator ResolvedArgs::rbegin_dot_args() const {
 
 ResolvedArgs::const_reverse_iterator ResolvedArgs::rend_dot_args() const {
   return m_dot_args.rend();
+}
+
+// ----- get_formal_for_actual -----
+
+SEXP ResolvedArgs::get_formal_for_actual(const SEXP actual) const {
+  std::map<SEXP, SEXP>::const_iterator it = m_supplied_to_formal_map.find(actual);
+  if (it == m_supplied_to_formal_map.end()) {
+    return 0;
+  } else {
+    return it->second;
+  }
 }
 
 // ----- AnnotationMap methods -----
