@@ -38,6 +38,8 @@
 #include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/ResolvedArgs.h>
 #include <analysis/ResolvedArgsAnnotationMap.h>
+#include <analysis/ResolvedCallByValueInfo.h>
+#include <analysis/ResolvedCallByValueInfoAnnotationMap.h>
 #include <analysis/Settings.h>
 #include <analysis/Utils.h>
 #include <analysis/VFreshDFSolver.h>
@@ -75,9 +77,19 @@ static Expression op_arglist_rec(SubexpBuffer * const sb,
 				 const string rho);
 static Expression op_resolved_args(SubexpBuffer * sb,
 				   ResolvedArgs * resolved_args,
+				   ResolvedCallByValueInfo * cbv,
 				   string rho,
 				   int * unprotect,
 				   string & laziness_string);
+static Expression op_resolved_arg(SubexpBuffer * sb,
+				  ResolvedArgs * resolved_args,
+				  ResolvedCallByValueInfo * cbv,
+				  string rho,
+				  int * unprotcnt,
+				  string & laziness_string,
+				  ResolvedArgs::const_reverse_iterator it,
+				  int i,
+				  Expression tail);
 static Expression op_promise_args(SubexpBuffer * sb,
 				  string args1var,
 				  SEXP args,
@@ -104,11 +116,13 @@ Expression SubexpBuffer::op_clos_app(FuncInfo * fi_if_known,
   std::vector<EagerLazyT> lazy_info;
   bool args_resolved;
 
-  if (Settings::instance()->get_resolve_arguments() && fi_if_known != 0) {
+  if (Settings::instance()->get_resolve_arguments() &&
+      ResolvedArgsAnnotationMap::instance()->is_valid(cell)) {
     args_resolved = true;
     args_annot = getProperty(ResolvedArgs, cell);
-    lazy_info = args_annot->get_lazy_info();
-    args1 = op_resolved_args(this, args_annot, rho, &unprotcnt, laziness_string);
+    ResolvedCallByValueInfo * cbv = getProperty(ResolvedCallByValueInfo, cell);
+    lazy_info = cbv->get_eager_lazy_info();
+    args1 = op_resolved_args(this, args_annot, cbv, rho, &unprotcnt, laziness_string);
   } else {
     args_resolved = false;
     lazy_info = getProperty(CallByValueInfo, cell)->get_eager_lazy_info();
@@ -304,6 +318,7 @@ static Expression op_promise_args(SubexpBuffer * sb, string args1var, SEXP args,
 
 static Expression op_resolved_args(SubexpBuffer * sb,
 				   ResolvedArgs * resolved_args,
+				   ResolvedCallByValueInfo * cbv,
 				   string rho,
 				   int * unprotcnt,
 				   string & laziness_string)
@@ -311,23 +326,41 @@ static Expression op_resolved_args(SubexpBuffer * sb,
   int i = 0;
   string out;
   Expression tail = Expression::nil_exp;
-  for (ResolvedArgs::const_reverse_iterator it = resolved_args->rbegin(); it != resolved_args->rend(); it++) {
-    laziness_string = (resolved_args->get_eager_lazy(i) == EAGER ? "E" : "L") + laziness_string;
-    Expression arg;
-    if (it->source == ResolvedArgs::RESOLVED_DEFAULT) {
-      arg = sb->op_literal(CAR(it->cell), rho);
-    } else {
-      arg = op_arg(sb, it->cell, resolved_args->get_eager_lazy(i), rho);
+  for (ResolvedArgs::const_reverse_iterator it = resolved_args->rbegin();
+       it != resolved_args->rend();
+       it++)
+    {
+      tail = op_resolved_arg(sb, resolved_args, cbv, rho, unprotcnt, laziness_string, it, i, tail);
+      i++;
     }
+  return tail;
+}
+
+static Expression op_resolved_arg(SubexpBuffer * sb,
+				  ResolvedArgs * resolved_args,
+				  ResolvedCallByValueInfo * cbv,
+				  string rho,
+				  int * unprotcnt,
+				  string & laziness_string,
+				  ResolvedArgs::const_reverse_iterator it,
+				  int i,
+				  Expression tail)
+{
+  string out;
+  Expression arg;
+  laziness_string = (cbv->get_eager_lazy(i) == EAGER ? "E" : "L") + laziness_string;
+  if (it->source == ResolvedArgs::RESOLVED_DEFAULT) {
+    arg = sb->op_literal(CAR(it->cell), rho);
+    out = sb->appl3("tagged_cons", "", arg.var, make_symbol(TAG(it->formal)), tail.var);
+  } else {
+    arg = op_arg(sb, it->cell, cbv->get_eager_lazy(i), rho);
     if (TAG(it->cell) == R_NilValue) {
       out = sb->appl2("cons", "", arg.var, tail.var);
     } else {
       out = sb->appl3("tagged_cons", "", arg.var, make_symbol(TAG(it->cell)), tail.var);
     }
-    if (!arg.del_text.empty()) (*unprotcnt)++;
-    if (!tail.del_text.empty()) (*unprotcnt)++;
-    tail = Expression(out, DEPENDENT, INVISIBLE, unp(out));
-    i++;
   }
-  return tail;
+  if (!arg.del_text.empty()) (*unprotcnt)++;
+  if (!tail.del_text.empty()) (*unprotcnt)++;
+  return Expression(out, DEPENDENT, INVISIBLE, unp(out));
 }

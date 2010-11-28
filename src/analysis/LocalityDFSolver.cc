@@ -119,6 +119,15 @@ perform_analysis(ProcHandle proc, OA_ptr<CFG::CFGInterface> cfg) {
       // TODO: add back assertion. Why does this sometimes fail?
     }
   }  // next CFG node
+  if (debug) {
+    std::cout << "Locality DF solver output map {" << std::endl;
+    for (map<SEXP, Locality::LocalityType>::const_iterator it = output.begin(); it != output.end(); it++) {
+      Rf_PrintValue(CAR(it->first));
+      std::cout << " --> " << type_name(it->second) << std::endl;
+    }
+    std::cout << "}" << std::endl;
+  }
+    
   return output;
 }
 
@@ -263,7 +272,7 @@ transfer(OA_ptr<DataFlow::DataFlowSet> in_dfs, StmtHandle stmt_handle) {
   // if variable was found to be local during statement-level
   // analysis, add it in
   EXPRESSION_FOR_EACH_USE(annot, use_sexp) {
-    BasicVar * use = getProperty(BasicVar, use_sexp);    
+    BasicVar * use = getProperty(BasicVar, use_sexp);
     if (use->get_basic_scope_type() == Locality_LOCAL) {
       OA_ptr<R_VarRef> ref; ref = var_ref_from_basic_var(use);
       OA_ptr<DFSetElement> elem; elem = new DFSetElement(ref, use->get_basic_scope_type());

@@ -111,32 +111,4 @@ void FuncInfoAnnotationMap::build_tree(FuncInfo * parent, BasicFuncInfo * basic)
   }
 }
 
-void FuncInfoAnnotationMap::collect_libraries() {
-  FuncInfo * fi;
-  std::list<SEXP> libs;
-  FOR_EACH_PROC(fi) {
-    PROC_FOR_EACH_CALL_SITE(fi, csi) {
-      SEXP lhs = call_lhs(CAR(*csi));
-      if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
-	BasicFuncInfo * new_bfi = new BasicFuncInfo(0, library_value(lhs), library_value(lhs));
-	// putProperty(BasicFuncInfo, library_value(lhs), new_bfi);
-	FuncInfo * new_fi = new FuncInfo(0, new_bfi);
-	get_map()[library_value(lhs)] = new_fi;
-	libs.push_back(library_value(lhs));
-      }
-    }
-  }
-  for(std::list<SEXP>::const_iterator iter = libs.begin(); iter != libs.end(); ++iter) {
-    FuncInfo * fi = getProperty(FuncInfo, *iter);
-    OA::OA_ptr<OA::CFG::NodeInterface> node;
-    OA::StmtHandle stmt;
-    PROC_FOR_EACH_NODE(fi, node) {
-      NODE_FOR_EACH_STATEMENT(node, stmt) {
-	SexpTraversal::instance()->make_expression_info(make_sexp(stmt));
-      }
-    }
-    VarAnnotationMap::instance()->compute_proc(fi->get_basic());
-  }
-}
-
 }

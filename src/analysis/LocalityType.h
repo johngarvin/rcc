@@ -35,6 +35,11 @@
 namespace Locality {
 
 enum LocalityType {
+  Locality_NONE,     // deliberately declaring no locality type.
+		     // Example: default arguments of library
+		     // procedures, not part of the local/free
+		     // analysis because they are not part of user
+		     // code.
   Locality_TOP,
   Locality_LOCAL,
   Locality_FREE,

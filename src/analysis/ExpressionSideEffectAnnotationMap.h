@@ -65,7 +65,7 @@ private:
 
   void compute();
   void compute_oa_side_effect();
-  void make_side_effect(const FuncInfo * const, const SEXP e);
+  void make_side_effect(const OA::ProcHandle ph, const SEXP e);
 
   void init_lib_data();
 

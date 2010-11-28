@@ -62,12 +62,12 @@ void PreDebutSideEffect::set_action(bool x) {
 
 // ----- insertion -----
 
-void PreDebutSideEffect::insert_use_sexp(const FuncInfo * fi, const SEXP sexp) {
-  m_side_effect->insert_use_sexp(fi, sexp);
+void PreDebutSideEffect::insert_use_sexp(const SEXP sexp) {
+  m_side_effect->insert_use_sexp(sexp);
 }
 
-void PreDebutSideEffect::insert_def_sexp(const FuncInfo * fi, const SEXP sexp) {
-  m_side_effect->insert_def_sexp(fi, sexp);
+void PreDebutSideEffect::insert_def_sexp(const SEXP sexp) {
+  m_side_effect->insert_def_sexp(sexp);
 }
 
 

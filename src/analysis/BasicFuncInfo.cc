@@ -35,7 +35,6 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
 #include <analysis/BasicFuncInfoAnnotationMap.h>
-#include <analysis/FormalArgInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/RequiresContext.h>
 #include <analysis/Utils.h>
@@ -271,9 +270,9 @@ std::ostream & BasicFuncInfo::dump(std::ostream & os) const
   dumpPtr(os, m_parent);
   os << "Begin arguments:" << std::endl;
   for (SEXP arg = get_args(); arg != R_NilValue; arg = CDR(arg)) {
-    FormalArgInfo * arg_annot = getProperty(FormalArgInfo, arg);
-    arg_annot->dump(os);
+    dumpSEXP(os, arg);
   }
+  os << "End arguments" << std::endl;
   endObjDump(os, BasicFuncInfo);
 }
 

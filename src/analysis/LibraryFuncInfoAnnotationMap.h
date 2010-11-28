@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,64 +15,47 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-
-// File: VarAnnotationMap.h
 //
-// Set of Var annotations, representing basic variable information,
-// including the methods for computing the information. Maps a cons
-// cell containing a SYMSXP to a Var annotation. Does NOT own the
-// values (Vars) in the map.
+// File: LibraryFuncInfoAnnotationMap.h
 //
-// TODO: This should
-// probably be split up into the different analyses at some point.
+// Set of LibraryFuncInfo annotations representing function information,
+// including the methods for computing the information. 
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#ifndef VAR_ANNOTATION_MAP_H
-#define VAR_ANNOTATION_MAP_H
-
-#include <map>
-
-#include <OpenAnalysis/CFG/CFGInterface.hpp>
+#ifndef LIBRARY_FUNC_INFO_ANNOTATION_MAP_H
+#define LIBRARY_FUNC_INFO_ANNOTATION_MAP_H
 
 #include <analysis/DefaultAnnotationMap.h>
 #include <analysis/PropertyHndl.h>
 
-// ----- forward declarations -----
-
-class R_IRInterface;
-
 namespace RAnnot {
-
-class BasicFuncInfo;
-
-class VarAnnotationMap : public DefaultAnnotationMap {
+  
+class LibraryFuncInfoAnnotationMap : public DefaultAnnotationMap {
 public:
-  // destructor
-  virtual ~VarAnnotationMap();
-
+  // deconstructor
+  virtual ~LibraryFuncInfoAnnotationMap();
+  
   // singleton
-  static VarAnnotationMap * instance();
-
+  static LibraryFuncInfoAnnotationMap * instance();
+  
   // getting the name causes this map to be created and registered
   static PropertyHndlT handle();
 
 private:
-  // private constructor for singleton pattern
-  explicit VarAnnotationMap();
-
+  /// private constructor for singleton pattern
+  explicit LibraryFuncInfoAnnotationMap();
+  
+  /// traverse the program, create a FuncInfo for each function
+  /// definition with the whole program as the root
   void compute();
   
-  void compute_proc_locality_info(RAnnot::BasicFuncInfo * fi);
-  void compute_locality_info(OA::OA_ptr<R_IRInterface> interface,
-			     OA::ProcHandle proc,
-			     OA::OA_ptr<OA::CFG::CFGInterface> cfg);
-
-  static VarAnnotationMap * s_instance;
-  static PropertyHndlT s_handle;
   static void create();
-};
 
+  static LibraryFuncInfoAnnotationMap * s_instance;
+  static PropertyHndlT s_handle;
+};
+  
 }
 
-#endif
+#endif // LIBRARY_FUNC_INFO_ANNOTATION_MAP_H

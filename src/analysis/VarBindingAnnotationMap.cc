@@ -35,6 +35,7 @@
 #include <analysis/SymbolTable.h>
 #include <analysis/Utils.h>
 #include <analysis/Var.h>
+#include <analysis/VarAnnotationMap.h>
 #include <analysis/VarBinding.h>
 #include <analysis/VarBindingAnnotationMap.h>
 #include <analysis/VarInfo.h>
@@ -169,6 +170,9 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	case Locality::Locality_BOTTOM:
 	  rcc_error("VarBindingAnnotationMap: found def of BOTTOM type");
 	  break;
+	case Locality::Locality_NONE:
+	  scopes->insert(InternalLexicalScope::instance());
+	  break;
 	default:
 	  rcc_error("VarBindingAnnotationMap: bad Locality type in first pass");
 	}
@@ -201,6 +205,9 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	      }
 	  }
 	  break;
+	case Locality::Locality_NONE:
+	  scopes->insert(InternalLexicalScope::instance());
+	  break;
 	default:
 	  rcc_error("VarBindingAnnotationMap: bad Locality type in second pass");
 	  break;
@@ -211,6 +218,17 @@ void VarBindingAnnotationMap::create_var_bindings() {
 	}
 	get_map()[v->get_mention_c()] = scopes;
       }
+    }
+  }
+
+  // grab remaining Var annotations (default args, etc.) and add to
+  // ambiguous scope
+  VarAnnotationMap * varmap = VarAnnotationMap::instance();
+  for (VarAnnotationMap::const_iterator it = varmap->begin(); it != varmap->end(); it++) {
+    if (get_map().find(it->first) == get_map().end()) {
+      VarBinding * scopes = new VarBinding();
+      scopes->insert(InternalLexicalScope::instance());
+      get_map()[it->first] = scopes;
     }
   }
 }

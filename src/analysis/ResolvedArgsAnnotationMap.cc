@@ -32,6 +32,8 @@
 #include <analysis/FuncInfo.h>
 #include <analysis/FuncInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/LibraryFuncInfo.h>
+#include <analysis/LibraryFuncInfoAnnotationMap.h>
 #include <analysis/OACallGraphAnnotation.h>
 #include <analysis/OEscapeInfoAnnotationMap.h>
 #include <analysis/SexpTraversal.h>
@@ -69,12 +71,19 @@ void ResolvedArgsAnnotationMap::compute() {
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       SEXP cell = *csi;
       OACallGraphAnnotation * cga = getProperty(OACallGraphAnnotation, CAR(cell));
-      if (cga == 0) continue;
-      OA::ProcHandle ph = cga->get_singleton_if_exists();
-      if (ph == OA::ProcHandle(0)) continue;
-      FuncInfo * callee = getProperty(FuncInfo, HandleInterface::make_sexp(ph));
-      if (callee == 0) continue;
-      formals = fundef_args(callee->get_sexp());
+      if (cga) {
+	// call to user procedure
+	OA::ProcHandle ph = cga->get_singleton_if_exists();
+	if (ph == OA::ProcHandle(0)) continue;
+	BasicFuncInfo * callee = getProperty(BasicFuncInfo, HandleInterface::make_sexp(ph));
+	formals = fundef_args(callee->get_sexp());
+      } else if (is_var(call_lhs(CAR(cell))) && is_library(call_lhs(CAR(cell))) && is_closure(library_value(call_lhs(CAR(cell))))) {
+	// call to library closure
+	LibraryFuncInfo * callee = getProperty(LibraryFuncInfo, library_value(call_lhs(CAR(cell))));
+	formals = closure_args(callee->get_sexp());
+      } else {
+	continue;
+      }
       ResolvedArgs * value = new ResolvedArgs(call_args(CAR(cell)), formals);
       get_map()[cell] = value;
     }

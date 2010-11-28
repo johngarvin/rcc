@@ -70,7 +70,8 @@ void FormalArgInfoAnnotationMap::create() {
 
 void FormalArgInfoAnnotationMap::compute() {
   BasicFuncInfo * bfi;
-  FOR_EACH_BASIC_PROC(bfi) {
+  FOR_EACH_BASIC_PROC_AND_LIB(bfi) {
+    // user procedures
     for (SEXP e = bfi->get_args(); e != R_NilValue; e = CDR(e)) {
       get_map()[e] = new FormalArgInfo(e);
     }

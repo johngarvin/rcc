@@ -33,6 +33,7 @@
 #include <analysis/AnalysisResults.h>
 #include <analysis/BasicFuncInfo.h>
 #include <analysis/BasicFuncInfoAnnotationMap.h>
+#include <analysis/BasicVarAnnotationMap.h>
 #include <analysis/ExpressionInfo.h>
 #include <analysis/HandleInterface.h>
 #include <analysis/LocalityDFSolver.h>
@@ -98,59 +99,21 @@ PropertyHndlT VarAnnotationMap::s_handle = "Var";
 // compute all Var annotation information
 void VarAnnotationMap::compute() {
   BasicFuncInfo * fi;
+  for (BasicVarAnnotationMap::const_iterator it = BasicVarAnnotationMap::instance()->begin(); it != BasicVarAnnotationMap::instance()->end(); ++it) {
+    BasicVar * bv = dynamic_cast<BasicVar *>(it->second);
+    Var * var = new Var(bv);
+    if (debug) {
+      std::cout << "VarAnnotationMap adding: ";
+      var->dump(std::cout);
+    }
+    get_map()[bv->get_mention_c()] = var;
+  }
+  
   FOR_EACH_BASIC_PROC(fi) {
-    compute_proc(fi);
+    compute_proc_locality_info(fi);
   }
 }
   
-void VarAnnotationMap::compute_proc(BasicFuncInfo * fi) {
-  compute_proc_syntactic_info(fi);
-  compute_proc_locality_info(fi);
-}
-
-// Compute syntactic variable info for the whole program. Refers to
-// the ExpressionInfo annotation for each statement.
-void VarAnnotationMap::compute_proc_syntactic_info(BasicFuncInfo * fi) {
-  SEXP use_sexp, def_sexp;
-  OA_ptr<OA::CFG::NodeInterface> node;
-  StmtHandle stmt;
-
-  // uses and defs in function body
-  PROC_FOR_EACH_NODE(fi, node) {
-    NODE_FOR_EACH_STATEMENT(node, stmt) {
-      ExpressionInfo * expr = getProperty(ExpressionInfo, make_sexp(stmt));
-      EXPRESSION_FOR_EACH_USE(expr, use_sexp) {
-	BasicVar * basic_var = getProperty(BasicVar, use_sexp);
-	assert(basic_var != 0);
-	Var * var = new Var(basic_var);
-	if (debug) {
-	  std::cout << "VarAnnotationMap adding use: ";
-	  var->dump(std::cout);
-	}
-	get_map()[use_sexp] = var;
-      }
-      EXPRESSION_FOR_EACH_DEF(expr, def_sexp) {
-	BasicVar * basic_var = getProperty(BasicVar, def_sexp);
-	assert(basic_var != 0);
-	Var * var = new Var(basic_var);
-	if (debug) {
-	  std::cout << "VarAnnotationmap adding def: ";
-	  var->dump(std::cout);
-	}
-	get_map()[def_sexp] = var;
-      }      
-    }
-  }
-
-  // defs for formal args
-  for(SEXP e = fi->get_args(); e != R_NilValue; e = CDR(e)) {
-    BasicVar * bvar = getProperty(BasicVar, e);
-    Var * var = new Var(bvar);
-    putProperty(Var, e, var);
-  }
-
-}
-
 /// compute variable locality (bound/free) for each function
 void VarAnnotationMap::compute_proc_locality_info(BasicFuncInfo * fi) {
   R_Analyst * an = R_Analyst::instance();
@@ -173,6 +136,10 @@ void VarAnnotationMap::compute_locality_info(OA_ptr<R_IRInterface> interface,
   for(MyMap::const_iterator it = map.begin(); it != map.end(); it++) {
     Var * var = dynamic_cast<Var *>(get_map().at(it->first));
     var->set_scope_type(it->second);
+    if (debug) {
+      Rf_PrintValue(CAR(var->get_mention_c()));
+      std::cout << "set to " << type_name(it->second) << std::endl;
+    }
   }
 }
 

@@ -36,7 +36,7 @@ class SexpTraversal {
 public:
   static SexpTraversal * instance();
 
-  static ExpressionInfo * make_expression_info(const SEXP & k);
+  static ExpressionInfo * make_expression_info(const SEXP & k, Locality::LocalityType lt);
 
 private:
   explicit SexpTraversal();
@@ -50,11 +50,13 @@ private:
   static void build_ud_rhs(ExpressionInfo * ei,
 			   const SEXP cell,
 			   BasicVar::MayMustT may_must_type,
-			   bool is_stmt);  
+			   Locality::LocalityType lt,
+			   bool is_stmt);
   static void build_ud_lhs(ExpressionInfo * ei,
 			   const SEXP cell,
 			   const SEXP rhs_c,
 			   BasicVar::MayMustT may_must_type,
+			   Locality::LocalityType lt,
 			   LhsType lhs_type);
 
   static void make_use_var(ExpressionInfo * ei,

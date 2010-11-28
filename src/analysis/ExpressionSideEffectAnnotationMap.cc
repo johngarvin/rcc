@@ -29,7 +29,10 @@
 #include <analysis/AnalysisException.h>
 #include <analysis/AnalysisResults.h>
 #include <analysis/Analyst.h>
+#include <analysis/ExpressionInfo.h>
+#include <analysis/ExpressionInfoAnnotationMap.h>
 #include <analysis/HandleInterface.h>
+#include <analysis/HellProcedure.h>
 #include <analysis/IRInterface.h>
 #include <analysis/OACallGraphAnnotationMap.h>
 #include <analysis/ResolvedArgs.h>
@@ -107,7 +110,7 @@ PropertyHndlT ExpressionSideEffectAnnotationMap::s_handle = "ExpressionSideEffec
 
 // ----- computation -----
 
-// compute all Var annotation information
+// compute all ExpressionSideEffect annotation information
 void ExpressionSideEffectAnnotationMap::compute() {
   init_lib_data();
 
@@ -117,30 +120,41 @@ void ExpressionSideEffectAnnotationMap::compute() {
 
   compute_oa_side_effect();
   // now use m_side_effect to get info on expressions
+  
+#if 0
+  ExpressionInfoAnnotationMap::const_iterator it;
+  ExpressionInfoAnnotationMap * eiam = ExpressionInfoAnnotationMap::instance();
+  for (it = eiam->begin(); it != eiam->end(); it++) {
+    ExpressionInfo * ei = dynamic_cast<ExpressionInfo *>(it->second);
+    make_side_effect(ei->get_cell());
+  }
+#endif
 
   // get side effects for default arguments
   FOR_EACH_PROC(fi) {
+    ProcHandle ph = HandleInterface::make_proc_h(fi->get_sexp());
     for (SEXP arg = fi->get_args(); arg != R_NilValue; arg = CDR(arg)) {
       if (CAR(arg) != R_MissingArg) {
-	make_side_effect(fi, arg);
+	make_side_effect(ph, arg);
       }
     }
   }
 
   FOR_EACH_PROC(fi) {
+    ProcHandle ph = make_proc_h(fi->get_sexp());
     PROC_FOR_EACH_NODE(fi, node) {
       NODE_FOR_EACH_STATEMENT(node, stmt) {
 	if (debug) {
 	  std::cout << "making side effect for statement: ";
 	  Rf_PrintValue(CAR(make_sexp(stmt)));
 	}
-	make_side_effect(fi, make_sexp(stmt));
+	make_side_effect(ph, make_sexp(stmt));
       }  // next statement
     }  // next node
 
     PROC_FOR_EACH_CALL_SITE(fi, csi) {
       // left side
-      make_side_effect(fi, CAR(*csi));
+      make_side_effect(ph, CAR(*csi));
 
       // actual args
       for (R_CallArgsIterator arg_it(CAR(*csi)); arg_it.isValid(); ++arg_it) {
@@ -148,10 +162,19 @@ void ExpressionSideEffectAnnotationMap::compute() {
 	  std::cout << "making side effect for actual arg: ";
 	  Rf_PrintValue(CAR(arg_it.current()));
 	}
-	make_side_effect(fi, arg_it.current());
+	make_side_effect(ph, arg_it.current());
+      }
+
+      // possible library calls
+      SEXP lhs = call_lhs(CAR(*csi));
+      if (is_var(lhs) && is_library(lhs) && is_closure(library_value(lhs))) {
+	for (SEXP formal = closure_args(library_value(lhs)); formal != R_NilValue; formal = CDR(formal)) {
+	  make_side_effect(HellProcedure::instance(), formal);
+	}
       }
     }
   }  // next function
+
 }
 
 /// populate m_side_effect with OA side effect info
@@ -208,21 +231,20 @@ void ExpressionSideEffectAnnotationMap::add_all_names_defined(SideEffect * annot
   }
 }
 
-void ExpressionSideEffectAnnotationMap::make_side_effect(const FuncInfo * const fi, const SEXP cell) {
+void ExpressionSideEffectAnnotationMap::make_side_effect(const ProcHandle ph, const SEXP cell) {
   SEXP cs_c, use, def;
-  OA_ptr<Alias::AliasTagIterator> tag_iter;
 
-  OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(make_proc_h(fi->get_sexp()));
+  OA_ptr<Alias::Interface> alias = m_alias->getAliasResults(ph);
   SEXP e = CAR(cell);
   ExpressionInfo * expr = getProperty(ExpressionInfo, cell);
   ExpressionSideEffect * annot = new ExpressionSideEffect(expression_is_trivial(e), expression_is_cheap(e));
 
   // first grab local uses and defs
   EXPRESSION_FOR_EACH_USE(expr, use) {
-    annot->insert_use_sexp(fi, use);
+    annot->insert_use_sexp(use);
   }
   EXPRESSION_FOR_EACH_DEF(expr, def) {
-    annot->insert_def_sexp(fi, def);
+    annot->insert_def_sexp(def);
   }
 
   // now grab side effects due to procedure calls: get interprocedural

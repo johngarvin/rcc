@@ -75,14 +75,12 @@ void SideEffect::set_action(bool x) {
 
 // ----- insertion -----
 
-void SideEffect::insert_use_sexp(const FuncInfo * fi, const SEXP sexp) {
-  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
+void SideEffect::insert_use_sexp(const SEXP sexp) {
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::instance()->find_entry(sexp));
   insert_use(make_var_info(symbol));
 }
 
-void SideEffect::insert_def_sexp(const FuncInfo * fi, const SEXP sexp) {
-  OA::ProcHandle proc = make_proc_h(fi->get_sexp());
+void SideEffect::insert_def_sexp(const SEXP sexp) {
   OA::SymHandle symbol = make_sym_h(SymbolTableFacade::instance()->find_entry(sexp));
   insert_def(make_var_info(symbol));
 }

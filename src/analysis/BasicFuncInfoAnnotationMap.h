@@ -43,7 +43,7 @@
 #define FOR_EACH_BASIC_PROC_AND_LIB(bfi) \
   for (RAnnot::BasicFuncInfoAnnotationMap::const_iterator bfii = BasicFuncInfoAnnotationMap::instance()->begin(); \
        bfii != BasicFuncInfoAnnotationMap::instance()->end() && ((bfi) = dynamic_cast<BasicFuncInfo *>(bfii->second)) != 0; \
-       ++bfii, (bfi) = *bfii)
+       ++bfii, (bfi) = dynamic_cast<BasicFuncInfo *>(bfii->second))
 
 namespace RAnnot {
   
@@ -77,9 +77,6 @@ private:
   /// Recursively traverse e to build the scope tree. 'parent' is a
   /// pointer to the parent lexical scope.
   void build_scope_tree_rec(SEXP e, BasicFuncInfo * parent);
-  
-  /// Get FuncInfos for libraries called in the program
-  void collect_libraries();
   
   static void create();
 

@@ -50,6 +50,7 @@ void ResolvedArgs::resolve() {
   int i, j, dots;
   Rboolean seendots;
   SEXP f, a, b;
+  MyArgSetT::iterator it;
 
   i = 0;
   for (f = m_formals ; f != R_NilValue ; f = CDR(f)) {
@@ -100,14 +101,15 @@ void ResolvedArgs::resolve() {
   dots = -1;
   seendots = FALSE;
   i = 0;
+  it = m_resolved_args.begin();
   for (f = m_formals; f != R_NilValue; f = CDR(f)) {
     if (ARGUSED(f) == 0) {
       if (TAG(f) == R_DotsSymbol && !seendots) {
 	/* Record where ... value goes */
+	it->cell = R_NilValue;
+	it->source = RESOLVED_DOT;
+	it->is_missing = false;
 	dots = i;
-	m_resolved_args.at(dots).cell = R_NilValue;
-	m_resolved_args.at(dots).source = RESOLVED_DOT;
-	m_resolved_args.at(dots).is_missing = false;
 	seendots = TRUE;
       } else {
 	j = 1;
@@ -119,10 +121,10 @@ void ResolvedArgs::resolve() {
 	    if (ARGUSED(f) == 1)
 	      Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 		       var_name(TAG(f)).c_str());
-	    m_resolved_args.at(i).cell = b;
-	    m_resolved_args.at(i).source = RESOLVED_TAG_PARTIAL;
+	    it->cell = b;
+	    it->source = RESOLVED_TAG_PARTIAL;
 	    if (CAR(b) != R_MissingArg)
-	      m_resolved_args.at(i).is_missing = false;
+	      it->is_missing = false;
 	    m_supplied_to_formal_map[b] = f;
 	    SET_ARGUSED(b, 1);
 	    SET_ARGUSED(f, 1);
@@ -131,6 +133,7 @@ void ResolvedArgs::resolve() {
 	}
       }
     }
+    it++;
     i++;
   }
 
@@ -182,25 +185,28 @@ void ResolvedArgs::resolve() {
 
   if (dots != -1) {
     /* Gobble up all unused actuals */
-    m_resolved_args.at(dots).source = RESOLVED_DOT;
     j = 0;
     for (b = m_supplied; b != R_NilValue; b = CDR(b))
       if (!ARGUSED(b)) j++;
 
     if (j > 0) {
-      m_dot_args = std::vector<MyArgT>(i);
-      i = 0;
-      for (b = m_supplied; b != R_NilValue; b = CDR(b))
+      MyArgT dummy_arg;
+      m_resolved_args.insert(m_resolved_args.begin() + dots + 1, j, dummy_arg); // insert j empty args after dots
+      m_lazy_info.insert(m_lazy_info.begin() + dots + 1, j, LAZY);
+      i = dots + 1;
+      for (b = m_supplied; b != R_NilValue; b = CDR(b)) {
 	if (!ARGUSED(b)) {
-	  m_dot_args.at(i).cell = b;
-	  m_dot_args.at(i).formal = m_resolved_args.at(dots).formal;
-	  m_dot_args.at(i).source = RESOLVED_POSITION;
-	  m_dot_args.at(i).is_missing = false;
+	  m_resolved_args.at(i).cell = b;
+	  m_resolved_args.at(i).formal = m_resolved_args.at(dots).formal;
+	  m_resolved_args.at(i).source = RESOLVED_DOT;
+	  m_resolved_args.at(i).is_missing = false;
 	  m_supplied_to_formal_map[b] = m_resolved_args.at(dots).formal;
 	  f = CDR(f);
 	  i++;
 	}
+      }
     }
+    m_resolved_args.erase(m_resolved_args.begin() + dots);  // remove dots argument
   }
   else {
     /* Check that all arguments are used */
@@ -213,18 +219,8 @@ void ResolvedArgs::resolve() {
   }
 }
 
-// ----- eager/lazy data -----
-
-EagerLazyT ResolvedArgs::get_eager_lazy(int arg) const {
-  return m_lazy_info.at(arg);
-}
-  
-void ResolvedArgs::set_eager_lazy(int arg, EagerLazyT x) {
-  m_lazy_info.at(arg) = x;
-}
-
-std::vector<EagerLazyT> ResolvedArgs::get_lazy_info() const {
-  return m_lazy_info;
+int ResolvedArgs::size() {
+  return m_resolved_args.size();
 }
 
 // ----- iterators -----
@@ -243,22 +239,6 @@ ResolvedArgs::const_reverse_iterator ResolvedArgs::rbegin() const {
 
 ResolvedArgs::const_reverse_iterator ResolvedArgs::rend() const {
   return m_resolved_args.rend();
-}
-
-ResolvedArgs::const_iterator ResolvedArgs::begin_dot_args() const {
-  return m_dot_args.begin();
-}
-
-ResolvedArgs::const_iterator ResolvedArgs::end_dot_args() const {
-  return m_dot_args.end();
-}
-
-ResolvedArgs::const_reverse_iterator ResolvedArgs::rbegin_dot_args() const {
-  return m_dot_args.rbegin();
-}
-
-ResolvedArgs::const_reverse_iterator ResolvedArgs::rend_dot_args() const {
-  return m_dot_args.rend();
 }
 
 // ----- get_formal_for_actual -----

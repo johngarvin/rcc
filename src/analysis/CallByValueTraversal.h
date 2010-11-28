@@ -1,6 +1,6 @@
 // -*- Mode: C++ -*-
 //
-// Copyright (c) 2006 Rice University
+// Copyright (c) 2010 Rice University
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,29 +16,36 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
-// File: LocalityType.h
+// File: CallByValueTraversal.h
 //
-// Enumerated type for locality data flow solver. These form a lattice:
-//       TOP
-//     /    \
-// LOCAL     FREE
-//     \    /
-//     BOTTOM
+// Computes call-by-value information for all call sites in the
+// program. Fills in both CallByValueInfoAnnotationMap and
+// ResolvedCallByValueInfoAnnotationMap.
 //
 // Author: John Garvin (garvin@cs.rice.edu)
 
-#include "LocalityType.h"
+#ifndef CALL_BY_VALUE_TRAVERSAL_H
+#define CALL_BY_VALUE_TRAVERSAL_H
 
-namespace Locality {
+namespace RAnnot {
 
-const std::string type_name(LocalityType x) {
-  switch(x) {
-  case Locality_NONE: return "NONE";
-  case Locality_TOP: return "TOP";
-  case Locality_LOCAL: return "LOCAL";
-  case Locality_FREE: return "FREE";
-  case Locality_BOTTOM: return "BOTTOM";
-  }
-}
+class CallByValueTraversal {
+public:
+  virtual ~CallByValueTraversal();
 
-}  // end namespace Locality
+  /// instance for singleton pattern
+  static CallByValueTraversal * instance();
+
+  /// traverse the procedures in the program and fill in annotations
+  void compute();
+
+private:
+  /// private constructor for singleton pattern
+  explicit CallByValueTraversal();
+
+  static CallByValueTraversal * s_instance;
+};
+
+} // end namespace RAnnot
+
+#endif
