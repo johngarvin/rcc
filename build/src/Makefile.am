@@ -53,6 +53,8 @@ rcc_bin_SOURCES =				\
   CallByValueInfo.h                             \
   CallByValueInfoAnnotationMap.cc               \
   CallByValueInfoAnnotationMap.h                \
+  CallByValueTraversal.cc                       \
+  CallByValueTraversal.h                        \
   CallType.cc                                   \
   CallType.h                                    \
   CEscapeInfo.h                                 \
@@ -104,6 +106,10 @@ rcc_bin_SOURCES =				\
   LexicalContext.cc                             \
   LexicalScope.cc                               \
   LexicalScope.h                                \
+  LibraryFuncInfo.cc                            \
+  LibraryFuncInfo.h                             \
+  LibraryFuncInfoAnnotationMap.cc               \
+  LibraryFuncInfoAnnotationMap.h                \
   LocalityDFSet.cc				\
   LocalityDFSetElement.cc			\
   LocalityDFSetElement.h			\
@@ -151,6 +157,10 @@ rcc_bin_SOURCES =				\
   ResolvedArgs.h                                \
   ResolvedArgsAnnotationMap.cc                  \
   ResolvedArgsAnnotationMap.h                   \
+  ResolvedCallByValueInfo.cc                    \
+  ResolvedCallByValueInfo.h                     \
+  ResolvedCallByValueInfoAnnotationMap.cc       \
+  ResolvedCallByValueInfoAnnotationMap.h        \
   ReturnedCGSolver.cc                           \
   ReturnedCGSolver.h                            \
   ReturnedDFSolver.cc                           \
@@ -263,7 +273,14 @@ rcc_bin_SOURCES =				\
 						\
   NonUniformDegreeTree.cc			\
   NonUniformDegreeTree.h			\
-  NonUniformDegreeTreeTmpl.h
+  NonUniformDegreeTreeTmpl.h                    \
+                                                \
+  CCode.h                                       \
+  Include.h                                     \
+  LiteralInclude.h                              \
+  Program.h                                     \
+  SearchInclude.h                               
+
 
 # RCC home-grown call graph
 # Commented out because we are using OpenAnalysis call graphs instead

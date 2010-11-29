@@ -323,7 +323,7 @@ static Expression op_resolved_args(SubexpBuffer * sb,
 				   int * unprotcnt,
 				   string & laziness_string)
 {
-  int i = 0;
+  int i = resolved_args->size() - 1;
   string out;
   Expression tail = Expression::nil_exp;
   for (ResolvedArgs::const_reverse_iterator it = resolved_args->rbegin();
@@ -331,7 +331,7 @@ static Expression op_resolved_args(SubexpBuffer * sb,
        it++)
     {
       tail = op_resolved_arg(sb, resolved_args, cbv, rho, unprotcnt, laziness_string, it, i, tail);
-      i++;
+      i--;
     }
   return tail;
 }
