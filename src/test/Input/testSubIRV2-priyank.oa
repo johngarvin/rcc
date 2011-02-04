@@ -1,0 +1,15 @@
+// m=n=o; 
+
+// int main() {
+        PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+
+LOCATION = { < SymHandle("m"), local > }
+LOCATION = { < SymHandle("n"), local > }
+LOCATION = { < SymHandle("o"), local > }
+MEMREFEXPRS = { StmtHandle("m = n = o;") =>
+                [ 	
+		MemRefHandle("m_1") => NamedRef( DEF, SymHandle("m") ) 		     
+		MemRefHandle("n_1") => NamedRef( DEFUSE, SymHandle("n"))
+		MemRefHandle("o_1") => NamedRef( USE, SymHandle("o"))
+                    
+                ] } 

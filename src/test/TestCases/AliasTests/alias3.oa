@@ -1,0 +1,112 @@
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+    MEMREFEXPRS = { StmtHandle("int main(){int loc;int *locPtr;int *a;int *b;int *c;int loc2;locPtr = &loc;a = locPtr;b = locPtr;c = locPtr;a =(b = c);a = &loc2;return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{int loc;int *locPtr;int *a;int *b;int *c;int loc2;locPtr = &loc;a = locPtr;b = locPtr;c = locPtr;a =(b = c);a = &loc2;return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int loc;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *locPtr;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *a;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *b;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *c;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int loc2;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("locPtr = &loc;") =>
+        [
+            MemRefHandle("locPtr") => 
+                NamedRef( DEF, SymHandle("locPtr"), F, full)
+            MemRefHandle("&loc") => 
+                NamedRef( USE, SymHandle("loc"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("locPtr = &loc;") =>
+        [
+            < NamedRef( DEF, SymHandle("locPtr"), F, full)
+            , NamedRef( USE, SymHandle("loc"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("a = locPtr;") =>
+        [
+            MemRefHandle("a") => 
+                NamedRef( DEF, SymHandle("a"), F, full)
+            MemRefHandle("locPtr") => 
+                NamedRef( USE, SymHandle("locPtr"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("a = locPtr;") =>
+        [
+            < NamedRef( DEF, SymHandle("a"), F, full)
+            , NamedRef( USE, SymHandle("locPtr"), F, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("b = locPtr;") =>
+        [
+            MemRefHandle("b") => 
+                NamedRef( DEF, SymHandle("b"), F, full)
+            MemRefHandle("locPtr") => 
+                NamedRef( USE, SymHandle("locPtr"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("b = locPtr;") =>
+        [
+            < NamedRef( DEF, SymHandle("b"), F, full)
+            , NamedRef( USE, SymHandle("locPtr"), F, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("c = locPtr;") =>
+        [
+            MemRefHandle("c") => 
+                NamedRef( DEF, SymHandle("c"), F, full)
+            MemRefHandle("locPtr") => 
+                NamedRef( USE, SymHandle("locPtr"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("c = locPtr;") =>
+        [
+            < NamedRef( DEF, SymHandle("c"), F, full)
+            , NamedRef( USE, SymHandle("locPtr"), F, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("a =(b = c);") =>
+        [
+            MemRefHandle("a") => 
+                NamedRef( DEF, SymHandle("a"), F, full)
+            MemRefHandle("b") => 
+                NamedRef( DEF, SymHandle("b"), F, full)
+            MemRefHandle("c") => 
+                NamedRef( USE, SymHandle("c"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("a =(b = c);") =>
+        [
+            < NamedRef( DEF, SymHandle("b"), F, full)
+            , NamedRef( USE, SymHandle("c"), F, full) >
+            < NamedRef( DEF, SymHandle("a"), F, full)
+            , NamedRef( DEF, SymHandle("b"), F, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("a = &loc2;") =>
+        [
+            MemRefHandle("a") => 
+                NamedRef( DEF, SymHandle("a"), F, full)
+            MemRefHandle("&loc2") => 
+                NamedRef( USE, SymHandle("loc2"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("a = &loc2;") =>
+        [
+            < NamedRef( DEF, SymHandle("a"), F, full)
+            , NamedRef( USE, SymHandle("loc2"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("return 0;") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("main"), local > }
+    LOCATION = { < SymHandle("loc"), local > }
+    LOCATION = { < SymHandle("locPtr"), local > }
+    LOCATION = { < SymHandle("a"), local > }
+    LOCATION = { < SymHandle("b"), local > }
+    LOCATION = { < SymHandle("c"), local > }
+    LOCATION = { < SymHandle("loc2"), local > }

@@ -1,0 +1,961 @@
+   8/21/06   UseOA-Rose svn branch r201   Priyadarshini Malusare 
+      We got CFG, CallGraph, ParamBinding, SideEffect and ReachDefs working
+	  with the new DGraphRefactor in the branch.
+
+   8/2206    UseOA-Rose svn branch r202   Priyadarshini Malusare
+      ICFG refactor is working in the branch.
+
+7/4/06    OpenAnalysis svn tag trunk r126 Michelle Strout
+
+    - updated ParamBindings and ManagerParamBindings so that they 
+      don't use isRefParam and they can handle the possibility of
+      multiple procedure targets for a particular CallHandle, which
+      happens with function pointers.
+    - analyses that use ParamBindings and some of the old IRInterface
+      stuff now have asserts.  Mostly things in the Activity/ directory.
+    - Changed a lot of ExprHandles to CallHandles.
+    - ./test-open64 --oa-ParamBindings TestProgs/twofunc1.B works and
+      scripts/regressAll.script works in UseOA-Open64 rev 33
+
+7/7/06    OpenAnalysis svn tag trunk r136 Barbara Kreaseck
+    - added CallGraphStandard functionality:
+         - stores map of CallHandle to set of ProcHandles (may Callee Procs)
+         - user interface: getCalleeProcs(CallHandle c) returns an iterator
+           over a set of ProcHandles that represent the may-called procs
+           associated with the given CallHandle.
+         - output now includes CallHandle on edges.
+         - output now includes a dump of the map of CallHandles to ProcHandle
+           sets
+    - UseOA-Open64 regression tests have been updated to reflect extra output
+    - UseOA-ROSE regression tests have not yet been updated.  Sorry ... coming.
+
+7/14/06    OpenAnalysis svn tag trunk r141 Barbara Kreaseck
+    - updated ICFGStandard functionality to use CallGraph to find procHandles
+      associated with callHandles ( enables may-call analysis use).
+    - updated OutputBuilder to have default parameters on the following
+      functions (original functionality and calls are maintained):  
+        outputString(const std::string &str, int filter=1)
+	  - default parameter of 1 will filter str to change '\n' to '\\n'
+	    in OutputBuilderDOT
+          - a filter parameter of 0 will not filter at all
+        graphNodeLabelEnd(const std::string &extras="")
+          - if you send nothing, nothing extra is printed with the node
+          - if you send an extra string, it will be included after the
+            end of the label but before the close ']' in OutputBuilderDOT.
+        graphEdgeLabelEnd(const std::string &extras="")
+          - if you send nothing, nothing extra is printed with the edge
+          - if you send an extra string, it will be included after the
+            end of the label but before the close ']' in OutputBuilderDOT.
+              samples include: 'style=dashed,color=blue'
+    - works with about-to-be-committed:
+        UseOA-open64 r42, UseOA-Rose r112 with rose-0.8.7a/compile-gcc-3.2
+
+7/17/06    OpenAnalysis svn tag trunk r145 Priyadarshini Malusare
+    - Added SideEffect Analysis				
+    - Created seperate CalleeToCallerVisitorIRInterface and let
+      SideEffectIRInterface and ActivityIRInterface derived from it.
+    - Modified CalleeToCallerVisitor.cpp in DataFlow for Deref.
+    - Following files are added to modified:
+      Activity/ManagerInterDep.cpp, Activity/ManagerInterDep.hpp,
+      DataFlow/CalleeToCallerVisitor.cpp, DataFlow/CalleeToCallerVisitor.hpp,
+      DataFlow/CallGraphDFProblemNew.hpp, DataFlow/LocDFSet.cpp,
+      DataFlow/LocDFSet.hpp, IRInterface/ActivityIRInterface.hpp.
+      IRInterface/SideEffectIRInterface.hpp, Makefile.am, Makefile.in,
+      MemRefExpr/MemRefExpr.hpp,
+      SideEffect/ManagerInterSideEffectStandard.cpp,
+      SideEffect/ManagerInterSideEffectStandard.hpp,
+      SideEffect/ManagerSideEffectStandard.cpp,
+      SideEffect/ManagerSideEffectStandard.hpp,
+      SideEffect/SideEffectStandard.cpp,
+      IRInterface/CalleeToCallerVisitorIRInterface.hpp,
+      SideEffect/SideEffectStandard_output.cpp
+      
+7/17/06    OpenAnalysis svn tag trunk r146 Barbara Kreaseck
+    - re-updated OutputBuilder 
+        - back to before r141 
+          (undid changes to outputString,graphNodeLabelEnd,graphEdgeLabelEnd)
+        - added graphSubStart and graphSubEnd functionality
+    - works with about-to-be-committed: (not completely true, see r148 below)
+        UseOA-open64 r43, UseOA-Rose r116 with rose-0.8.7a/compile-gcc-3.2
+
+7/17/06    OpenAnalysis svn tag trunk r147 Priyadarshini Malusare
+    - Changed Makefile.am to include DataFlow/LocDFSet.hpp and 
+      DataFlow/ICFGDFSolver.hpp 
+
+7/17/06    OpenAnalysis svn tag trunk r148 Barbara Kreaseck
+    - version r146 did not work with UseOA-open64 r43.
+    - versions r147 and r148 do work with UseOA-open64 r43 (with the 
+         include file changes in r147)
+
+7/17/06    OpenAnalysis svn tag trunk r149 Priyadarshini Malusare
+    - Added outpt InterSideEffectStandard_output.cpp
+    - Modified files:
+      ChangeLog, InterSideEffectStandard.cpp, InterSideEffectStandard.hpp,
+      InterSideEffectStandard_output.cpp, Makefile.am 
+
+7/18/06    OpenAnalysis svn tag trunk r150  Michelle Strout
+    - Fixed some of the logic in CalleeToCallerVisitor code.
+    - Added a composeWith method to the MemRefExpr subclass RefOp.
+      It handles composing a Deref with a MemRefExpr that has
+      its address taken.
+
+7/18/06    OpenAnalysis svn tag trunk r151 Priyadarshini Malusare	 
+    - Added InterSideEffectStandard_output.cpp, modified
+    SideEffectStandard_output.cpp 		    
+
+7/19/06    OpenAnalysis svn tag trunk r153 Michelle Strout
+    - did some fixing to ManagerAliasMapXAIF, still have an issue
+      with InvisibleLocs
+
+7/20/06    OpenAnalysis svn tag trunk r154 Michelle Strout
+    - fixed the semantics of getBaseLoc for InvisibleLoc.  It can't
+      return the location for the base symbol in the MRE.  Most of the
+      code expects it to just return the InvisibleLoc.
+      I checked all places that getBaseLoc() was being used to make
+      sure that those where the expected semantics.
+    - cleaned out a lot of old stuff that we are not using anymore,
+      which means the Makefile.in changed and you will have to reconfigure
+
+7/20/06    OpenAnalysis svn tag trunk r155 Priyadarshini Malusare
+    - Added getLocation to CalleeToCallerVisitorIRInterface, Added ProcHandle
+    Callee to the constructor of CalleeToCallerVisitor, added getBaseSym for 
+    InvisibleLocations. 
+
+7/20/06    OpenAnalysis svn tag trunk r156 Priyadarshini Malusare
+    -Changes in CalleeToCallerVisitor::InvisibleLoc 
+	    
+7/20/06    OpenAnalysis svn tag trunk r157 Priyadarshini Malusare
+    - Added few debug statements in the CalleeToCallerVisitor	
+
+7/20/06   OpenAnalysis svn tag trunk r158 Priyadarshini Malusare
+	- Changes in createNewMRE() in the CalleeToCallerVisitor.cpp
+
+7/20/06   OpenAnalysis svn tag trunk r159 Priyadarshini Malusare
+    - Changes in ComposedWith in the MemRefExpr.cpp. OpenAnalysis revision 159
+      has SideEffect Analysis that works for examples like simpleMix-passptr.c
+      in UseOA-ROSE revision 122.
+
+7/20/06    OpenAnalysis svn tag trunk r160 Barbara Kreaseck
+    - added output(ir) routines for LocDFSet, DepDFSet and ICFGDep
+    - added subGraph routines to OutputBuild* classes.
+    - updated the way ICFGDep handles refParams
+    - fixed bug in DGraphStandard::getSinkNodesIterator()
+    - passes regressAll in UseOA_Open64 r45 and Useoa_Rose r122
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+7/22/06    OpenAnalysis svn tag trunk r161 Priyadarshini Malusare 
+    -Refactored the CallGraph data-flow framework to be like the ICFG data-flow
+    framework. Converted rid of CallGraphDFProblemNew.* to CallGraphDFProblem.hpp,
+	CallGraphDFSolver.hpp, CallGraphDFSolver.cpp
+   -Modified CallGraphDFProblem.hpp, made it similar to ICFGDFProblem.hpp,
+    an abstract base class.
+   -Modified CallGraphDFSolver.*pp, make them similar to ICFGDFSolver.*pp so
+    that it to accept a CallGraphDFProblem as a parameter. 
+   -Change all of the Managers that used to inherit from CallGraphDFProblemNew 
+    so that they inherit from CallGraphDFProblem virtually. Also made it so that
+	they use a CallGraphDFSolver similar to how Activity/ManagerICFGActive uses
+	ICFGDFSolver. Activity/ManagerInterDep.cpp, Activity/ManagerInterDep.hpp, 
+	SideEffect/ManagerInterSideEffectStandard.cpp, 
+	SideEffect/ManagerInterSideEffectStandard.hpp, 
+   -Passes regressAll in UseOA_Open64 r45 and Useoa_Rose r122  compiled with 
+   gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+	  
+08/01/06    OpenAnalysis svn tag trunk r162 Priyadarshini Malusare 
+    -Refactored the CFG data-flow framework to be like the ICFG data-flow
+     framework. Added CFgDFProblem.hpp, CFGDFSolver.hpp, CFGDFSolver.cpp
+    -Change all of the Managers that used to inherit from CFGDFProblem virtually.
+     Also made it so that they use a CFGDFSolver. These Managers are as follows:
+     Activity/ManagerDepStanadrd.*, Activity/ManagerVaryStandard.*. 
+	 Activity/ManagerUsefulStanadard.*, ReachDefs/ManagerReachDefsStanadrd.*, 
+	 ReachConsts/ManagerReachConstsStanadard.*      	 
+   -Passes regressAll in UseOA_Open64 r50 and Useoa_Rose r127  compiled with 
+    gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+08/01/06    OpenAnalysis svn tag trunk r164 Priyadarshini Malusare
+   -Added ReachConstsStandard_output.cpp that was missing in the OA revision
+    162.
+	
+08/01/06    OpenAnalysis svn tag trunk r165 Priyadarshini Malusare
+   -Added CFGDFSolver.*pp that was missing in the OA revision 164.
+
+8/01/06    OpenAnalysis svn tag trunk r166 Barbara Kreaseck
+    - updated ICFG to cvs:MustMayBranch equivalent (changed output accordingly)
+    - added 3 new maps to ParamBindings.*pp, with the following interface:
+       +  // return an iterator over the actual ExprHandles for a call in order
+       +  OA_ptr<ExprHandleIterator> 
+       +  getActualExprHandleIterator(CallHandle call);
+       +
+       +  //! get ExprTree for actual ExprHandle
+       +  OA_ptr<ExprTree> getActualExprTree(ExprHandle expr);
+       +
+       +  //! get actual ExprHandle in CallHandle for formal SymHandle
+       +  ExprHandle getActualExprHandle(CallHandle call, SymHandle formal);
+    - added output routine for ExprTree
+    - added LocDFSet::calleeToCallerTransitive()
+    - added LocDFSet::callerToCalleeTransitive()
+    - added ExprTree/MemRefsVisitor.*pp (gets all memrefs in an expression)
+    - updated LocDFSet::callerToCallee() to handle derefs correctly
+       + added new parameter: ProcHandle caller
+       + updated callerToCallee calls in applicable Activity/ManagerICFG's
+    - passes regressAll in UseOA_Open64 r52 and UseOA_Rose r130
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+8/01/06    OpenAnalysis svn tag trunk r167 Michelle Strout
+    Changed the handling of InvisibleLoc's in the alias analysis results
+    in ManagerFIAliasAliasMap.  If a dereference to a formal parameter or 
+    a global variable is in an MRE set with no named references, that set
+    of MREs is mapped to a set of invisible locations (one for each MRE
+    that does not have a non-formal local as the base symbol).
+    regressAll works in UseOA-ROSE r131 after reverifying a number of test
+    cases.  Will test with UseOA-Open64 after commit.
+
+8/09/06    OpenAnalysis svn tag trunk r177 Michelle Strout
+    When an MRE has its address taken, I call recordMRE on a clone of that
+    MRE with its address not taken.  Need this because sometime analyses
+    such as activity analysis will be making a query on the non-addressof
+    version of that MRE.  Works with regressAll in UseOA-Open64 r55.
+
+8/09/06    OpenAnalysis svn tag trunk r178 Barbara Kreaseck
+    - updated ManagerICFGUseful to conservative working status:
+       + less conservative treatment of CALL_RETURN edges still outstanding
+    - LocDFSet changes:
+       + callerToCallee(), callerToCalleeTransitive() and
+	 calleeToCaller(), calleeToCallerTransitive() now have IRInterface
+	 params, and will only be able to be called from a Manager ...
+       + added a callerToCalleeNot() routine as a first attempt at 
+	 determining residual locations that DO NOT get converted
+	 from a caller data flow set into a member of a callee set.
+    - removed deprecated Activity/ManagerInterUseful*
+    - removed deprecated Activity/ManagerInterVary*
+    - passes regressAll in UseOA_Open64 r56 and UseOA_Rose r145
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+8/09/06    OpenAnalysis svn tag trunk r179 Michelle Strout
+    Tooks some deprecated methods out of some IRInterfaces.  Works with 
+    r146 of UseOA-ROSE regressAll compiled on gcc 4.0.2.
+
+8/10/06    OpenAnalysis svn tag trunk r180 Barbara Kreaseck
+    - added Activity::inActivePerStmt output routine
+    - updated ManagerICFGVaryInActive::callerToCallee to perform both
+      LocDFSet::callerToCallee and LocDFSet::CallerToCalleeTransitive
+    - passes regressAll in UseOA_Open64 r57 and UseOA_Rose r147
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2 on Okapi
+
+8/11/06    OpenAnalysis svn tag trunk r182 Barbara Kreaseck
+    - added Activity::InterActive output routine
+    - updated ManagerICFGActive to conservative working status:
+       + may conservatively marks some statements as active
+    - passes regressAll in UseOA_Open64 r57 and UseOA_Rose r149
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+8/13/06    OpenAnalysis svn tag trunk r183 Michelle Strout
+   + changed setAddressTaken so that it cancels out Deref and returns the result
+   Works with UseOA-ROSE trunk r151.  Going to test with UseOA-Open64 after
+   commit.
+
+8/13/06    OpenAnalysis svn tag trunk r184 Michelle Strout
+    Made it so that NotationGenerator uses a MemRefExprVisitor now and
+    it is capable of handling a FieldAccess.
+
+8/13/06    OpenAnalysis svn tag trunk r185 Michelle Strout
+    Minor change to make sure that USEDEF and DEFUSE are printed out
+    instead of just USE or DEF.
+
+8/15/06    OpenAnalysis svn tag trunk r186 Barbara Kreaseck
+    - changed ManagerICFGUseful and UsefulStandard to store both inUseful
+      and outUseful.
+    - created ManagerICFGVaryActive and ActivePerStmt to find/store both
+      inActive and outActive
+    - updated ManagerICFGActive to use outActive to calculate active stmts
+      thus no longer passing meaningful data flow sets ==> one iteration
+    - removed ManagerICFGInActive and InActivePerStmt from repository
+    - passes regressAll in UseOA_Open64 r63 and UseOA_Rose r152
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2 on Okapi
+
+8/15/06    OpenAnalysis svn tag trunk r187 Barbara Kreaseck
+    - updated ChangeLog to reflect correct Open64 rev number for r186 log
+
+8/18/06    OpenAnalysis svn tag trunk r195 Luis Ramos
+    - added Linearity Analysis
+    - updated Makefile.am to include the new files for Linearity Analysis:
+     - IRInterface/LinearityIRInterface, ExprTree/LinearityLocsVisitor
+       Linearity/Interface, Linearity/LinearityPair,
+       Linearity/LinearityDepsSet, Linearity/LinearityMatrixStandard
+       Linearity/ManagerLinearityStandard
+    - changed ExprTree.hpp class CallNode, private member is now a
+      CallHandle, CallNode Constructrue now adds a CallHandle, getHandle()
+      now returns a CallHandle. CallNode used to have ExprHandles.
+    - this version of Linearity Analysis is still being tested, debug output
+      is on by default.
+
+8/18/06    OpenAnalysis svn tag trunk r196 Luis Ramos
+    - fixed bug where the dependance chain for each statement was not pass
+      to the LinearityLocsVisitor properly. It would cause a wrong result
+      in where the Dataflow set did not record the complete dependance for
+      a location. It now passes the inRecast of the LinearityMatrix
+      Dataflow set, instead of the mLM from the exit nodes of the proc.
+
+8/22/06    OpenAnalysis svn tag trunk r205 Luis Ramos
+    - changed ManagerLinearityStandard.hpp from 
+      class ManagerStandard  : private DataFlow::CFGDFProblem to
+      class ManagerLinearity : public virtual DataFlow::CFGDFProblem
+
+8/22/06    OpenAnalysis svn tag trunk r206 Priyadarshini Malusare 
+    - changed ManagerReachDefs.hpp from
+      class ManagerStandard  : private DataFlow::CFGDFProblem to
+      class ManagerReachDefs : public virtual DataFlow::CFGDFProblem
+
+8/23/06    OpenAnalysis svn tag trunk r209 Luis Ramos
+    - correction from r205 and r206 ManagerStandard was not change
+      appropiately, it now reflects what it shoudl be, ManagerLinearity
+      and ManagerReachDefsStandard respectively.
+
+8/24/06    OpenAnalysis svn log trunk r210 Priyadarshini Malusare
+    -New Graph Refactor for CFG, CallGraph and ICFG merged with the current
+      revision of OpenAnalysis in the repository (revision 208)
+    -deleted Utils/BaseGraph.* , Created DGraphInterface.hpp,
+      DGraphImplement.hpp and DGraphImplement.cpp. 
+    -Created deleted all the old
+      files from CFG and created are files CFG.hpp, CFG.cpp,CFGInterface.hpp.
+      ManagerCFGStandard.* changed to ManagerCFG.*
+    -Deleted old files from CallGraph and cteared new files CallGraph.hpp,
+      CallGraph.cpp, CallGraphInterface.hpp. ManagerCallGraphStandrad.* has
+      changed to ManagerCallGraph.*
+    -ManagerICFGStandard has changed to ManagerICFG.*
+    -Makefile.am is modified and all the files that depend on BaseGraph are
+      temoprarily removed from the Makefile.am (Need Refactor later)  
+	
+8/26/06    OpenAnalysis svn log trunk r211 Priyadarshini Malusare
+    -Fixed UDDUChains. "isRefParam" is deprecated and replaced with
+	 new functionality. Added Output routine for UDDUChains result.
+    -Fixed the bug in AliasMap.cpp.
+	
+8/29/06    OpenAnalysis svn log trunk 212 Priyadarshini Malusare
+    -removed mId and sNextId from CFG::Node, CFG::Edge,CallGraph::Node,
+       CallGraph::Edge and ICFG::Node, ICFG::Edge.
+    -Removed CallGraph inherit from DGraph::DGraphImplement.
+    -In ICFG::NodesIterator and ICFG::EdgesIterator current() is implemented.
+    -Added removeIncomingEdges, removeOutgoingEdges, removeNode, removeEdge
+        routine in ICFG, CFG and CallGraph.
+    -Removed Utils/Graph.*
+    -Removed SetIterator.hpp as nobody is using this routine.
+    -Removed excessive debug statements in the DGraphImplement::addNode.
+    -Some routines need removed altogether.
+     getCallGraphInterface*,  getDGraphInterfaceNode*,  convert_to_ICFG
+    -Data structures that you need to remove altogether
+     DGNodeToNodeMap mDGNodeToICFGNode, DGEdgeToEdgeMap mDGEdgeToICFGEdge;
+     OA_ptr<std::list<OA_ptr<Node> > > mNodes, 
+     OA_ptr<std::list<OA_ptr<Edge> > > mEdges;
+
+8/30/06   OpenAnalysis svn log trunk 216 Priyadarshini Malusare
+    -Added removeNode, removeEdge, removeIncomingEdge, removeOutgoingEdge
+     and getRoot in DGraph, CFG, CallGraph and ICFG.
+
+8/30/06   OpenAnalysis svn log trunk 217 Priyadarshini Malusare
+    -Added modifications for ICFG and CallGraph.
+
+0/31/06   OpenAnalysis svn log trunk 218 Priyadarshini Malusare
+    -delete statement is removed from OA_ptr.
+    -Changes related to getDFSIterator did not properly saved in r217.
+     This revision has modified version.
+ 
+9/1/06    OpenAnalysis svn tag trunk r221 Barbara Kreaseck
+    - removed old ManagerICFGReachConstsStandard
+    - added/update ManagerICFGReachConsts from MustMayActive branch
+    - updated ManagerReachConstsStandard with correct IN/OUT node inits
+    - passes regressAll in UseOA_Open64 r73 and UseOA_Rose r185
+      compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+9/1/06    OpenAnalysis svn tag trunk r222 Priyadarshini Malusare
+    - OpenAnalysis r221 has all the changes for MPICFG. But there are some
+      linker errors after checkout fresh copies of OpenAnalysis, UseOA-Open64
+      and UseOA-ROSE. After debugging in detial in seems that the problem
+      occur after including ReachConsts in the Makefile.am. I am commiting
+      these changes after removing ReachConsts from the Makefile.am so that
+      nobody will get stuck due to this error. 
+	   
+9/1/06    OpenAnalysis svn tag trunk r223 Priyadarshini Malusare
+     - getDFSIterator has changed.
+
+
+9/5/06    OpenAnalysis svn tag trunk r224 Priyadarshini Malusare
+     -restored all the modifications in OpenAnalysis r221. 
+     -Added Iterators specific to CFG, CallGrapg and ICFG. 
+
+9/6/06    OpenAnalysis svn tag trunk r225 Priyadarshini Malusare
+     -Removed old unnecessary files from CFG, ICFG and CallGraph and 
+       DataFlow
+     -Replaced "#include ICFG.hpp" by "#include ICFGInterface.hpp" in 
+       ICFGDFProblem.hpp
+     -Replaced "#include CFG.hpp" by "#include CFGInterface.hpp" in 
+        CFGDFProblem.hpp
+     -Replaced "#include CallGraph.hpp" by "#include CallGraphInterface.hpp" 
+        in CallGraphDFProblem.hpp
+     -Replaced Node by NodeInterface, Edge by EdgeInterface, ICFG by 
+       ICFGInterface, CFG by CFGInterface and CallGraph by CallGraphInterface 
+       in the following files:
+       Activity/ ManagerICFGDep.*pp, ManagerICFGVary.*pp, 
+       ManagerICFGVaryActive.*pp, ManagerICFGUseful.*pp, ManagerICFGActive.*pp, 
+       ManagerICFGReachConsts.*pp, ManagerParamBindings.*pp, 
+       ManagerICFGReachConsts.cpp, ManagerInterSideEffectStandard.cpp
+     -Replaced convert routine and source() and sink() with the corresponding 
+       function defined specific to CFG/ICFG/CallGraph in the above files and 
+       *DFSolver.*pp, *DFProblem.*pp
+     -Shifted all the Implementation in ICFG, CallGraph into *.cpp
+     -Except ICFG, noone can directly access CFG. 
+     -CFGInterface defines CFG specific Iterators and CFG.*pp Implement those  
+       Iterators, as defined below
+       Node::getCFGIncomingEdgesIterator(),  Node::getCFGOutgoingEdgesIterator(), 
+       Node::getCFGSourceNodesIterator(),    Node::getCFGSinkNodesIterator(),
+       Edge::getCFGInterfaceNodeSource(),    Edge::getCFGInterfaceNodeSink(),
+       NodesIterator::getCFGNode(),          EdgesIterator::getCFGEdge(),
+       ICFG::getCFGNodesIterator(),          ICFG::getCFGEdgesIterator(), 
+       ICFG::getCFGEntryNodesIterator(),     ICFG::getCFGExitNodesIterator(),
+       ICFG::getCFGReversePostDFSIterator(), ICFG::getCFGDFSIterator()
+       Similar functions are added specific to CallGraph and ICFG. 
+     -commented out getICFGEdge, getICFGNode. Noone is using it.
+     -mInNodeMap, mOutNodeMap in the *DFProblem.hpp is mapped to NodeInterface.
+       In the old code it was mapped to Node. 
+     -passes regressAll in UseOA_Open64 r75 and UseOA_Rose r187
+       compiled with gcc-3.2 and rose-0.8.7a/compile-gcc-3.2
+
+9/7/06     OpenAnalysis svn tag trunk r226 Priyadarshini Malusare
+     -In the previous revision DGraph::getDFSIterator::tempList was not
+      initialized which was giving core dump. In r226, tempList is 
+      allocated to avoid NULL Pointer.
+
+9/7/06     OpenAnalysis svn tag trunk r227 Priyadarshini Malusare
+     -Removed getRoot Completely.
+
+9/8/06     OpenAnalysis svn tag trunk r228 Priyadarshini Malusare
+     -Added following checks for getMayLocs in AliasMap.cpp to 
+      avoid NULL pointers if (!mIdToLocSetMap[*iter].ptrEqual(0))
+
+9/10/08    OpenAnalysis svn tag trunk r229 Priyadarshini Malusare
+     - For CFG,ICFG,CallGraph
+       source() is replaced by getSource, sink is replaced by getSink()
+       getCFGInterfaceNodeSource() is replaced by getCFGSource(),
+       getCFGInterfaceNodeSink() is replaced by getCFGSink().
+     - Removed Unnecessary comment from CallGraph.cpp:331
+
+9/11/08    OpenAnalysis svn tag trunk r229 Priyadarshini Malusare
+     - In order to solve the problem of core dump in OpenAD due to 
+       NULL pointer in Alias following Changes are done:
+       -std::set_intersection(ids1->begin(),ids1->end(),
+        ids2->begin(),ids2->end(), std::inserter(temp,temp.end()));
+        is changed to std::set_intersection(ids1->begin(),ids1->end(),
+        ids2->begin(),ids2->end(), std::inserter(temp,temp.begin()));
+       -Added checks for *it1 and *it2
+        
+9/11/06    OpenAnalysis svn tag trunk r230 Priyadarshini Malusare
+       -Added output for ReachConstsStandard.
+
+9/12/06    OpenAnalysis svn tag trunk r233 Priyadarshini Malusare
+       -Fixed the getDFSIterator
+       -Fixed recursion Problem
+       -Replaced getNodesIterator by getEntryNodesIterator while creating
+        DFS nodeList
+		
+9/12/06    OpenAnalysis svn tag trunk r234 Priyadarshini Malusare
+       -Modified getDFSNodes Iterator such that it should start with minimal 
+        nodes and push the Node before visiting its children.
+
+9/13/06    OpenAnalysis svn tag trunk r235 Priyadarshini Malusare
+       -Modified getDFSIterator so that it accept a parameter/root where
+        where it can start DFS search.
+
+9/13/06    OpenAnalysis svn tag trunk r236 Michelle Strout
+    - Modified ManagerFIAlias so that we actually use a merge function
+      as is described in the Ryder paper.
+
+9/13/06    OpenAnalysis svn tag trunk r237 Michelle Strout
+    - Small fix to the merge function.  I was not iterating over ALL of
+      the mres in the unioned set.
+
+10/1/06    OpenAnalysis svn tag trunk r240 Priyadarshini Malusare
+    - Added DUG and duaa for Context-Sensitive Flow-Insensitive 
+      Activity Analysis.
+    - Added IRInterface/DUGInterface.hpp
+    - New additions in the Makefile.am as follows: 
+      IRInterface/DUGIRInterface, DUG/DUGInterface.hpp,
+      DUG/DUGStandard.hpp, DUG/ManagerDUGStandard.hpp,
+      DUG/DUGStandard.cpp, DUG/ManagerDUGStandard.cpp,
+      added duaa/ManagerDUActive.hpp, duaa/ManagerDUActive.cpp
+
+10/3/06    OpenAnalysis svn tag trunk r245 Priyadarshini Malusare
+    - modified Node::getId and Edge::getId functions in DUGStandard.hpp
+
+10/26/06    OpenAnalysis svn tag trunk r245 Luis Ramos
+    - Modified ExprTree.cpp output routine so that it accepts a visitor
+    - Added OutputExprTreeVisitor which will visit a tree from the root
+      outputing each node.
+
+12/03/06    OpenAnalysis svn tag trunk r258 Priyadarshini Malusare
+    - Context-Sensitive and Flow-InSensitive Activity analysis consists
+      of Def-Use Graph and Def-Use Activity Analysis. These two
+      directories are combined under one directory called CSFIActivity.
+    - Regenerated Makefile.am 
+	
+12/05/06    OpenAnalysis svn tag trunk r264 Priyadarshini Malusare
+    - Changed #include <OpenAnalysis/DUG/DUGStandard.hpp> to 
+      #include <OpenAnalysis/CSFIActivity/DUGStandard.hpp>
+    - Removed duaa and DUG directories as they are replaced by       	
+      CSFIActivity.
+
+12/06/06    OpenAnalysis svn tag trunk r266 Priyadarshini Malusare
+    - ExprStmtPair are renamed as AssignPair.
+    - Activity, Linearity, ReachConsts and ICFGReachConsts are affected.
+     Modifications are done to corresponding IRInterface and Managers.
+
+12/06/06    OpenAnalysis svn tag trunk r267 Priyadarshini Malusare
+    - Clean Up wrt Activity::ActivityStandard::insertActiveLoc.
+      Deprecated code that used to find out Active Symbols.
+
+12/10/06    OpenAnalysis svn tag trunk r269 Priyadarshini Malusare
+    - Changed CFG, CallGraph and ICFG to use inheritance.
+   
+12/20/06    OpenAnalysis svn tag trunk r270 Priyadarshini Malusare
+    - DGraphImplement::removeNode modified so that Incoming and
+      outgoing edges are removed when a node is removed.
+
+12/20/06    OpenAnalysis svn tag trunk r274 Priyadarshini Malusare
+    - Added Check for Invisible Locations in ManagerAliasMapXAIF as 
+      follows:
+    - ManagerAliasMapXAIF should increament count by one or two for
+      accessing array subscript. In case of array as formal reference
+      parameter, array apperas as InvisibleLocation and not Subscript
+      Location. Therefore, checks are added for array as Invisible
+      location.
+ 
+12/22/06    OpenAnalysis svn tag trunk r276 Michelle Strout
+    Modified the build process so that you can use the developer script
+    but you do not have to.  OpenAnalysis is set up so you don't have
+    to set any environment variables and it will compile.  You can
+    set the environment variables that the developer script uses or
+    the typical ones like CXXFLAGS, CXX, etc.  Made this change to make
+    it easier for people just starting to use OpenAnalysis, but I still
+    wanted to maintain the ability to use Andy's cool developer script.
+    Also added some more information to the build.log that is generated.
+    It now keeps track of which version of g++ was used to do the build.
+
+1/8/2007    OpenAnalysis svn tag trunk r 282 Priyadarshini Malusare 
+  - logic for InvisibleLoc is used to ensure two MemRefExprs in the same
+    set that only differs with respect to accuracy i.e. (one shows
+    up as PartialAccuracy and other as FullAccuracy) are mapped to the 
+    same location. e.g. following 2 MREs should be mapped to the same
+    location i.e. Location with partial Accuracy conservatively.
+
+1/11/2007   OpenAnalysis svn tag trunk r 283 Luis Ramos
+  - Modified LinearityAnalysis so that it follows the transitive rule
+
+1/19/2007   OpenAnalysis svn tag trunk r 284 Luis Ramos
+  - Fixed LinearityAnalysis problems and now correctly performs the
+    analysis. 
+  - Fixed Clone routine, Operator!=, Operator==, added
+    if(debug)'s. 
+  - Fixed the output routines for Linearity and the
+    debug output. 
+  - Fixed Linearity so that CFGDFProblem/Solver were 
+    correctly using it.
+  - Added new regression tests for Linearity and added Linearity to
+    regressAll.
+
+1/23/04    OpenAnalysis svn tag trunk r 285 Priyadarshini Malusare
+  - change addressTaken field of MemRefExpr to AddressOf class.
+  - Please refer following link on the wiki.
+    http://www-unix.mcs.anl.gov/OpenAnalysisWiki/moin.cgi/AddressOf_20class 
+
+2/07/07    OpenAnalysis svn tag trunk r 298 Priyadarshini Malusare
+  - deprecated Accuracy field of MemRefExpr. 
+  - Partial Accuracy is represented by instance of SubSetRef class.
+  - Full Accuracy is represented by corresponding MemRefExpr.
+  - Please refer following link on the wiki.
+    http://www-unix.mcs.anl.gov/OpenAnalysisWiki/moin.cgi/Location_20class
+
+2/13/07    OpenAnalysis svn tag trunk r 299 Priyadarshini Malusare
+  - Modified CSFIActivity Analysis to output correct Active Symbols.
+    removed code that was using Alias Analysis as Alias Analysis is 
+    not Context-Sensitive we can not use it to get correct Locations.
+
+2/14/07    OpenAnalysis svn tag trunk r 306 Andy Stone
+    - Seperated classes in Location/ into seperate files.
+
+2/15/07    OpenAnalysis svn tag trunk r 307 Andy Stone
+    - Added affine expression manager, package, and IR interface.
+    - Added loop abstraction.
+    - Added DataDep manager, package, and IR interface.
+    - Added the IdxExprAccess class.
+    - Note: These packages are not yet complete.
+
+2/28/07    OpenAnalysis svn tag trunk r 309 Priyadarshini Malusare
+    - Added InterActiveFortran class as a seperate interface for
+      Context-Sensitive-Flow-InSensitive Activity Analysis.
+    - This is temporary adjustment for Appliactions like OpenAD
+      until we get Context-Sensitive Alias Analysis wotrking.
+    - We still maintain InterActive.* as an interface for 
+      Flow-Sensitive-Context-InSensitive Activity Analysis.
+    - Please refer berlios bug #10522.
+
+03/02/07    OpenAnalysis svn tag trunk r 311 Priyadarshini Malusare
+    - Added Active MemRefHandles and Active Statements for CSFI
+      Activity Analysis.
+
+03/06/07    OpenAnalysis svn tag trunk r 317 Priyadarshini Malusare
+    - Cleaned Following Classes for operator< and operator==.
+    - MemRefExpr.cpp, LocFieldSubSet.cpp, LocIdxSubSet.cpp,
+      LocSet.cpp, NamedLoc.cpp, UnknownLoc.cpp, UnnamedLoc.cpp
+
+03/15/07    OpenAnalysis svn tag trunk r 326 Priyadarshini Malusare
+    - Fixed ManagerICFGvaryActive::callToReturn and 
+      ManagerICFGUseful::callToReturn so that it would kill all
+      the non-local variables along the Call_Return_Edge.
+    - This modification is doneto improve the precision of the 
+      CIFS Activity Analysis.
+    - Also, ManagerICFG.cpp is Fixed so that CALL_RETURN_EDGE would
+      have valid CallHandle instead of CallHandle(0).
+
+04/14/07    OpenAnalysis svn tag trunk r 346 Priyadarshini Malusare
+    - Modification in AliasMapXAIF so that it will generate multiple
+      virtual locations for InvisibleLoc::SubSetRef and single Virtual
+      Location for InvisibleLoc::Deref.
+
+04/15/07    OpenAnalysis svn tag trunk r352 Priyadarshini Malusare
+    - Changed UnnamedRef(memRefType, StmtHandle) to                                   UnnamedRef(memRefType, StmtHandle).
+    - Changed UnnamedLoc(StmtHandle , ....) to                                        UnnamedLoc(ExprHandle , ....) 
+
+04/17/07    OpenAnalysis svn tag trunk r356 Barbara Kreaseck
+    - Changed subgraph output to create a cluster label that is
+      compatible with Dot (removed any inclusive prefixes using
+      ::).  Subgraphs will now print enclosed within boxes again.
+    - cosmetic changes in ICFG.hpp
+    - This triggers the need for re-generating any regression
+      output files that print Dot output.
+
+04/25/07    OpenAnalysis svn tag trunk r367 Priyadarshini Malusare
+    - Modified the output of LocFieldSubSet.
+
+05/18/07    OpenAnalysis svn tag trunk r397 Michelle Strout
+    Performance debugging.
+    - logic in AliasMap addLocation is not correct wrt MAYALIAS,
+      subclasses of LocSubSet are full accurate
+    - making an AliasMap set MAYALIAS anytime two or more locations are put
+      in it or a SubSetLoc with partial accuracy or an invisible loc with
+      an MRE with partial accuracy.
+    - took out some code in addLocation that was sequentially looping through
+      the mLocToIdMap for a location instead of just doing a lookup.
+    - works with both UseOA-ROSE and UseOA-Open64 regressAll.  Need to
+      rerun UseOA-ROSE genFIAliasAliasMap because the changes actually
+      improved the precision of the results.
+
+05/21/07    OpenAnalysis svn tag trunk r405 Luis Ramos
+    - Added RIFG.cpp/hpp and NestedSCR.cpp/hpp with updated source for used
+      with HPCToolkit.
+    - Modified Makefile.am to include RIFG and NestedSCR under Utils.
+
+05/24/07    OpenAnalysis svn tag trunk r406 Luis Ramos
+    - Commited Changes to Makefile.am for the inclusion of RIFG and NestedSCR
+    in Utils.
+    - Include Line from configure.ac now reads: m4_include(config/hpc-cxxutils.m4)
+    for autoconf 2.6+ compatibility.
+
+05/30/07    OpenAnalysis svn tag trunk r409/410 Barbara Kreaseck
+    - added iter counts to InterActive, with interface routines
+      This triggers re-gen of ICFGActive regression output in both
+      UseOA-Open64 and UseOA-Rose (to follow shortly).
+    - cleaned up ManagerICFGActive.*pp:  no data flow on this analysis so
+      all callbacks that receive an in-set and return an out-set no longer
+      convert the dfset, and just return the in-set.  Also, added some flags
+      to minimize location processing when we already know a memref is active
+      or when we already know a stmt is active.
+    - minor clean-up in ManagerICFGUseful.hpp, ManagerICFGVaryActive.cpp
+
+06/08/07    OpenAnalysis svn tag trunk r415 Barbara Kreaseck
+    - corrected LocDFSet copy constructor: used to wrongly copy map.  
+      Now map is not copied, valid flag is set to false, and map will
+      be re-created when needed.  This affects LocDFSet::clone().
+    - passes regressAll on UseOA-ROSE r295, UseOA-Open64 r177, MPICFG r415
+
+06/26/07    OpenAnalysis svn tag trunk r427 Priyadarshini Malusare
+    - Removed DGraphIterative.*hpp.
+    - Added generic class DGraphSolverDFP.*pp that selects
+      Iterative and WorkList algorithm for DataFlow Analysis based on
+      the option specified by the user.
+    - Added abstract class WorkList, derived classes WorkListQueue
+      and WOrkListPQueue.
+
+06/27/07    OpenAnalysis svn tag trunk r432 Priyadarshini Malusare
+    - Clean-up CSFIActivity to remove InterAlias in the parameter
+      list of performAnalysis.
+
+07/01/07    OpenAnalysis svn tag trunk r435 Priyadarshini Malusare
+   - Added scope(local/nonlocal) for UnnamedRef. 
+
+07/03/07    OpenAnalysis svn tag trunk r436 Priyadarshini Malusare
+   - Two InvisibleLocations mayOverlap if:
+     a. Number of Derefs are same.
+     b. Same SymHandle for innermost MRE.
+
+07/03/07    OpenAnalysis svn tag trunk r437 Priyadarshini Malusare
+   - Modified ManagerFIAliasAliasMap.* to improve the performance of 
+     AliasAnalysis.
+   - These maps are made local.
+     std::map<int,bool> foundNonVisibleRef, 
+     std::map<int,bool> foundVisibleFixedLoc;
+     std::map<int,int>  LocsetIdToAliasMapId;
+   - Removed maps.
+     std::map<ProcHandle, std::map<int,int> > setIdToNumLocs;
+     std::map<int,std::set<OA_ptr<MemRefExpr> > > ufSetToMREs;
+
+07/06/07    OpenAnalysis svn tag trunk r438 Priyadarshini Malusare
+   - Added code in ManagerICFGUseful::callerToCallee and 
+     ManagerICFGVaryActive::callerToCallee to handle useful
+     and varied global variables.
+
+07/06/07    OpenAnalysis svn tag trunk r439 Priyadarshini Malusare
+   - Modified AliasMapXAIF so that address range does not start
+     with 0 for LocSubSet.
+
+07/11/07    OpenAnalysis svn tag trunk r442 Priyadarshini Malusare
+   - ManagerFIAlias::InvisibleLocationVisitor visitIdxAccess, 
+     visitExprAcess, visitFieldAccess constructor second parameter
+     is modified ti reflect correct field and index information.
+
+07/18/07    OpenAnalysis svn tag trunk r445 Barbara Kreaseck
+   - Added get/set routines for number of iteration for active
+     analysis within InterActiveFortran.*pp
+   - Added debugging statements to other changed files.
+
+07/24/07   OpenAnalysis svn tag trunk r446 Brian White
+   - Added ManagerFIAliasReachable that implements Ryder's
+     FIAlias, but only visits functions/methods deemed reachable
+     as part of the analysis.  This involved some repackaging
+     of FIAlias internals.
+
+   - Commented out assertion in SubSetRef::composeWith
+	         //    assert(! mre->isaAddressOf() );
+     sent e-mail to Priya
+
+     Date: Wed, 11 Jul 2007 14:45:25 -0400 (EDT)
+     Subject: Re: bug in AliasMap::getMayLocs?
+
+07/27/07   OpenAnalysis svn tag trunk r448 Barbara Kreaseck
+   - Cosmetic ConstDef output change
+   - Changed AliasMap to mark any set with an InvLoc as MayAlias
+
+07/27/07   OpenAnalysis svn tag trunk r450 Barbara Kreaseck
+   - Corrected slight error in ManagerICFGReachConsts.cpp
+   - Changed ManagerFIAliasAliasMap.cpp to add extra IdSets for
+     NamedRef's and local UnnamedRef's that are also in MayAlias
+     IdSets after unification.  This allows them to have mustLocs
+     for when they are the lhs of assignments, etc.
+
+08/14/07   OpenAnalysis svn tag trunk r460 Priyadarshini Malusare
+   - Seperated ICFGActive and ICFGVary passes from 
+     ManagerICFGVaryActive::transfer to improve execution speed of
+     the ICFGActivity Analysis.
+
+08/14/07   OpenAnalysis svn tag trunk r463 Priyadarshini Malusare
+   - Deprecated ActivityStmtType and ReachConstsStmtType from
+     * ManagerICFGReachConsts
+     * ManagerICFGReachCOnsts
+     * ManagerICFGDep
+     * ManagerDepStandard.
+
+08/17/07   OpenAnalysis svn tag trunk r465 Priyadarshini Malusare
+   - Modify InterSideEffect::mCallToSideEffectMap, so that 
+     callee LUSE --> inserted --> caller USE
+     callee LREF --> inserted --> caller REF
+     callee LMOD --> inserted --> caller MOD
+     callee LDEF --> inserted --> caller DEF
+
+08/20/07   OpenAnalysis svn tag trunk r469 Priyadarshini Malusare
+   - Fixed the bug in ManagerFIAlias for UnnamedRef.
+
+08/20/07   OpenAnalysis svn tag trunk r469 Priyadarshini Malusare
+   - SubSetRef::composedWith is modified and thus AliasMap::getMayLocs
+     needed trivial modification.
+   - OuputBuilderText::Graph output needed trivial modification
+
+10/04/07   OpenAnalysis svn tag trunk r494 Priyadarshini Malusare
+   - Modified Output of ExprTree, so that OpNode can print multiple
+     children (i.e. more than 2)
+
+10/29/07   OpenAnalysis svn tag trunk r518 Priyadarshini Malusare
+   - Added DUGStandard::dumpdot routine.
+
+10/29/07   OpenAnalysis svn tag trunk r523 Priyadarshini Malusare
+   - Added modifications jaewook made in order to fix the
+     problem in DUG graph navigation.
+
+10/29/07   OpenAnalysis svn tag trunk r524 Priyadarshini Malusare
+   - Depercated Unnecessary field from Activity Analysis:
+     DepStandard.*, InterDep.*, InterVary.hpp, ManagerInterActive.*,
+     ManagerInterDep.*, ManagerProcIterDep.*, VaryStandard.*,
+     ManagerVaryStandard.*, ManagerEachActive.*,
+     ManagerDepStandard.*,  ManagerICFGVary.*
+
+01/07/08   OpenAnalysis svn tag trunk r588 Priyadarshini Malusare 	 
+   - Modified DataFlowAnalysis as follows
+     - Implemented DataFlowSetImplIterator
+     - modified mSet, so that it will be no longer a pointer
+     - clean up set operations [union and intersection]
+
+01/10/08   OpenAnalysis svn tag trunk r597 Priyadarshini Malusare
+  - uncomment OA_ptr<MemRefExprIterator> getMemRefExprIterator(int tag) 
+  - Changed ManagerCallGraph so that it gets SymHandle for all NamedRefs 
+  - UnnamedRefs would indicate lambda functions.
+
+01/12/08   OpenAnalysis svn tag trunk r600 Priyadarshini Malusare
+  - Got ICFGActivity and ICFGDep analysis working with SC compiler
+  - Following modifications are done:
+    - ActivityIRInterface only inherits from IRHandleIRInterface
+    - Eliminated ActivityIRInterface inheritance from 
+	  CalleeToCallerVisitorIRInterface
+    - Fixed EvalToMemRefVisitor according to the current modifications 
+	  to ExprTreeVisitor.
+    - Fixed the output of DataFlowSetImpl [sprint()]
+    - Fixed the output of ICFGDep and DepDFSet.
+
+01/17/08   OpenAnalysis svn tag trunk r614 Priyadarshini Malusare
+  - Simplified ParamBings, ManagerParamBindgs.
+  - ManagerParamBindings create a map between CallHandle,
+    MemRefExpr for the formal parameter and ExprTree for the actual.
+  - Added ParamBindIterator.
+
+01/28/08   OpenAnalysis svn tag trunk r636 Priyadarshini Malusare
+  - Removed VisibleBaseVisitor from ManagerFIAlias.cpp
+  - Added pure virtual output routine in Interface.hpp
+  - Added following in AliasTagSet constructor.
+    + mTags = new DataFlow::DataFlowSetImpl<int>();
+  - Added GenOUT in AliasTagResults.cpp
+  - Added following in ManagerFIAlias.hpp
+    + friend class AnalyzedProcIterator;
+  - Added AliasTagResults_output.cpp
+
+02/11/08   OpenAnalysis svn tag trunk r671 Priyadarshini Malusare
+  - Fixed the output of Activity analysis and ICFGReachConsts
+    after adding Alias::output(IRHandlesIRInterface, Alias::Interface)
+
+02/12/08   OpenAnalysis svn tag trunk r673 Priyadarshini Malusare
+  - Added defaultRCType in RCPairSet.
+
+02/13/08   OpenAnalysis svn tag trunk r682 Priyadarshini Malusare
+  - Modified EvalToMemRefVisitor so that it would iterate over
+    ExprTree and collects MREs.
+
+
+02/22/08   OpenAnalysis svn tag trunk r697 Priyadarshini Malusare
+  - Fixed following bugs in the ManagerFIAliasAliasTag.cpp
+    - Replaced mapIter->first by ufset->Find(mapIter->first)
+      in order to make sure that we are not looking for the old
+      representative set.
+      - for (mapIter=mMap.begin(); mapIter!=mMap.end(); mapIter++ ) {
+            // loop through the justRefop keys
+            int ufsetID = ufset->Find(mapIter->first);
+            std::map<OA_ptr<MemRefExpr>,int> outerRefToUFSetID 
+			= mMap[ufsetID];
+            std::map<OA_ptr<MemRefExpr>,int>::iterator outerRefIter;
+			
+  - Fixed following bugs in the ManagerFIAlias.cpp
+  1 - In merge, after recursive merge => update the map, 
+      } else {
+              merge(old1[mre], old2[mre], ufset, map);
+              map[part1_find][mre] = ufset->Find(old1[mre]);
+      }
+      ...
+      } else {
+              merge(old1[mre], old2[mre], ufset, map);
+              map[part1_find][mre] = ufset->Find(old1[mre]);
+      }
+  2 - doPhase3Iteration must return a boolean value to indicate 
+      whether it has caused a change.
+
+02/22/08   OpenAnalysis svn tag trunk r699 Priyadarshini Malusare
+  - Deprecated EvalToMemRefVisitor.hpp
+  - Added CollectMREVisitor.hpp. It iterate over ExprTree and
+    collect all Memory Reference Expressions.
+
+
+04/03/07   OpenAnalysis svn tag trunk r788 Priyadarshini Malusare
+  - Added AliasTags in the output of AliasTagSet
+  - Changed IntraSideEffect to InterSideEffect
+  - Modified ManagerInterSideEffectStandard to propogate code from
+    caller to callee.
+  - Modified ManagerICFGDep to create DiffUsePairs for callsite
+    parameters.
+
+05/07/08   OpenAnalysis svn tag trunk r793 Priyadarshini Malusare
+  - Refactored ICFGDep to Use AssignPairs instead of getDefMREs and
+    getDiffUseMREs. AssignPairs return Memory Reference Expressions
+    for the Differentiable uses on RHS.
+  - switch callerToCallee() and calleeToCaller() in ManagerICFGUseful
+    and ManagerICFGVaryActive so that Useful and Vary information
+    is propogated correctly between caller and callee.
+
+06/30/08   OpenAnalysis svn tag AliasTagBranch r822 Barbara Kreaseck
+  - Updated DataFlowSetImpl.hpp to take universal sets more correctly 
+    into account.
+  - Same RegressAll output on UseOA-Open64 r325
+
+06/30/08   OpenAnalysis svn tag AliasTagBranch r823 Barbara Kreaseck
+  - Split ReachConsts.*pp into RCPair.*pp and RCPairSet.*pp
+  - Same RegressAll output on UseOA-Open64 r325
+
+07/09/08   OpenAnalysis svn tag AliasTagBranch r827 Barbara Kreaseck
+  - updated const char* usage in DEBUG MACRO in Util.hpp to get rid of warnings 
+  - added toString routines to AliasTag
+  - added a reset() method to AssignPairIterator
+  - updated EvalToConstVisitor to work with RCPair vs OA_ptr<RCPair>
+  - added toString routines to DataFlowSetImpl class
+  - removed assert(!universalSet) from DataFlowSetImplIterator constructor
+      + for some DataFlowSetImpl, the iterator will be the only accessor, and
+        having a universal set may be reasonable.
+  - added a isUniversalSetIter() method to query situation instead
+  - incremental changes to RCPair, RCPairSet, ReachConsts, ManagerICFGReachConsts
+      + they compile but are not ready for prime time yet
+  - renamed RCPairTest.cpp to driver_RCPairTest.cpp
+  - compiles and Same RegressAll output on UseOA-Open64 r329
+
+07/09/08   OpenAnalysis svn tag AliasTagBranch r828 Barbara Kreaseck
+  - minor changes to repair RCPairSet::intersectEqu()
+  - minor changes to ReachConst/Makefile
+  - minor changes to driver_RCPairTest.cpp
+  - no impact on RegressAll
+
+07/10/08   OpenAnalysis svn tag AliasTagBranch r839 Barbara Kreaseck
+  - current changes ManagerICFGReachConsts (compiles, but untested)
+  - as well as RCPairSet
+  - re-instating ReachConsts, et al, back into Makefile.am
+	and back into UseOA-Open64 shortly
+	please contact me <kreaseck@gmail.com> if this causes problems
+  - no impact on RegressAll with UseOA-Open64 r337
+
+07/11/08   OpenAnalysis svn tag AliasTagBranch r840 Barbara Kreaseck
+  - more RCPairSet testing
+  - fixed a DataFlowSetImpl constructor and clone()
+  - no impact on RegressAll with UseOA-Open64 r337
+
+07/15/08   OpenAnalysis svn tag AliasTagBranch r844 Barbara Kreaseck
+  - RCPairSet testing complete
+  - Changed ReachConsts::Interface to query based upon StmtHandle/AliasTagSet
+    or CallHandle/AliasTagSet, and associated ReachConstsStandard
+  - Consequently updated EvalToConstVisitor to work with above
+  - Updated ManagerICFGReachConsts to work with new Interface
+  - no impact on RegressAll with UseOA-Open64 r340
+
+07/17/08   OpenAnalysis svn tag AliasTagBranch r845 Barbara Kreaseck
+  - ManagerICFGReachConsts::transfer() and ::callTransfer() are returning
+    Universal outSets when they receive Universal inSets.  This is due
+    to reversePostDFS ordering and CallToReturn edges sending UniversalSets
+    due to ReachConsts being a Intersection MEET analysis.
+  - no impact on RegressAll with UseOA-Open64 r340
+
+07/24/08   OpenAnalysis svn tag AliasTagBranch r853 Barbara Kreaseck
+  - completed ExprTree::output() so that is no longer asserts
+  - completed AliasTag::dump() to contain useful information
+  - fixed minor problem in ManagerICFGReachConsts
+  - no impact on RegressAll with UseOA-Open64 branch r343
+
+08/14/08   OpenAnalysis svn tag AliasTagBranch r863 Barbara Kreaseck
+  - decorated ICFG edges with CFG::EdgeType and ExprHandles from CFG edges
+  - no impact on RegressAll with UseOA-Open64 AliasTagBranch r347

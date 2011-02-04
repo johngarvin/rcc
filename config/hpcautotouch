@@ -1,0 +1,90 @@
+#!/bin/sh
+# Testing: set -x: line by line (set -n: syntax)
+# set -x
+
+# $Header: /Volumes/cvsrep/developer/shared/config/hpcautotouch,v 1.2 2004/09/29 21:07:37 eraxxon Exp $
+
+## **************************************************************************
+##
+## File: 
+##    $Source: /Volumes/cvsrep/developer/shared/config/hpcautotouch,v $
+##    cf. README.auto
+##
+## Author:
+##    Written by Nathan Tallent, Rice University.
+##    
+## **************************************************************************
+
+#############################################################################
+
+HPCAUTOTOUCH_VERSION="1.0"
+
+#############################################################################
+
+# Note: All function names are prefixed with 'f_' in order to make
+# function calls very clear.
+
+cmd="$0"
+error_pfx="*Error*"
+
+f_usage()
+{
+  p="printf"
+  $p "\n"
+  $p "Usage:\n"
+  $p "  ${cmd} [OPTIONS]\n"
+  $p "\n"
+  $p "  Touches certain Autoconf/make output files to ensure that an\n"
+  $p "  invocation of 'make' will not cause autoconf/automake to be rerun\n"
+  $p "  and therefore require that it be installed on the user's system.  A\n"
+  $p "  common problem with CVS is that the relative timestamps between\n"
+  $p "  Autoconf/make output files are not preserved, thereby creating build\n"
+  $p "  headaches for users without the current version of Autoconf/make.\n"
+  $p "\n"
+  $p "  Options: Defaults are shown in square brackets [].\n"
+  $p "    -h, --help   : Print help, then exit\n"
+  $p "    -v, --version: Print version, then exit\n"
+  $p "\n"
+}
+
+
+# args: ($1..$n): all arguments given to this script
+f_getoptions()
+{
+  # parse argument list
+  while [ $# -ge 0 ]; do
+    case $1 in
+      --version | -v )
+         echo "version: ${HPCAUTOTOUCH_VERSION}" ; exit 0 ;;
+      --help | --h* | -h )
+         f_usage; exit 0 ;; 
+      -* ) 
+         printf "${error_pfx} Invalid option '$1'\n";
+         f_usage; exit 1;
+         ;;
+      * )   
+         break ;;
+    esac
+    shift
+  done
+}
+
+#############################################################################
+# Main
+#############################################################################
+# $n: argument n, with $0 being the command name
+# $*: all arguments from $1 to $n
+
+f_getoptions $*
+
+# Results in an error if no file found
+#find . -name aclocal.m4  | xargs /bin/touch
+
+# We sleep for a moment to ensure relative timestamp differences
+find . -name aclocal.m4   -exec /bin/touch '{}' \;
+sleep 1
+#find . -name config.h.in  -exec /bin/touch '{}' \;
+find . -name configure    -exec /bin/touch '{}' \;
+sleep 1
+find . -name Makefile.in  -exec /bin/touch '{}' \;
+

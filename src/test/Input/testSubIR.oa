@@ -1,0 +1,149 @@
+        // int main() {
+        PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+                
+            // int x; 
+            LOCATION = { < SymHandle("x"), local > }
+            // int *p;
+            LOCATION = { < SymHandle("p"), local > }
+            
+            // all other symbols visible to this procedure
+            LOCATION = { < SymHandle("g"), not local > }
+
+            // x = g;
+            MEMREFEXPRS = { StmtHandle("x = g;") =>
+                [ 
+                    MemRefHandle("x_1") => NamedRef ( DEF, SymHandle("x") )
+                    MemRefHandle("g_1") => NamedRef ( USE, SymHandle("g") )
+                ] } 
+
+            // p = &x;
+            MEMREFEXPRS = { StmtHandle("p = &x;") =>
+                [
+                    MemRefHandle("p_1") => NamedRef( DEF, SymHandle("p") )
+                    MemRefHandle("&x_1") =>
+                       NamedRef( USE, SymHandle("x"), addressOf = T, 
+                                    accuracy = full )
+
+                ] }
+            PTRASSIGNPAIRS = { StmtHandle("p = &x;") =>
+                [
+                    < NamedRef( DEF, SymHandle("p") ), 
+                      NamedRef( USE, SymHandle("x"), T, full ) >
+                ] }
+
+            // char *cptr1, **cptr2, c, d;
+            LOCATION = { < SymHandle("cptr1"), local > }
+            LOCATION = { < SymHandle("cptr2"), local > }
+            LOCATION = { < SymHandle("c"), local > }
+            LOCATION = { < SymHandle("d"), local > }
+    
+            // cptr1 = &c;
+            MEMREFEXPRS = { StmtHandle( "cptr1 = &c;") =>
+                [
+                    MemRefHandle("cptr1_1") => NamedRef( DEF, SymHandle("cptr1") )
+                    MemRefHandle("&c_1") =>
+                        NamedRef( USE, SymHandle("c"), T, full )
+
+                ] }
+            PTRASSIGNPAIRS = { StmtHandle("cptr1 = &c;") =>
+                [
+                    < NamedRef( DEF, SymHandle("cptr1") ),
+                      NamedRef( USE, SymHandle("c"), T, full ) >
+                ] }
+
+            // cptr2 = &cptr1;
+            MEMREFEXPRS = { StmtHandle("cptr2 = &cptr1;") =>
+                [
+                    MemRefHandle("cptr2_1") => NamedRef( DEF, SymHandle("cptr2") )
+                    MemRefHandle("&cptr1_1") =>
+                        NamedRef( USE, SymHandle("cptr1"), T, full )
+
+                ] }
+            PTRASSIGNPAIRS = { StmtHandle("cptr2 = &cptr1;") =>
+                [
+                    < NamedRef( DEF, SymHandle("cptr2") ),
+                      NamedRef( USE, SymHandle("cptr1"), T, full ) >
+                ] }
+
+            // c = 'h';
+            MEMREFEXPRS = { StmtHandle("c = 'h';") =>
+                [ 
+                    MemRefHandle("c_1") => NamedRef ( DEF, SymHandle("c") )
+                ] } 
+
+            // d = **cptr2;
+            MEMREFEXPRS = { StmtHandle("d = **cptr2;") =>
+                [ 
+                    MemRefHandle("d_1") => NamedRef ( DEF, SymHandle("d") )
+                    MemRefHandle("cptr2_2") => NamedRef ( USE, SymHandle("cptr2") )
+                    MemRefHandle("*cptr2_1") => 
+                      Deref( USE, NamedRef ( USE, SymHandle("cptr2") ) )
+                    MemRefHandle("**cptr2_1") => 
+                      Deref( USE, Deref( USE, NamedRef ( USE, SymHandle("cptr2") ) ) )
+                ] } 
+
+            // double A[10];
+            LOCATION = { < SymHandle("A"), local > }
+
+            // double *B;
+            LOCATION = { < SymHandle("B"), local > }
+               
+            // struct { double lf; int d; } S;
+            LOCATION = { < SymHandle("S"), local > }
+    
+            // B = &S.lf;
+            MEMREFEXPRS = { StmtHandle("B = &S.lf;") =>
+                [
+                    MemRefHandle("B_1") => NamedRef( DEF, SymHandle("B") )
+                    MemRefHandle("&S.lf") =>
+                        NamedRef( USE, SymHandle("S"), T, part )
+
+                ] }
+            PTRASSIGNPAIRS = { StmtHandle("B = &S.lf;") =>
+                [
+                    < NamedRef( DEF, SymHandle("B") ),
+                      NamedRef( USE, SymHandle("S"), T, part ) >
+                ] }
+
+
+            // foo( S.lf, B, c);
+            MEMREFEXPRS = { StmtHandle("foo( S.lf, B, c);") =>
+                [
+                    MemRefHandle("S.lf_1") =>
+                        NamedRef( USE, SymHandle("S"), F, part )
+                    MemRefHandle("B_2") =>
+                        NamedRef( USE, SymHandle("B"), T, full )
+                    MemRefHandle("c_2") =>
+                        NamedRef( USE, SymHandle("c"), T, full )
+
+                ] }
+            CALLSITES = { StmtHandle("foo( S.lf, B, c);") =>
+                [
+                    CallHandle("foo( S.lf, B, c);") =>
+                        NamedRef( USE, SymHandle("foo"), F, full )
+                ] }
+            PARAMBINDPTRASSIGNPAIRS = { CallHandle("foo( S.lf, B, c);") => 
+                [
+                    < 2, NamedRef( USE, SymHandle("B"), T, full ) >
+                    < 3, NamedRef( USE, SymHandle("c"), T, full ) >
+                ] }
+
+
+        // void foo( double p1, double *p2, char &p3 ) { ... }
+        PROCEDURE = { < ProcHandle("foo"), SymHandle("foo") > }
+            FORMALS = { 
+                [
+                    < 1, SymHandle("p1") >
+                    < 2, SymHandle("p2") >
+                    < 3, SymHandle("p3") >
+                ] }
+
+            // double p1
+            LOCATION = { < SymHandle("p1"), local > }
+            
+            // double *p2
+            LOCATION = { < SymHandle("p2"), local > }
+            
+            // double *p3
+            LOCATION = { < SymHandle("p3"), local > }
+

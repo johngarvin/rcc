@@ -1,0 +1,46 @@
+
+EquivSets(
+    mMemRefToProc: MemRefHandle	 => ProcHandle
+        MemRefHandle(locPtr)	 => ProcHandle(main)
+        MemRefHandle(&loc)	 => ProcHandle(main)
+        MemRefHandle(a)	 => ProcHandle(main)
+        MemRefHandle(b)	 => ProcHandle(main)
+        MemRefHandle(c)	 => ProcHandle(main)
+        MemRefHandle(&loc2)	 => ProcHandle(main)
+    mMemRefToSets: MemRefHandle	 => int
+        MemRefHandle(locPtr)	 => [ 1 ] 
+        MemRefHandle(a)	 => [ 3 ] 
+        MemRefHandle(b)	 => [ 4 ] 
+        MemRefHandle(c)	 => [ 5 ] 
+    mProcNSetToLocs: ProcHandle	 => std::map<int,OA_ptr<Location> >
+        ProcHandle(main)	 => 
+        SetToLocs: int	 => OA_ptr<Location>
+            1	 => [ 
+                NamedLoc(
+                    mSymHandle: SymHandle(locPtr)
+                    mLocal: 1
+                    mFullOverlap: 
+                    mPartOverlap: 
+                ) ] 
+            3	 => [ 
+                NamedLoc(
+                    mSymHandle: SymHandle(a)
+                    mLocal: 1
+                    mFullOverlap: 
+                    mPartOverlap: 
+                ) ] 
+            4	 => [ 
+                NamedLoc(
+                    mSymHandle: SymHandle(b)
+                    mLocal: 1
+                    mFullOverlap: 
+                    mPartOverlap: 
+                ) ] 
+            5	 => [ 
+                NamedLoc(
+                    mSymHandle: SymHandle(c)
+                    mLocal: 1
+                    mFullOverlap: 
+                    mPartOverlap: 
+                ) ] 
+)

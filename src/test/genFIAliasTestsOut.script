@@ -1,0 +1,11 @@
+./regress -a FIAlias -f TestCases/AliasTests/testSubIR.oa > TestResults/FIAlias/testSubIR.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/alias1.oa > TestResults/FIAlias/alias1.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/alias2.oa > TestResults/FIAlias/alias2.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/alias3.oa > TestResults/FIAlias/alias3.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/alias4.oa > TestResults/FIAlias/alias4.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/diffTypes.oa > TestResults/FIAlias/diffTypes.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/funCall.oa > TestResults/FIAlias/funCall.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/LiangEtAl00.oa > TestResults/FIAlias/LiangEtAl00.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/OAWikiEx.oa > TestResults/FIAlias/OAWikiEx.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/testSubIR.oa > TestResults/FIAlias/testSubIR.oa.out
+./regress -a FIAlias -f TestCases/AliasTests/utke.oa > TestResults/FIAlias/utke.oa.out

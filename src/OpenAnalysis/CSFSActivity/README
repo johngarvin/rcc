@@ -1,0 +1,31 @@
+
+
+-----------------------------------------------------------
+Context-Sensitive Flow-Sensitive Activity Analysis (CSFSAA) 
+Based on Variable Dependence Graph (VDG)
+-----------------------------------------------------------
+
+- This Analysis is specific to ForTran77
+
+- Based on CSFI activity analysis with the following extensions
+
+
+
+- Node key: 
+
+  - SymHandle -> IRSymHandle: pair of <IRHandle, SymHandle>
+
+  - For normal statements with one destination variable, key is 
+    the statement handle + the symbol of the destination variable.
+
+  - For call expressions, CallHandle + SymHandle of the actual
+    parameter. 
+
+  - For each of the formal parameters, two nodes are created: one for
+    IN and the other for OUT.
+
+    IN:  IRHandle(1) + SymHandle
+    OUT: IRHandle(2) + SymHandle
+
+  - The elements of the dependence matrices are also IRSymHandles.
+

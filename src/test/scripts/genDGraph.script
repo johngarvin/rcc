@@ -1,0 +1,4 @@
+echo "Generating TestResults/DGraph/simple-dot1.dot.out"
+./testgraph TestCases/DGraph/simple-dot1.dot >& TestResults/DGraph/simple-dot1.dot.out
+echo "Generating TestResults/DGraph/if1.dot.out"
+./testgraph TestCases/DGraph/if1.dot >& TestResults/DGraph/if1.dot.out

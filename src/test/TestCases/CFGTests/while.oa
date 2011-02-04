@@ -1,0 +1,74 @@
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+    MEMREFEXPRS = { StmtHandle("int main(){int i;double x;double y;double f;i = 0;f = 0.00000000000000000000000;while(i < 20){x =((3 * i));y =(2.00000000000000000000000 * x);f +=(x + y);i++;}}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{int i;double x;double y;double f;i = 0;f = 0.00000000000000000000000;while(i < 20){x =((3 * i));y =(2.00000000000000000000000 * x);f +=(x + y);i++;}}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int i;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double x;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double y;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double f;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("i = 0;") =>
+        [
+            MemRefHandle("i") => 
+                NamedRef( DEF, SymHandle("i"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("f = 0.00000000000000000000000;") =>
+        [
+            MemRefHandle("f") => 
+                NamedRef( DEF, SymHandle("f"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("while(i < 20){x =((3 * i));y =(2.00000000000000000000000 * x);f +=(x + y);i++;}") =>
+        [
+            MemRefHandle("i") => 
+                NamedRef( USE, SymHandle("i"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("{x =((3 * i));y =(2.00000000000000000000000 * x);f +=(x + y);i++;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("x =((3 * i));") =>
+        [
+            MemRefHandle("x") => 
+                NamedRef( DEF, SymHandle("x"), F, full)
+            MemRefHandle("i") => 
+                NamedRef( USE, SymHandle("i"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("y =(2.00000000000000000000000 * x);") =>
+        [
+            MemRefHandle("y") => 
+                NamedRef( DEF, SymHandle("y"), F, full)
+            MemRefHandle("x") => 
+                NamedRef( USE, SymHandle("x"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("f +=(x + y);") =>
+        [
+            MemRefHandle("f") => 
+                NamedRef( DEF, SymHandle("f"), F, full)
+            MemRefHandle("x") => 
+                NamedRef( USE, SymHandle("x"), F, full)
+            MemRefHandle("y") => 
+                NamedRef( USE, SymHandle("y"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("i++;") =>
+        [
+            MemRefHandle("i") => 
+                NamedRef( DEF, SymHandle("i"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("return 0;") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("main"), local > }
+    LOCATION = { < SymHandle("i"), local > }
+    LOCATION = { < SymHandle("x"), local > }
+    LOCATION = { < SymHandle("y"), local > }
+    LOCATION = { < SymHandle("f"), local > }

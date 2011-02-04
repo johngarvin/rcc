@@ -1,0 +1,5 @@
+libOAul_a-UnionFindUniverse.o libOAul_a-UnionFindUniverse.o:  \
+ ../../../src/OpenAnalysis/Utils/UnionFindUniverse.cpp \
+  ../../../src/OpenAnalysis/Utils/UnionFindUniverse.hpp
+
+../../../src/OpenAnalysis/Utils/UnionFindUniverse.hpp:

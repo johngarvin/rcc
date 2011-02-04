@@ -1,0 +1,48 @@
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+    MEMREFEXPRS = { StmtHandle("int main(){int loc;int *a;int *b;a = &loc;b = &loc;return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{int loc;int *a;int *b;a = &loc;b = &loc;return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int loc;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *a;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *b;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("a = &loc;") =>
+        [
+            MemRefHandle("a") => 
+                NamedRef( DEF, SymHandle("a"), F, full)
+            MemRefHandle("&loc") => 
+                NamedRef( USE, SymHandle("loc"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("a = &loc;") =>
+        [
+            < NamedRef( DEF, SymHandle("a"), F, full)
+            , NamedRef( USE, SymHandle("loc"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("b = &loc;") =>
+        [
+            MemRefHandle("b") => 
+                NamedRef( DEF, SymHandle("b"), F, full)
+            MemRefHandle("&loc") => 
+                NamedRef( USE, SymHandle("loc"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("b = &loc;") =>
+        [
+            < NamedRef( DEF, SymHandle("b"), F, full)
+            , NamedRef( USE, SymHandle("loc"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("return 0;") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("main"), local > }
+    LOCATION = { < SymHandle("loc"), local > }
+    LOCATION = { < SymHandle("a"), local > }
+    LOCATION = { < SymHandle("b"), local > }

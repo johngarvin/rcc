@@ -1,0 +1,17 @@
+// l = (int*)malloc(sizeof(int)*p)
+
+// int main() {
+        PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+
+LOCATION = { < SymHandle("l"), local > }
+MEMREFEXPRS = { StmtHandle("l = malloc(sizeof(int));") =>
+                [
+		MemRefHandle("l_1") => NamedRef ( DEF, SymHandle("l") )
+                MemRefHandle("malloc_1") =>  UnnamedRef(USE, StmtHandle("l = malloc(sizeof(int));"))
+                ] }
+PTRASSIGNPAIRS = { StmtHandle("l = malloc(sizeof(int));") =>
+                [
+                    < NamedRef(DEF, SymHandle("l") ),
+                      UnnamedRef(USE, StmtHandle("l = malloc(sizeof(int));"))
+                    >
+                ] }
