@@ -1,20 +1,21 @@
-#!/bin/csh
-setenv R_HOME @R_HOME@
-setenv BINDIR `dirname $0`
-setenv CMD "$BINDIR/rcc.bin"
-setenv RCC_R_INCLUDE_PATH @RCC_R_INCLUDE_PATH@
-if (${?LD_LIBRARY_PATH}) then
-    setenv LD_LIBRARY_PATH @R_LIB_PATH@:@RCC_LIB_PATH@:${LD_LIBRARY_PATH}
+#!/bin/bash
+export R_HOME=@R_HOME@
+export RCC_R_INCLUDE_PATH=@RCC_R_INCLUDE_PATH@
+BINDIR=`dirname $0`
+CMD="$BINDIR/rcc.bin"
+if [[ ${LD_LIBRARY_PATH} ]]
+then
+    export LD_LIBRARY_PATH=@R_LIB_PATH@:@RCC_LIB_PATH@:${LD_LIBRARY_PATH}
 else
-    setenv LD_LIBRARY_PATH @R_LIB_PATH@:@RCC_LIB_PATH@
-endif
-if (! ${?PRERUN}) setenv PRERUN ''
+    export LD_LIBRARY_PATH=@R_LIB_PATH@:@RCC_LIB_PATH@
+fi
 # hackery to run rcc under gdb using rcc's arguments
-if (${PRERUN} == "gdb") then
-    setenv TMPFILE `mktemp /tmp/rcc.XXXXXX`
+if [[ "${PRERUN}" == "gdb" ]]
+then
+    TMPFILE=`mktemp /tmp/rcc.XXXXXX`
     echo "set args $*" > ${TMPFILE}
-    setenv CMD "${PRERUN} ${CMD} -x ${TMPFILE}"
+    CMD="${PRERUN} ${CMD} -x ${TMPFILE}"
 else
-    setenv CMD "${PRERUN} ${CMD} $*"
-endif
+    CMD="${PRERUN} ${CMD} $*"
+fi
 exec ${CMD}
