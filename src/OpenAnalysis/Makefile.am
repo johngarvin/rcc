@@ -80,10 +80,10 @@ MYINSTALLEDHEADERS = \
   IRInterface/SideEffectIRInterface.hpp \
   IRInterface/InterSideEffectIRInterface.hpp \
   IRInterface/InterSideEffectIRInterfaceDefault.hpp \
+  IRInterface/SSAIRInterface.hpp \
   IRInterface/LivenessIRInterface.hpp \
   IRInterface/CallGraphIRInterface.hpp \
   IRInterface/ICFGIRInterface.hpp \
-  IRInterface/OpBasicInterface.hpp \
   IRInterface/ParamBindingsIRInterface.hpp \
   IRInterface/ReachDefsIRInterface.hpp \
   IRInterface/ActivityIRInterface.hpp \
