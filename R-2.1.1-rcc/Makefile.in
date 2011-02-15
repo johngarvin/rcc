@@ -1,0 +1,223 @@
+#
+# ${R_HOME}/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = .
+
+include $(top_builddir)/Makeconf
+
+distdir = $(PACKAGE)-$(VERSION)
+INSTFILES = AUTHORS COPYING COPYING.LIB COPYRIGHTS NEWS ONEWS THANKS
+NON_SVN_INSTFILES = FAQ RESOURCES
+DISTFILES = $(INSTFILES) \
+	ChangeLog INSTALL OONEWS README VERSION Y2K \
+	Makeconf.in Makefile.in \
+	config.site configure configure.ac \
+	date-stamp
+SUBDIRS = m4 tools doc etc share src po tests
+SUBDIRS_WITH_NO_BUILD = debian
+
+all: Makefile Makeconf R docs recommended
+recommended: @USE_RECOMMENDED_PACKAGES_TRUE@ stamp-recommended
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	@cd $(top_builddir) && $(SHELL) ./config.status $@
+Makeconf: $(srcdir)/Makeconf.in $(top_builddir)/config.status
+	@cd $(top_builddir) && $(SHELL) ./config.status $@
+
+ACLOCAL_M4 = aclocal.m4
+ACINCLUDE_DEPENDENCIES = \
+	m4/R.m4 \
+	m4/clibs.m4 \
+	m4/codeset.m4 \
+	m4/gettext.m4 \
+	m4/libtool.m4
+CONFIGURE_DEPENDENCIES = $(srcdir)/VERSION
+config.status: $(srcdir)/configure
+	@$(SHELL) ./config.status --recheck
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+	@BD=`pwd`; cd $(srcdir) && $(AUTOCONF) -B $${BD}
+$(ACLOCAL_M4): $(srcdir)/configure.ac acinclude.m4
+	@BD=`pwd`; cd $(srcdir) && $(ACLOCAL) --output=$${BD}/$@ -I $${BD}
+acinclude.m4: $(srcdir)/configure.ac $(ACINCLUDE_DEPENDENCIES)
+	@(cd $(srcdir) && cat $(ACINCLUDE_DEPENDENCIES)) > $@
+
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
+
+R: Makefile svnonly
+	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
+	  for f in $(INSTFILES); do \
+	    $(INSTALL_DATA) $(srcdir)/$${f} $(top_builddir); \
+	  done; \
+	fi
+	@for d in $(SUBDIRS); do \
+	  (cd $${d} && $(MAKE) R) || exit 1; \
+	done
+	@test -f src/library/stamp-docs || \
+	  echo "you should 'make docs' now ..."
+
+docs: R FORCE
+	-@(cd doc && $(MAKE) $@)
+	-@(cd src/library && $(MAKE) $@)
+help html latex examples: FORCE
+	-@(cd src/library && $(MAKE) $@)
+FORCE:
+
+stamp-recommended: R docs
+	@(cd src/library/Recommended && $(MAKE))
+
+vignettes: stamp-recommended
+	-@(cd src/library && $(MAKE) $@)
+
+install: installdirs svnonly
+	@for d in $(SUBDIRS); do \
+	  (cd $${d} && $(MAKE) $@) || exit 1; \
+	done
+	@for f in $(INSTFILES); do \
+	  $(INSTALL_DATA) $(srcdir)/$${f} "$(rhome)"; \
+	done
+	@for f in $(NON_SVN_INSTFILES); do \
+	  $(INSTALL_DATA) $${f} "$(rhome)"; \
+	done
+@WANT_R_FRAMEWORK_TRUE@		$(MAKE) install-R-framework
+@WANT_R_FRAMEWORK_TRUE@		@(sed 's/^LIBR =.*/LIBR = -framework R/' \
+@WANT_R_FRAMEWORK_TRUE@		  $(top_builddir)/etc/Makeconf > "$(rhome)/etc/Makeconf")
+@WANT_R_FRAMEWORK_TRUE@		@(sed 's/Versions\/$(VERSION)\/Resources/Resources/' \
+@WANT_R_FRAMEWORK_TRUE@		  $(R_FRAMEWORK_DIR)/Resources/bin/R > \
+@WANT_R_FRAMEWORK_TRUE@		  $(R_FRAMEWORK_DIR)/Resources/bin/RR)
+@WANT_R_FRAMEWORK_TRUE@		@(mv $(R_FRAMEWORK_DIR)/Resources/bin/RR $(R_FRAMEWORK_DIR)/Resources/bin/R)
+@WANT_R_FRAMEWORK_TRUE@		@(chmod 755 $(R_FRAMEWORK_DIR)/Resources/bin/R)
+@WANT_R_FRAMEWORK_TRUE@		@(cp $(R_FRAMEWORK_DIR)/Resources/bin/R $(R_FRAMEWORK_DIR)/Resources/R)
+
+svnonly:
+	@if test ! -f "$(srcdir)/FAQ" || test -f non-tarball ; then \
+	  cd doc/manual && $(MAKE) front-matter ; \
+	  touch non-tarball ; \
+	else \
+	  if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
+	    for f in $(NON_SVN_INSTFILES); do \
+	      $(INSTALL_DATA) $(srcdir)/$${f} $(top_builddir); \
+	    done \
+	  fi \
+	fi
+
+installdirs:
+	@$(MKINSTALLDIRS) "$(rhome)"
+install-strip:
+	$(MAKE) INSTALL_PROGRAM="${INSTALL_PROGRAM} -s" install
+uninstall:
+	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
+	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
+	@for f in $(INSTFILES) $(NON_SVN_INSTFILES); do \
+	  rm -f "$(rhome)/$${f}"; \
+	done
+	@rm -rf "$(Rexecbindir)" "$(Rexeclibdir)"
+	@rmdir "$(rhome)" 2>/dev/null \
+          || echo "  dir $(rhome) not removed"
+
+mostlyclean: clean
+clean:
+	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
+	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
+	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
+	  rm -f $(INSTFILES) $(NON_SVN_INSTFILES) ; \
+	fi
+distclean: clean
+	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
+	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
+	-@rm -rf bin include lib library modules gnome
+	@if test -f non-tarball ; then \
+	  rm -f $(NON_SVN_INSTFILES) non-tarball ; \
+	fi
+	-@rm -f Makeconf Makefile Makefile.bak Makefrag.* \
+	  config.cache config.log config.status libtool \
+	  $(ACLOCAL_M4) acinclude.m4 $(distdir).tar.gz
+maintainer-clean: distclean
+	@echo "This command is intended for maintainers to use; it"
+	@echo "deletes files that may need special rules to rebuild"
+	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
+	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
+	-@(cd $(srcdir) && rm -rf autom4te.cache)
+
+dist: dist-unix
+dist-unix: distdir
+	-chmod -R a+r $(distdir)
+	-chmod -R go-w $(distdir)
+	distname=`$(srcdir)/tools/GETDISTNAME`; \
+	  dirname=`echo $${distname} | sed -e s/_.*//`; \
+          if test $(distdir) != $${dirname} ; then \
+            mv $(distdir) $${dirname}; \
+          fi ; \
+	  GZIP=$(GZIP) $(TAR) czf $${distname}.tar.gz $${dirname}; \
+	  rm -rf $${dirname}
+dist-win:
+distdir: $(DISTFILES) vignettes
+	@rm -rf $(distdir)
+	@mkdir $(distdir)
+	@-chmod 755 $(distdir)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done
+	@for f in $(NON_SVN_INSTFILES); do \
+	  cp -p $${f} $(distdir)/$${f}; \
+	done
+	@for d in $(SUBDIRS); do \
+	  test -d $(distdir)/$${d} \
+	    || mkdir $(distdir)/$${d} \
+	    || exit 1; \
+	  chmod 755 $(distdir)/$${d}; \
+	  (cd $${d} && $(MAKE) distdir) \
+	    || exit 1; \
+	done
+	@for d in $(SUBDIRS_WITH_NO_BUILD); do \
+	  ((cd $(srcdir); $(TAR) -c -f - $(DISTDIR_TAR_EXCLUDE) $${d}) \
+	      | (cd $(distdir); $(TAR) -x -f -)) \
+	    || exit 1; \
+	done
+	@cp library/grid/doc/*.pdf library/grid/doc/index.html \
+	  $(distdir)/src/library/grid/inst/doc
+	@(cd $(distdir); tools/link-recommended)
+
+dvi info pdf:
+	-@(cd doc && $(MAKE) $@)
+install-dvi install-info install-pdf:
+	-@(cd doc/manual && $(MAKE) $@)
+uninstall-dvi uninstall-info uninstall-pdf:
+	-@(cd doc/manual && $(MAKE) $@)
+
+check check-devel check-all:
+	@(cd tests && $(MAKE) $@)
+
+reset-recommended:
+	@(cd src/library/Recommended && $(MAKE) clean)
+
+install-R-framework:
+	@(cd "$(R_FRAMEWORK_DIR)/Versions/$(VERSION)" && \
+	  ln -f -s -n Resources/include Headers && \
+	  ln -f -s -n Resources/lib/libR.dylib R && \
+	  test -d "Resources/bin/Frameworks" || mkdir -p "Resources/bin/Frameworks" && \
+	  cd Resources/bin/exec && \
+	  ln -f -s -n ../Frameworks Frameworks)
+	@(cd "$(R_FRAMEWORK_DIR)/Versions" && \
+	  ln -f -s -n $(VERSION) Current)
+	@(cd "$(R_FRAMEWORK_DIR)"  && \
+	  ln -f -s -n Versions/Current/PrivateHeaders PrivateHeaders&& \
+	  ln -f -s -n Versions/Current/Headers Headers&& \
+	  ln -f -s -n Versions/Current/R R && \
+	  ln -f -s -n Versions/Current/Resources Resources)
+	@(cd "$(R_FRAMEWORK_DIR)/Resources/lib" && \
+	  install_name_tool -id "$(R_FRAMEWORK_DIR)/Versions/$(VERSION)/Resources/lib/libR.dylib" ../lib/libR.dylib)
+	@(cp -R $(srcdir)/src/include $(R_FRAMEWORK_DIR)/Versions/Current/PrivateHeaders)
+	@(install_name_tool -change libR.dylib "$(R_FRAMEWORK_DIR)/Versions/$(VERSION)/Resources/lib/libR.dylib" \
+	  $(R_FRAMEWORK_DIR)/Resources/bin/exec/R)
+	@(find "$(R_FRAMEWORK_DIR)/Resources/" -name '*.so' -exec install_name_tool \
+	  -change libR.dylib "$(R_FRAMEWORK_DIR)/Versions/$(VERSION)/Resources/lib/libR.dylib" \{\} \;)
+
+TAGS:
