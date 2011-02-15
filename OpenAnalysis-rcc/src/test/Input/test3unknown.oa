@@ -1,0 +1,23 @@
+// int main()
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+ // double phi;
+ LOCATION = { < SymHandle("phi"), local > }
+
+
+ // phi = *(inversePhi());
+ MEMREFEXPRS = { StmtHandle("phi = *(inversePhi())") =>
+  [
+    MemRefHandle("phi_1") => NamedRef(DEF, SymHandle("phi"))
+    MemRefHandle("*(inversePhi())") => 
+         Deref(USE, UnknownRef(USE, T, part))
+  ]
+ }
+ PTRASSIGNPAIRS = { StmtHandle("phi = *(inversePhi())") =>
+  [
+    < NamedRef( DEF, SymHandle("phi") ),
+      UnknownRef( USE, T, partial) >
+  ]
+ }
+
+// double* inversePhi(void)
+PROCEDURE = { < ProcHandle("inversePhi"), SymHandle("inversePhi") > }

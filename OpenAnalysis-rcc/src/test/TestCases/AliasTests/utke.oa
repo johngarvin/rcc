@@ -1,0 +1,70 @@
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+    MEMREFEXPRS = { StmtHandle("int main(){double x;double z;double y;double *p;p = &x;z = *p;p = &z;y =( *p / 2.00000000000000000000000);return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{double x;double z;double y;double *p;p = &x;z = *p;p = &z;y =( *p / 2.00000000000000000000000);return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double x;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double z;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double y;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double *p;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("p = &x;") =>
+        [
+            MemRefHandle("p") => 
+                NamedRef( DEF, SymHandle("p"), F, full)
+            MemRefHandle("&x") => 
+                NamedRef( USE, SymHandle("x"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("p = &x;") =>
+        [
+            < NamedRef( DEF, SymHandle("p"), F, full)
+            , NamedRef( USE, SymHandle("x"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("z = *p;") =>
+        [
+            MemRefHandle("z") => 
+                NamedRef( DEF, SymHandle("z"), F, full)
+            MemRefHandle("*p") => 
+                Deref( USE, NamedRef( USE, SymHandle("p"), F, full), 1, F, full)
+            MemRefHandle("p") => 
+                NamedRef( USE, SymHandle("p"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("p = &z;") =>
+        [
+            MemRefHandle("p") => 
+                NamedRef( DEF, SymHandle("p"), F, full)
+            MemRefHandle("&z") => 
+                NamedRef( USE, SymHandle("z"), T, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("p = &z;") =>
+        [
+            < NamedRef( DEF, SymHandle("p"), F, full)
+            , NamedRef( USE, SymHandle("z"), T, full) >
+        ] }
+    MEMREFEXPRS = { StmtHandle("y =( *p / 2.00000000000000000000000);") =>
+        [
+            MemRefHandle("y") => 
+                NamedRef( DEF, SymHandle("y"), F, full)
+            MemRefHandle("*p") => 
+                Deref( USE, NamedRef( USE, SymHandle("p"), F, full), 1, F, full)
+            MemRefHandle("p") => 
+                NamedRef( USE, SymHandle("p"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("return 0;") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("main"), local > }
+    LOCATION = { < SymHandle("x"), local > }
+    LOCATION = { < SymHandle("z"), local > }
+    LOCATION = { < SymHandle("y"), local > }
+    LOCATION = { < SymHandle("p"), local > }

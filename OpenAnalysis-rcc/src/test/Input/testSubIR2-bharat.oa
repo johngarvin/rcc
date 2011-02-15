@@ -1,0 +1,21 @@
+//int main() {
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+
+	//int n = 2;
+	LOCATION = { < SymHandle("n"), local > }
+
+	//int *g;
+	LOCATION = { < SymHandle("g"), local > }
+
+	//g = malloc(sizeof(int)*n);
+	MEMREFEXPRS = { StmtHandle("g = malloc(sizeof(int)*n);") =>
+	[
+		MemRefHandle ("g_1") => NamedRef (DEF, SymHandle ("g"))
+		MemRefHandle ("n_1") => NamedRef (USE, SymHandle ("n"))
+		MemRefHandle ("malloc(sizeof(int)*n)") => 
+			UnnamedRef (USE, StmtHandle( "malloc( sizeof(int)*n )" ), T, full )
+	] }
+	PTRASSIGNPAIRS = { StmtHandle("g = malloc(sizeof(int)*n);") =>
+        [
+                    < MemRefHandle("g_1"), MemRefHandle("malloc(sizeof(int)*n)") >
+        ] }

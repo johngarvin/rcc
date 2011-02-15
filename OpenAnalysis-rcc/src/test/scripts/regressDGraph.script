@@ -1,0 +1,8 @@
+echo "Testing TestCases/DGraph/simple-dot1.dot, TestResults/DGraph/simple-dot1.dot.out "
+./testgraph TestCases/DGraph/simple-dot1.dot >& t
+diff t TestResults/DGraph/simple-dot1.dot.out
+
+echo "Testing TestCases/DGraph/if1.dot, TestResults/DGraph/if1.dot.out "
+./testgraph TestCases/DGraph/if1.dot >& t
+diff t TestResults/DGraph/if1.dot.out
+

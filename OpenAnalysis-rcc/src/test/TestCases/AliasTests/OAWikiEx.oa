@@ -1,0 +1,68 @@
+
+PROCEDURE = { < ProcHandle("gnu_dev_major"), SymHandle("gnu_dev_major") > }
+    MEMREFEXPRS = { StmtHandle("extern "C" {inline unsigned int gnu_dev_major(unsigned long long __dev) throw( /* from unparseFuncDeclStmt() type list output not implemented */ ){}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("return(((__dev >> 8) & 4095) |((((unsigned int )(__dev >> 32)) & 4294963200)));") =>
+        [
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+        ] }
+    LOCATION = { < SymHandle("gnu_dev_major"), local > }
+    LOCATION = { < SymHandle("__dev"), local > }
+
+PROCEDURE = { < ProcHandle("gnu_dev_major"), SymHandle("gnu_dev_major") > }
+    MEMREFEXPRS = { StmtHandle("extern "C" {inline unsigned int gnu_dev_major(unsigned long long __dev) throw( /* from unparseFuncDeclStmt() type list output not implemented */ ){}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("return(((__dev >> 8) & 4095) |((((unsigned int )(__dev >> 32)) & 4294963200)));") =>
+        [
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+        ] }
+    LOCATION = { < SymHandle("gnu_dev_major"), local > }
+    LOCATION = { < SymHandle("__dev"), local > }
+
+PROCEDURE = { < ProcHandle("gnu_dev_major"), SymHandle("gnu_dev_major") > }
+    MEMREFEXPRS = { StmtHandle("extern "C" {inline unsigned int gnu_dev_major(unsigned long long __dev) throw( /* from unparseFuncDeclStmt() type list output not implemented */ ){}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("return(((__dev >> 8) & 4095) |((((unsigned int )(__dev >> 32)) & 4294963200)));") =>
+        [
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+        ] }
+    LOCATION = { < SymHandle("gnu_dev_major"), local > }
+    LOCATION = { < SymHandle("__dev"), local > }
+
+PROCEDURE = { < ProcHandle("gnu_dev_major"), SymHandle("gnu_dev_major") > }
+    MEMREFEXPRS = { StmtHandle("extern "C" {inline unsigned int gnu_dev_major(unsigned long long __dev) throw( /* from unparseFuncDeclStmt() type list output not implemented */ ){}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("return(((__dev >> 8) & 4095) |((((unsigned int )(__dev >> 32)) & 4294963200)));") =>
+        [
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+            MemRefHandle("__dev") => 
+                NamedRef( USE, SymHandle("__dev"), F, full)
+        ] }
+    LOCATION = { < SymHandle("gnu_dev_major"), local > }
+    LOCATION = { < SymHandle("__dev"), local > }

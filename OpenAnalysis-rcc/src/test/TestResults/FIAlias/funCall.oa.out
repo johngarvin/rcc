@@ -1,0 +1,19 @@
+
+EquivSets(
+    mMemRefToProc: MemRefHandle	 => ProcHandle
+        MemRefHandle(*i)	 => ProcHandle(makeAlias)
+        MemRefHandle(i)	 => ProcHandle(makeAlias)
+        MemRefHandle(*j)	 => ProcHandle(makeAlias)
+        MemRefHandle(j)	 => ProcHandle(makeAlias)
+    mMemRefToSets: MemRefHandle	 => int
+        MemRefHandle(*i)	 => [ 0 ] 
+        MemRefHandle(i)	 => [ 0 ] 
+        MemRefHandle(*j)	 => [ 0 ] 
+        MemRefHandle(j)	 => [ 0 ] 
+    mProcNSetToLocs: ProcHandle	 => std::map<int,OA_ptr<Location> >
+        ProcHandle(makeAlias)	 => 
+        SetToLocs: int	 => OA_ptr<Location>
+            0	 => [ 
+                UnknownLoc(
+                ) ] 
+)

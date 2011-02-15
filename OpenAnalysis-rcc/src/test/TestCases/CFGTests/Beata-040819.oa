@@ -1,0 +1,21 @@
+
+PROCEDURE = { < ProcHandle("foo"), SymHandle("foo") > }
+    MEMREFEXPRS = { StmtHandle("void foo(){int i;int j = 1;switch(i){case 1:{if(j) {j++;}else {}}}}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{int i;int j = 1;switch(i){case 1:{if(j) {j++;}else {}}}}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int i;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int j = 1;") =>
+        [
+            MemRefHandle("j") => 
+                NamedRef( DEF, SymHandle("j"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("switch(i){case 1:{if(j) {j++;}else {}}}") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("foo"), local > }
+    LOCATION = { < SymHandle("j"), local > }

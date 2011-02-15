@@ -1,0 +1,62 @@
+
+PROCEDURE = { < ProcHandle("makeAlias"), SymHandle("makeAlias") > }
+    FORMALS = {
+        [
+            < 1, SymHandle("j") >
+        ] }
+    MEMREFEXPRS = { StmtHandle("void makeAlias(int **i,int **j){*i = *j;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{*i = *j;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("*i = *j;") =>
+        [
+            MemRefHandle("*i") => 
+                Deref( DEF, NamedRef( USE, SymHandle("i"), F, full), 1, F, full)
+            MemRefHandle("i") => 
+                NamedRef( USE, SymHandle("i"), F, full)
+            MemRefHandle("*j") => 
+                Deref( USE, NamedRef( USE, SymHandle("j"), F, full), 1, F, full)
+            MemRefHandle("j") => 
+                NamedRef( USE, SymHandle("j"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("*i = *j;") =>
+        [
+            < Deref( DEF, NamedRef( USE, SymHandle("i"), F, full), 1, F, full)
+            , Deref( USE, NamedRef( USE, SymHandle("j"), F, full), 1, F, full) >
+        ] }
+    LOCATION = { < SymHandle("makeAlias"), local > }
+    LOCATION = { < SymHandle("i"), local > }
+    LOCATION = { < SymHandle("j"), local > }
+
+PROCEDURE = { < ProcHandle("makeAlias"), SymHandle("makeAlias") > }
+    FORMALS = {
+        [
+            < 1, SymHandle("j") >
+        ] }
+    MEMREFEXPRS = { StmtHandle("void makeAlias(int **i,int **j){*i = *j;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{*i = *j;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("*i = *j;") =>
+        [
+            MemRefHandle("*i") => 
+                Deref( DEF, NamedRef( USE, SymHandle("i"), F, full), 1, F, full)
+            MemRefHandle("i") => 
+                NamedRef( USE, SymHandle("i"), F, full)
+            MemRefHandle("*j") => 
+                Deref( USE, NamedRef( USE, SymHandle("j"), F, full), 1, F, full)
+            MemRefHandle("j") => 
+                NamedRef( USE, SymHandle("j"), F, full)
+        ] }
+    PTRASSIGNPAIRS = { StmtHandle("*i = *j;") =>
+        [
+            < Deref( DEF, NamedRef( USE, SymHandle("i"), F, full), 1, F, full)
+            , Deref( USE, NamedRef( USE, SymHandle("j"), F, full), 1, F, full) >
+        ] }
+    LOCATION = { < SymHandle("makeAlias"), local > }
+    LOCATION = { < SymHandle("i"), local > }
+    LOCATION = { < SymHandle("j"), local > }

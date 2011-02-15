@@ -1,0 +1,33 @@
+
+PROCEDURE = { < ProcHandle("foo"), SymHandle("foo") > }
+    MEMREFEXPRS = { StmtHandle("float foo(char op){float x = 2.00000000000;float y = 3.00000000000;float z;switch(op){case 43:{z =(x + y);break;}case 45:{z =(x - y);break;}case 42:{z =(x * y);break;}case 47:{z =(x / y);}default:{z = 0.00000000000;break;}}return z;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{float x = 2.00000000000;float y = 3.00000000000;float z;switch(op){case 43:{z =(x + y);break;}case 45:{z =(x - y);break;}case 42:{z =(x * y);break;}case 47:{z =(x / y);}default:{z = 0.00000000000;break;}}return z;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("float x = 2.00000000000;") =>
+        [
+            MemRefHandle("x") => 
+                NamedRef( DEF, SymHandle("x"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("float y = 3.00000000000;") =>
+        [
+            MemRefHandle("y") => 
+                NamedRef( DEF, SymHandle("y"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("float z;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("switch(op){case 43:{z =(x + y);break;}case 45:{z =(x - y);break;}case 42:{z =(x * y);break;}case 47:{z =(x / y);}default:{z = 0.00000000000;break;}}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("return z;") =>
+        [
+            MemRefHandle("z") => 
+                NamedRef( USE, SymHandle("z"), F, full)
+        ] }
+    LOCATION = { < SymHandle("foo"), local > }
+    LOCATION = { < SymHandle("x"), local > }
+    LOCATION = { < SymHandle("y"), local > }
+    LOCATION = { < SymHandle("z"), local > }

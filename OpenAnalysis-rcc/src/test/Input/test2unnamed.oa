@@ -1,0 +1,42 @@
+// int main()
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+ // int *a, **b;
+ LOCATION = { < SymHandle("a"), local > }
+ LOCATION = { < SymHandle("b"), local > }
+
+ // a = malloc(4*20);
+ MEMREFEXPRS = { StmtHandle("a = malloc(4*20);") =>
+  [
+    MemRefHandle("a_1") => NamedRef(DEF, SymHandle("a"))
+    MemRefHandle("malloc(4*20)") =>
+         UnnamedRef(USE, StmtHandle("a = malloc(4*20);"))
+  ] 
+ }
+ PTRASSIGNPAIRS = { StmtHandle("a = malloc(4*20);") =>
+  [
+    < NamedRef(DEF, SymHandle("a")),
+      UnnamedRef(USE, StmtHandle("malloc(4*20)"))
+    >
+  ]
+ }
+
+ // b = &a;
+ MEMREFEXPRS = { StmtHandle("b = &a;") =>
+  [
+    MemRefHandle("b_1") => NamedRef(DEF, SymHandle("b"))
+    MemRefHandle("&a_1") => NamedRef(USE, SymHandle("a"), T, full)
+  ]
+ }
+ PTRASSIGNPAIRS = { StmtHandle("b = &a;") =>
+  [
+    < NamedRef( DEF, SymHandle("b") ), 
+      NamedRef( USE, SymHandle("a"), T, full ) >
+  ]
+ }
+
+ // a[1] = 40;
+ MEMREFEXPRS = { StmtHandle("a[1] = 40;") =>
+  [
+    MemRefHandle("a_2") => NamedRef(DEF, SymHandle("a"), F, part)
+  ]
+ }

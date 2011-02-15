@@ -1,0 +1,43 @@
+////////////////////////////
+// NON-TRIVIAL EXAMPLE #2 //
+////////////////////////////
+
+// Here we are using an UnknownRef.
+// This is the C program that the below grammar represents:
+
+// #include <stdlib.h>
+
+// int main()
+// {
+// 	int  w;
+//      int* r;
+//      int* q;
+//         
+//      w  = 5;
+//      *q = 10;
+//
+//      *(r + *q) = w;
+//
+// 	return 0;
+// }
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+
+LOCATION = { < SymHandle("r"), local > }
+LOCATION = { < SymHandle("q"), local > }  
+LOCATION = { < SymHandle("w"), local > }
+
+MEMREFEXPRS = { StmtHandle("*(r + *q) = w;") =>
+[
+	MemRefHandle("r_1") => NamedRef(USE, SymHandle("r"))
+	MemRefHandle("q_1") => NamedRef(USE, SymHandle("q"))
+	MemRefHandle("w_1") => NamedRef(USE, SymHandle("w"), F, full)
+	MemRefHandle("*q_1") => Deref(USE, NamedRef(USE, SymHandle("q")), 1, F, full)
+	MemRefHandle("(r + *q)") => UnknownRef(USE, T, part)
+	MemRefHandle("*(r + *q)") => Deref(USE, UnknownRef(USE, T, part), 1, F, full)
+] }
+PTRASSIGNPAIRS = { StmtHandle("*(r + *q) = w;") =>
+[
+	< Deref(USE, UnknownRef(USE, T, part), 1, F, full),
+          NamedRef( USE, SymHandle("w")) >
+] }

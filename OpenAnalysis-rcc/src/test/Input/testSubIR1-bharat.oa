@@ -1,0 +1,67 @@
+//int **p;
+
+//int moo(){
+  PROCEDURE = { < ProcHandle("moo"), SymHandle("moo") > }
+
+    LOCATION = { < SymHandle("p"), not local > }    
+
+    //int ***q;
+        LOCATION = { < SymHandle("q"), local > }
+
+    //char c;
+        LOCATION = { < SymHandle("c"), local > }
+
+    //q = &p;
+        MEMREFEXPRS = { StmtHandle("q = &p;") =>
+        [
+            MemRefHandle("q_1") => NamedRef( DEF, SymHandle("q") )
+            MemRefHandle("&p_1") =>
+            NamedRef( USE, SymHandle("p"), T, full )
+
+        ] }
+        PTRASSIGNPAIRS = { StmtHandle("q = &p;") =>
+        [
+            < NamedRef( DEF, SymHandle("q") ),
+              NamedRef( USE, SymHandle("p"), T, full ) >
+        ] }
+        
+    //boo (**p, ***q, c);
+    LOCATION = { < SymHandle("a1"), not local > }
+    LOCATION = { < SymHandle("a2"), not local > }
+    LOCATION = { < SymHandle("a3"), not local > }
+        MEMREFEXPRS = { StmtHandle("boo (*p, ***q, c);") =>
+                [
+                    MemRefHandle("a1_1") =>
+                        NamedRef( DEF, SymHandle("a1"), F, full )
+                    MemRefHandle("p_2") => 
+            NamedRef ( USE, SymHandle("p") )
+                    MemRefHandle("*p_1") =>
+                    Deref( USE, NamedRef ( USE, SymHandle("p") ) )
+                    MemRefHandle("q_2") =>
+                    NamedRef ( USE, SymHandle("q") )
+                    MemRefHandle("*q_1") =>
+                        Deref( USE, NamedRef( USE, SymHandle("q"), F, full ) )    
+                    MemRefHandle("**q_1") =>
+                        Deref( USE, Deref( USE, NamedRef( USE, SymHandle("q"), F, full ) ) )
+                    MemRefHandle("***q_1") =>
+                        Deref( USE, Deref( USE, Deref ( USE, NamedRef( USE, SymHandle("q"), F, full ) ) ))
+                    MemRefHandle("a3_1") =>
+                        NamedRef( DEF, SymHandle("a3"), F, full )
+                    MemRefHandle("c_1") =>
+                        NamedRef( USE, SymHandle("c"), T, full )
+
+                ] }
+    PARAMBINDPTRASSIGNPAIRS = { CallHandle("boo (*p, ***q, c);") => 
+        [
+        ] }
+
+
+    // void boo( int *a1, int a2, char a3 ) { ... }
+    PROCEDURE = { < ProcHandle("boo"), SymHandle("boo") > }
+    FORMALS = { 
+                  [
+                    < 1, SymHandle("a1") >
+                    < 2, SymHandle("a2") >
+                    < 3, SymHandle("a3") >
+                  ] }
+

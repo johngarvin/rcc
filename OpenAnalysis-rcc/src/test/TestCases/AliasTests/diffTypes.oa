@@ -1,0 +1,66 @@
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+    MEMREFEXPRS = { StmtHandle("int main(){double *ps;int *pi;int i;int j;i = *pi;*ps = 3.00000000000000000000000;j = *pi;g(i,j);return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("{double *ps;int *pi;int i;int j;i = *pi;*ps = 3.00000000000000000000000;j = *pi;g(i,j);return 0;}") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("double *ps;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int *pi;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int i;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("int j;") =>
+        [
+        ] }
+    MEMREFEXPRS = { StmtHandle("i = *pi;") =>
+        [
+            MemRefHandle("i") => 
+                NamedRef( DEF, SymHandle("i"), F, full)
+            MemRefHandle("*pi") => 
+                Deref( USE, NamedRef( USE, SymHandle("pi"), F, full), 1, F, full)
+            MemRefHandle("pi") => 
+                NamedRef( USE, SymHandle("pi"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("*ps = 3.00000000000000000000000;") =>
+        [
+            MemRefHandle("*ps") => 
+                Deref( DEF, NamedRef( USE, SymHandle("ps"), F, full), 1, F, full)
+            MemRefHandle("ps") => 
+                NamedRef( USE, SymHandle("ps"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("j = *pi;") =>
+        [
+            MemRefHandle("j") => 
+                NamedRef( DEF, SymHandle("j"), F, full)
+            MemRefHandle("*pi") => 
+                Deref( USE, NamedRef( USE, SymHandle("pi"), F, full), 1, F, full)
+            MemRefHandle("pi") => 
+                NamedRef( USE, SymHandle("pi"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("g(i,j);") =>
+        [
+            MemRefHandle("i") => 
+                NamedRef( USE, SymHandle("i"), F, full)
+            MemRefHandle("j") => 
+                NamedRef( USE, SymHandle("j"), F, full)
+        ] }
+    CALLSITES = { StmtHandle("g(i,j);") =>
+        [
+            CallHandle("g(i,j)") => 
+                NamedRef( USE, SymHandle("g"), F, full)
+        ] }
+    MEMREFEXPRS = { StmtHandle("return 0;") =>
+        [
+        ] }
+    LOCATION = { < SymHandle("g"), local > }
+    LOCATION = { < SymHandle("main"), local > }
+    LOCATION = { < SymHandle("ps"), local > }
+    LOCATION = { < SymHandle("pi"), local > }
+    LOCATION = { < SymHandle("i"), local > }
+    LOCATION = { < SymHandle("j"), local > }

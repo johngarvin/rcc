@@ -1,0 +1,34 @@
+////////////////////////////
+// NON-TRIVIAL EXAMPLE #1 //
+////////////////////////////
+
+// Here we are using an UnnamedRef.
+// This is the C program that the below grammar represents:
+
+// #include <stdlib.h>
+
+// int main()
+// {
+// 	int t;
+//         
+// 	t = (int) malloc(sizeof(int));
+//
+// 	return 0;
+// }
+
+PROCEDURE = { < ProcHandle("main"), SymHandle("main") > }
+
+LOCATION = { < SymHandle("t"), local > }
+
+MEMREFEXPRS = { StmtHandle("t = (int) malloc(sizeof(int));") =>
+[
+	MemRefHandle("t_1") => NamedRef(DEF, SymHandle("t"))
+	MemRefHandle("malloc_1") => UnnamedRef(USE, StmtHandle("t = (int) malloc(sizeof(int));"))
+] }
+            
+PTRASSIGNPAIRS = { StmtHandle("t = (int) malloc(sizeof(int));") =>
+[
+	< NamedRefHandle( DEF, SymHandle("t") ),
+          UnnamedRef( USE, StmtHandle("t = (int) malloc(sizeof(int));") )
+        >
+] }

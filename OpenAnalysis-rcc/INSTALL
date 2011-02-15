@@ -1,0 +1,83 @@
+Building and Installing OpenAnalysis
+------------------------------------
+
+The build system for OpenAnalysis looks for certain environment
+variables, but none of them are necessary.  To build and install
+with default options (eg. CXX=g++, CXXFLAGS="", ...) type the
+following command:
+
+    % make -f Makefile.quick all
+
+After the build, there will be a build.log file with the settings
+that were used during the build, including the version of the 
+compiler used.  For example:
+    
+    Compiling OpenAnalysis on 12/21/06 at 12:59:12 PM MST
+    Compile started by mstrout
+    OADIR:='/home/mstrout/OA/OpenAnalysis'
+    CXXFLAGS:='-g -O0'
+    CCFLAGS:=' '
+    CXX:='g++ '
+    CC:='cc '
+    CXXLD:=' '
+    CCLD:=''
+    PLATFORM:='x86-Linux'
+    CXX version => 'g++ (GCC) 4.0.3 Copyright (C) 2006 Free Software Foundation, Inc. This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.'
+    COMPILE_SUCCESFUL='yes'
+    Compilation finished on 12/21/06 at 12:59:36 PM MST
+
+The libOAul.a file will be in $(PLATFORM)/lib/ and the header files will be
+in $(PLATFORM)/include/.
+
+To do a partial recompile when only some of the files have been 
+modified, do the following:
+
+    % make -f Makefile.quick install
+
+Do the following to get installation help.
+
+    % make -f Makefile.quick
+
+Before doing a 'make -f Makefile.quick all' you can set the CXXFLAGS
+as well:
+
+    % setenv CXXFLAGS '-g -O0'
+
+Debugging
+---------
+When running an executable that links to the OAlib, 
+OpenAnalysis looks at the value of the OA_DEBUG environmental variable 
+to determine what classes should have debugging turned on or off. 
+By convention classes that have debugging support will search the 
+environmental variable for 'DEBUG_ClassName'. For example, to turn 
+on debugging in ManagerFIAlias OA_DEBUG would be set like so:
+
+    // using bash shell 
+    % export OA_DEBUG="DEBUG_ManagerFIAlias" 
+ 
+    // using csh or tcsh 
+    % setenv OA_DEBUG "DEBUG_ManagerFIAlias" 
+
+Multiple debug flags can be strung together with colons. To turn 
+on debugging in ManagerFIAlias, ManagerActiveStandard, and ICFGDep do:
+
+    // using bash shell 
+    export OA_DEBUG="DEBUG_ManagerFIAlias:ManagerActiveStandard:ICFGDep" 
+ 
+    // using csh or tcsh 
+    setenv  OA_DEBUG "DEBUG_ManagerFIAlias:ManagerActiveStandard:ICFGDep" 
+
+To turn off debugging simply remove the desired flag from the OA_DEBUG variable.
+
+Adding debugging support to a new module
+-----------------------------------------
+
+To set up the debugging in a new class do the following in the .cpp file:
+
+    * #include <Utils/Util.hpp>.
+    * Somewhere in the file before the class's constructor 
+      declare 'static bool debug;'.
+    * In the constructor call OA_DEBUG_CTRL_MACRO("DEBUGFLAG:ALL", debug). 
+      Substitute DEBUGFLAG with the name of the flag you wish to be 
+      associated with this class. Usually this should be 'DEBUG_ClassName' 
+

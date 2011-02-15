@@ -1,0 +1,11 @@
+# comment in file.test
+# Regression tests for       DGraph Refactor
+testname::DGraph
+inputdir::TestCases/DGraph
+outputdir::TestResults/DGraph
+driverexec::./testgraph 
+
+# list of tests
+#       input file,    			 status
+test::  simple-dot1.dot,          
+test::  if1.dot,

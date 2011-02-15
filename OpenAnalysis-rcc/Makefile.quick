@@ -1,0 +1,181 @@
+# Makefile.quick
+#  Copyright ((c)) 2002, Rice University 
+#  All rights reserved.
+#  See Rice.copyright for details.
+#
+# (07/28/06) AIS - added code to construct build.log
+
+#############################################################################
+# Makefile
+#############################################################################
+
+#############################################################################
+# Set variables from the configure script
+
+SHELL = /bin/sh
+WD := $(shell pwd)
+
+# please be careful to make sure that no spaces follow the variables
+# defined below.  When extra spaces are added this will be reflected
+# in the build log and cause issues when other scripts (like the
+# benchmarking scripts) process it.
+ifndef OA_OADIR
+  OADIR:=$(WD)
+else
+  OADIR:=$(OA_OADIR)
+endif
+ifndef OA_CXXFLAGS
+  CXXFLAGS:=$(CXXFLAGS)
+else
+  CXXFLAGS:=$(OA_CXXFLAGS)
+endif
+ifndef OA_CCFLAGS
+  CCFLAGS:=$(CCFLAGS)
+else
+  CCFLAGS:=$(OA_CCFLAGS)
+endif
+ifndef OA_CXX
+  CXX:=$(CXX)
+else
+  CXX:=$(OA_CXX)
+endif
+ifndef OA_CC
+  CC:=$(CC)
+else
+  CC:=$(OA_CC)
+endif
+ifndef OA_CXXLD
+  CXXLD:=$(CXXLD)
+else
+  CCLD:=$(OA_CCLD)
+endif
+
+PLATFORM := $(shell cd $(WD)/config && ./hpcplatform)
+ifeq ($(PLATFORM),)
+  $(error "Unknown/unsupported platform") # unavailable in older gmakes
+  error "Unknown/unsupported platform"    # will certainly cause an error
+endif
+
+#############################################################################
+
+BUILDDIR   = $(WD)/build-$(PLATFORM)
+INSTALLDIR = $(WD)/$(PLATFORM)
+
+CONFIG_OPTS =
+
+# LIB option
+ifeq ($(LIB),native)
+  CONFIG_OPTS += --enable-libnative --disable-libcross
+endif
+ifeq ($(LIB),cross)
+  CONFIG_OPTS += --enable-libcross  --disable-libnative
+endif
+
+# DEVELOP option
+ifdef DEVELOP
+  CONFIG_OPTS += --enable-develop
+endif
+
+#############################################################################
+
+define HELPCMDS
+echo "A wrapper for configuring, building and installing OpenAnalysis."
+echo "Targets:"
+echo "  all       - Configure, build and install, using the options below."
+echo ""
+echo "  configure - Configure and create makefiles, using the options below."
+echo "  build     - Build"
+echo "  install   - Install"
+echo ""
+echo "Options to 'all' and 'configure':"
+echo "  CXX=<C++-compiler>      - Set the C++ compiler"
+echo "  DEVELOP=1               - develop mode"
+echo "  LIB=native|cross        - build only libnative or libcross"
+echo ""
+echo "By default, makefiles are created in:"
+echo "  $(BUILDDIR)"
+echo "By default, the installation is performed in:"
+echo "  $(INSTALLDIR)"
+echo ""
+echo "For more complex actions, use the configure target above and then use"
+echo "the _resulting_ makefiles in the build directory; or use the typical"
+echo "Autoconf/Automake trio,"
+echo "  ./configure <options> ; make ; make install"
+endef
+
+help: 
+	@$(HELPCMDS)
+
+all: configure build install
+
+.PHONY : all help
+
+#############################################################################
+
+configure: check clean
+	@echo "*** Configuring ***"
+	$(WD)/config/hpcautotouch
+	-mkdir -p $(BUILDDIR)
+	cd $(BUILDDIR) && \
+	../configure $(CONFIG_OPTS) --prefix="$(INSTALLDIR)"
+
+build:
+	@echo "*** Building ***"
+	cd $(BUILDDIR) && $(MAKE)
+
+clean:
+	/bin/rm -f -r $(BUILDDIR)
+
+alldocs:
+	doxygen config.doxygen
+
+.PHONY : configure build clean alldocs
+
+############################################################
+
+install: build_log installStep2 mark_compile_successful
+
+installStep2:
+	@echo "*** Installing ***"
+	cd $(BUILDDIR) && $(MAKE) install
+	@echo "*** Installed to: $(INSTALLDIR) ***"
+
+uninstall: 
+	/bin/rm -f -r $(INSTALLDIR)
+
+.PHONY : install installStep2 uninstall
+
+#############################################################################
+
+check:
+# Note: this is actually useless since make gives CXX a default value
+	@if [ -z "$(CXX)" ]; then \
+	  echo "Please specify compiler with environment variable CXX."; \
+	  return 1; \
+	fi
+
+.PHONY : build_log mark_compile_successful clean_log 
+
+# added by AIS (07/28/06)
+build_log:
+	@echo -e "\033[32mOutputing flags to build.log\033[0m" 
+	@date +"Compiling OpenAnalysis on %D at %r %Z" > build.log 
+	@echo "Compile started by" `whoami` >> build.log 
+	@echo "OADIR:='$(OADIR)'"  >> build.log 
+	@echo "CXXFLAGS:='$(CXXFLAGS)'"  >> build.log 
+	@echo "CCFLAGS:='$(CCFLAGS)'"  >> build.log 
+	@echo "CXX:='$(CXX)'"  >> build.log 
+	@echo "CC:='$(CC)'"  >> build.log 
+	@echo "CXXLD:='$(CXXLD)'"  >> build.log 
+	@echo "CCLD:='$(CCLD)'"  >> build.log
+	@echo "PLATFORM:='$(PLATFORM)'"  >> build.log
+	@echo "CXX version => '$(shell $(CXX) --version)'"  >> build.log
+
+mark_compile_successful:
+	@echo "COMPILE_SUCCESFUL='yes'" >> build.log
+	@date +"Compilation finished on %D at %r %Z" >> build.log
+
+clean_log:
+	@echo "Project cleaned" > build.log
+
+#############################################################################

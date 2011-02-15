@@ -1,0 +1,45 @@
+echo -e "Testing TestCases/AliasTests/testSubIR.oa\n\tTestResults/FIAlias/testSubIR.oa checked by MMS"
+./regress -a FIAlias -f TestCases/AliasTests/testSubIR.oa > t
+diff t TestResults/FIAlias/testSubIR.oa.out
+
+echo -e "Testing TestCases/AliasTests/alias1.oa\n\tTestResults/FIAlias/TestResults/FIAlias/alias1.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/alias1.oa > t
+diff t TestResults/FIAlias/alias1.oa.out
+
+echo -e "Testing TestCases/AliasTests/alias2.oa\n\tTestResults/FIAlias/TestResults/FIAlias/alias2.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/alias2.oa > t
+diff t TestResults/FIAlias/alias2.oa.out
+
+echo -e "Testing TestCases/AliasTests/alias3.oa\n\tTestResults/FIAlias/TestResults/FIAlias/alias3.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/alias3.oa > t
+diff t TestResults/FIAlias/alias3.oa.out
+
+echo -e "Testing TestCases/AliasTests/alias4.oa\n\tTestResults/FIAlias/TestResults/FIAlias/alias4.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/alias4.oa > t
+diff t TestResults/FIAlias/alias4.oa.out
+
+echo -e "Testing TestCases/AliasTests/diffTypes.oa\n\tTestResults/FIAlias/TestResults/FIAlias/diffTypes.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/diffTypes.oa > t
+diff t TestResults/FIAlias/diffTypes.oa.out
+
+echo -e "Testing TestCases/AliasTests/funCall.oa\n\tTestResults/FIAlias/TestResults/FIAlias/funCall.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/funCall.oa > t
+diff t TestResults/FIAlias/funCall.oa.out
+
+echo -e "Testing TestCases/AliasTests/LiangEtAl00.oa\n\tTestResults/FIAlias/TestResults/FIAlias/LiangEtAl00.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/LiangEtAl00.oa > t
+diff t TestResults/FIAlias/LiangEtAl00.oa.out
+
+echo -e "Testing TestCases/AliasTests/OAWikiEx.oa\n\tTestResults/FIAlias/TestResults/FIAlias/OAWikiEx.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/OAWikiEx.oa > t
+diff t TestResults/FIAlias/OAWikiEx.oa.out
+
+echo -e "Testing TestCases/AliasTests/testSubIR.oa\n\tTestResults/FIAlias/TestResults/FIAlias/testSubIR.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/testSubIR.oa > t
+diff t TestResults/FIAlias/testSubIR.oa.out
+
+echo -e "Testing TestCases/AliasTests/utke.oa\n\tTestResults/FIAlias/TestResults/FIAlias/utke.oa checked by ???"
+./regress -a FIAlias -f  TestCases/AliasTests/utke.oa > t
+diff t TestResults/FIAlias/utke.oa.out
+
+rm t
