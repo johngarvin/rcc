@@ -94,9 +94,7 @@ void DefaultAnnotationMap::compute_if_necessary() {
 
 void DefaultAnnotationMap::reset() {
   std::map<MyKeyT, MyMappedT>::iterator iter;
-  for (iter = m_map.begin(); iter != m_map.end(); ++iter) {
-    m_map.erase(iter);
-  }
+  m_map.erase(m_map.begin(), m_map.end());
   m_computed = false;
 }
 
