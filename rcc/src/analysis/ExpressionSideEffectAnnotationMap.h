@@ -67,13 +67,13 @@ private:
   void compute_oa_side_effect();
   void make_side_effect(const OA::ProcHandle ph, const SEXP e);
 
-  void init_lib_data();
+  static void init_lib_data();
 
-  bool expression_is_trivial(const SEXP e);
-  bool expression_is_cheap(const SEXP e);
-  bool call_may_have_action(const SEXP e);
-  bool call_may_be_expensive(const SEXP e);
-  bool call_may_throw_error(const SEXP e);
+  static bool expression_is_trivial(const SEXP e);
+  static bool expression_is_cheap(const SEXP e);
+  static bool call_may_have_action(const SEXP e);
+  static bool call_may_be_expensive(const SEXP e);
+  static bool call_may_throw_error(const SEXP e);
 
   void add_all_names_used(SideEffect * annot,
 			  OA::OA_ptr<OA::Alias::Interface> alias,
@@ -88,7 +88,7 @@ private:
 
   OA::OA_ptr<OA::SideEffect::InterSideEffectStandard> m_side_effect;
   OA::OA_ptr<OA::Alias::InterAliasInterface> m_alias;
-  SideEffectLibMap m_non_action_libs;
+  static SideEffectLibMap m_non_action_libs;
 };
 
 }  // end namespace RAnnot

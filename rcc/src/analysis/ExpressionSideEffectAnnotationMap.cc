@@ -103,6 +103,7 @@ PropertyHndlT ExpressionSideEffectAnnotationMap::handle() {
 void ExpressionSideEffectAnnotationMap::create() {
   s_instance = new ExpressionSideEffectAnnotationMap();
   analysisResults.add(s_handle, s_instance);
+  init_lib_data();
 }
 
 ExpressionSideEffectAnnotationMap * ExpressionSideEffectAnnotationMap::s_instance = 0;
@@ -112,8 +113,6 @@ PropertyHndlT ExpressionSideEffectAnnotationMap::s_handle = "ExpressionSideEffec
 
 // compute all ExpressionSideEffect annotation information
 void ExpressionSideEffectAnnotationMap::compute() {
-  init_lib_data();
-
   FuncInfo * fi;
   OA_ptr<CFG::NodeInterface> node;
   StmtHandle stmt;
