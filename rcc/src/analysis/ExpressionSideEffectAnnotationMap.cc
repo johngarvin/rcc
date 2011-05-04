@@ -120,15 +120,6 @@ void ExpressionSideEffectAnnotationMap::compute() {
   compute_oa_side_effect();
   // now use m_side_effect to get info on expressions
   
-#if 0
-  ExpressionInfoAnnotationMap::const_iterator it;
-  ExpressionInfoAnnotationMap * eiam = ExpressionInfoAnnotationMap::instance();
-  for (it = eiam->begin(); it != eiam->end(); it++) {
-    ExpressionInfo * ei = dynamic_cast<ExpressionInfo *>(it->second);
-    make_side_effect(ei->get_cell());
-  }
-#endif
-
   // get side effects for default arguments
   FOR_EACH_PROC(fi) {
     ProcHandle ph = HandleInterface::make_proc_h(fi->get_sexp());
@@ -275,7 +266,6 @@ bool ExpressionSideEffectAnnotationMap::expression_is_trivial(const SEXP e) {
   if (is_const(e) || is_var(e) || is_subscript(e)) {
     return true;
 
-    // TODO: and (assume-correct-program or call cannot throw error)
   } else if (is_call(e) &&
 	     ! call_may_have_action(e) &&
 	     ! call_may_throw_error(e))
